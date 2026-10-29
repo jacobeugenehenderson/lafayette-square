@@ -41,7 +41,7 @@ const frag = /* glsl */`
   uniform vec2 uTexel;
   uniform float uFirst, uKaris, uPackedDepth, cameraNear, cameraFar;
   uniform vec4 uRect;            // the hero's box on screen, uv (x0, y0, x1, y1)
-  uniform float uLogDepth, uFocusDist, uMaxBlur, uHeroBlur, uZone, uRamp;
+  uniform float uLogDepth, uFocusDist, uMaxBlur, uHeroBlur, uZone, uRamp, uFocusOn;
   uniform vec2 uTanHalf;
   uniform vec3 uUpView;
   ${DOF_BLUR_GLSL}
@@ -99,7 +99,7 @@ class HeroLadderPass extends Pass {
         uRect: { value: new THREE.Vector4(0, 0, 1, 1) }, uMask: { value: null }, uHeroNear: { value: 0 }, uHeroGround: { value: 0 },
         uLogDepth: { value: 0 }, uFocusDist: { value: 1000 }, uTanHalf: { value: new THREE.Vector2(0.2, 0.2) },
         uUpView: { value: new THREE.Vector3(0, 1, 0) }, uMaxBlur: { value: 0 }, uHeroBlur: { value: 0 },
-        uZone: { value: 0.2 }, uRamp: { value: 0.5 },
+        uZone: { value: 0.2 }, uRamp: { value: 0.5 }, uFocusOn: { value: 1 },
       },
       vertexShader: vert, fragmentShader: frag, depthTest: false, depthWrite: false,
     })
@@ -164,7 +164,7 @@ class HeroLadderPass extends Pass {
     u.uFocusDist.value = _dofRefs.focusDist.current
     u.uTanHalf.value.copy(_dofRefs.tanHalf.current); u.uUpView.value.copy(_dofRefs.upView.current)
     u.uMaxBlur.value = _dofRefs.maxBlur.current; u.uHeroBlur.value = _dofRefs.heroBlur.current
-    u.uZone.value = _dofRefs.zone.current; u.uRamp.value = _dofRefs.ramp.current
+    u.uZone.value = _dofRefs.zone.current; u.uRamp.value = _dofRefs.ramp.current; u.uFocusOn.value = _dofRefs.focusOn.current
     u.uRect.value.set(rect[0], rect[1], rect[2], rect[3])
     u.uHeroNear.value = _dofRefs.heroNear.current; u.uHeroGround.value = _dofRefs.heroGround.current
     const prev = renderer.getRenderTarget(), prevClear = renderer.getClearAlpha(), prevColor = renderer.getClearColor(new THREE.Color())

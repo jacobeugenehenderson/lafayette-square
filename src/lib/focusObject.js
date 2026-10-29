@@ -14,8 +14,14 @@
  * ⭐ THE BOX IS DERIVED, EVERY FRAME, NEVER STORED: a building's from the slab index (footprint, its ground to its roof,
  * through the one lift — buildingLift.js); a set-piece's and the Arch's from their own drawn object, found by name
  * (`focus:<id>`). Nothing is kept at pick time, so nothing can go stale.
- * ⛔ An id that names nothing is said once, loudly, naming it, and that end of the focus is the camera's aim.
- * A hero that is not an object (the centroid, the landscape backdrop) is no focus object: the aim, said once.
+ * ⭐ IN THE HERO VIEW THE FOCUS IS ALWAYS AN OBJECT, NEVER THE AIM (Jacob, 2026-10-28; registry
+ * r-stage-focuses-the-object-and-captures-the-screen): playing, paused, orbited or scrubbed — the movie's object at the
+ * playhead, else the town's hero (#focusChoice, the one decision). Street focuses where the camera points; Browse has
+ * no depth of field.
+ * ⛔ An id that names nothing is said once, loudly, naming it, and that end of the focus has NO PLANE: it weighs 0, so
+ * the frame blurs at the Amount there and racks toward it (Zob's ruling). A town with no hero and no key focus has no
+ * focus plane at all: the Amount everywhere (Amount 0: sharp). A hero that is not an object (the centroid, the landscape
+ * backdrop) is no focus object, said once.
  */
 import * as THREE from 'three'
 import { buildingLiftY } from './buildingLift.js'
@@ -43,10 +49,10 @@ const sayOnce = (key, msg, error = true) => { if (_said.has(key)) return; _said.
 export function resolveFocusId(id, heroSubject) {
   if (id !== 'hero') return id
   if (heroSubject === undefined) return null   // the scene has not loaded yet: not yet, said nothing
-  if (!heroSubject) { sayOnce('hero:none', '[focus] the town has no hero (Survey ▸ Hero) — depth of field focuses on the camera\'s aim', false); return null }
+  if (!heroSubject) { sayOnce('hero:none', '[focus] the town has no hero (Survey ▸ Hero) — there is no focus plane: the hero view blurs at the Amount', false); return null }
   if (heroSubject.kind === 'arch') return 'arch'
   if (heroSubject.kind === 'landmark' && heroSubject.id) return heroSubject.id
-  sayOnce(`hero:${heroSubject.kind}`, `[focus] the town's hero is the ${heroSubject.kind}, not an object — depth of field focuses on the camera's aim`, false)
+  sayOnce(`hero:${heroSubject.kind}`, `[focus] the town's hero is the ${heroSubject.kind}, not an object — there is no focus plane: the hero view blurs at the Amount`, false)
   return null
 }
 
@@ -99,6 +105,27 @@ export function focusMeshes(id, { scene, index }) {
   return out.length ? out : null
 }
 
+/**
+ * ⭐ WHAT DEPTH OF FIELD FOCUSES ON THIS FRAME — the one decision (Jacob, 2026-10-28). By the VIEW:
+ *   'browse' → { off }: Browse has no depth of field.
+ *   'hero'   → the focus OBJECTS: the movie's two ends at the playhead while MovieCamera publishes them, else the town's
+ *              hero. ⛔ Never the aim. `weight` is how much of a focus plane there is, 1 per end that resolves, lerped
+ *              by `lam`: 0 = none, the Amount everywhere.
+ *   else     → { aim }: Street (and a view with no shot) focuses where the camera points.
+ * `heroSubject === undefined` (the town not loaded yet) is { off }: not yet, said nothing.
+ * @param ctx { scene, index, exag } as for focusBox · @returns { off } | { aim } | { a, b, lam, weight, heroMeshes }
+ */
+export function focusChoice({ viewMode, movieFocus: mf, heroSubject, ctx }) {
+  if (viewMode === 'browse') return { off: true }
+  if (viewMode !== 'hero') return { aim: true }
+  if (heroSubject === undefined) return { off: true }
+  const from = mf?.on ? mf.from : 'hero', to = mf?.on ? mf.to : 'hero', lam = mf?.on ? Math.min(1, Math.max(0, mf.lam || 0)) : 0
+  const box = (id) => { const r = resolveFocusId(id, heroSubject); return r ? focusBox(r, ctx) : null }
+  const a = box(from), b = to === from ? a : box(to), wa = a ? 1 : 0, wb = b ? 1 : 0
+  const near = lam < 0.5 ? from : to, nearId = resolveFocusId(near, heroSubject)
+  return { a, b, lam, weight: wa + (wb - wa) * lam, heroMeshes: nearId ? focusMeshes(nearId, ctx) : null }
+}
+
 const _b = new THREE.Box3(), _p = new THREE.Vector3()
 /**
  * The world box `[x0, y0, z0, x1, y1, z1]` of the object a (resolved) focus id names, or null — said once.
@@ -130,6 +157,6 @@ export function focusBox(id, { scene, index, exag }) {
     const top = Math.max(e.baseY ?? 0, e.roofTopY ?? 0)
     return [x0, buildingLiftY(0, c, exag, 0, false, g), z0, x1, buildingLiftY(top, c, exag, 0, false, g), z1]
   }
-  if (index) sayOnce(`id:${id}`, `[focus] ⛔ "${id}" names no object in this town (no set-piece, no slab building) — depth of field focuses on the camera's aim`)
+  if (index) sayOnce(`id:${id}`, `[focus] ⛔ "${id}" names no object in this town (no set-piece, no slab building) — that end of the focus has no plane: it blurs at the Amount`)
   return null
 }
