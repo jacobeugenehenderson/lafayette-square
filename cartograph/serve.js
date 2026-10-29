@@ -23,7 +23,7 @@ import { pourCodeClosure, pourCodeChanged, geographyReadChanged, contentChanged,
 import { treeBakeInputsForMap, treeLibraryFiles } from './tree-bake-inputs.mjs'
 import { terrainValueReads } from './terrainReads.mjs'
 import { COAST_FILE } from './coastFile.mjs'
-import { pourSteps, skeletonStep, runSkeleton, stepReads, recordStep, readBakeReads, runPour, groundForReaders } from './pourSteps.mjs'
+import { pourSteps, skeletonStep, runSkeleton, stepReads, recordStep, readBakeReads, runPour, groundForReaders, sceneForReaders } from './pourSteps.mjs'
 import { readBakeDesign, SEED_STRIPPED_FIELDS } from './lookDesign.mjs'
 import { productionDomainFor, askOperations } from './operations-domain.mjs'
 import { lookIdFor, isDeclaredOnly, planJoin, executeJoin } from './scene-address.mjs'
@@ -3077,9 +3077,8 @@ createServer(async (req, res) => {
             // lamps / atlas / scene (hero keyframes) — keyed by SCENE, as bake-trees opens them (Class D row 10)
             [...treeInputs.inputs, ...treeLibraryFiles(), SCENE_DESIGN, bakePaths.geography,
              join(REPO_ROOT, 'public', 'baked', bakeScene, 'lamps.json'), join(REPO_ROOT, 'public', 'baked', bakeScene, 'trees-atlas.json'),
-             // ⛔ scene.json by VALUE, without `bakedAt`: the bake re-stamps that field at its very end, so by file the trees
-             // step was stale after every bake (and tree-anchors and ground-ao after it). What bake-trees reads is the rest.
-             { value: `baked/${bakeScene}/scene.json without its bakedAt stamp`, read: () => { const sc = readJsonOrNull(join(REPO_ROOT, 'public', 'baked', bakeScene, 'scene.json')); if (sc) delete sc.bakedAt; return sc } },
+             // ⛔ scene.json by VALUE, without `bakedAt` (pourSteps.mjs#sceneForReaders): the bake re-stamps it at its very end
+             sceneForReaders(join(REPO_ROOT, 'public', 'baked', bakeScene)),
              join(SCENE_DIR, 'lu-policy.json'), join(bakePaths.raw, 'osm.json'),
              join(REPO_ROOT, 'arborist', 'bake-trees.js')],
             [join(REPO_ROOT, treeInputs.output)],
@@ -3125,9 +3124,10 @@ createServer(async (req, res) => {
       // not-inputs: geography.json (scene.js resolves the scene's name; shapes no output)
       // not-inputs: ribbons.json (scene.js resolves the scene's name; shapes no output)
       // not-inputs: design.json (lookDesign.mjs, reached through scene.js; this step reads no authored value)
+      // not-inputs: scene.json (read by VALUE, pourSteps.mjs#sceneForReaders: without the bakedAt stamp written below; this audit reports that UNKNOWN, as trees)
       await runIfDirty('revetment-far',
         [groundForReaders(LOOK_DIR), join(LOOK_DIR, 'ground.bin'), join(LOOK_DIR, 'terrain.json'), join(LOOK_DIR, 'terrain.bin'),
-         join(LOOK_DIR, 'revetment.json'), join(LOOK_DIR, 'scene.json'), join(here, 'bake-revetment-far.js')],
+         join(LOOK_DIR, 'revetment.json'), sceneForReaders(LOOK_DIR), join(here, 'bake-revetment-far.js')],
         [join(LOOK_DIR, 'revetment-far.json'), join(LOOK_DIR, 'revetment-far.bin'), join(LOOK_DIR, 'revetment-far-unseen.bin')],
         `node bake-revetment-far.js --look=${id} ${sceneFlag}`,
         // ⚠️ ~3–4 min a coastal town (provincetown 179 s, huron 259 s, 2026-10-29): it builds every NEAR chunk once for its exact
