@@ -62,8 +62,9 @@ bring the options (§3.1) before building.
 ## 4. Gates
 - PURE ROTATION: across an aim drag, the camera's position is unchanged (bitwise or < 1e-9) and its up stays world-up (roll 0).
   Mutant: the target dragged instead of rotated (an orbit) → RED.
-- UNDER THE CURSOR: a planted drag from pixel A to pixel B leaves the grabbed direction at B within a pixel, for a near and a far
-  point (a 190 m apex at 2 km). Mutant: delta-based rotation → RED at the far point.
+- UNDER THE CURSOR: a planted drag from pixel A to pixel B leaves the grabbed direction at B within a pixel, at the frame's CENTRE
+  and at its EDGE. A pure rotation is depth-blind (Gimbal, measured: a delta solve errs 2.09 px at centre, 14.38 px at the edge, the
+  same at 50 m and 2 km), so near vs far can't catch it. Mutant: delta-based rotation → RED at the edge.
 - NOTHING ELSE MOVED: the existing gestures (orbit, ⌥ grab, ⌘/⌃ pan, middle dolly, wheel, `claims-a-lean-never-turns-the-map`) are
   unchanged; claims-the-camera-has-one-definition green.
 - PLANT, POINT, PLAY: in Stage, aim, capture a key, play: the played frame matches the aimed one (position, look direction, fov).
