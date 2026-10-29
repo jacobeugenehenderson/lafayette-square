@@ -1,0 +1,58 @@
+{
+ "stats": {
+  "parts": 197,
+  "partsBuilt": 196,
+  "tiles": 1296,
+  "runs": 1125
+ },
+ "tile": 500,
+ "min": 62.5,
+ "win": 250,
+ "sites": [
+  {
+   "class": "the back-offset: a trimmed arc STARTS outside D's wedge at (…)",
+   "at": [
+    -119.15,
+    313.735
+   ],
+   "why": "[census 3 open] ⛔ the back-offset: a trimmed arc STARTS outside D's wedge at (-119.15,313.735). Unruled; refusing.",
+   "leaves": 1,
+   "m2": 2900.5,
+   "parentOnly": 0,
+   "sizes": [
+    62.5
+   ],
+   "verdict": "REAL"
+  },
+  {
+   "class": "the open/close cannot read this ring: a STAIRCASE in its SOURCE at a cut",
+   "at": [
+    343.28,
+    -204.639
+   ],
+   "why": "[census 3 open] ⛔ the open/close cannot read this ring: a STAIRCASE in its SOURCE at a cut. Ring 0's edge(s) 103 (343.280, -204.639) → (343.289, -204.645), 10.8 mm lie within the lattice's rounding of edge 102's line, so their offset lines cross and are read out of order. Nothing the operator can do changes it today: the rule is BACKLOG \"the open/close refuses at a source staircase\" (unbuilt). Refusing. (detail: the cut joins edge 102 to edge 104 and edge(s) 103 it skips appear elsewhere in the ring ([{\"edge\":103,\"atTokens\":[104]}]); tokens round it [0:97 0:98 0:99 0:100 0:101 new 0:102 0:104 ",
+   "leaves": 1,
+   "m2": 2845.8,
+   "parentOnly": 0,
+   "sizes": [
+    62.5
+   ],
+   "verdict": "REAL"
+  },
+  {
+   "class": "the open/close cannot read this ring: a STAIRCASE in its SOURCE at a cut",
+   "at": [
+    4986.648,
+    -140.72
+   ],
+   "why": "[census 3 close] ⛔ the open/close cannot read this ring: a STAIRCASE in its SOURCE at a cut. Ring 0's edge(s) 7 (4986.648, -140.720) → (4986.655, -140.716), 8.1 mm lie within the lattice's rounding of edge 6's line, so their offset lines cross and are read out of order. Nothing the operator can do changes it today: the rule is BACKLOG \"the open/close refuses at a source staircase\" (unbuilt). Refusing. (detail: the cut joins edge 6 to edge 8 and edge(s) 7 it skips appear elsewhere in the ring ([{\"edge\":7,\"atTokens\":[6]}]); tokens round it [0:1 0:2 0:4 0:5 0:6 0:7 0:6 0:8 new 0:9 0:10 0:11 0:12 ",
+   "leaves": 1,
+   "m2": 2713.7,
+   "parentOnly": 0,
+   "sizes": [
+    62.5
+   ],
+   "verdict": "REAL"
+  }
+ ]
+}

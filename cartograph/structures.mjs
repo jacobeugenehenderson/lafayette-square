@@ -137,13 +137,14 @@ export function openCloseAtStep(paths, stepM, what) {
   const m2 = (pp) => pp.reduce((t, q) => t + ringAreaU(q), 0) / SCALE / SCALE, place = (q) => [+(q[0].X / SCALE).toFixed(3), +(q[0].Y / SCALE).toFixed(3)]
   const feature = (pp) => { const xs = pp[0].map(q => q.X), ys = pp[0].map(q => q.Y)
     return { m2: +m2(pp).toFixed(4), lenM: +(Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)) / SCALE).toFixed(3), at: place(pp[0]), poly: pp.map(q => q.map(v => [v.X / SCALE, v.Y / SCALE])) } }
-  const kept = new Paths(), opened = [], closed = [], belowResolution = [], dropped = [], taken = [], filled = []
+  const kept = new Paths(), opened = [], closed = [], belowResolution = [], dropped = [], taken = [], filled = [], topology = []
   // ⛔ PER PART, NEVER ACROSS TWO: each connected part (its own outer and holes; a part in a part's hole is its own) is opened and
   // closed alone, so two parts a metre apart stay two. The parts are the noded union's own (openClose.mjs#partsOf), never a
   // second, re-rounded union's
   for (const part of partsOf(paths, what)) {
     const r = openCloseCutOnce(part, stepM, what), at = place(part[0])
     dropped.push(...r.dropped.map(x => ({ stage: x.who, m2: +(x.u2 / SCALE / SCALE).toFixed(6), at: x.at })))
+    topology.push(...r.topology)                 // every topology change the open/close made, NAMED (openClose.mjs: Jacob's ruling (a))
     if (!r.rings.length) belowResolution.push({ m2: +(part.reduce((t, q) => t + Clipper.Area(q), 0) / SCALE / SCALE).toFixed(3), at, ring: fromPath(part[0]) })
     else { const tm = r.tf.reduce((t, pp) => t + m2(pp), 0), fm = r.ff.reduce((t, pp) => t + m2(pp), 0)
       if (tm > 0) opened.push({ m2: +tm.toFixed(3), at }); if (fm > 0) closed.push({ m2: +fm.toFixed(3), at })
@@ -151,7 +152,7 @@ export function openCloseAtStep(paths, stepM, what) {
       for (const q of r.rings) { const p = new Path(); for (const v of q) p.push(new IntPoint(v.X, v.Y)); kept.push(p) } } }
   const split = (xs) => { const sl = xs.filter(x => !x.kept)
     return { features: xs.filter(x => x.kept).map(x => feature(x.pp)).sort((a, b) => b.m2 - a.m2), slivers: { n: sl.length, m2: +sl.reduce((t, x) => t + m2(x.pp), 0).toFixed(4) } } }
-  return { paths: kept, opened, closed, belowResolution, openedPieces: split(taken), closedPieces: split(filled), dropped }
+  return { paths: kept, opened, closed, belowResolution, openedPieces: split(taken), closedPieces: split(filled), dropped, topology }
 }
 const ringAreaU = (q) => { let a = 0; for (let i = 0; i < q.length; i++) { const p = q[i], w = q[(i + 1) % q.length]; a += p.X * w.Y - w.X * p.Y } return a / 2 }
 
@@ -234,10 +235,10 @@ export function deckFootprints(osmGround, stepM) {
   // ⭐ EACH DECK IS OPENED, THEN CLOSED, AT THE TRACE'S STEP (Boz's rulings, 2026-10-27): Huron, a pier line with no width beside
   // its mapped area left a notch 5 m deep and under a cell wide; footprint corners were as sharp as 0.20° (Huron) and 1.13°
   // (PTown), which the ink cannot outline where a deck's edge is drawn as shore. The one rule, `openCloseAtStep`, below.
-  const { paths: closedPaths, opened, closed, belowResolution } = openCloseAtStep(paths, stepM, 'a deck')
+  const { paths: closedPaths, opened, closed, belowResolution, topology } = openCloseAtStep(paths, stepM, 'a deck')
   const u = union(closedPaths)
   const { rings, on, crossing } = footprintOf(u)
-  return { paths: u, rings, on, crossing, closed, closedM2: +closed.reduce((t, c) => t + c.m2, 0).toFixed(3), opened, openedM2: +opened.reduce((t, c) => t + c.m2, 0).toFixed(3), belowResolution, count, m2: u.reduce((t, p) => t + Clipper.Area(p), 0) / (SCALE * SCALE) }
+  return { paths: u, rings, on, crossing, closed, closedM2: +closed.reduce((t, c) => t + c.m2, 0).toFixed(3), opened, openedM2: +opened.reduce((t, c) => t + c.m2, 0).toFixed(3), belowResolution, topology, count, m2: u.reduce((t, p) => t + Clipper.Area(p), 0) / (SCALE * SCALE) }
 }
 
 /**

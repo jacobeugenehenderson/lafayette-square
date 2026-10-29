@@ -40,10 +40,12 @@ export const angleCmp = (d1, d2, numberOnly = false) => { const h1 = half(d1[0],
 // ⭐ THE TIERED BOUND, ONE HOME (Zob, 2026-10-29): is point q on line l at the lattice's resolution? An EMITTED point: within
 // NODE_BOUND of the line (exact: 2·cross² ≤ |dir|²). A NODING-INSERTED point (`segs`: the emitted segments it was routed into):
 // within NODE_BOUND of ANY of them (snap rounding's own guarantee), so up to 2·NODE_BOUND from the line. The emission invariant
-// (scratch/cut-once/cand3.mjs) and facesOf's transition test both call this, so the two cannot drift
+// (scratch/cut-once/cand3.mjs), the claimant drop (an OFFSET line, L + n·d, so its points are not integers) and facesOf's
+// transition test all call this, so they cannot drift. A line of integer points is tested exactly; any other in doubles
 export function onLineTiered(l, q, segs = null) {
   if (segs?.length) return segs.some(([a, b]) => { const ex = b[0] - a[0], ey = b[1] - a[1], L2 = ex * ex + ey * ey, t = L2 ? Math.max(0, Math.min(1, ((q[0] - a[0]) * ex + (q[1] - a[1]) * ey) / L2)) : 0
     return Math.hypot(q[0] - a[0] - t * ex, q[1] - a[1] - t * ey) <= NODE_BOUND })
+  if (!l.flat().every(Number.isInteger)) { const ex = l[1][0] - l[0][0], ey = l[1][1] - l[0][1], cr = ex * (q[1] - l[0][1]) - ey * (q[0] - l[0][0]); return 2 * cr * cr <= ex * ex + ey * ey }
   const dx = BigInt(l[1][0] - l[0][0]), dy = BigInt(l[1][1] - l[0][1]), cr = dx * BigInt(Math.round(q[1]) - l[0][1]) - dy * BigInt(Math.round(q[0]) - l[0][0])
   return 2n * cr * cr <= dx * dx + dy * dy }
 export function facesOf(edges, keep, { sets, who = 'facesOf', numberOnly = false, allTags = false, prefer = null, inserted = null, tags: withTags = true } = {}) {

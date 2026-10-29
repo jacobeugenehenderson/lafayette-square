@@ -7,7 +7,7 @@
 // The fast rows; Huron's whole traced water is the heavy ratchet: ▶ node checks/claims-the-open-close-cuts-once-huron.mjs
 //   (0) the instruments are seen to fail: a planted copy reads copy 1; a planted missing corner reads a definition disagreement
 //   (1) each planted row, aimed at one emission rule, through the kit: no disagreement with the definition past 2·NODE_BOUND, no
-//       copy, no crossing; a row whose topology change is Boz's refuses BY NAME
+//       copy, no crossing; where the definition changes topology the kit follows it and NAMES the change (3b)
 //   (2) PTown's decks and Breakwater strip and Huron's pier (fixtures): the same bar, and the decks' ≤ 2 mm edges at their pre-open 0
 //   (3) TOPOLOGY: a planted hole, split and pinch keep the integer form's parts and holes
 //   (4) PTown's take-out (coast v5 + its street decks): copy 0, crossings 0, its ≤ 2 mm edges on a RATCHET
@@ -63,6 +63,20 @@ const ROWS = {
   arcClipped: ['a trimmed arc with a vertex 6 u outside D is clipped at its target line', [[[0, 0], [19980, 0], [19990, -6], [20000, 20], [20000, 20000], [0, 20000]]]],
   cornerStub: ['a strip crossing a square\'s corner at a neck: the neck token read in the ring\'s forward order', [SQ(0, 0, 20000, 20000), [[18721, 20550], [20279, 19650], [24779, 27444], [23221, 28344]]]],
   insideRun: ['Huron\'s own water where a token inside one run carries its neighbour\'s line within the rounding: the run continues', fx('huron-inside-run-crop').paths],
+  // PTown's own water (10 m round (−3936.813, −1432.743); 5 such sites in the census): a 5 u source edge between two near-collinear
+  // long ones, whose offset vanished, so the erode's 1 u segment there is claimed by edges 9 and 7 between 8 and 9. Read forward, 7
+  // comes after the successor 9 and the call refused 'no forward order'; 7's own offset line holds both ends within the rounding, so it
+  // is a claimant and is dropped (openClose.mjs#emit; the mutant setClaimantsKept, scratch, refuses here)
+  claimant: ['an order-breaking claimant within the rounding is dropped, the token read forward', fx('ptown-claimant-crop').paths],
+  // PTown's own water (10 m round (817.712, −600.875); the census's 2 'backward, no staircase' sites): the same shape with a 17.8 u
+  // edge, but the successor carries TWO tags (9 and 10), so the order is bounded at its latest; edge 8, read beyond it, is a claimant
+  // (the mutant setClaimantOneSuccessor, scratch, refuses 'a cut from edge 10 to edge 8 runs BACKWARD')
+  claimant2: ['an order-breaking claimant before a two-tag successor is dropped', fx('ptown-claimant2-crop').paths],
+  // PTown's own water (30 m round (−4486.547, −1424.506); the census's 7 wide fills): the close shuts a mouth and the dilate re-forms a
+  // hole tagged with the open's OUTER edges. A ring wound opposite to its tags' source takes no arc stand-ins (Zob's ruling; the mutant
+  // setOppStandins fills the hole, 2.74 m²), and an offset face wholly the rounding is not emitted (a 3-vertex zero-area ring at the
+  // mouth grew into a 1 m² hole that drained this one; the mutant setFSliverKept refuses 'P's hole opened'). The hole is KEPT
+  wideFill: ['a hole the close re-forms at a shut mouth is kept, its walls an outer\'s edges', fx('ptown-widefill-crop').paths],
 }
 // ⚠ A CUT POINT OFF ITS SOURCE LINE (Zob, 2026-10-29; BACKLOG "the open/close's residual against the definition"): in insideRun, a new
 // cut side meets source edge 0 at (−4312.323, −3315.972), 1.94 u off its line (past NODE_BOUND), and the output runs back onto it: 2
@@ -71,18 +85,17 @@ const COPY_KNOWN = { insideRun: { n: 2, at: '-4312.323, -3315.972' } }
 for (const [name, [what, rings]] of Object.entries(ROWS)) { const r = judge(openCloseAtStep, ip(rings), STEP_M, name), kc = COPY_KNOWN[name]
   const copyOk = kc ? r.copy === kc.n && r.copies.some(c => c.flat().join(', ').includes(kc.at)) : !r.copy
   row(!r.why && !r.cand.twoNb && !r.defn.twoNb && !r.cross && copyOk, `(1) ${name}: ${what} — ${r.why ? `REFUSED: ${r.why.slice(0, 200)}` : `${off2(r)} · copy ${r.copy}${kc ? ` (ceiling ${kc.n}, at (${kc.at}): ${r.copy > kc.n ? 'ROSE' : r.copy < kc.n ? 'FELL: lower it in this commit' : 'held'})` : ''} · crossings ${r.cross}`}`) }
-// the two rows whose topology change is Boz's: each refuses by the guard's own name
-{ const wallLong = [SQ(0, 0, 20000, 20000), rev(SQ(5000, 5000, 10000, 14300))], r = judge(openCloseAtStep, ip(wallLong), STEP_M, 'wallLong')
-  row(/the topology guard: P's hole at \(5\.000, 19\.300\) .* opened to the outside/.test(r.why || ''), `(1) wallLong: a sub-2h wall over a stretch wider than 2h opens the hole, and the guard REFUSES by name — ${r.why ? r.why.slice(0, 160) : 'BUILT'}`) }
-// ⛔ A KNOWN REFUSAL (Plumb, 2026-10-29; BACKLOG "the close's back-offset loses a hole the dilate re-forms"): a hole whose wall the
-// open breaks over a stretch narrower than 2h. The close should refill the mouth and keep the hole (the definition does); its
-// back-offset of the dilate's re-formed hole ring (a cut between two COLLINEAR edges of one open ring, across an arc that runs the
-// whole outer) emits that arc instead, and the hole was FILLED with no refusal. The guard now refuses it by name. RED when the
-// message changes, and RED when it starts BUILDING (then this row asserts it keeps its hole, against the definition)
+// a hole whose wall the open breaks over a stretch WIDER than 2h: the close cannot refill it, and the hole opens to the outside, as the
+// definition opens it (Jacob's ruling (a); until 2026-10-29 the guard refused it). It builds, matches the definition, and names the change
+{ const wallLong = [SQ(0, 0, 20000, 20000), rev(SQ(5000, 5000, 10000, 14300))], r = judge(openCloseAtStep, ip(wallLong), STEP_M, 'wallLong'), rec = r.why ? [] : openCloseAtStep(ip(wallLong), STEP_M, 'wallLong').topology
+  row(!r.why && !r.cand.twoNb && !r.defn.twoNb && rec.some(x => x.kind === 'hole-opened'), `(1) wallLong: a sub-2h wall over a stretch wider than 2h opens the hole, as the definition does, and the record names it — ${r.why ? `REFUSED: ${r.why.slice(0, 160)}` : `${off2(r)} · record ${JSON.stringify(rec)}`}`) }
+// ⭐ ONE LINE, TWO EDGES: a hole whose wall the open breaks over a stretch narrower than 2h. The close refills the mouth and the hole
+// is KEPT, as the definition keeps it: the dilate re-forms the hole ring, whose back-offset reads a merged token of two collinear
+// edges (the mouth's two sides) and LEAVES it at the last edge (openClose.mjs#emit). Left at the first, the join out ran across the
+// whole outer and the hole was filled (until 2026-10-29 a known refusal here; the mutant setMergeLeavesFirst, scratch/cut-once)
 { const wallShort = [SQ(0, 0, 20000, 20000), rev([[5000, 5000], [15000, 5000], [15000, 17000], [10150, 17000], [10150, 19050], [9850, 19050], [9850, 17000], [5000, 17000]])]
-  const r = judge(openCloseAtStep, ip(wallShort), STEP_M, 'wallShort'), KNOWN = "the open/close: a filled feature at (10.150, 20.000) (120.90 m²) is wider than a cell"
-  row(!!r.why && r.why.includes(KNOWN), `(1) wallShort, the KNOWN refusal: a hole whose wall the open breaks over a short stretch — ${r.why ? (r.why.includes(KNOWN) ? 'refuses by name: the filled feature is wider than a cell (the close\'s back-offset loses the hole; cause not established)' : `refuses, NOT as known: ${r.why.slice(0, 200)}`) : 'now BUILDS: assert its hole is kept against the definition, and retire the known refusal'}`) }
-
+  const r = judge(openCloseAtStep, ip(wallShort), STEP_M, 'wallShort')
+  row(bar(r) && r.topo.holes === 1, `(1) wallShort: a hole whose wall the open breaks over a short stretch is KEPT — ${r.why ? `REFUSED: ${r.why.slice(0, 200)}` : `${r.topo.outers} outer, ${r.topo.holes} hole (want 1) · ${off2(r)} · copy ${r.copy} · crossings ${r.cross}`}`) }
 // ⭐ THE DEFINITION'S INVARIANT ON EVERY FEATURE (Zob's ruling, 2026-10-29): openClose.mjs refuses a taken or filled feature wider than
 // 2h. Read from the source (both lists pass through the predicate before k is cut), and the predicate seen to fail: a planted over-wide
 // take (a 3 m square) is wider; a 0.6 m strip is not
@@ -113,6 +126,28 @@ const TOPO = [SQ(0, 0, 20000, 20000), rev(SQ(7000, 7000, 6000, 6000)),
   row(same && bar(r), `(3) topology: a hole, a split and a pinch → ${r.why ? `REFUSED: ${r.why.slice(0, 160)}` : `${r.topo.outers} outer(s), ${r.topo.holes} hole(s); the integer form ${z.topo.outers}, ${z.topo.holes} · ${off2(r)}`}`)
   if (!r.why) { const dropped = r.k.filter(q => { let a = 0; for (let i = 0; i < q.length; i++) { const p = q[i], w = q[(i + 1) % q.length]; a += p.X * w.Y - w.X * p.Y } return a > 0 }), t = topo(dropped)
     row(t.holes !== z.topo.holes, `(3) mutant: a method that drops a hole → ${t.outers} outer(s), ${t.holes} hole(s) against the integer form's ${z.topo.holes}, RED${t.holes === z.topo.holes ? ' — NOT seen' : ''}`) } }
+
+// ── (3b) THE TOPOLOGY THE DEFINITION CHANGES IS FOLLOWED, AND NAMED (Jacob's ruling (a), 2026-10-29): where the definition fills or
+// opens a hole, merges holes or splits a part, the open/close does too, and its `topology` record names every change ({ kind, at, m2,
+// n }). Per kind, a planted case: it builds, matches the definition end to end, and its record CLOSES THE BOOKS: P's holes − filled −
+// opened − Σ(merged n − 1) = the output's holes, and P's outers + Σ(split n − 1) − Σ(joined n − 1) = its outers. ⛔ The mutant: the
+// same change made SILENTLY (the record emptied) cannot close them, RED. (A change the definition does NOT make refuses at
+// widerThanTwoH, row (1); its rule mutants are the scratch harness's.)
+{ const books = (src, k, rec) => { const a = topo(src), b = topo(k), n = (kind, f = () => 1) => rec.filter(x => x.kind === kind).reduce((t, x) => t + f(x), 0), extra = (x) => (x.n || 1) - 1
+    return a.holes - n('hole-filled') - n('hole-opened') - n('holes-merged', extra) === b.holes && a.outers + n('part-split', extra) - n('parts-joined', extra) === b.outers }
+  const TOPOS = [
+    ['hole-opened', 'PTown\'s own water: the definition opens an 11.13 m² hole to the outside (and fills a 1.6 m² one)', ip(fx('ptown-holeopen-crop').paths), fx('ptown-holeopen-crop').fineM],
+    ['hole-filled', 'PTown\'s own water: two sub-cell holes whose walls meet within 2h are filled (the walls-meet transition)', ip(fx('ptown-walls-crop').paths), fx('ptown-walls-crop').fineM],
+    ['holes-merged', 'two holes 6 m deep, the 0.6 m wall between them taken: one hole', ip([SQ(0, 0, 30000, 20000), rev(SQ(6000, 6000, 8000, 8000)), rev(SQ(14600, 6000, 8000, 8000))]), STEP_M],
+    ['part-split', 'a dumbbell whose 0.4 m × 3 m neck the open takes: two parts', ip([SQ(30000, 0, 8000, 8000), SQ(38000, 3800, 3000, 400), SQ(41000, 0, 8000, 8000)]), STEP_M]]
+  for (const [kind, what, src, stepM] of TOPOS) { let res = null, why = null; try { res = openCloseAtStep(src, stepM, kind) } catch (e) { why = String(e.message) }
+    const r = why ? { why } : judge(openCloseAtStep, src, stepM, kind), rec = res?.topology || []
+    const ok = !why && !r.cand.twoNb && !r.defn.twoNb && rec.some(x => x.kind === kind) && books(src, res.paths, rec)
+    row(ok, `(3b) ${kind}: ${what} — ${why ? `REFUSED: ${why.slice(0, 180)}` : `${off2(r)} · record ${JSON.stringify(rec.map(x => `${x.kind}${x.n ? `×${x.n}` : ''} ${x.m2} m²`))} · the books ${books(src, res.paths, rec) ? 'close' : 'DO NOT close'}`}`)
+    if (!why) row(!books(src, res.paths, []), `(3b) mutant: the ${kind} made SILENTLY (no record) → the books ${books(src, res.paths, []) ? 'still close — the row cannot see a silent change' : 'do not close, RED'}`) }
+  // the cross-ring token (two holes' walls, three tags): read per ring, a transition; it builds and matches the definition
+  const cr = judge(openCloseAtStep, ip(fx('ptown-crossring-crop').paths), fx('ptown-crossring-crop').fineM, 'cross-ring')
+  row(bar(cr), `(3b) cross-ring: two holes' walls meeting at a segment carrying three tags of the two rings, each ring read at the tag that continues its neighbour — ${cr.why ? `REFUSED: ${cr.why.slice(0, 180)}` : `${off2(cr)} · copy ${cr.copy} · crossings ${cr.cross}`}`) }
 
 // ── (4) PTown's take-out (structures.mjs#waterWithoutDecks over coast v5 and its street decks): the water within two cells of a
 // deck opened, the deck and its slivers closed, both through openClose.mjs. ⛔ Its three subtractions (w0, loc, thin) are still
