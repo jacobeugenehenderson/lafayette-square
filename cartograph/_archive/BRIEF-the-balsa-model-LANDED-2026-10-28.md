@@ -1,7 +1,8 @@
 # BRIEF — the balsa model: the town looks finished and holds nothing until it is asked
 
 <!-- BRIEF-STATE
-status: OPEN (ruled; §1 co-signed by Zob with corrections, 2026-10-27)
+status: RETIRED 2026-10-28 (the build LANDED: plumb/balsa-no-hover b1ef7373 + adff5486, merged 2c825dd4 on Zob's PASS and Ward GREEN, checked by checks/claims-the-town-has-no-hover.mjs; the identity split (§2, §3 steps 2–5) SKIPPED by ruling r-balsa-lands-its-rulings-not-the-identity-cut)
+status-was: OPEN (ruled; §1 co-signed by Zob with corrections, 2026-10-27)
 dispatched: step 1 → Plumb (FRESH, 2026-10-27): STOPPED per §3.1. RULED (Jacob, 2026-10-27, r-balsa-lands-its-rulings-not-the-identity-cut): §4's rulings land; the identity rebuild (§2's split, §3 steps 2-5) is SKIPPED; speed work goes to the desktop frame time and PTown's ground
 written: 2026-10-27 night (Boz, at Jacob's request: "write the balsa model plan")
 evict-when: a town's first paint and its pan/zoom carry no per-building identity, a click resolves one and loads its contents,

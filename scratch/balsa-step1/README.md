@@ -1,6 +1,6 @@
 # balsa step 1 — measurement (Plumb, 2026-10-27)
 
-`BRIEF-the-balsa-model §3.1`. Probe only; builds nothing.
+`BRIEF-the-balsa-model-LANDED-2026-10-28 §3.1`. Probe only; builds nothing.
 
 **Method.** Staging Ward `1612d2de` on kit `7179c779`. Cold cache, headless Chrome, this M1, one run per cell. Phone = iPhone UA,
 390×844 @3, CPU throttled 4× (the M1 GPU, not a phone GPU). Desktop = 1512×982 @2. Read: `ward:*` startup marks, rAF intervals,

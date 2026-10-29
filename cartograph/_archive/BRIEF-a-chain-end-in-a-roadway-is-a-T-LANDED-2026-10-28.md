@@ -1,7 +1,7 @@
 # BRIEF — a chain end inside another street's roadway is a T
 
 <!-- BRIEF-STATE
-status: OPEN (ruled; not dispatched: after Ferrule's way-tag work, both touch mintInputs)
+status: RETIRED 2026-10-28 (LANDED: kerf/chain-end-is-a-node 0cd45dac, merged 67849da9 on Zob's PASS; the join is built at mintInputs, cartograph/chainJoins.mjs#joinChainEnds, checked by checks/claims-a-chain-end-in-a-roadway-is-a-node.mjs. The (b′) ends and the join's override home stay OPEN for Jacob, in BACKLOG's handoff)
 written: 2026-10-27 night (Boz)
 evict-when: the check below is GREEN on every poured town with its mutants seen RED, the join is built at mintInputs, merged on
 Zob's PASS; then this moves to cartograph/_archive/ dated.

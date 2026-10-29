@@ -33,7 +33,7 @@ found. If the code contradicts this brief, stop and flag Boz before building.
 
 - **Served:** the ground slab is `public/baked/<town>/ground.bin`; the bake time is
   `cartograph/data/<town>/clean/bake-timings.json` `<town>:ground`.
-- **⭐ Measured on staging, 2026-10-27 (Plumb, balsa step 1; `BRIEF-the-balsa-model` §STEP 1 RESULT):** by this brief's own
+- **⭐ Measured on staging, 2026-10-27 (Plumb, balsa step 1; `BRIEF-the-balsa-model-LANDED-2026-10-28` §STEP 1 RESULT):** by this brief's own
   measure (fast, smooth action) the ground leads. PTown's in-browser drawnGround height-field build is the largest named
   main-thread cost (phone and desk), beside a 56.5 MB ground.bin. Numbers and driver: `scratch/balsa-step1/`.
 - **Step 1 landed:** `checks/claims-the-ground-stays-in-budget.mjs` (55e80e5c; the time ceiling is ground + ground-shore,
