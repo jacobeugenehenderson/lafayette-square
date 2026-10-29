@@ -80,6 +80,7 @@ const OBS = {   // newest first is NOT assumed by the parser — it sorts
     barometricPressure: q('wmoUnit:Pa', 101000), cloudLayers: [{ amount: 'BKN' }], presentWeather: [],
   })),
 }
+OBS.KNOP = OBS.KTMP.map(({ barometricPressure, ...o }) => o)   // temperature, no pressure: the fill's key then has no pressure station
 function fakeFetch(stationIds, asked = [], down = new Set()) {
   return async (url) => {
     asked.push(url)
@@ -170,11 +171,12 @@ async function claims(mutant) {
     const p2 = await run('KPRS,KTMP,KTRI', [])
     if (p1.meta.fill !== null) fails.push('with KTMP answering 503, a fill was made anyway')
     if (p2.meta.fill?.station !== 'KTMP') fails.push(`after a 503, the next poll's fill is ${JSON.stringify(p2.meta.fill?.station ?? null)}, not KTMP — the failure was held for the window`)
-    // a 503 on the stations LIST (fetched first, for pressure) is not held either
-    const l1 = await run('KPRS,KTMP,KFOUR', [], new Set(['LIST']))
-    const l2 = await run('KPRS,KTMP,KFOUR', [])
+    // a 503 on the stations LIST (fetched first, for pressure) is not held either. No station here reports pressure, so
+    // both polls key the fill alike (Zob: the list's failure was counted before the fill, and the delta hid it).
+    const l1 = await run('KNOP,KFOUR', [], new Set(['LIST']))
+    const l2 = await run('KNOP,KFOUR', [])
     if (l1.meta.fill !== null) fails.push('with the stations list answering 503, a fill was made anyway')
-    if (l2.meta.fill?.station !== 'KTMP') fails.push(`after the stations list's 503, the next poll's fill is ${JSON.stringify(l2.meta.fill?.station ?? null)}, not KTMP — the failure was held for the window`)
+    if (l2.meta.fill?.station !== 'KNOP') fails.push(`after the stations list's 503, the next poll's fill is ${JSON.stringify(l2.meta.fill?.station ?? null)}, not KNOP — the failure was held for the window`)
     // the cadence is the producer's stamp: an all-absent fill + a one-hour grid has no two consecutive readings
     if (w.hourly.cadence !== H) fails.push(`nws stamps the series' cadence as ${w.hourly.cadence}, not ${H} ms`)
     const sparse = [0, 3].map((i) => ({ time: new Date(GRID0 + i * H), temperatureF: 50 + i }))
