@@ -160,13 +160,31 @@ function emit(E, T, SRC, d, who, stat, LINES = null) {
   // squared into a 0.75 m cap where the definition keeps P's arc). Its join t → u was tried against the limit first; D's boundary
   // there is the two target lines: in the OPEN (P ∩ D, d < 0) D holds an arc vertex iff it lies on the region's side (LEFT) of both;
   // in the CLOSE (P ∪ E, the mirror) the vertex is P's own iff it lies outside E, RIGHT of both; each within NODE_BOUND. Each such
-  // vertex is the boolean's own; one that is not refuses by name (the boolean would cut the arc: unruled until one exists)
+  // vertex is the boolean's own. ⭐ Where the arc LEAVES the wedge (Zob's ruling, 2026-10-29), the exact answer is the arc CLIPPED
+  // by it: an arc edge crossing L_a or L_b emits lineCrossOf(that edge, that line), rounded once, its outgoing edge on the line it
+  // runs along; an exit by one line and an entry (or the arc's end) by the other passes D's corner X = L_a ∩ L_b. No constant
   const leftOf = (L, q) => { const dx = L[1][0] - L[0][0], dy = L[1][1] - L[0][1]; return Math.sign(-d) * (dx * (q[1] - L[0][1]) - dy * (q[0] - L[0][0])) / Math.hypot(dx, dy) >= -NODE_BOUND }
-  const pushArc = (a, kind, t0, u0 = null) => { a.pts.forEach((q, k) => {
+  const sd = (L, q) => { const dx = L[1][0] - L[0][0], dy = L[1][1] - L[0][1]; return Math.sign(-d) * (dx * (q[1] - L[0][1]) - dy * (q[0] - L[0][0])) / Math.hypot(dx, dy) }
+  const isInt = (L) => L.every(pt => pt.every(Number.isInteger))
+  const crossAt = (e, L) => (isInt(e) && isInt(L) ? lineCrossOf({ a: e[0], b: e[1] }, { a: L[0], b: L[1] }, who) : fcross(e, L).map(Math.round))
+  const tAlong = (e, L) => { const a0 = sd(L, e[0]), a1 = sd(L, e[1]); return a0 / (a0 - a1) }   // where e crosses L, 0..1
+  const clipArc = (a, kind, t0, u0) => { const LA = t0.int || t0.flt, LB = u0.int || u0.flt, ins = (q) => leftOf(LA, q) && leftOf(LB, q)
+    const Xc = () => crossAt(LA, LB), pts = a.pts
+    if (!ins(pts[0])) throw new Error(`[${who}] ⛔ the back-offset: a trimmed arc STARTS outside ${d < 0 ? 'D' : 'E'}'s wedge at (${pts[0].map(v => v / SCALE)}). Unruled; refusing.`)
+    let exitL = null
+    for (let k = 0; k < pts.length; k++) { const q = pts[k], inside = ins(q)
+      if (k > 0) { const e = [pts[k - 1], q], prevIn = exitL == null
+        if (prevIn && !inside) { const Ls = [LA, LB].filter(L => !leftOf(L, q)), L = Ls.length > 1 && tAlong(e, Ls[1]) < tAlong(e, Ls[0]) ? Ls[1] : Ls[0]
+          const P = crossAt(e, L); out.push(P); outL.push(L === LA ? (t0.int || null) : (u0.int || null)); origin(P, 'arc-clip'); exitL = L; stat.arcClipped = (stat.arcClipped || 0) + 1 }
+        else if (!prevIn && inside) { const Ls = [LA, LB].filter(L => !leftOf(L, e[0])), L = Ls.length > 1 && tAlong(e, Ls[1]) > tAlong(e, Ls[0]) ? Ls[1] : Ls[0]
+          if (L !== exitL) { const X = Xc(); out.push(X); outL.push(L === LA ? (t0.int || null) : (u0.int || null)); origin(X, 'arc-clip') }
+          const P = crossAt(e, L); out.push(P); outL.push(a.lns[k - 1]); origin(P, 'arc-clip'); exitL = null }
+        else if (!prevIn && !inside && ins([(e[0][0] + e[1][0]) / 2, (e[0][1] + e[1][1]) / 2])) throw new Error(`[${who}] ⛔ the back-offset: a trimmed arc's edge passes through ${d < 0 ? 'D' : 'E'}'s wedge with both ends outside, at (${q.map(v => v / SCALE)}). Unruled; refusing.`) }
+      if (inside) { out.push(q); outL.push(a.lns[k]); origin(q, kind) } }
+    if (exitL != null && exitL !== LB) { const X = Xc(); out.push(X); outL.push(u0.int || null); origin(X, 'arc-clip') } }
+  const pushArc = (a, kind, t0, u0 = null) => { if (kind === 'trimmed-arc' && !TRIMMED_ARC_CORNERS) return clipArc(a, kind, t0, u0)
+    a.pts.forEach((q, k) => {
       const prevLine = k === 0 ? (t0.int || t0.flt) : a.lns[k - 1], nextLine = a.lns[k]
-      if (kind === 'trimmed-arc' && !TRIMMED_ARC_CORNERS) { const LA = t0.int || t0.flt, LB = u0.int || u0.flt
-        if (!(leftOf(LA, q) && leftOf(LB, q))) throw new Error(`[${who}] ⛔ the back-offset: a trimmed arc's vertex (${q.map(v => v / SCALE)}) lies ${d < 0 ? 'outside D' : 'inside E'} (across ${JSON.stringify(leftOf(LA, q) ? LB : LA)}), so the boolean would cut the arc. Unruled; refusing.`)
-        out.push(q); outL.push(a.lns[k]); origin(q, kind); return }
       if (!ARC_RAW && prevLine && nextLine && capAt(prevLine, nextLine, q, { int: nextLine })) { stat.arcSquared = (stat.arcSquared || 0) + 1; return }
       out.push(q); outL.push(a.lns[k]); origin(q, kind) }) }
   for (let k = 0; k < N; k++) { const t = t2[k], u = t2[(k + 1) % N]
@@ -286,10 +304,7 @@ let TAGS_OFF_AT = null                            // ⛔ the mutant only (setTag
 export const setTagsOffAt = (v) => { TAGS_OFF_AT = v }
 let OWN_SKIPS_LIMIT = false                       // ⛔ the mutant only (setOwnSkipsLimit): the own-vertex join without the miter limit
 export const setOwnSkipsLimit = (v) => { OWN_SKIPS_LIMIT = !!v }
-// ⚠ UNRULED (Zob's, 2026-10-29): the containment test closes PTown's take-out (0.22 m² → 0) and REFUSES Huron's open at
-// (−3994.769, −2687.883), a trimmed-arc vertex 2.2 u outside D. Off by default (the arc's own turns through capAt, as before);
-// CUTONCE_ARC_BY_D=1 / setTrimmedArcCorners(false) switches it on
-let TRIMMED_ARC_CORNERS = !process.env.CUTONCE_ARC_BY_D
+let TRIMMED_ARC_CORNERS = false                   // ⛔ the mutant only (setTrimmedArcCorners): a trimmed arc unclipped, its vertices by their own turns
 export const setTrimmedArcCorners = (v) => { TRIMMED_ARC_CORNERS = !!v }
 let ARC_RAW = false                               // ⛔ the mutant only (setArcRaw): arcs emit raw vertices, no corner call
 export const setArcRaw = (v) => { ARC_RAW = !!v }
