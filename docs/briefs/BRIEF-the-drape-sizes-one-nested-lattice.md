@@ -48,15 +48,15 @@ Where they meet, today, the two layers each draw their own edge.
      (Zob): today the far `drapeGlobals` omits them.
 2. **`farRow`, THE ONE PRODUCER OF THE EDGE.** The far layer's vertex row at a far station (positions and normals), factored out of
    `revetmentDrape`'s per-vertex body. The far build calls it for its own rows. A near chunk's boundary row is `farRow`'s row: the shared
-   u's copied exactly, the near-only u's lerped along its segments. (Zob: `fieldAt` is additive, so with the ramp at 0 on the boundary
-   row the near already computes the SHARED vertices bit-identically; the one producer is still what places the in-between u's and the
-   normals. Either way the gate asserts it.)
+   u's copied exactly, the near-only u's lerped along its segments, and the normals are `farRow`'s. The gate asserts it.
 3. **CHUNKS CUT ON FAR STATIONS**, in the bake and in `SlabRevetment.jsx` alike: near range = far range × 2^(octaves−1).
-4. **THE EDGE TREATMENT: OPEN, measured before Boz rules.** A near chunk is chosen per camera and can't know whether its neighbour is
-   near or far. (i) Ramp every chunk edge: octaves 2–3 go from 0 at the boundary row to full over one far step, which reduces
-   detail on 11–33% of the near surface (one far step = 4·blk/3 per side, on 12 m chunks). (ii) Ramp only the edges that face a far
-   chunk, rebuilt when a neighbour's selection changes. (iii) No ramp: the boundary row is farRow's, which leaves a slope step.
-   Boz: (ii) if its rebuild costs a frame or less at the movie's selection rate; otherwise Jacob's eye on (i) and (iii) side by side.
+4. **NO RAMP: THE BOUNDARY ROW IS `farRow`'s** (Boz ruled (iii), 2026-10-29, on `scratch/far-shore/edge-choice.mjs`). A near chunk
+   can't know whether its neighbour is near or far, so every near chunk's edge rows are `farRow`'s, and its next row is full detail.
+   The kink against the far triangle (median / p95): Huron 15.4° / 45.1°, PTown 18.5° / 53.8°. The rock's own near↔near angle:
+   11.8° / 41.8° and 11.2° / 38.9°. So it falls inside the stone's own facets, with no runtime rebuild and no detail band, and the
+   positions are closed. Not chosen: (i) ramp every edge (detail reduced on 11–33% of the near surface); (ii) rebuild the edges
+   that face a far chunk (one strip median 10–11 ms; the worst movie reselect is 2 strips ≈ 21–22 ms, over one frame). (ii) is the
+   measured fallback if Jacob's eye finds the row.
 ⛔ Byte-identity breaks by design: the near layer everywhere (the nesting moves its spacing by less than one step), the near layer at chunk
 edges (conformed), and the far layer on every face the new sizing changes. All three are named in the commit; the far shore is re-baked
 (the `revetment-far` step, ~7 s a town).
@@ -70,12 +70,12 @@ edges (conformed), and the far layer on every face the new sizing changes. All t
   neighbour chunk's. ⛔ Never the hidden far quad that the near replaces, which says nothing about the seam (Zob). That overrides 3-of-4 for that
   column only. Gate: the near-drawn and far-drawn boundary segment sets are equal.
 - A planted row, a near chunk beside a far chunk on one face. Mutants → RED: the near computing its own boundary row; the far not through
-  `farRow`; the inward ramp removed (if a ramp ships).
+  `farRow`.
 - A mutant sizing from 201 samples again → PTown 1:left empty, RED.
 - **PTown 1:left non-empty**, near and far; **Huron 97:right and 111:left not emptied**; `claims-the-armoured-shore-is-never-empty` GREEN.
 - The deviation probe (`scratch/boulder-lod-deviation.mjs`) re-run; the far bake equals the runtime's far build (`far-bake-vs-runtime.mjs`);
   `claims-a-bare-station-costs-nothing` and `claims-the-far-shore-is-not-built-at-load` green.
-- **Jacob's eye**, at a grazing angle across a seam, after the re-bake.
+- **Jacob's eye**, at a grazing angle at a near/far boundary, PTown and Huron, after the re-bake. If it finds the row, (ii) above.
 
 ## 4. Bounds
 Branch off groyne/far-shore in `.claude/worktrees/`; `git commit -- <paths>`. Bakes and :5190 in Boz's slot; never integration's slab.
