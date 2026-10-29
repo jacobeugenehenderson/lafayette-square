@@ -156,8 +156,17 @@ function emit(E, T, SRC, d, who, stat, LINES = null) {
   // goes through the ONE corner function like any join (squared past the limit, else the vertex). An arc stands in for what the
   // next boolean returns, which holds only where D contains P's arc, and D does not contain a corner the limit squares.
   // Gap arcs and jogs never reach the limit (sub-NODE_BOUND wiggles, right-angle steps), but they are called the same way
-  const pushArc = (a, kind, t0) => { a.pts.forEach((q, k) => {
+  // ⭐ A TRIMMED ARC asks D, not the arc's own turns (the take-out, 2026-10-29: PTown's MacMillan, a 1 u notch whose 130° turn was
+  // squared into a 0.75 m cap where the definition keeps P's arc). Its join t → u was tried against the limit first; D's boundary
+  // there is the two target lines: in the OPEN (P ∩ D, d < 0) D holds an arc vertex iff it lies on the region's side (LEFT) of both;
+  // in the CLOSE (P ∪ E, the mirror) the vertex is P's own iff it lies outside E, RIGHT of both; each within NODE_BOUND. Each such
+  // vertex is the boolean's own; one that is not refuses by name (the boolean would cut the arc: unruled until one exists)
+  const leftOf = (L, q) => { const dx = L[1][0] - L[0][0], dy = L[1][1] - L[0][1]; return Math.sign(-d) * (dx * (q[1] - L[0][1]) - dy * (q[0] - L[0][0])) / Math.hypot(dx, dy) >= -NODE_BOUND }
+  const pushArc = (a, kind, t0, u0 = null) => { a.pts.forEach((q, k) => {
       const prevLine = k === 0 ? (t0.int || t0.flt) : a.lns[k - 1], nextLine = a.lns[k]
+      if (kind === 'trimmed-arc' && !TRIMMED_ARC_CORNERS) { const LA = t0.int || t0.flt, LB = u0.int || u0.flt
+        if (!(leftOf(LA, q) && leftOf(LB, q))) throw new Error(`[${who}] ⛔ the back-offset: a trimmed arc's vertex (${q.map(v => v / SCALE)}) lies ${d < 0 ? 'outside D' : 'inside E'} (across ${JSON.stringify(leftOf(LA, q) ? LB : LA)}), so the boolean would cut the arc. Unruled; refusing.`)
+        out.push(q); outL.push(a.lns[k]); origin(q, kind); return }
       if (!ARC_RAW && prevLine && nextLine && capAt(prevLine, nextLine, q, { int: nextLine })) { stat.arcSquared = (stat.arcSquared || 0) + 1; return }
       out.push(q); outL.push(a.lns[k]); origin(q, kind) }) }
   for (let k = 0; k < N; k++) { const t = t2[k], u = t2[(k + 1) % N]
@@ -208,7 +217,7 @@ function emit(E, T, SRC, d, who, stat, LINES = null) {
     // clockwise ⇔ X outside (the region lies LEFT of every ring)
     if (AR && AR.valid) { const arc = AR.pts; {
         const loop = [...arc, X]; let a2 = 0n; for (let k = 0; k < loop.length; k++) { const p = loop[k], q = loop[(k + 1) % loop.length]; a2 += BigInt(p[0]) * BigInt(q[1]) - BigInt(q[0]) * BigInt(p[1]) }
-        if (TRIM_INVERTED ? !(d < 0 ? a2 < 0n : a2 > 0n) : (d < 0 ? a2 < 0n : a2 > 0n)) { pushArc(AR, 'trimmed-arc', t); stat.trimmedArc = (stat.trimmedArc || 0) + 1; continue } } }
+        if (TRIM_INVERTED ? !(d < 0 ? a2 < 0n : a2 > 0n) : (d < 0 ? a2 < 0n : a2 > 0n)) { pushArc(AR, 'trimmed-arc', t, u); stat.trimmedArc = (stat.trimmedArc || 0) + 1; continue } } }
     // ⛔ a BACKWARD cut between non-parallel lines of one ring: refuse by name (Zob, 2026-10-29; unruled until one exists)
     // ⭐ BACKWARD BUT ADJACENT (Zob, 2026-10-29): u = t − 1 on one ring: the two lines are adjacent source edges, and their
     // crossing must BE the shared source vertex v_t, integer for integer (checked, never assumed), which is emitted. Why the
@@ -277,6 +286,11 @@ let TAGS_OFF_AT = null                            // ⛔ the mutant only (setTag
 export const setTagsOffAt = (v) => { TAGS_OFF_AT = v }
 let OWN_SKIPS_LIMIT = false                       // ⛔ the mutant only (setOwnSkipsLimit): the own-vertex join without the miter limit
 export const setOwnSkipsLimit = (v) => { OWN_SKIPS_LIMIT = !!v }
+// ⚠ UNRULED (Zob's, 2026-10-29): the containment test closes PTown's take-out (0.22 m² → 0) and REFUSES Huron's open at
+// (−3994.769, −2687.883), a trimmed-arc vertex 2.2 u outside D. Off by default (the arc's own turns through capAt, as before);
+// CUTONCE_ARC_BY_D=1 / setTrimmedArcCorners(false) switches it on
+let TRIMMED_ARC_CORNERS = !process.env.CUTONCE_ARC_BY_D
+export const setTrimmedArcCorners = (v) => { TRIMMED_ARC_CORNERS = !!v }
 let ARC_RAW = false                               // ⛔ the mutant only (setArcRaw): arcs emit raw vertices, no corner call
 export const setArcRaw = (v) => { ARC_RAW = !!v }
 let NO_SLIVER_DROP = false                        // ⛔ the mutant only (setNoSliverDrop)
@@ -482,7 +496,7 @@ export function morph(region, d, who, stat, lines = null) {
   if (BACK_PIECES) return backPieces(F, region, lines, -d, who, stat)
   // TRACE (diagnostic only, CUTONCE_TRACE_AT=x,y metres): every eroded/dilated edge within 2 m of the place, with its tags
   if (process.env.CUTONCE_TRACE_AT) { const [tx, ty] = process.env.CUTONCE_TRACE_AT.split(',').map(v => +v * SCALE)
-    F.rings.forEach((E, k) => E.forEach((q, e) => { const r2 = E[(e + 1) % E.length]; if (Math.hypot(q.X - tx, q.Y - ty) > 2000) return
+    F.rings.forEach((E, k) => E.forEach((q, e) => { const r2 = E[(e + 1) % E.length]; if (Math.min(Math.hypot(q.X - tx, q.Y - ty), Math.hypot(r2.X - tx, r2.Y - ty)) > 2000) return
       console.log(`TRACE ${who} ring ${k} e${e} (${q.X},${q.Y})→(${r2.X},${r2.Y}) tags ${JSON.stringify(F.tags[k][e])}`) })) }
   const OUT = F.rings.map((E, k) => emit(E, F.tags[k], region, d, who, stat, lines))
   if (process.env.CUTONCE_TRACE_AT) { const [tx, ty] = process.env.CUTONCE_TRACE_AT.split(',').map(v => +v * SCALE)
@@ -506,13 +520,21 @@ const m2 = (pp) => pp.reduce((t, r) => t + area(r), 0) / SCALE / SCALE
 
 /** The cut-once open/close at the step, with provenance. `paths` clipper paths (any winding; unioned first, nonzero). */
 export { pieces, area }
+// P: the input's union, each edge tagged with its own line
+const unionTagged = (paths, what) => arrange([paths.map(p => p.map(q => ({ X: q.X, Y: q.Y })))], w => w[0] !== 0, `${what} union`, false, null, false).rings
+  .map(r => r.map((q, i) => ({ X: q.X, Y: q.Y, tag: [[q.X, q.Y], [r[(i + 1) % r.length].X, r[(i + 1) % r.length].Y]] })))
+// open = morph(P, −h) ∩ P
+const openOf = (Pt, h, what, stat) => arrange([Pt, morph(Pt, -h, `${what} open`, stat)], w => w[0] > 0 && w[1] > 0, `${what} ∩P`, false, 0)
+// ⭐ THE OPEN AND THE CLOSE ALONE, at h = step/2, for a caller whose operation is one of them (structures.mjs#waterWithoutDecks: the
+// water beside a deck opened, the deck and its slivers closed): the same stages openCloseProvenance composes. → clipper Paths
+export function openAt(paths, stepM, what, stat = {}) { const Pt = unionTagged(paths, what); return Pt.length ? toIP(openOf(Pt, (stepM / 2) * SCALE, what, stat).rings) : [] }
+export function closeAt(paths, stepM, what, stat = {}) { const Pt = unionTagged(paths, what); if (!Pt.length) return []
+  const C = morph(Pt, (stepM / 2) * SCALE, `${what} close`, stat, Pt.map(r => r.map(q => q.tag)))
+  return toIP(arrange([Pt, C], w => w[0] > 0 || w[1] > 0, `${what} closed`, false, 0).rings) }
 export function openCloseProvenance(paths, stepM, what) {
   const h = (stepM / 2) * SCALE, stat = { own: 0, cutJoin: 0, squared: 0, newLines: 0 }
-  const P = arrange([paths.map(p => p.map(q => ({ X: q.X, Y: q.Y })))], w => w[0] !== 0, `${what} union`, false, null, false).rings
-  const Pt = P.map(r => r.map((q, i) => ({ X: q.X, Y: q.Y, tag: [[q.X, q.Y], [r[(i + 1) % r.length].X, r[(i + 1) % r.length].Y]] })))
-  // open = morph(P, −h) ∩ P
-  const D = morph(Pt, -h, `${what} open`, stat)
-  const OPEN = arrange([Pt, D], w => w[0] > 0 && w[1] > 0, `${what} ∩P`, false, 0), open = OPEN.rings
+  const Pt = unionTagged(paths, what)
+  const OPEN = openOf(Pt, h, what, stat), open = OPEN.rings
   STAGES.open = open
   // closedK = morph(open, +h) ∪ open
   // ⭐ a TRANSITION edge of the open (two lines within rounding) gives the close the line its neighbour runs on, so the run
