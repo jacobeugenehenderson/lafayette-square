@@ -214,6 +214,7 @@ export async function nwsWeather({ lat, lon, name, from, now = new Date(), hours
   const fill = fillFrom < first ? await theFill(stations, fillFrom, first, obs?.station ?? null, nowMs) : null
   const seamC = fill?.seamF == null || gridHours[0]?.temperatureF == null ? null : (gridHours[0].temperatureF - fill.seamF) * 5 / 9
   const hourly = [...(fill?.hours ?? []), ...gridHours]
+  hourly.cadence = H   // the series' step, stamped: weatherAt reads a longer step as a hole (never inferred from the series)
   return { current, hourly, meta: {
     gridId: p.gridId, gridX: p.gridX, gridY: p.gridY, updateTime: grid.updateTime,
     station: obs?.station ?? null, observedAt: obs ? new Date(obs.series[0].t) : null,
@@ -230,16 +231,18 @@ const _fills = new Map()   // stations URL → { key, fill }: the fill, fetched 
 
 /**
  * The fill, once per (stations, window start, grid start, pressure station): its hours are past observations, so a poll
- * inside the same window reuses them (one station's 7 h is ~0.15 MB, every 5 min per tab). A refusal is held too, so an
- * unreachable morning is not re-asked of five stations each poll. A grid starting after now is not held (its later
+ * inside the same window reuses them (one station's 7 h is ~0.15 MB, every 5 min per tab). ⛔ Nothing is held after a
+ * FAILED answer (a 5xx, a 429): the next poll asks again. So a refusal is held only when every station answered and
+ * none reached `from` (not re-asked of five stations each poll). A grid starting after now is not held (its later
  * hours have yet to be observed).
  */
 async function theFill(stations, fillFrom, gridFirst, pressureStation, nowMs) {
   const key = `${fillFrom} ${gridFirst} ${pressureStation}`
   const held = _fills.get(stations.url)
   if (held?.key === key) return held.fill
+  const failedBefore = stations.answered.failed
   const fill = await observedHours(stations, fillFrom, gridFirst, pressureStation)
-  if (gridFirst <= nowMs) _fills.set(stations.url, { key, fill })
+  if (gridFirst <= nowMs && stations.answered.failed === failedBefore) _fills.set(stations.url, { key, fill })
   return fill
 }
 
@@ -251,12 +254,13 @@ async function theFill(stations, fillFrom, gridFirst, pressureStation, nowMs) {
 function stationsOf(stationsUrl, fetchImpl, name) {
   let listed = null
   const seen = new Map(), where = new Map()
+  const answered = { failed: 0 }   // failed answers this poll (a 5xx, a 429): a refusal built on one is not held
   return {
-    url: stationsUrl, name,
+    url: stationsUrl, name, answered,
     async ids() {
       if (!listed) {
         const { res, body } = await getJson(stationsUrl, fetchImpl)
-        if (!res.ok) { console.error(`[weather] ⛔ NWS stations list answered ${res.status} for "${name}" — no observations`); listed = [] }
+        if (!res.ok) { answered.failed++; console.error(`[weather] ⛔ NWS stations list answered ${res.status} for "${name}" — no observations`); listed = [] }
         else {
           listed = []
           for (const f of (body.features || []).slice(0, STATIONS_TRIED)) {
@@ -277,7 +281,10 @@ function stationsOf(stationsUrl, fetchImpl, name) {
       if (!seen.has(key)) {
         const span = `start=${encodeURIComponent(new Date(start).toISOString())}${end == null ? '' : `&end=${encodeURIComponent(new Date(end).toISOString())}`}`
         seen.set(key, getJson(`${NWS_ROOT}/stations/${id}/observations?${span}`, fetchImpl)
-          .then(({ res, body }) => (res.ok ? (body.features || []).map((f) => f.properties).sort((a, b) => Date.parse(b.timestamp) - Date.parse(a.timestamp)) : null)))
+          .then(({ res, body }) => {
+            if (!res.ok) { answered.failed++; return null }
+            return (body.features || []).map((f) => f.properties).sort((a, b) => Date.parse(b.timestamp) - Date.parse(a.timestamp))
+          }))
       }
       return seen.get(key)
     },

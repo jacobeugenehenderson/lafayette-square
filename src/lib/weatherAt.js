@@ -19,7 +19,9 @@
  * WeatherFieldMissingError (a WeatherRangeError, so every reader that holds-and-says across the forecast's edge takes
  * the same path). The hours before NWS's grid are observed, and lack cloud cover and the weather code (lib/nws.js).
  * ⛔ An hour the station did not observe is a HOLE in the series, not a span to smooth across: an instant inside one
- * THROWS a WeatherHoleError (a WeatherRangeError). The hole's unit is the series' own cadence (its shortest step).
+ * THROWS a WeatherHoleError (a WeatherRangeError). The hole's unit is the series' own cadence, STAMPED on it by its
+ * producer (`hourly.cadence`, ms — lib/nws.js) and never inferred: a series with no two consecutive readings would infer
+ * it from the hole itself. ⛔ A series without the stamp throws by name.
  *
  * A reading: { temperatureF, cloudCover (%), precipitation (mm), visibility (m), windSpeedMs, windDirDeg, windGustsMs,
  * humidity (%), pressureMb, weatherCode, directRadiation, diffuseRadiation } — as lib/nws.js reads them from the National Weather Service (radiation always null: NWS has none), as
@@ -60,6 +62,8 @@ export function weatherAt(t, { live, now, hourly }) {
 /** The hourly forecast at `t`. Throws a WeatherRangeError outside it. */
 export function forecastAt(t, hourly) {
   if (!(t instanceof Date) || !Number.isFinite(t.getTime())) throw new Error(`[weatherAt] ⛔ not an instant: ${t}`)
+  // ⛔ Empty FIRST: a standing preset sets an empty, unstamped series (WeatherPoller), and that is a range refusal
+  // the readers hold and say — never the cadence's throw, which they would rethrow.
   if (!hourly?.length) throw new WeatherRangeError('[weatherAt] ⛔ there is no forecast to read')
   const ms = t.getTime()
   const first = hourly[0].time.getTime(), last = hourly[hourly.length - 1].time.getTime()
@@ -96,15 +100,10 @@ function hermite(hourly, f, i, k, span) {
   return (2 * k3 - 3 * k2 + 1) * y0 + (k3 - 2 * k2 + k) * span * m[i] + (-2 * k3 + 3 * k2) * y1 + (k3 - k2) * span * m[i + 1]
 }
 
-const _cadence = new WeakMap()   // hourly array → its shortest step (ms)
-/** The series' own cadence: its shortest step between two readings. A longer step is a hole. */
+/** The series' own cadence (ms), as its producer stamped it. A longer step is a hole. ⛔ Throws when unstamped. */
 function cadence(hourly) {
-  if (!_cadence.has(hourly)) {
-    let c = Infinity
-    for (let j = 1; j < hourly.length; j++) c = Math.min(c, hourly[j].time - hourly[j - 1].time)
-    _cadence.set(hourly, c)
-  }
-  return _cadence.get(hourly)
+  if (!(hourly.cadence > 0)) throw new Error(`[weatherAt] ⛔ the series carries no cadence (hourly.cadence, ms) — its producer must stamp its step; a hole cannot be told from a step without it`)
+  return hourly.cadence
 }
 
 const _tangents = new WeakMap()   // hourly array → { field → tangents }
