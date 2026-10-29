@@ -57,10 +57,13 @@ export function arrange(sets, keep, who, allTags = false) {
 }
 
 // the back-offset: one eroded (or dilated) ring with its tags → the morphed ring's points, the region's own wherever unchanged
-function emit(E, T, SRC, d, who, stat) {
+function emit(E, T, SRC, d, who, stat, LINES = null) {
   // tokens: L = a line { int: [a, b] } (a region edge) or { flt: [a, b] } (a new line); V = a fixed point
+  // ⭐ PROVENANCE CROSSES THE STAGE BOUNDARY (Zob, 2026-10-29): a region edge's line is the LINE IT WAS BORN ON (`LINES[g][i]`:
+  // P's own line, or a born line's two integer points), never a line re-derived through the region's rounded vertices
   const tok = []
-  const Lsrc = (g, i) => { const R = SRC[g], a = R[i], b = R[(i + 1) % R.length]; return { kind: 'L', g, i, int: [[a.X, a.Y], [b.X, b.Y]] } }
+  const lineOf = (g, i) => { const L = LINES?.[g]?.[i]; if (L) return L; const R = SRC[g], a = R[i], b = R[(i + 1) % R.length]; return [[a.X, a.Y], [b.X, b.Y]] }
+  const Lsrc = (g, i) => ({ kind: 'L', g, i, int: lineOf(g, i) })
   for (let e = 0; e < E.length; e++) { const tg = T[e], p = E[e], q = E[(e + 1) % E.length]
     const tags = tg == null ? [] : Array.isArray(tg) ? tg : [tg]
     if (!tags.length) { // a null edge: a NEW line, the cap's own back-offset by −d
@@ -82,11 +85,19 @@ function emit(E, T, SRC, d, who, stat) {
     t2.push(t) }
   while (t2.length > 1 && t2[0].kind === 'L' && t2[t2.length - 1].kind === 'L' && ((t2[0].g != null && t2[0].g === t2[t2.length - 1].g && t2[0].i === t2[t2.length - 1].i))) t2.pop()
   // the joins: between two consecutive lines with no fixed point between
-  const out = [], N = t2.length
+  const out = [], outL = [], N = t2.length
+  // the region's own arc from t's edge to u's, FORWARD IN THE RING'S OWN ORDER whatever its length (Zob, 2026-10-29; the
+  // 'under n/2' heuristic is deleted), and VALID only if no interior edge of it appears elsewhere in this ring's lines (else
+  // the jump runs BACKWARD against the ring); each arc point with its outgoing edge's line
+  const present = new Set(t2.filter(x => x.kind === 'L' && x.g != null).map(x => x.g + ':' + x.i))
+  const arcOf = (t, u) => { const R = SRC[t.g], n = R.length, pts = [], lns = []; let valid = true
+    for (let j = (t.i + 1) % n; ; j = (j + 1) % n) { pts.push([R[j].X, R[j].Y]); lns.push(lineOf(t.g, j)); if (j === u.i) break; if (present.has(t.g + ':' + j)) valid = false; if (pts.length > n) break }
+    return { pts, lns, valid } }
+  const pushArc = (a, kind) => { a.pts.forEach((q, k) => { out.push(q); outL.push(a.lns[k]); origin(q, kind) }) }
   for (let k = 0; k < N; k++) { const t = t2[k], u = t2[(k + 1) % N]
-    if (t.kind === 'V') { out.push(t.p); origin(t.p, t.cut ? 'cut-point' : 'run-vertex'); continue }
+    if (t.kind === 'V') { out.push(t.p); outL.push(u.kind === 'L' ? (u.int || null) : null); origin(t.p, t.cut ? 'cut-point' : 'run-vertex'); continue }
     if (u.kind === 'V') continue
-    if (t.g != null && u.g === t.g && u.i === (t.i + 1) % SRC[t.g].length) { const v = SRC[t.g][u.i]; out.push([v.X, v.Y]); origin([v.X, v.Y], 'own'); stat.own++; continue }
+    if (t.g != null && u.g === t.g && u.i === (t.i + 1) % SRC[t.g].length) { const v = SRC[t.g][u.i]; out.push([v.X, v.Y]); outL.push(u.int || null); origin([v.X, v.Y], 'own'); stat.own++; continue }
     // a cut join between two lines
     const A = t.int || t.flt, B = u.int || u.flt
     const na = unit(A[0], A[1]), nb = unit(B[0], B[1]), cosA = na[0] * nb[0] + na[1] * nb[1], sinA = na[0] * nb[1] - nb[0] * na[1]
@@ -99,25 +110,25 @@ function emit(E, T, SRC, d, who, stat) {
       //  · else (backward, two rings, a failed band): refuse by name (a swallowtail: unruled until one exists)
       { const [dx, dy, ox, oy] = [A[1][0] - A[0][0], A[1][1] - A[0][1], B[0][0] - A[0][0], B[0][1] - A[0][1]].map(BigInt), cr = dx * oy - dy * ox
         if (2n * cr * cr <= dx * dx + dy * dy) { stat.staircase = (stat.staircase || 0) + 1; continue } }
-      const fwd = t.g != null && u.g === t.g ? (u.i - t.i + SRC[t.g].length) % SRC[t.g].length : null, bwd = fwd == null ? null : SRC[t.g].length - fwd
-      if (t.g == null || u.g !== t.g || !(fwd < bwd)) throw new Error(`[${who}] ⛔ the back-offset: parallel distinct lines ${JSON.stringify(A)} and ${JSON.stringify(B)} meet ${t.g == null || u.g !== t.g ? 'from two rings' : `BACKWARD (edge ${t.i} then ${u.i} of ${SRC[t.g].length})`}, farther apart than the lattice's rounding (clause swallowtail). Refusing.`)
+      const ja = t.g != null && u.g === t.g ? arcOf(t, u) : null
+      if (!ja || !ja.valid) throw new Error(`[${who}] ⛔ the back-offset: parallel distinct lines ${JSON.stringify(A)} and ${JSON.stringify(B)} meet ${!ja ? 'from two rings' : `BACKWARD (edge ${t.i} then ${u.i} of ${SRC[t.g].length}, ring ${t.g}${area(SRC[t.g]) < 0 ? ', a HOLE' : ', an outer'})`}, farther apart than the lattice's rounding (clause swallowtail). Refusing.`)
       const R = SRC[t.g], n = R.length, L = Math.hypot(A[1][0] - A[0][0], A[1][1] - A[0][1])
       const side = (p) => ((p[0] - A[0][0]) * (A[1][1] - A[0][1]) - (p[1] - A[0][1]) * (A[1][0] - A[0][0])) / L, o = side(B[0])
       const lo = Math.min(0, o) - NODE_BOUND, hi = Math.max(0, o) + NODE_BOUND, arc = []
       for (let j = (t.i + 1) % n; ; j = (j + 1) % n) { arc.push([R[j].X, R[j].Y]); if (j === u.i) break; if (arc.length > n) throw new Error(`[${who}] ⛔ the back-offset: the jog's arc does not close. Refusing.`) }
       const off = arc.find(p => { const s = side(p); return s < lo || s > hi })
       if (off) throw new Error(`[${who}] ⛔ the back-offset: parallel distinct lines meet across a protrusion at (${off.map(v => v / SCALE)}) (clause parallel-protrusion: lines ${JSON.stringify(A)} and ${JSON.stringify(B)}, ${Math.abs(o).toFixed(3)} u apart; the vertex ${side(off).toFixed(3)} u across, the band [${lo.toFixed(3)}, ${hi.toFixed(3)}]; arc of ${arc.length} vertices; t = (${t.g}, ${t.i}), u = (${u.g}, ${u.i}) of ${n}). Refusing.`)
-      out.push(...arc); arc.forEach(q => origin(q, 'jog')); stat.jogJoin = (stat.jogJoin || 0) + 1; continue }
+      pushArc(ja, 'jog'); stat.jogJoin = (stat.jogJoin || 0) + 1; continue }
     if (Math.abs(sinA) < 1e-15 && cosA > 0) throw new Error(`[${who}] ⛔ the back-offset: a new line parallel to its neighbour at (${A[1]}). Refusing.`)
     const Xf = fcross(A, B)                                                    // the lines' crossing, unrounded
     const dLine = (q, L) => { const dx = L[1][0] - L[0][0], dy = L[1][1] - L[0][1]; return Math.abs((q[0] - L[0][0]) * dy - (q[1] - L[0][1]) * dx) / Math.hypot(dx, dy) }
     // ⭐ THE GAP RULE AT ANY NON-ADJACENT JOIN (Zob, 2026-10-29; clause 3 made general): every skipped source vertex within
     // NODE_BOUND of the cut path (L_a to X, then L_b) → the two answers differ by less than the lattice's own rounding, so the
     // source vertices are emitted, never X
-    if (t.g != null && u.g === t.g) { const R = SRC[t.g], n = R.length, fwd = (u.i - t.i + n) % n
-      if (fwd > 1 && fwd < n / 2) { const sk = []; for (let j2 = (t.i + 1) % n; ; j2 = (j2 + 1) % n) { sk.push([R[j2].X, R[j2].Y]); if (j2 === u.i) break }
+    const AR = t.g != null && u.g === t.g ? arcOf(t, u) : null
+    if (AR && AR.valid && AR.pts.length > 1) { const sk = AR.pts; {
         const dS = (q, a, b) => { const dx = b[0] - a[0], dy = b[1] - a[1], L2 = dx * dx + dy * dy, tt = L2 ? Math.max(0, Math.min(1, ((q[0] - a[0]) * dx + (q[1] - a[1]) * dy) / L2)) : 0; return Math.hypot(q[0] - a[0] - tt * dx, q[1] - a[1] - tt * dy) }
-        if (sk.every(q => Math.min(dS(q, A[0], Xf), dS(q, Xf, B[1])) <= NODE_BOUND)) { out.push(...sk); sk.forEach(q => origin(q, 'gap-arc')); stat.gapArc = (stat.gapArc || 0) + 1; continue } } }
+        if (sk.every(q => Math.min(dS(q, A[0], Xf), dS(q, Xf, B[1])) <= NODE_BOUND)) { pushArc(AR, 'gap-arc'); stat.gapArc = (stat.gapArc || 0) + 1; continue } } }
     if (1 + cosA < MITER_LIM && sinA * -d > 0) {    // squared, as clipper squares the join (parity; the limit JUSTIFIED below)
       // ⭐ THE CAP'S ENDS ARE ITS CROSSINGS WITH ITS NEIGHBOURS (Zob, 2026-10-29): the cap is a NEW line, placed as clipper places
       // its square (at |d| from the offset vertex, across the bisector), and each end is lineCross(L_cap, L_a) and
@@ -127,23 +138,29 @@ function emit(E, T, SRC, d, who, stat) {
       const cap = [[c[0] + dd * (na[0] - na[1] * tt), c[1] + dd * (na[1] + na[0] * tt)], [c[0] + dd * (nb[0] + nb[1] * tt), c[1] + dd * (nb[1] - nb[0] * tt)]]
       const e1 = fcross(cap, A).map(Math.round), e2 = fcross(cap, B).map(Math.round)
       for (const [e, L, nm] of [[e1, A, 'a'], [e2, B, 'b']]) if (dLine(e, L) > NODE_BOUND) throw new Error(`[${who}] ⛔ the back-offset: a squared join's cap end (${e.map(v => v / SCALE)}) lies ${dLine(e, L).toFixed(3)} u off its neighbour line ${nm}, past NODE_BOUND. Refusing.`)
-      out.push(e1, e2); [e1, e2].forEach(q => origin(q, 'square')); stat.squared++; (stat.squares ||= []).push(Xf.map(Math.round)); continue }
+      out.push(e1, e2); outL.push([e1, e2], u.int || null); [e1, e2].forEach(q => origin(q, 'square')); stat.squared++; (stat.squares ||= []).push(Xf.map(Math.round)); continue }
     const X = t.int && u.int ? lineCrossOf({ a: A[0], b: A[1] }, { a: B[0], b: B[1] }, who) : fcross(A, B).map(Math.round)
     // ⭐ A CUT WHOSE CROSSING THE NEXT BOOLEAN TRIMS EMITS THAT BOOLEAN'S EXACT RESULT: THE REGION'S OWN ARC (Zob's ruling,
     // 2026-10-29). L_a and L_b are the region's own edge lines: in the open, X = L_a ∩ L_b outside the region is trimmed by ∩P,
     // which in exact arithmetic follows L_a to a's end, the skipped source arc, then L_b; the close is the mirror (X inside,
     // unioned away). So the arc is emitted and X never is. The side, exact (BigInt): the local loop arc-then-X wound
     // clockwise ⇔ X outside (the region lies LEFT of every ring)
-    if (t.g != null && u.g === t.g) { const R = SRC[t.g], n = R.length, fwd = (u.i - t.i + n) % n
-      if (fwd > 0 && fwd < n / 2) { const arc = []; for (let j = (t.i + 1) % n; ; j = (j + 1) % n) { arc.push([R[j].X, R[j].Y]); if (j === u.i) break }
+    if (AR && AR.valid) { const arc = AR.pts; {
         const loop = [...arc, X]; let a2 = 0n; for (let k = 0; k < loop.length; k++) { const p = loop[k], q = loop[(k + 1) % loop.length]; a2 += BigInt(p[0]) * BigInt(q[1]) - BigInt(q[0]) * BigInt(p[1]) }
-        if (TRIM_INVERTED ? !(d < 0 ? a2 < 0n : a2 > 0n) : (d < 0 ? a2 < 0n : a2 > 0n)) { out.push(...arc); arc.forEach(q => origin(q, 'trimmed-arc')); stat.trimmedArc = (stat.trimmedArc || 0) + 1; continue } } }
-    out.push(X); origin(X, t.flt || u.flt ? 'new-line-join' : 'cut-join'); stat.cutJoin++
+        if (TRIM_INVERTED ? !(d < 0 ? a2 < 0n : a2 > 0n) : (d < 0 ? a2 < 0n : a2 > 0n)) { pushArc(AR, 'trimmed-arc'); stat.trimmedArc = (stat.trimmedArc || 0) + 1; continue } } }
+    // ⛔ a BACKWARD cut between non-parallel lines of one ring: refuse by name (Zob, 2026-10-29; unruled until one exists)
+    if (AR && !AR.valid && process.env.CUTONCE_COUNT_BACKWARD) { const n = SRC[t.g].length, back = (t.i - u.i + n) % n
+      ;(stat.backward ||= {})[back] = ((stat.backward ||= {})[back] || 0) + 1; out.push(X); outL.push(u.int || null); origin(X, 'backward-cut'); continue }
+    if (AR && !AR.valid) throw new Error(`[${who}] ⛔ the back-offset: a cut joins edge ${t.i} to edge ${u.i} of ring ${t.g}${area(SRC[t.g]) < 0 ? ' (a HOLE)' : ' (an outer)'} BACKWARD against the ring's order, lines ${JSON.stringify(A)} and ${JSON.stringify(B)}. Refusing.`)
+    out.push(X); outL.push(u.int || null); origin(X, t.flt || u.flt ? 'new-line-join' : 'cut-join'); stat.cutJoin++
     const par = (L, q) => { const dx = L[1][0] - L[0][0], dy = L[1][1] - L[0][1]; return ((q[0] - L[0][0]) * dx + (q[1] - L[0][1]) * dy) / (dx * dx + dy * dy) }
     DETAIL.set(X[0] + ',' + X[1], { who, t: t.g != null ? { g: t.g, i: t.i } : 'new', u: u.g != null ? { g: u.g, i: u.i } : 'new', ta: +par(A, Xf).toFixed(4), tb: +par(B, Xf).toFixed(4), A, B }) }
-  return out.map(([X, Y]) => ({ X, Y }))
+  if (outL.length !== out.length) throw new Error(`[${who}] ⛔ the back-offset: ${out.length} points but ${outL.length} outgoing lines. Refusing.`)
+  return out.map(([X, Y], k) => ({ X, Y, tag: TAGS_BY_SEGMENT ? null : outL[k] }))
 }
 export const ORIGIN = new Map(), DETAIL = new Map()
+let TAGS_BY_SEGMENT = false                       // ⛔ the mutant only (setTagsBySegment): the close tags by the open's segments
+export const setTagsBySegment = (v) => { TAGS_BY_SEGMENT = !!v }
 let TRIM_INVERTED = false                          // ⛔ the mutant only (setTrimInverted): the side test inverted
 export const setTrimInverted = (v) => { TRIM_INVERTED = !!v }
 const origin = (p, kind) => { const k = p[0] + ',' + p[1], o = ORIGIN.get(k); ORIGIN.set(k, o && o !== kind ? o + '|' + kind : kind) }
@@ -151,10 +168,10 @@ const fcross = (A, B) => { const r = [A[1][0] - A[0][0], A[1][1] - A[0][1]], s =
   if (!den) throw new Error('⛔ the back-offset: a new line parallel to its neighbour. Refusing.')
   const t = ((B[0][0] - A[0][0]) * s[1] - (B[0][1] - A[0][1]) * s[0]) / den; return [A[0][0] + t * r[0], A[0][1] + t * r[1]] }
 
-export function morph(region, d, who, stat) {
+export function morph(region, d, who, stat, lines = null) {
   const raw = region.map((R, g) => rawOffset(R, d, g, (stat.squares ||= [])))
   const F = arrange([raw], w => w[0] > 0, `${who} offset`, true)
-  return F.rings.map((E, k) => emit(E, F.tags[k], region, d, who, stat))
+  return F.rings.map((E, k) => emit(E, F.tags[k], region, d, who, stat, lines))
 }
 
 // a face set's rings → pieces [outer, …holes] (a hole into the smallest outer holding its first vertex)
@@ -174,12 +191,12 @@ export { pieces, area }
 export function openCloseProvenance(paths, stepM, what) {
   const h = (stepM / 2) * SCALE, stat = { own: 0, cutJoin: 0, squared: 0, newLines: 0 }
   const P = arrange([paths.map(p => p.map(q => ({ X: q.X, Y: q.Y })))], w => w[0] !== 0, `${what} union`).rings
-  const Pt = P.map(r => r.map(q => ({ ...q })))
+  const Pt = P.map(r => r.map((q, i) => ({ X: q.X, Y: q.Y, tag: [[q.X, q.Y], [r[(i + 1) % r.length].X, r[(i + 1) % r.length].Y]] })))
   // open = morph(P, −h) ∩ P
   const D = morph(Pt, -h, `${what} open`, stat)
-  const open = arrange([Pt, D], w => w[0] > 0 && w[1] > 0, `${what} ∩P`).rings
+  const OPEN = arrange([Pt, D], w => w[0] > 0 && w[1] > 0, `${what} ∩P`), open = OPEN.rings
   // closedK = morph(open, +h) ∪ open
-  const C = morph(open, h, `${what} close`, stat)
+  const C = morph(open, h, `${what} close`, stat, TAGS_BY_SEGMENT ? null : OPEN.tags)
   const taken = pieces(arrange([Pt, open], w => w[0] > 0 && !(w[1] > 0), `${what} taken`).rings)
   const closedK = arrange([open, C], w => w[0] > 0 || w[1] > 0, `${what} closedK`).rings
   const filled = pieces(arrange([closedK, open], w => w[0] > 0 && !(w[1] > 0), `${what} filled`).rings)
