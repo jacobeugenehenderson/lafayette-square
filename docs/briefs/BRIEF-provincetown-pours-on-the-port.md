@@ -30,6 +30,9 @@ port's commits and `cartograph/BACKLOG.md`'s brief-A row; never anyone's memory.
   no forward order fits · 2 · 0.15% | source STAIRCASE at a cut · 2 · 0.15% | backward cut, no staircase · 2 · 0.13% |
   guard: P's hole opened · 1 · 0.10% | walls-meet · 1 · 0.02% | guard: two parts joined · 1 · 0.05% (on a tile edge, probably
   a tiling artefact) | cross-ring-not-a-pair · 1 · 0.05% | trimmed arc starts outside D · 1 · 0.07%. Huron's water and pier: 0.
+- `claims-the-shore-knows-which-side-is-wet` (now reading ①'s water face, 2b12075c) is RED on measured arcs: PTown 9,201 m (water
+  beside ≤ 6%) and 115 m; Huron 14 m and 85 m. Cause not established. ⚠️ Huron's integration `clean/map.json` is a symlink to the main
+  checkout's, so its pour may not be the slab's. Include it in the census: is it the coast, or the inputs?
 - Parked and local: `plumb/concurrence` (the 1-step concurrence fix; Huron's ratchet rose slightly) · `plumb/staircase-runs` (the
   staircase rule; Huron's ratchet rose, and it joined 3.65% of Huron's lidar edges, so a lidar trace is a staircase throughout) ·
   `plumb/takeout-on-arrangement` 3dc1a151 (the take-out's three subtractions; a named debt).
