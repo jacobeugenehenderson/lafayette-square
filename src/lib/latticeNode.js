@@ -144,6 +144,11 @@ export const crossOf = (s, t, numberOnly = false) => {
 // does segment s ENTER hot pixel h's half-open square [X − ½, X + ½) × [Y − ½, Y + ½)? In doubled units (the square is
 // [2X−1, 2X+1)), so integer endpoints are even and a segment can lie along no pixel edge: the box test, then the four
 // corners' sides of the line, signs in doubles while every difference is under 2^24 and in BigInt past it.
+// ⛔ A CORNER TOUCH (Zob, 2026-10-28; checks/fixtures/huron-close-self-noding-2026-10-28.json): a diagonal can pass EXACTLY
+// through a corner (odd, odd), the midpoint of a unit diagonal step. When the line meets the square only there (one
+// corner on it, the other three strictly on one side), the segment enters iff that corner is the square's OWN, the
+// included (x0, y0), and lies on the segment. The other three are excluded: counting them routed a segment through two
+// pixels it never enters, which made the antennas that collapsed a ring and left a crossing un-noded.
 export const entersPixel = (s, h, numberOnly = false) => {
   const ax = 2 * s.a[0], ay = 2 * s.a[1], bx = 2 * s.b[0], by = 2 * s.b[1], x0 = 2 * h.X - 1, x1 = 2 * h.X + 1, y0 = 2 * h.Y - 1, y1 = 2 * h.Y + 1
   if (Math.max(ax, bx) < x0 || Math.min(ax, bx) >= x1 || Math.max(ay, by) < y0 || Math.min(ay, by) >= y1) return false
@@ -151,7 +156,13 @@ export const entersPixel = (s, h, numberOnly = false) => {
     ? (x, y) => Math.sign(dx * (y - ay) - dy * (x - ax))
     : (x, y) => sgnB(BigInt(dx) * BigInt(y - ay) - BigInt(dy) * BigInt(x - ax))
   const v = [f(x0, y0), f(x1, y0), f(x0, y1), f(x1, y1)]
-  return Math.min(...v) <= 0 && Math.max(...v) >= 0 }
+  if (!(Math.min(...v) <= 0 && Math.max(...v) >= 0)) return false
+  const zeros = v.filter(z => z === 0).length
+  if (zeros === 1 && (Math.min(...v) === 0 || Math.max(...v) === 0)) {   // the line meets the square at one corner only
+    if (v[0] !== 0) return false                                           // an excluded corner
+    return Math.min(ax, bx) <= x0 && x0 <= Math.max(ax, bx) && Math.min(ay, by) <= y0 && y0 <= Math.max(ay, by)
+  }
+  return true }
 // where hot pixel h falls along segment s: the projection's integer numerator (the common /|ab|² dropped), compared with
 // < and > only, in doubles while the segment is under 2^24 units and in BigInt past it (one segment never mixes the two)
 export const alongOf = (s, h, numberOnly = false) => { const dx = s.b[0] - s.a[0], dy = s.b[1] - s.a[1]
