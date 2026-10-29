@@ -96,7 +96,12 @@ export function changeGate(P, out, h, squares, who, outTagsIn = null, Ptags = nu
 // directions (their tags: exact integer vectors), never from the edges' own short spans, so no length is skipped. ⛔ There was a
 // "skip edges under 50 u" (a tuned constant, hiding exactly where a method-made corner sits): removed. An edge with no line (or a
 // born line one step long) is LISTED, not skipped
-export function sharpCorners(rings, P, tags = null) { const pv = new Set(P.flat().map(q => q.X + ',' + q.Y)), o = [], noLine = []
+// ⭐ A P CORNER IS P'S OWN TWO EDGES (Zob, 2026-10-29): the vertex is P's AND both output edges' lines are P's two edges at it (exact
+// endpoints, either order), never a vertex that merely coincides with one of P's
+let P_CORNER_BY_VERTEX = false                    // ⛔ the mutant only (setPCornerByVertex): a P corner by its vertex alone
+export const setPCornerByVertex = (v) => { P_CORNER_BY_VERTEX = !!v }
+export function sharpCorners(rings, P, tags = null) { const o = [], noLine = [], ek = (L) => [L[0].join(','), L[1].join(',')].sort().join('|'), pe = new Map()
+  for (const r of P) r.forEach((q, i) => { const w = r[(i + 1) % r.length], k = ek([[q.X, q.Y], [w.X, w.Y]]); for (const v of [q, w]) { const vk = v.X + ',' + v.Y; (pe.get(vk) || pe.set(vk, new Set()).get(vk)).add(k) } })
   // a tag is a LINE (two numeric points) or a LIST of tags (a transition's): never split a line into its points
   const isLine = (x) => Array.isArray(x) && x.length === 2 && x.every(pt => Array.isArray(pt) && pt.length === 2 && pt.every(Number.isFinite))
   const lineOf = (t) => (isLine(t) ? t : Array.isArray(t) ? t.find(isLine) || null : null)
@@ -108,13 +113,23 @@ export function sharpCorners(rings, P, tags = null) { const pv = new Set(P.flat(
       if (Math.abs(lx) + Math.abs(ly) <= 2) noLine.push({ at: [a.X / SCALE, a.Y / SCALE], bornOneStep: L }); return [lx, ly] })
     for (let i = 0; i < n; i++) { const u = dir[(i - 1 + n) % n], v = dir[i], lu = Math.hypot(...u), lv = Math.hypot(...v); if (!lu || !lv) continue
       const cosT = (u[0] * v[0] + u[1] * v[1]) / lu / lv; if (!(1 + cosT < 0.5)) continue
-      const b = r[i]; o.push({ at: [b.X / SCALE, b.Y / SCALE], insideDeg: +(180 - Math.acos(Math.max(-1, Math.min(1, cosT))) * 180 / Math.PI).toFixed(2), Pcorner: pv.has(b.X + ',' + b.Y) }) } })
+      const b = r[i]; o.push({ at: [b.X / SCALE, b.Y / SCALE], insideDeg: +(180 - Math.acos(Math.max(-1, Math.min(1, cosT))) * 180 / Math.PI).toFixed(2), Pcorner: (() => { const own = pe.get(b.X + ',' + b.Y), Li = lineOf(tags?.[ri]?.[(i - 1 + n) % n]), Lo = lineOf(tags?.[ri]?.[i]); return !!(own && Li && Lo && !P_CORNER_BY_VERTEX ? own.has(ek(Li)) && own.has(ek(Lo)) : own) })() }) } })
   o.noLine = noLine; return o }
+// ⭐ THE SHARPNESS GATE, RESTATED (Zob, 2026-10-29): a corner past the limit is an ERROR only where the DEFINITION lacks it. Each is
+// marked `definition` when the oracle's own k (oracle.mjs#reference, 1000× finer) has a vertex within 2·NODE_BOUND whose own corner
+// is past the limit too; a P corner is P's (sharpCorners). → the same list, marked; `errors` the rest
+let DEFINITION_ALWAYS = false                     // ⛔ the mutant only (setDefinitionAlways): every sharp corner called the definition's
+export const setDefinitionAlways = (v) => { DEFINITION_ALWAYS = !!v }
+export async function classifySharp(sharp, P, stepM) { const O = await import('./oracle.mjs'), F = 1000, R = O.referenceOf(P, stepM)
+  const lim = (a, b, c) => { const u = [b.X - a.X, b.Y - a.Y], v = [c.X - b.X, c.Y - b.Y], lu = Math.hypot(...u), lv = Math.hypot(...v); return lu && lv && 1 + (u[0] * v[0] + u[1] * v[1]) / lu / lv < 0.5 }
+  const ref = []; for (const r of R) r.forEach((b, i) => { if (lim(r[(i - 1 + r.length) % r.length], b, r[(i + 1) % r.length])) ref.push([b.X / F, b.Y / F]) })
+  const out = sharp.map(x => ({ ...x, definition: DEFINITION_ALWAYS || ref.some(q => Math.hypot(q[0] - x.at[0] * SCALE, q[1] - x.at[1] * SCALE) <= 2 * NODE_BOUND) }))
+  return { list: out, errors: out.filter(x => !x.Pcorner && !x.definition), definitionCorners: ref.length } }
 // one run of the candidate on (src, stepM), measured: the row compare.mjs prints and the check judges
 export function measure(src, stepM, name) {
   const t0 = Date.now(), r = C3.openCloseProvenance(src, stepM, name), ms = Date.now() - t0
   const { squares, ...st } = r.stat, gate = changeGate(r.P, r.rings, (stepM / 2) * SCALE, squares || [], name, r.tags)
   const out = r.rings.map(q => q.map(v => new IntPoint(v.X, v.Y))), X = crossings(out)
   const sharp = sharpCorners(r.rings, r.P, r.tags)
-  return { ms, stat: st, gate, sharp: { past: sharp.filter(x => !x.Pcorner).length, Pcorners: sharp.filter(x => x.Pcorner), list: sharp.slice(0, 8), noLine: sharp.noLine.length, noLineList: sharp.noLine.slice(0, 6) }, crossings: X.length, le2mm: short(out), ...topo(out), src: topo(r.P.map(q => q.map(v => new IntPoint(v.X, v.Y)))), rings: r.rings, P: r.P, tags: r.tags }
+  return { ms, stat: st, gate, sharp: { past: sharp.filter(x => !x.Pcorner).length, Pcorners: sharp.filter(x => x.Pcorner), list: sharp.slice(0, 8), all: sharp, noLine: sharp.noLine.length, noLineList: sharp.noLine.slice(0, 6) }, crossings: X.length, le2mm: short(out), ...topo(out), src: topo(r.P.map(q => q.map(v => new IntPoint(v.X, v.Y)))), rings: r.rings, P: r.P, tags: r.tags }
 }

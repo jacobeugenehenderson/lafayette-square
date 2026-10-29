@@ -28,6 +28,8 @@ function reference(P, stepM, stages = {}) { const h = (stepM / 2) * 1000 * F
   const tf = pieces(op(ClipType.ctDifference, P, open)).filter(survives), ff = pieces(op(ClipType.ctDifference, closedK, open)).filter(survives)
   let k = tf.length ? op(ClipType.ctDifference, P, tf.flat()) : P; if (ff.length) k = op(ClipType.ctUnion, [...k, ...ff.flat()]); stages.k = k; return k }
 const area = (pp) => pp.reduce((t, q) => t + Clipper.Area(q), 0)
+// the definition's k for a P in OUR units ({X, Y} rings), on the fine lattice (×1000)
+export const referenceOf = (P, stepM) => reference(up(P.map(r => r.map(q => ({ X: q.X, Y: q.Y })))), stepM)
 // END TO END at both thresholds (Zob, 2026-10-29): a shipped k against the definition's own full chain from P, each side's count and
 // area past NODE_BOUND and past 2·NODE_BOUND
 const sidesOf = (K, R) => [...pieces(op(ClipType.ctDifference, K, R)).map(pp => ({ pp, side: 'candidate only' })), ...pieces(op(ClipType.ctDifference, R, K)).map(pp => ({ pp, side: 'definition only' }))]
