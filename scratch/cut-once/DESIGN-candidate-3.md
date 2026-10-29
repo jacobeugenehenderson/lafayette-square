@@ -118,6 +118,13 @@ Why not adopted: it is closer to the definition where it EMITS (open, closedK) a
 forward dilate). Off-line tags were not the cause: (a′) took them from 1,316 to 3 and the dilate grew. The dilate's cause is not
 established and not pursued. The superseded step-0 table is in git history (this file before this commit).
 
+## Tried, NOT adopted: the take-out's own booleans on the arrangement (branch `plumb/takeout-on-arrangement`, 3dc1a151, local)
+w0, loc, thin, the touch test, u0 and the final water − decks as tagged arrangements (boolOf, growBy, openAt/closeAt on birth
+lines). The v5 take-out then RECURS at deck 0's open (the run 84–86 read, then 84 again); cause not established. Its premise was
+false: MacMillan's 2.8 u staircase is in the deck's source ring, not made by clipper's water − deck. The take-out's three
+subtractions stay on clipper's integer booleans as a NAMED DEBT against the brief's "every boolean" (Zob, 2026-10-29): on the
+shipping v5 fixture, ≤ 2 mm 11, copy 0, crossings 0, one 0.008 m² piece against the definition.
+
 ## Not established
 Whether ①'s 4 mm offset (282.795 vs 282.791) is a further step after the take-out. Whether the Huron crossing (the debt) is
 the near-parallel copies or something else in the cut/fill; the method removes the copies, and the fixture will show
