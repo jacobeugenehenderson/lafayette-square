@@ -2,8 +2,8 @@
   "generated_by": "node checks/tier.mjs --json",
   "total": 510,
   "counts": {
-    "safe": 360,
-    "local-effect": 32,
+    "safe": 362,
+    "local-effect": 30,
     "live": 118
   },
   "checks": [
@@ -2721,9 +2721,9 @@
     },
     {
       "file": "checks/claims-the-arch-stands-where-it-is.mjs",
-      "tier": "local-effect",
+      "tier": "safe",
       "why": [
-        "imports scripts/migrate-arch-stands.mjs, which can: writeFileSync"
+        "reads repo files only"
       ]
     },
     {
@@ -3506,9 +3506,9 @@
     },
     {
       "file": "checks/claims-the-survey-hero-is-retired.mjs",
-      "tier": "local-effect",
+      "tier": "safe",
       "why": [
-        "imports scripts/migrate-arch-stands.mjs, which can: writeFileSync"
+        "reads repo files only"
       ]
     },
     {

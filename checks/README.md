@@ -146,7 +146,7 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `scratch/claims-the-roster-light-tells-the-truth.mjs` | unreadable | imports arborist/roster-coverage.js, which can: imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command, imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files |
 | `scratch/claims-unpainted-arcs.mjs` | unreadable | writeFileSync · mkdirSync · computed import of scratch/.arc-probe/tileGround.arc.mjs, a module it writes itself — made at run time, cannot be read |
 
-## local-effect — 32. `npm run test:all`, never CI.
+## local-effect — 30. `npm run test:all`, never CI.
 
 Writes into the repo or a scratch dir.
 
@@ -169,7 +169,6 @@ Writes into the repo or a scratch dir.
 | `checks/claims-fade-derives-from-radius.mjs` | CLAIM: the circle has ONE origin, and the fade is DERIVED from it. |
 | `checks/claims-no-filename-reaches-a-plate-label.mjs` | DOES A SOURCE FILENAME (OR A SPECIES READ OFF ONE) REACH THE OPERATOR? |
 | `checks/claims-prominence-recovers-ls-landmarks.mjs` | CLAIM: the prominence rank is a SORT and never a filter, hand-promotion outranks |
-| `checks/claims-the-arch-stands-where-it-is.mjs` | CLAIM — THE ARCH STANDS WHERE IT IS (BRIEF-the-arch-stands-where-it-is, 2026-10-28, Keystone; Jacob's rulings, |
 | `checks/claims-the-built-ground-has-no-needles.mjs` | A CURB, A WALK OR A LAWN NEVER COMES TO A SHARP POINT. |
 | `checks/claims-the-ground-stays-in-budget.mjs` | "DOES THIS GROUND BAKE FIT UNDER ITS TOWN'S SERVED SLAB SIZE AND SERVED GROUND-BAKE TIME?" |
 | `checks/claims-the-lidar-flights-are-named.mjs` | CLAIM — WHEN THE LIDAR FLEW, AND THE GEOID IT WAS DELIVERED ON, ARE READ AND NAMED, NEVER GUESSED (fetch-lidar-flights.mjs). |
@@ -177,7 +176,6 @@ Writes into the repo or a scratch dir.
 | `checks/claims-the-road-meets-itself-across-its-centreline.mjs` | DOES THE DRAWN ROAD MEET ITSELF WHERE ITS TWO HALVES READ |
 | `checks/claims-the-street-eye-stands-on-the-ground.mjs` | IS EVERY STREET CAMERA 5′8″ ABOVE THE DRAWN GROUND? |
 | `checks/claims-the-stripe-lies-on-its-road.mjs` | DOES THE PAINTED STRIPE LIE ON THE ROAD IT IS PAINTED ON? |
-| `checks/claims-the-survey-hero-is-retired.mjs` | CLAIM — THE SURVEY HERO IS RETIRED: FOCUS LIVES ONLY ON THE KEYFRAMES (BRIEF-the-arch-stands-where-it-is §3.4, |
 | `checks/claims-the-walk-is-level-across.mjs` | DOES EVERY WALK AND CURB STAY LEVEL ACROSS ITS RUN, AT EVERY EXAGGERATION? |
 | `scratch/claims-attribution-is-per-town.mjs` | IS EACH TOWN CREDITING ITS OWN SOURCES? |
 | `scratch/claims-building-identity-survives-repour.mjs` | ⭐ WHY IT IS NOT A COUNT. `A01`'s ticket exists because `promote-ribbons.js`'s clobber |
@@ -185,7 +183,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 360. This is `npm test`.
+## safe — 362. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -454,6 +452,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-survey-passes-what-the-bake-passes.mjs` | DOES SURVEY'S LIVE BUILD GIVE buildTileGround EVERYTHING THE BAKE DOES? |
 | `checks/claims-swap-reaches-the-paint.mjs` | ⭐⭐⭐ THE OPERATOR'S GESTURE, AS A GATE. (Jacob, 2026-09-07: "The swap regime doesn't work on |
 | `checks/claims-the-ao-belongs-to-its-ground.mjs` | producer that rebuilds that manifest from scratch. `bake-ground-ao` writes |
+| `checks/claims-the-arch-stands-where-it-is.mjs` | CLAIM — THE ARCH STANDS WHERE IT IS (BRIEF-the-arch-stands-where-it-is, 2026-10-28, Keystone; Jacob's rulings, |
 | `checks/claims-the-armoured-shore-is-never-empty.mjs` | IS THERE A WALL AT EVERY DISTANCE? |
 | `checks/claims-the-authoring-store-reloads-on-edit.mjs` | DOES AN EDIT TO THE AUTHORING STORE RELOAD THE PAGE, NEVER SWAP IT HOT? |
 | `checks/claims-the-bands-are-held-by-their-owners.mjs` | EACH TILE'S CURB, WALK AND LAWN ARE CUT INTO PIECES, EACH WITH ONE OWNER (`bandPiecesOfTile`). |
@@ -522,6 +521,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-the-slab-envs-do-not-collide.mjs` | STAGING AND PRODUCTION MUST NOT SERVE THE SAME SLAB. |
 | `checks/claims-the-slope-is-on-the-leg.mjs` | ⭐⭐⭐ THE ACCEPTANCE FOR THE RAMP, AND IT IS A CONTINUITY TEST, NOT A DIMENSION ONE. |
 | `checks/claims-the-stamp-keeps-its-owners.mjs` | DOES STAMPING A TILE WITH ITS LAND USE LEAVE EVERY EDGE'S OWNER WHERE IT WAS, |
+| `checks/claims-the-survey-hero-is-retired.mjs` | CLAIM — THE SURVEY HERO IS RETIRED: FOCUS LIVES ONLY ON THE KEYFRAMES (BRIEF-the-arch-stands-where-it-is §3.4, |
 | `checks/claims-the-survey-reaches-the-measure.mjs` | ⭐⭐⭐ DOES THE CITY'S SURVEY REACH THE MAP? — the join, scored, for any town that has one. |
 | `checks/claims-the-tide-phase-stays-in-bounds.mjs` | the water never leaves the town's own low and high (BRIEF-tide). |
 | `checks/claims-the-tiers-are-current.mjs` | A DRIFTED checks/TIERS.json STOPS `npm test`, NAMING EVERY CHECK THAT MOVED. |

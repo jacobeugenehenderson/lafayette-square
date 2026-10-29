@@ -28,7 +28,7 @@ import { ROOT } from './_scenes.mjs'
 import { projectorOf as pourProjector } from '../cartograph/geography.mjs'
 import { projectorOf } from '../src/lib/townPlace.js'
 import { archSite, archPose, glintAt, GATEWAY_ARCH, PEAK_HEIGHT } from '../src/setpieces/gatewayArch.js'
-import { migrateArch, RETIRED_ARCH_FIELDS } from '../scripts/migrate-arch-stands.mjs'
+import { migrateArch, RETIRED_ARCH_FIELDS } from '../scripts/archStandsMigration.mjs'
 
 let red = 0
 const row = (ok, s) => { if (!ok) red++; console.log(`${ok ? '✅' : '⛔'} ${s}`) }

@@ -8,17 +8,19 @@
 //       with no focus has none (keyframeFocusIds starts at null) and focusChoice reads only the movie's ids.
 //   (2) THE MIGRATION carries an object hero onto the first key and loses nothing: arch → 'arch', landmark → its id, a
 //       first key's own focus kept, a key's 'hero' focus resolved, a null hero simply removed; a hero that is no object
-//       (centroid, landscape) and an object hero with no key to carry it are REFUSED by name.
+//       (centroid, landscape) and an object hero with no key to carry it are REFUSED by name. ALL OR NOTHING: a run
+//       with an unmigratable Look AFTER a migratable one writes nothing, and names every refusal.
 //   (3) EVERY LOOK: no design.json carries `heroSubject`, and no baked scene.json carries an OBJECT hero (whose focus would
 //       otherwise be lost): RED by name until `node scripts/migrate-arch-stands.mjs --write` and the re-bake. A slab's
 //       `heroSubject: null` is inert and said, not failed (it leaves at the town's next bake).
 //   MUTANTS (always run): a reader restored (`s.heroSubject` in a src file) → (1) RED · 'hero' back as the first key's
-//   default → (1) RED · a migration that drops the hero without carrying it → (2) RED.
+//   default → (1) RED · a migration that drops the hero without carrying it → (2) RED · a run that writes as it goes
+//   → (2) RED.
 //   node checks/claims-the-survey-hero-is-retired.mjs
 import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { ROOT } from './_scenes.mjs'
-import { migrateHero } from '../scripts/migrate-arch-stands.mjs'
+import { migrateHero, runMigration } from '../scripts/archStandsMigration.mjs'
 
 let red = 0
 const row = (ok, s) => { if (!ok) red++; console.log(`${ok ? '✅' : '⛔'} ${s}`) }
@@ -60,6 +62,19 @@ const judgeMigration = (mig) => {
   return why
 }
 const M = judgeMigration(migrateHero)
+const judgeAllOrNothing = (run) => {
+  const looks = [{ id: 'first', design: { heroSubject: { kind: 'arch', id: 'arch' }, heroKeyframes: [K()] } },
+    { id: 'second', design: { heroSubject: { kind: 'centroid', id: 'centroid' }, heroKeyframes: [K()] } },
+    { id: 'third', design: { heroSubject: { kind: 'landscape', id: 'backdrop' }, heroKeyframes: [K()] } }]
+  const written = []; let msg = ''
+  try { run(looks, { write: true, save: (id) => written.push(id) }) } catch (e) { msg = e.message }
+  const why = []
+  if (written.length) why.push(`wrote ${written.join(', ')} before refusing`)
+  if (!/second/.test(msg) || !/third/.test(msg)) why.push(`the refusal does not name every refused Look: "${msg.slice(0, 80)}"`)
+  return why
+}
+const A = judgeAllOrNothing(runMigration)
+row(!A.length, `(2) all or nothing: an unmigratable Look after a migratable one writes nothing, and every refusal is named: ${A.length ? A.join(' · ') : 'yes'}`)
 row(!M.length, `(2) the migration carries an object hero onto key 1, keeps an own focus, resolves 'hero', refuses what it cannot carry: ${M.length ? M.join(' · ') : 'yes'}`)
 
 // (3)
@@ -78,6 +93,7 @@ for (const { id } of index.looks) {
 const mutate = (name, ok) => row(!ok, `mutant: ${name} → ${ok ? 'still GREEN — the row proves nothing' : 'RED as it must be'}`)
 { const m = new Map(SRC); m.set('src/stage/StageApp.jsx', SRC.get('src/stage/StageApp.jsx') + '\nconst h = useCartographStore(s => s.heroSubject)\n'); mutate('a reader restored', !judgeSource(m).length) }
 { const m = new Map(SRC); m.set(FO, SRC.get(FO).replace('let cur = null', "let cur = 'hero'")); mutate("'hero' back as the first key's default", !judgeSource(m).length) }
+mutate('a run that writes as it goes', !judgeAllOrNothing((looks, { save }) => { for (const { id, design } of looks) { migrateHero(design, id); save(id) } }).length)
 mutate('a migration that drops the hero without carrying it', !judgeMigration((d) => ('heroSubject' in d ? { heroKeyframes: d.heroKeyframes || [] } : null)).length)
 
 console.log(red ? `\n⛔ ${red} row(s) RED` : '\n✅ the Survey hero is retired: focus lives only on the keyframes')
