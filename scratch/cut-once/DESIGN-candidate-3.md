@@ -17,7 +17,8 @@ P is the source part (an integer ring plus its holes); edge i of a ring lies on 
 1. **ERODE, with tags.** For each ring, each edge i gives the offset line Lᵢ(−h). Each join is the intersection of the two
    adjacent offset lines (as `structures.mjs#stripOf` does already **[code]**). Parity with ClipperOffset jtMiter, MiterLimit 2
    **[code: clipper-lib ClipperOffset, m_miterLim 0.5]**: a join with 1 + cos θ < 0.5 is SQUARED, and the square's cap edge is
-   tagged `null` (a new line). ⛔ At a concave join, clipper's three-point detour back through the source vertex is NOT
+   tagged `null` (a new line). ⛔ **The limit is clipper's CONSTANT, not ours** (Boz): kept for parity in step 0 so the
+   comparison is fair, then derived or justified before the build ships, never inherited silently. ⛔ At a concave join, clipper's three-point detour back through the source vertex is NOT
    copied: the exact intersection of the two offset lines is used. Every raw edge carries its tag (i, or null).
    The eroded GEOMETRY is only an intermediate. What leaves this step is its TOPOLOGY: which source lines survive, in what
    order around each output ring, plus the null caps. So the raw curve may be rounded to the lattice here without that
@@ -25,8 +26,8 @@ P is the source part (an integer ring plus its holes); edge i of a ring lies on 
 2. **RESOLVE the raw curve** (it self-intersects wherever a feature is narrower than 2h): node it with
    `latticeNode.js#nodeCrossings`, then take the region with clipper's union (nonzero, as today).
    - ⛔ **[code]**: nodeCrossings skips same-ring pairs (`s.ri === t.ri`), so a raw curve's self-crossings are not noded as
-     it stands. Either each raw ring goes in as one open path per edge (open paths are supported **[code]**), or nodeCrossings
-     takes a `self` option (an addition to a shared module: Zob's call).
+     it stands. Boz prefers ONE home: a `self` option on nodeCrossings, not a per-edge workaround at the call site
+     (open paths per edge are supported **[code]**, but that would be a second form). A shared-module change: Zob rules.
    - The tags ride the noding: nodeCrossings returns each output vertex's `edge` (its input segment) **[code]**. After the
      union, each output edge u→v is mapped back to its noded segment by EXACT vertex identity, never by proximity.
      **[unmeasured]**: that clipper's union adds no vertex to an input that is already noded (step 0 checks it, and the
@@ -38,7 +39,7 @@ P is the source part (an integer ring plus its holes); edge i of a ring lies on 
    - non-adjacent tags a, b (a feature was removed between them): Lₐ ∩ L_b, the CUT POINT, computed exactly in BigInt and
      rounded ONCE, half-up. This needs a LINE–LINE form of `crossOf`, because `crossOf` refuses a crossing outside both
      segments **[code]**, and a miter's crossing can lie past them. Proposed: `latticeNode.js#lineCrossOf`, sharing crossOf's
-     BigInt and half-up code.
+     BigInt and half-up code. Parallel lines (D = 0, exact) REFUSE by name, with no epsilon (Boz).
    - a null cap: its line is the cap's +h offset, a NEW line, computed in doubles and rounded once at birth (ORIENTATION's
      "the line is born rounded"). Same miter limit.
 4. **RESOLVE again** (dilation merges what touches): nodeCrossings, then union, as in step 2.
