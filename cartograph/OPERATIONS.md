@@ -249,7 +249,7 @@ All Image channels are TOD. Grouped by intent:
 
 - **Per-layer / per-LU swatch** — pick any map layer or land-use class from the tabbed list (Streets, Blocks, Land Use, Paths, Land Cover, Furniture, Labels, Roofs, Building, Trees, Park, Infra) and set its **Color** (hex swatch) and **Visible** (checkbox). Visibility here is also a bake lever (`BAKE.md §2`). *(Not TOD — a flat per-Look property.)*
 - **3D material editor** (for the selected PBR material) — **Roughness**, **Metalness**, a **Texture** dropdown (none / brick variants / stone / stucco / wood / slate / metal) with **Texture Scale** + **Texture Strength** when a texture is chosen, and **Emissive** (colour swatch + intensity).
-- **Building palette** — a 16-swatch colour grid that drives the per-building tint mix.
+- **Building palette** — the town's swatch grid that drives the per-building tint mix; a change recolours live (v2 towns: § Building walls).
 - **How the trees move (no control — by design).** Every tree's motion is an **endemic rustle** (a steady sway and flutter, always on, even in still air) **+ the real weather** (the town's felt wind, in metres of motion per m/s), with one **visible floor**: where a gust passes, the weather's part moves the canopy at least 2 screen pixels at each tree's own distance, so a far, flat card still shows it. Eye-gated 2026-10-05 as is; there are no look knobs. The figures live in the Look's `treeWind` channel (kit defaults = the approved look); a town that genuinely needs other ones authors them in its `design.json`. ▶ `node checks/claims-the-tree-wind-is-the-looks.mjs` · live pixels: `node scratch/tree-cost/wind-px.mjs --town=<id> --shot=browse|hero`
 
 ### Light Sources card *(was "Lamps")*

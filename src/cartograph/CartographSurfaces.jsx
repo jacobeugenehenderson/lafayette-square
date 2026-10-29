@@ -216,8 +216,9 @@ const TABS = [
       { id: 'foundation',      label: 'Foundation',      kind: 'material' },
       // Palette last — operator usually dials walls/roofs first, then
       // tunes the per-building tint mix.
-      // Baked into each building's vertices, so on a poured town it lands on the next buildings bake.
-      { id: 'palette',         label: 'Palette (on bake)', kind: 'palette' },
+      // Recolours LIVE, and the live colour IS the re-bake's: the player and the bake share src/lib/buildingTint.js
+      // (▶ node checks/claims-live-palette-equals-the-bake.mjs). A town still on buildings.json v2 refuses, loudly, until re-baked.
+      { id: 'palette',         label: 'Palette',         kind: 'palette' },
     ],
   },
   {
