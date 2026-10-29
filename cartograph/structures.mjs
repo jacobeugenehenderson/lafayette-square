@@ -17,7 +17,7 @@ import { CARTOGRAPH_DIR } from './config.js'
 import clipperLib from 'clipper-lib'
 import { CLIP_SCALE as SCALE } from '../src/lib/lattice.js'          // clipper units per metre: 1 mm
 import { NODE_BOUND } from '../src/lib/latticeNode.js'                 // the rounding's own bound: what a sliver is
-import { openCloseCutOnce, openAt, closeAt, pieces as ocPieces } from './openClose.mjs'   // the open/close, cut once (openCloseAtStep, waterWithoutDecks)
+import { openCloseCutOnce, openAt, closeAt } from './openClose.mjs'   // the open/close, cut once (openCloseAtStep, waterWithoutDecks)
 import { structureOverWater } from '../src/cartograph/streetClass.js'   // the over-water vocabulary's one home
 import { pourMeasureOf } from '../src/cartograph/streetProfiles.js'      // the pour's measure, the one rule (derive calls it too)
 import { DECK_KINDS } from '../src/cartograph/streetClass.js'   // the deck vocabulary's one home, beside isOffGradeWay
@@ -109,7 +109,8 @@ function convexHull(pts) {
 // ⭐ A FOOTPRINT AT THE TRACE'S OWN SCALE, BOTH WAYS: OPEN, THEN CLOSE, AT THE TRACE'S STEP (Boz's rulings, 2026-10-27; the
 // decks first, then the traced water, one method). A SPIKE or a GAP narrower than one cell is something neither the source nor
 // the line can resolve: the OPEN (eroded then dilated by half a cell, kept inside the source) finds what is narrower than a
-// cell, the CLOSE (dilated then eroded by half a cell, kept with the open) finds a gap narrower than a cell.
+// cell, the CLOSE (dilated then eroded by half a cell, kept with the open) finds a gap narrower than a cell. ⛔ Per connected
+// part, never across two: two parts a metre apart stay two.
 // ⭐⭐ CUT ONCE, IN FULL PRECISION (Boz's ruling, 2026-10-28; BRIEF-cut-once-in-full-precision): the open and the close only FIND
 // the features; what comes out is the SOURCE minus each feature the open took, plus each feature the close filled, and every
 // edge of it lies on the line it was born on: the source's own edge where nothing changed, never a re-rounded copy. The means
@@ -133,28 +134,27 @@ export function isRoundingSliver(pp) {
 }
 export function openCloseAtStep(paths, stepM, what) {
   if (!(stepM > 0)) throw new Error(`⛔ structures: openCloseAtStep (${what}) needs the trace's step (got ${stepM})`)
-  const r = openCloseCutOnce(paths, stepM, what), m2 = (pp) => pp.reduce((t, q) => t + ringAreaU(q), 0) / SCALE / SCALE
-  const place = (q) => [+(q[0].X / SCALE).toFixed(3), +(q[0].Y / SCALE).toFixed(3)]
-  // each piece to the source PART it belongs to: a taken piece lies in its part, a filled one against it (a notch, a hole), so the
-  // part whose boundary (outer or a hole) one of the piece's vertices lies on, within the noding's own bound (NODE_BOUND: snap
-  // rounding moves a vertex that far off the edge it was routed into), the smallest such. ⛔ None: refuses by name
-  const parts = ocPieces(r.P), onRing = (v, R) => R.some((a, i) => { const b = R[(i + 1) % R.length], dx = b.X - a.X, dy = b.Y - a.Y, L2 = dx * dx + dy * dy
-    const t = L2 ? Math.max(0, Math.min(1, ((v.X - a.X) * dx + (v.Y - a.Y) * dy) / L2)) : 0; return Math.hypot(v.X - a.X - t * dx, v.Y - a.Y - t * dy) <= NODE_BOUND })
-  const partOf = (pp) => { let best = -1
-    parts.forEach((P, i) => { if (pp[0].some(v => P.some(R => onRing(v, R))) && (best < 0 || ringAreaU(P[0]) < ringAreaU(parts[best][0]))) best = i })
-    if (best < 0) throw new Error(`⛔ structures: openCloseAtStep (${what}): a feature at (${place(pp[0])}) touches no part of the source, so it cannot be named by its part. Refusing.`)
-    return best }
-  const below = new Set(), belowResolution = []
-  for (const pp of r.taken) { const i = partOf(pp); if (i >= 0 && m2(pp) === m2(parts[i])) { below.add(i); belowResolution.push({ m2: +m2(pp).toFixed(3), at: place(parts[i][0]), ring: parts[i][0].map(q => [q.X / SCALE, q.Y / SCALE]) }) } }
-  const perPart = (pps) => { const by = new Map(); for (const pp of pps) { const i = partOf(pp); if (below.has(i)) continue; by.set(i, (by.get(i) || 0) + m2(pp)) }
-    return [...by].filter(([, v]) => v > 0).map(([i, v]) => ({ m2: +v.toFixed(3), at: place(parts[i][0]) })) }
+  const tree = new PolyTree(), cu = new Clipper(); cu.AddPaths(paths, PolyType.ptSubject, true)
+  if (!cu.Execute(ClipType.ctUnion, tree, PolyFillType.pftNonZero, PolyFillType.pftNonZero)) throw new Error(`⛔ structures: the union of ${what} FAILED`)
+  const m2 = (pp) => pp.reduce((t, q) => t + ringAreaU(q), 0) / SCALE / SCALE, place = (q) => [+(q[0].X / SCALE).toFixed(3), +(q[0].Y / SCALE).toFixed(3)]
   const feature = (pp) => { const xs = pp[0].map(q => q.X), ys = pp[0].map(q => q.Y)
     return { m2: +m2(pp).toFixed(4), lenM: +(Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)) / SCALE).toFixed(3), at: place(pp[0]), poly: pp.map(q => q.map(v => [v.X / SCALE, v.Y / SCALE])) } }
-  const split = (all, kept) => { const feats = kept.filter(pp => !below.has(partOf(pp))), sl = all.filter(pp => !kept.includes(pp) && !below.has(partOf(pp)))
-    return { features: feats.map(feature).sort((a, b) => b.m2 - a.m2), slivers: { n: sl.length, m2: +sl.reduce((t, pp) => t + m2(pp), 0).toFixed(4) } } }
-  const paths_ = r.rings.map(q => { const p = new Path(); for (const v of q) p.push(new IntPoint(v.X, v.Y)); return p })
-  return { paths: paths_, opened: perPart(r.tf), closed: perPart(r.ff), belowResolution, openedPieces: split(r.taken, r.tf), closedPieces: split(r.filled, r.ff),
-    dropped: r.dropped.map(x => ({ stage: x.who, m2: +(x.u2 / SCALE / SCALE).toFixed(6), at: x.at })) }
+  const kept = new Paths(), opened = [], closed = [], belowResolution = [], dropped = [], taken = [], filled = []
+  // ⛔ PER PART, NEVER ACROSS TWO: each connected part (its own outer and holes; a part in a part's hole is its own) is opened and
+  // closed alone, so two parts a metre apart stay two
+  const each = (node) => { for (const ch of node.Childs()) { const part = [ch.Contour(), ...ch.Childs().map(c => c.Contour())]
+    const r = openCloseCutOnce(part, stepM, what), at = place(part[0])
+    dropped.push(...r.dropped.map(x => ({ stage: x.who, m2: +(x.u2 / SCALE / SCALE).toFixed(6), at: x.at })))
+    if (!r.rings.length) belowResolution.push({ m2: +(part.reduce((t, q) => t + Clipper.Area(q), 0) / SCALE / SCALE).toFixed(3), at, ring: fromPath(part[0]) })
+    else { const tm = r.tf.reduce((t, pp) => t + m2(pp), 0), fm = r.ff.reduce((t, pp) => t + m2(pp), 0)
+      if (tm > 0) opened.push({ m2: +tm.toFixed(3), at }); if (fm > 0) closed.push({ m2: +fm.toFixed(3), at })
+      taken.push(...r.taken.map(pp => ({ pp, kept: r.tf.includes(pp) }))); filled.push(...r.filled.map(pp => ({ pp, kept: r.ff.includes(pp) })))
+      for (const q of r.rings) { const p = new Path(); for (const v of q) p.push(new IntPoint(v.X, v.Y)); kept.push(p) } }
+    for (const hole of ch.Childs()) each(hole) } }
+  each(tree)
+  const split = (xs) => { const sl = xs.filter(x => !x.kept)
+    return { features: xs.filter(x => x.kept).map(x => feature(x.pp)).sort((a, b) => b.m2 - a.m2), slivers: { n: sl.length, m2: +sl.reduce((t, x) => t + m2(x.pp), 0).toFixed(4) } } }
+  return { paths: kept, opened, closed, belowResolution, openedPieces: split(taken), closedPieces: split(filled), dropped }
 }
 const ringAreaU = (q) => { let a = 0; for (let i = 0; i < q.length; i++) { const p = q[i], w = q[(i + 1) % q.length]; a += p.X * w.Y - w.X * p.Y } return a / 2 }
 
