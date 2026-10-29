@@ -30,8 +30,9 @@ import { join, relative } from 'path'
 const ROOT = new URL('..', import.meta.url).pathname
 const SRC = join(ROOT, 'src')
 const TOWN = 'src/components/Town.jsx'
-// Rendered by Town but not a drawing: an app may use it for its own children.
+// ⏳ Known-open apps, by path → why it is open and what closes it (see the header). Empty: none is open.
 const OPEN = {}
+// Rendered by Town but not a drawing: an app may use it for its own children.
 const WRAPPERS = {
   R3FErrorBoundary: 'an error boundary; it draws nothing',
   // Town mounts the controls only under <Town controls> (an app that imports only Town); an app that places its own
@@ -63,22 +64,34 @@ export function piecesOf(townSrc) {
 
 // Code only: a comment that names a piece mounts nothing.
 const code = (src) => src.replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, '')
-// The drawn town: the pieces Town renders between <Suspense> and </Suspense>.
+// Each top-level <Suspense>…</Suspense> block, matched by depth (Town has more than one).
+function suspenseBlocks(src) {
+  const out = [], tag = /<(\/?)Suspense\b[^>]*>/g
+  let depth = 0, start = -1, t
+  while ((t = tag.exec(src))) {
+    if (!t[1]) { if (depth++ === 0) start = t.index }
+    else if (depth > 0 && --depth === 0) out.push(src.slice(start, tag.lastIndex))
+  }
+  return out
+}
+// The drawn town: the pieces of the <Suspense> block that draws the ground. ⛔ Never first-<Suspense>-to-last-</Suspense>:
+// a one-line <Suspense><TownMoonPainter/></Suspense> above the sky (fd3cf5a5, 2026-10-04) made that span swallow every sky
+// and wind piece, and five sky and tree viewers read as towns for 25 days.
 function drawnPiecesOf(townSrc) {
-  const m = code(townSrc).match(/<Suspense\b[\s\S]*<\/Suspense>/)
-  return m ? [...new Set([...m[0].matchAll(/<([A-Z]\w*)\b/g)].map(x => x[1]))].filter(n => n !== 'Suspense' && !WRAPPERS[n]) : []
+  const b = suspenseBlocks(code(townSrc)).find(s => /<BakedGround\b/.test(s))
+  return b ? [...new Set([...b.matchAll(/<([A-Z]\w*)\b/g)].map(x => x[1]))].filter(n => n !== 'Suspense' && !WRAPPERS[n]) : []
 }
 const renders = (src, name) => new RegExp(`<${name}\\b`).test(code(src))
 const harnessReason = (x) => x.path.startsWith('src/harness/') && (x.src.slice(0, 1500).match(/^.*⛔ HARNESS ONLY.*$/m) || [])[0]
 
-export function audit(files) {
+export function audit(files, drawnOf = drawnPiecesOf) {
   const f = [], info = []
   const town = files.find(x => x.path === TOWN)
   if (!town) return { f: [`${TOWN} does not exist — there is no one assembly for an app to mount`], info }
   const pieces = piecesOf(town.src)
   if (!pieces.length) return { f: [`${TOWN} renders no renderer piece — the definition broke`], info }
   info.push(`renderer pieces (read from ${TOWN}): ${pieces.join(', ')}`)
-  const drawn = drawnPiecesOf(town.src)
+  const drawn = drawnOf(town.src)
   if (!drawn.includes('BakedGround')) return { f: [`${TOWN}'s <Suspense> block does not draw <BakedGround> — the definition broke`], info }
   // An app: owns a <Canvas> and draws a town — renders <Town> or a piece, or PLACES a town (placeTown / TownPlace), so
   // an app that places its town and then drops <Town> is still seen.
@@ -110,10 +123,20 @@ if (process.argv.includes('--self-test')) {
     ['the harness marker outside src/harness/', () => audit([...files, { path: 'src/fake/NewApp.jsx', src: `/* ⛔ HARNESS ONLY */ <Canvas><BakedGround /></Canvas>` }]).f.length],
     ['Town is deleted', () => audit(files.filter(x => x.path !== TOWN)).f.some(x => /does not exist/.test(x)) ? Infinity : 0],
   ]
-  // Caught means MORE failures than the tree has now — the known-open Stage row keeps the baseline red.
+  // Caught means MORE failures than the tree has now.
   const base = audit(files).f.length
   let bad = 0
   for (const [n, run] of cases) { const c = run() > base; if (!c) bad++; console.log(`${c ? '✅ caught' : '⛔ MISSED'} — ${n}`) }
+  // The other direction: a canvas that draws only a sky is NOT an app, even when Town wraps a sky piece in a <Suspense>
+  // of its own above the drawn block (the 2026-10-04 shape). Planted, then seen RED under the old first-to-last parse.
+  const sky = [...swap(TOWN, s => s.replace(/<Suspense\b/, '<Suspense fallback={null}><CloudDome /></Suspense>\n<Suspense')),
+    { path: 'src/fake/SkyOnly.jsx', src: `<Canvas><CloudDome /></Canvas>` }]
+  const greedy = (t) => { const m = code(t).match(/<Suspense\b[\s\S]*<\/Suspense>/); return m ? [...new Set([...m[0].matchAll(/<([A-Z]\w*)\b/g)].map(x => x[1]))].filter(n => n !== 'Suspense' && !WRAPPERS[n]) : [] }
+  const skyOk = audit(sky).f.length === base, skyMut = audit(sky, greedy).f.length > base
+  if (!skyOk) bad++
+  if (!skyMut) bad++
+  console.log(`${skyOk ? '✅' : '⛔'} a sky-only canvas is not an app, with a sky piece in its own <Suspense> above the drawn block`)
+  console.log(`${skyMut ? '✅ RED as it must be' : '⛔ MISSED'} — mutant: the first-<Suspense>-to-last-</Suspense> parse`)
   process.exit(bad ? 1 : 0)
 }
 
