@@ -16,7 +16,7 @@ import { nodeCrossings, lineCrossOf, sameLine, NODE_BOUND, crossOf, LATTICE_STEP
 import { facesOf, onLineTiered } from '../../src/lib/latticeFaces.js'
 import { isRoundingSliver } from '../../cartograph/structures.mjs'
 import { tagRun } from './tagRun.mjs'
-const { IntPoint, Clipper } = clipperLib
+const { IntPoint, Clipper, ClipperOffset, Paths, JoinType, EndType } = clipperLib
 const SCALE = 1000, MITER_LIM = 0.5                 // clipper's constant for MiterLimit 2: parity only (Boz: derive or justify after)
 
 const unit = (a, b) => { const dx = b[0] - a[0], dy = b[1] - a[1], f = 1 / Math.hypot(dx, dy); return [dy * f, -dx * f] }   // clipper's GetUnitNormal
@@ -578,6 +578,7 @@ const unionTagged = (paths, what) => arrange([paths.map(p => p.map(q => ({ X: q.
   .map(r => r.map((q, i) => ({ X: q.X, Y: q.Y, tag: [[q.X, q.Y], [r[(i + 1) % r.length].X, r[(i + 1) % r.length].Y]] })))
 // the input's union as its PARTS, each [outer, …holes] (a part in a part's hole its own): the noded arrangement's own P, for a caller that
 // opens and closes part by part (structures.mjs#openCloseAtStep)
+const fresh = () => { ORIGIN.clear(); INSERTED.clear(); DROPPED.length = 0 }   // the per-call records reset
 export const partsOf = (paths, what) => { fresh(); return pieces(unionTagged(paths, what)).map(pp => pp.map(r => r.map(q => ({ X: q.X, Y: q.Y })))) }
 // open = morph(P, −h) ∩ P
 const openOf = (Pt, h, what, stat) => arrange([Pt, morph(Pt, -h, `${what} open`, stat)], w => w[0] > 0 && w[1] > 0, `${what} ∩P`, false, 0)
@@ -632,7 +633,12 @@ export function openCloseProvenance(paths, stepM, what) {
   const kOuters = k.filter(r => area(r) > 0)
   const ownerIn = (pt) => kOuters.map((r, i) => ({ i, a: area(r), inside: wnd([r], pt[0], pt[1]) !== 0 })).filter(x => x.inside).sort((x, y) => x.a - y.a)[0]?.i ?? null
   if (!NO_TOPOLOGY_GUARD) {
-    for (const r of Pt.filter(r => area(r) < 0)) { const pt = probe(r); if (wnd(k, pt[0], pt[1]) !== 0) continue          // filled by the close: a sub-2h hole, accounted by the change gate
+    // ⛔ A FILLED HOLE MUST BE ONE THE DEFINITION FILLS (Plumb, 2026-10-29: planted wallShort, a 120 m² hole filled with no refusal):
+    // the close fills a hole only where it is narrower than 2h, i.e. the hole, as a region, erodes by h to nothing. Tested past the
+    // lattice's rounding (h + NODE_BOUND), so a hole within one rounding of 2h is not refused. An integer erode used as a PREDICATE
+    // only (as isRoundingSliver): its output is discarded
+    const wider = (r) => { const co = new ClipperOffset(), o = new Paths(); co.AddPaths([r.slice().reverse().map(q => new IntPoint(q.X, q.Y))], JoinType.jtMiter, EndType.etClosedPolygon); co.Execute(o, -(h + NODE_BOUND)); return o.some(q => Clipper.Area(q) > 0) }
+    for (const r of Pt.filter(r => area(r) < 0)) { const pt = probe(r); if (wnd(k, pt[0], pt[1]) !== 0) { if (wider(r)) throw new Error(`[${what}] ⛔ the topology guard: P's hole at (${(r[0].X / SCALE).toFixed(3)}, ${(r[0].Y / SCALE).toFixed(3)}) (${(-area(r) / SCALE / SCALE).toFixed(2)} m²) is FILLED by the output, but it is wider than a cell (it survives an erode by half a cell), so the open/close must keep it. Cause not established. Refusing.`); continue }
       if (ownerIn(pt) == null) throw new Error(`[${what}] ⛔ the topology guard: P's hole at (${(r[0].X / SCALE).toFixed(3)}, ${(r[0].Y / SCALE).toFixed(3)}) (${(-area(r) / SCALE / SCALE).toFixed(2)} m²) is no longer a hole of the output: it opened to the outside. The topology change is Boz's. Refusing.`) }
     const seen = new Map(); for (const r of Pt.filter(r => area(r) > 0)) { const o = ownerIn(probe(r)); if (o == null) continue
       if (seen.has(o)) throw new Error(`[${what}] ⛔ the topology guard: two parts of P (at (${(seen.get(o)[0].X / SCALE).toFixed(3)}, ${(seen.get(o)[0].Y / SCALE).toFixed(3)}) and (${(r[0].X / SCALE).toFixed(3)}, ${(r[0].Y / SCALE).toFixed(3)})) are joined by the output. The topology change is Boz's. Refusing.`)

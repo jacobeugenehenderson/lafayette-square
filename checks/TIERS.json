@@ -1,10 +1,10 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 509,
+  "total": 512,
   "counts": {
-    "safe": 360,
+    "safe": 362,
     "local-effect": 30,
-    "live": 119
+    "live": 120
   },
   "checks": [
     {
@@ -2953,6 +2953,14 @@
       ]
     },
     {
+      "file": "checks/claims-the-faces-are-walked-once.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "import of a data: module built at run time — its body cannot be read (use checks/_importSource.mjs)"
+      ]
+    },
+    {
       "file": "checks/claims-the-fade-tracks-the-active-disc.mjs",
       "tier": "safe",
       "why": [
@@ -3198,6 +3206,20 @@
       "why": [
         "imports vite — its server resolves localhost over DNS (caught by the no-network guard)",
         "imports package(s) vite — not read from source"
+      ]
+    },
+    {
+      "file": "checks/claims-the-open-close-cuts-once-huron.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-the-open-close-cuts-once.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
       ]
     },
     {

@@ -95,9 +95,9 @@ sub("  if (RAW_CURVE) { const raw = region.map((R, g) => rawOffset(R, d, g, (sta
     "  { let pieces = region.flatMap((R, g) => offsetPieces(R, d, g, (stat.squares ||= []), lines?.[g], stat))")
 sub("  if (BACK_PIECES) return backPieces(F, region, lines, -d, who, stat)\n", "")
 
-# ── the records per call, returned
+# ── the records per call, returned (cand3 defines fresh(), beside partsOf)
 sub("export function openAt(paths, stepM, what, stat = {}) { const Pt = unionTagged(paths, what);",
-    "const fresh = () => { ORIGIN.clear(); INSERTED.clear(); DROPPED.length = 0 }\nexport function openAt(paths, stepM, what, stat = {}) { fresh(); const Pt = unionTagged(paths, what);")
+    "export function openAt(paths, stepM, what, stat = {}) { fresh(); const Pt = unionTagged(paths, what);")
 sub("export function closeAt(paths, stepM, what, stat = {}) { const Pt = unionTagged(paths, what);",
     "export function closeAt(paths, stepM, what, stat = {}) { fresh(); const Pt = unionTagged(paths, what);")
 sub("export function openCloseProvenance(paths, stepM, what) {\n", "export function openCloseCutOnce(paths, stepM, what) {\n  fresh()\n")

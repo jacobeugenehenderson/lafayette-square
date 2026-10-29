@@ -89,7 +89,7 @@ function mutant(rel, edits) {
   src = src.replace(/from '(\.{1,2}\/[^']+)'/g, (_, r) => `from "${pathToFileURL(join(base, r)).href}"`).replace(/from 'clipper-lib'/g, `from "${import.meta.resolve('clipper-lib')}"`)
   writeFileSync(join(dir, rel.split('/').pop()), src); return { dir, file: join(dir, rel.split('/').pop()) }
 }
-const NO_OPEN = ['  return { paths: paths_, opened:', '  return { paths, opened:']
+const NO_OPEN = ['  return { paths: kept, opened,', '  return { paths, opened,']
 const NO_GUARD = ['if ((wetEdge(x.ri, q) || wetEdge(x.ri, (q - 1 + m) % m)) && kept.has(K)) throw', 'if (false) throw']
 const SIDED = ['const key = !o ? null : isWater ? `${WATER_EDGE_SKEL}${', 'const key = !o ? null : isWater ? `${WATER_EDGE_SKEL}|${o.side}${']
 async function withMutants(stxEdits, tgEdits, f) {
