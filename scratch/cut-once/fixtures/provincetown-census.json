@@ -3,7 +3,7 @@
   "parts": 197,
   "partsBuilt": 196,
   "tiles": 1296,
-  "runs": 1310
+  "runs": 1259
  },
  "tile": 500,
  "min": 62.5,
@@ -21,21 +21,6 @@
    "parentOnly": 1,
    "sizes": [
     250
-   ],
-   "verdict": "REAL"
-  },
-  {
-   "class": "the back-offset · no forward order fits both neighbours",
-   "at": [
-    -4521.321,
-    -2127.157
-   ],
-   "why": "[census 3 close] ⛔ the back-offset: the eroded segment (-4521.321,-2127.157) → (-4521.323,-2127.151) (6.32 u) carries ring 0's edges 25, 27, and no forward order fits both its predecessor (edge 25) and its successor (edge 26). Refusing.",
-   "leaves": 1,
-   "m2": 3364.1,
-   "parentOnly": 0,
-   "sizes": [
-    62.5
    ],
    "verdict": "REAL"
   },
@@ -126,21 +111,6 @@
    "parentOnly": 1,
    "sizes": [
     125
-   ],
-   "verdict": "REAL"
-  },
-  {
-   "class": "the back-offset · no forward order fits both neighbours",
-   "at": [
-    -3936.813,
-    -1432.743
-   ],
-   "why": "[census 3 open] ⛔ the back-offset: the eroded segment (-3936.813,-1432.743) → (-3936.812,-1432.743) (1.00 u) carries ring 0's edges 30, 28, and no forward order fits both its predecessor (edge 29) and its successor (edge 30). Refusing.",
-   "leaves": 1,
-   "m2": 2712.5,
-   "parentOnly": 0,
-   "sizes": [
-    62.5
    ],
    "verdict": "REAL"
   },
@@ -261,51 +231,6 @@
    "parentOnly": 1,
    "sizes": [
     125
-   ],
-   "verdict": "REAL"
-  },
-  {
-   "class": "the back-offset · no forward order fits both neighbours",
-   "at": [
-    -2924.358,
-    171.602
-   ],
-   "why": "[census 3 close] ⛔ the back-offset: the eroded segment (-2924.358,171.602) → (-2924.357,171.604) (2.24 u) carries ring 0's edges 6, 4, and no forward order fits both its predecessor (edge 5) and its successor (edge 6). Refusing.",
-   "leaves": 1,
-   "m2": 1216.6,
-   "parentOnly": 0,
-   "sizes": [
-    62.5
-   ],
-   "verdict": "REAL"
-  },
-  {
-   "class": "the back-offset · no forward order fits both neighbours",
-   "at": [
-    -1973.498,
-    1972.432
-   ],
-   "why": "[census 3 close] ⛔ the back-offset: the eroded segment (-1973.498,1972.432) → (-1973.498,1972.433) (1.00 u) carries ring 0's edges 88, 86, and no forward order fits both its predecessor (edge 87) and its successor (edge 88). Refusing.",
-   "leaves": 1,
-   "m2": 1851.7,
-   "parentOnly": 0,
-   "sizes": [
-    62.5
-   ],
-   "verdict": "REAL"
-  },
-  {
-   "class": "the back-offset · no forward order fits both neighbours",
-   "at": [
-    -652.026,
-    2285.18
-   ],
-   "why": "[census 3 open] ⛔ the back-offset: the eroded segment (-652.026,2285.18) → (-652.026,2285.179) (1.00 u) carries ring 0's edges 12, 14, and no forward order fits both its predecessor (edge 12) and its successor (edge 13). Refusing.",
-   "leaves": 1,
-   "m2": 968.6,
-   "parentOnly": 0,
-   "sizes": [
-    62.5
    ],
    "verdict": "REAL"
   },

@@ -134,7 +134,10 @@ out in the MAIN checkout (Jacob's), stays.
   of that outer: the trimmed-arc rule emits that arc and the hole fills (trace `scratch/cut-once/widefill-trace.mjs`). One attempt (an arc
   must not enclose the ring it stands in for; local `plumb/wide-fill-arc` 971fa28d) clears the class but turns each site into "P's hole
   opened": the crossing at that join pinches the hole into the outer. Cause of the pinch not established. (wallShort, the collinear case,
-  is fixed: a merged token leaves at its last edge.)
+  is fixed: a merged token leaves at its last edge.) ⭐ RULED (Zob, 2026-10-29): the close's hole is the dilate of the hole the dilate
+  formed, so at the mouth the corner is that hole's OWN two lines, crossed or squared by capAt; a morph ring wound OPPOSITE to its tags'
+  source ring takes no arc stand-ins and no backward rules; the enclosure test stays only as a guard. To measure: capAt's convexity read
+  in the emitted ring's orientation may leave the mouth unsquared (the pinch).
 - **an island near one terrain cell is kept or dropped on its vertex set** (Zob, 2026-10-29): Huron's (715.43, 214.26) is 29.583 m² at the
   open/close on both paths and the definition, yet kept at base and dropped through the port, downstream (simplify/settle, then "every island
   kept holds a terrain node"); the stage's sensitivity, cause not established.

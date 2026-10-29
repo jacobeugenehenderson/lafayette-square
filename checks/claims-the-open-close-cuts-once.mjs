@@ -63,6 +63,11 @@ const ROWS = {
   arcClipped: ['a trimmed arc with a vertex 6 u outside D is clipped at its target line', [[[0, 0], [19980, 0], [19990, -6], [20000, 20], [20000, 20000], [0, 20000]]]],
   cornerStub: ['a strip crossing a square\'s corner at a neck: the neck token read in the ring\'s forward order', [SQ(0, 0, 20000, 20000), [[18721, 20550], [20279, 19650], [24779, 27444], [23221, 28344]]]],
   insideRun: ['Huron\'s own water where a token inside one run carries its neighbour\'s line within the rounding: the run continues', fx('huron-inside-run-crop').paths],
+  // PTown's own water (10 m round (−3936.813, −1432.743); 5 such sites in the census): a 5 u source edge between two near-collinear
+  // long ones, whose offset vanished, so the erode's 1 u segment there is claimed by edges 9 and 7 between 8 and 9. Read forward, 7
+  // comes after the successor 9 and the call refused 'no forward order'; 7's own offset line holds both ends within the rounding, so it
+  // is a claimant and is dropped (openClose.mjs#emit; the mutant setClaimantsKept, scratch, refuses here)
+  claimant: ['an order-breaking claimant within the rounding is dropped, the token read forward', fx('ptown-claimant-crop').paths],
 }
 // ⚠ A CUT POINT OFF ITS SOURCE LINE (Zob, 2026-10-29; BACKLOG "the open/close's residual against the definition"): in insideRun, a new
 // cut side meets source edge 0 at (−4312.323, −3315.972), 1.94 u off its line (past NODE_BOUND), and the output runs back onto it: 2

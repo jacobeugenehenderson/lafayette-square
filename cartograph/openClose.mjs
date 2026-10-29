@@ -166,9 +166,21 @@ function emit(E, T, SRC, d, who, stat, LINES = null) {
         tok.push(Lsrc(g, pred)); stat.insideRun = (stat.insideRun || 0) + 1; continue }
       if (pred != null) { const pos = (x) => (x - pred + n) % n, ids = [...new Set(tags.map(x => x.i))].filter(x => !covered(x)).sort((a, b) => pos(a) - pos(b))
         const last = ids[ids.length - 1]
-        if (nx.length === 1 && nx[0] !== last && pos(nx[0]) < pos(last)) throw new Error(`[${who}] ⛔ the back-offset: the eroded segment (${[p.X, p.Y].map(v => v / SCALE)}) → (${[q.X, q.Y].map(v => v / SCALE)}) (${Math.hypot(q.X - p.X, q.Y - p.Y).toFixed(2)} u) carries ring ${g}'s edges ${ids.join(', ')}, and no forward order fits both its predecessor (edge ${pred}) and its successor (edge ${nx[0]}). Refusing.`)
-        for (const i of ids) tok.push(Lsrc(g, i))
-        stat.orderedTokens = (stat.orderedTokens || 0) + 1; lastRun = { ring: g, from: ids[0], to: last }; continue } }
+        // ⭐ A CLAIMANT THAT BREAKS THE ORDER IS THE ROUNDING (Plumb, 2026-10-29; PTown's five 'no forward order' sites, each a short source
+        // edge between two near-collinear long ones, its offset vanished): a tag read after the successor's going forward is dropped when
+        // its OWN offset line holds both of the segment's ends within the lattice's rounding (NODE_BOUND, two roundings at a vertex the
+        // noding inserted: the tiered bound), the inside-run ruling's own meaning of a claimant. The kept tags read forward; none kept, the
+        // token continues the predecessor. Any other order refuses by name, with all three
+        let ids2 = ids
+        if (nx.length === 1 && nx[0] !== last && pos(nx[0]) < pos(last)) {
+          const keep = ids.filter(x => pos(x) <= pos(nx[0])), drop = ids.filter(x => pos(x) > pos(nx[0]))
+          const offLine = (i) => { const L = lineOf(g, i), dx = L[1][0] - L[0][0], dy = L[1][1] - L[0][1], len = Math.hypot(dx, dy), nxv = dy / len, nyv = -dx / len
+            return [p, q].every(v => { const ins = INSERTED.has(v.X + ',' + v.Y), dist = Math.abs((v.X - (L[0][0] + nxv * d)) * dy - (v.Y - (L[0][1] + nyv * d)) * dx) / len; return dist <= (ins ? 2 : 1) * NODE_BOUND }) }
+          if (!drop.every(offLine))
+  if (nx.length === 1 && nx[0] !== last && pos(nx[0]) < pos(last)) throw new Error(`[${who}] ⛔ the back-offset: the eroded segment (${[p.X, p.Y].map(v => v / SCALE)}) → (${[q.X, q.Y].map(v => v / SCALE)}) (${Math.hypot(q.X - p.X, q.Y - p.Y).toFixed(2)} u) carries ring ${g}'s edges ${ids.join(', ')}, and no forward order fits both its predecessor (edge ${pred}) and its successor (edge ${nx[0]}). Refusing.`)
+          ids2 = keep.length ? keep : [pred]; stat.claimantsDropped = (stat.claimantsDropped || 0) + 1 }
+        for (const i of ids2) tok.push(Lsrc(g, i))
+        stat.orderedTokens = (stat.orderedTokens || 0) + 1; lastRun = { ring: g, from: ids2[0], to: ids2[ids2.length - 1] }; continue } }
     const r = tagRun(tags, SRC, { twoH: 2 * Math.abs(d), lineOf: LINES ? lineOf : null })
     if (!r.ok) throw new Error(`[${who}] ⛔ the back-offset: the eroded segment (${[p.X, p.Y].map(v => v / SCALE)}) → (${[q.X, q.Y].map(v => v / SCALE)}) carries tags ${JSON.stringify(tags)}: ${r.clause}. Refusing.`)
     stat[r.kind] = (stat[r.kind] || 0) + 1
