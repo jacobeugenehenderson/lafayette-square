@@ -16,10 +16,10 @@
  * GroundDisc with sky-tinted color + noise wobble). Production's prior
  * src/components/GatewayArch.jsx (hardcoded position/scale/rotation,
  * paint-on-foot color blending, no uplights, no GroundDisc) retires.
- * Visible production change: arch now lands at operator-authored
- * placement (default ~[996,0,-332] @ 1.3) instead of the prior
- * hardcoded [1470,-185,-490] @ 2.66 — operator authoring finally reaches
- * production for the first time.
+ * ⭐ PLACEMENT IS DERIVED (2026-10-28): the Arch stands on its real feet,
+ * projected through the town's place (src/setpieces/gatewayArch.js#archSite);
+ * the Look's `arch` channel authors only its presence, turn, base height and
+ * foot fade (skyLightChannels.js#ARCH_FLAT_DEFAULTS).
  *
  * DesignerArch (the plan-view silhouette used by the cartograph Designer
  * mode) lives at src/cartograph/DesignerArch.jsx — it stays in the
@@ -33,6 +33,7 @@ import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSkyState from '../hooks/useSkyState'
 import SunCalc from 'suncalc'
 import { townPlace } from '../lib/townPlace.js'
+import { archSite, ARCH_A as A, ARCH_B as B, ARCH_C as C, PEAK_HEIGHT, HALF_SPAN } from '../setpieces/gatewayArch.js'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import {
   ARCH_FLAT_DEFAULTS,
@@ -40,13 +41,6 @@ import {
 import { resolveGroupAtMinute, getTodSlotMinutes } from '../cartograph/animatedParam.js'
 import { lookOf } from '../lib/lookOf.js'
 
-// NPS catenary equation converted to meters:
-const A = 211.5
-const B = 20.96
-const C = 0.03292
-
-const PEAK_HEIGHT = A - B
-const HALF_SPAN = Math.acosh(A / B) / C
 
 // Scratch vectors for per-frame uplight world-space transforms (avoid GC).
 const _upPos = new THREE.Vector3()
@@ -119,6 +113,7 @@ export function createArchGeometry(curveSegs = 120) {
 }
 
 const ARCH_DEFAULT_CHANNEL      = Object.freeze({ values: { ...ARCH_FLAT_DEFAULTS } })
+let _saidStale = false
 const ARCHLIGHT_DEFAULT_CHANNEL = Object.freeze(kitDayChannel('archLight'))
 
 export default function GatewayArch({
@@ -318,16 +313,13 @@ export default function GatewayArch({
     const t = Math.max(0, Math.min(1, (sunAltitude + 0.12) / 0.42))
     const day = t * t * (3 - 2 * t)
 
-    meshRef.current.rotation.y = arch.rotation
-    // Pivot at the apex (keystone): scale grows feet outward+downward while
-    // the archstone holds its world-Y position.
-    const apexY = arch.yOffset + PEAK_HEIGHT * (1 - arch.scale)
-    meshRef.current.position.set(
-      arch.distance * arch.bearingX,
-      apexY,
-      arch.distance * arch.bearingZ,
-    )
-    meshRef.current.scale.setScalar(arch.scale)
+    // ⭐ It stands where it stands: its real feet through the town's place (src/setpieces/gatewayArch.js). The Look
+    // authors only how it presents: `presence` grows size and height together from the BASE, which sits at `yOffset`;
+    // `turn` is added to its real facing.
+    const site = archSite(townPlace())
+    meshRef.current.rotation.y = site.facing + arch.turn
+    meshRef.current.position.set(site.x, arch.yOffset, site.z)
+    meshRef.current.scale.setScalar(arch.presence)
 
     if (shaderRef.current) {
       shaderRef.current.uniforms.uDayFactor.value = day
@@ -429,6 +421,12 @@ export default function GatewayArch({
   // the look changes — "rendered fewer hooks than expected", exactly the
   // crash Preview's look switcher would trigger.
   if (!archChannel) return null
+  // ⛔ A slab baked before the Arch stood where it is carries no presence: said by name and not drawn, never drawn at
+  // a guessed size. Re-bake the town's scene (checks/claims-the-arch-stands-where-it-is.mjs (4) is RED until then).
+  if (!Number.isFinite(arch.presence)) {
+    if (!_saidStale) { _saidStale = true; console.error(`[arch] ⛔ "${lookId}"'s arch block predates the Arch standing where it is (no presence) — not drawn; re-bake the scene`) }
+    return null
+  }
 
   return (
     <mesh

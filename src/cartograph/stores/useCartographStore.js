@@ -466,9 +466,13 @@ const DESIGN_FIELDS = [
   // Not a plain _grp: _grp seeds ARCH_FLAT_DEFAULTS for a Look that has no block,
   // which is what installed an identical arch in all six design.json files and
   // forced the renderer to gate on a look NAME instead. Absent ⇒ null ⇒ absent.
-  { key: 'arch', hydrate: (d) => d.arch
-    ? migrateGroupChannel(d.arch, ARCH_FIELD_KEYS, ARCH_FLAT_DEFAULTS)
-    : null },
+  // ⛔ A block from before the Arch stood where it is (2026-10-28: placement derived, pivot at the base) is REFUSED,
+  // never read under the new rule: defaulted, it would draw LS at presence 1 and autosave that over the town's Look.
+  { key: 'arch', hydrate: (d) => {
+    if (!d.arch) return null
+    if (d.arch.values && !('presence' in d.arch.values)) throw new Error('⛔ this Look\'s `arch` block predates the Arch standing where it is — run `node cartograph/migrate-arch-stands.mjs --write` (Stage closed), then reload')
+    return migrateGroupChannel(d.arch, ARCH_FIELD_KEYS, ARCH_FLAT_DEFAULTS)
+  } },
   // Landscape is NOT a plain _grp: migrateGroupChannel returns { values } and drops
   // every sibling key, which would silently EAT `source` — the Stage upload's opt-in
   // that the bake gates on (serve.js:1795). Nothing sets `source` yet ("Until the

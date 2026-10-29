@@ -21,7 +21,7 @@
  *
  * Frame: the OBJ is real meters, Y-up (ASL), +X=east, +Z=south, centered on the
  * DEM grid — SAME axes as the world slab (verified: +x=E, +z=S → NORTH is −z,
- * from ARCH_FLAT_DEFAULTS' real bearing; the reference_ls_local_frame_axes memo
+ * from the Gateway Arch's real feet, src/setpieces/gatewayArch.js; the reference_ls_local_frame_axes memo
  * that says +x=W is empty/stale). So the geo-anchor is a pure translate: place
  * the DEM center at the hood→DEM ENU offset, north landing at −z.
  */

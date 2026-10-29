@@ -19,6 +19,8 @@ import { useThree, useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 
 import GatewayArch from '../components/GatewayArch'
+import { archSite, HALF_SPAN as ARCH_HALF_SPAN } from '../setpieces/gatewayArch.js'
+import useTownPlace from '../hooks/useTownPlace.js'
 import { useLandscapeManifest } from '../components/MountainBackdrop.jsx'
 
 import { heroPoseAtTime } from '../preview/heroAnim'
@@ -153,6 +155,32 @@ function LanternChannel() {
   )
 }
 
+/** Where the Arch stands (derived, not authored) and which of the hero's keys that focus it aim off it. A key's aim is
+ *  the operator's: this says so, it never moves it. "Off" = beyond the Arch's own half-width as seen from the key. */
+function ArchSiteNote() {
+  const place = useTownPlace()
+  const a = useCartographStore(s => s.arch?.values)
+  const keyframes = useCartographStore(s => s.heroKeyframes)
+  if (!a) return null
+  const site = archSite(place)
+  const ids = keyframes?.length ? keyframeFocusIds(keyframes) : []
+  const off = []
+  ;(keyframes || []).forEach((k, i) => {
+    if (ids[i] !== 'arch' || !k?.position || !k?.target) return
+    const [px, , pz] = k.position, [tx, , tz] = k.target
+    const toArch = Math.atan2(site.z - pz, site.x - px), toAim = Math.atan2(tz - pz, tx - px)
+    const yaw = Math.atan2(Math.sin(toArch - toAim), Math.cos(toArch - toAim))
+    const half = Math.atan2(ARCH_HALF_SPAN * a.presence, Math.hypot(site.x - px, site.z - pz))
+    if (Math.abs(yaw) > half) off.push(`key ${i + 1} by ${(yaw * 180 / Math.PI).toFixed(1)}°`)
+  })
+  return (
+    <div className="text-caption px-1" style={{ color: 'var(--on-surface-variant)' }}>
+      Stands on its real feet: {(Math.hypot(site.x, site.z) / 1000).toFixed(2)} km out, real facing {site.facing.toFixed(2)} rad (Turn adds to it).
+      {off.length > 0 && <div style={{ color: 'var(--error)' }}>The aim misses the Arch at {off.join(' · ')}: re-key to frame it.</div>}
+    </div>
+  )
+}
+
 function HorizonControls() {
   // Live store reads — drag a slider, retint instantly in Stage; values
   // persist to design.json via the debounced save path; reload Stage and
@@ -209,16 +237,15 @@ function HorizonControls() {
             onChange={(v) => setLandscape('haze', v)} />
           <ColorRow label="Haze" value={ls.hazeColor} onChange={(v) => setLandscape('hazeColor', v)} />
         </>) : archChannel ? (<>
-          <SliderRow label="Hero Distance" value={a.distance} min={400} max={2000} step={10}
-            onChange={(v) => setArch('distance', v)} />
-          <SliderRow label="Hero Scale" value={a.scale} min={0.5} max={5.0} step={0.05}
-            onChange={(v) => setArch('scale', v)} />
-          <SliderRow label="Hero Rotation" value={a.rotation} min={0} max={Math.PI * 2} step={0.01}
-            onChange={(v) => setArch('rotation', v)} />
-          <SliderRow label="Hero Y Offset" value={a.yOffset} min={-200} max={200} step={1}
+          <SliderRow label="Presence" value={a.presence} min={0.5} max={8} step={0.05}
+            onChange={(v) => setArch('presence', v)} />
+          <SliderRow label="Turn" value={a.turn} min={-Math.PI} max={Math.PI} step={0.01}
+            onChange={(v) => setArch('turn', v)} />
+          <SliderRow label="Base Height" value={a.yOffset} min={-300} max={300} step={1}
             onChange={(v) => setArch('yOffset', v)} />
           <SliderRow label="Foot Fade" value={a.footFade} min={0} max={120} step={1}
             onChange={(v) => setArch('footFade', v)} />
+          <ArchSiteNote />
         </>) : null}
         {/* The distance: the Arch or the backdrop above (only where the town has one), then the air between, then
             the town's own edge. */}
