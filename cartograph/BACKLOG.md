@@ -99,6 +99,12 @@ precipitation/wind/visibility defaults (Layer 0 fallbacks) · claims-the-wind-ha
 re-aims LS's keys with it, then LS re-bakes and its cutover follows) (`r-plant-it-and-point-it`: today's navigation kept; add turn-in-place,
 then play) · the live edge fade band (below) · a town keeps the values it grew with (`r-a-town-keeps-the-values-it-grew-with`: a
 kit-default change never re-colours a town on its next bake; today `bake-scene.js`'s `design.X || kit…` channels follow the kit).
+- **⚖ QUESTION FOR JACOB: should a move tween the look DIRECTION, not the look-at POINT?** (Gimbal, measured 2026-10-29,
+  `.claude/worktrees/aimer/scratch/aimer/probe-equal-depth.mjs`.) `heroAnim.js` splines each key's target point and paces on target
+  travel, so a key's hidden look-at distance shapes the in-betweens. Against the same keys at one equal depth: mid-move look Δ LS 2.47° ·
+  PTown 17.72° · Huron 16.21° · HPDM 39.19°. ⛔ Not a defect by itself: these are the movies Jacob tuned by eye. Changing it re-shapes
+  every town's existing movie. Readers: MovieCamera, Stage's scrub, CelestialBodies' shadow fit, bake-trees' hero tiers (re-bake),
+  claims-the-movie-is-continuous. The aimer (α) neither fixes nor worsens it.
 **⛔ STAGE'S EDGE FADE BAND IS BAKE-TIME, NOT LIVE (Keystone, measured on LS 2026-10-29); ruled: visual values are live
 (`r-visual-look-values-are-live-in-stage`), brief owed, not tonight.** Also: createGroupChannelActions' set<Channel> drops a write to an
 animated channel's unkeyed slot silently (Layer 0; refuse by name). ⚠️ LS's design.json carries edgeFadeBand 801 (on r 892: the fade
