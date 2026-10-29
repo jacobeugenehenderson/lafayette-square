@@ -267,6 +267,10 @@ region count — ① blocks inside the mark vs drawn — and the endpoint-gap sc
 ---
 
 ## 🛡 HARDENING — correct on the eye, not yet correct-by-construction
+- **🧭 "no terrain identity" and "flat" are one string** (Zob, 2026-10-29). bake-tree-anchors and bake-lamps stamp
+  `terrain.identity ?? 'none'`, and `terrainCommon.js#terrainIdentity` of the flat terrain is also `'none'`. So an anchor file whose
+  identity failed to compute reads as a flat town's, and the anchor verdict (`src/lib/anchorGate.js`) matches it to a flat slab.
+  Flat-to-flat is right; the failure should be its own loud value. Pre-existing. Not built.
 - **D3 — corner identity at divided transitions → freeze at prebake.** The false-corner cure is LIVE (`9c275ce`); doctrine wants the decision made once upstream as frozen topology (`PREBAKE §5`). Sibling of the curb-freeze. ⚠️ Relocating re-derives corners → gate it; don't cleanup-refactor.
 
 ## ⏭ NEXT

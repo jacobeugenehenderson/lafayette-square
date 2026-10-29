@@ -61,9 +61,10 @@ say(silent('planted.jsx', 'function P() { useMemo(() => { const a = 1 }, []) }')
 
 if (process.argv.includes('--mutants')) {
   console.log('── mutants (each must turn it RED)')
-  const src = readFileSync(TREES, 'utf8'), anchor = "    const arr = groundPairs(instances, t => (typeof t.groundRaw === 'number' ? t.groundRaw : getElevationRaw(t.x, t.z)))\n    return arr\n"
-  if (!src.includes(anchor)) { say(false, 'mutant anchor gone from InstancedTrees.jsx (VariantInstances groundRaws)') }
-  else { const r = silent(TREES, src.replace(anchor, anchor.replace('    return arr\n', '')))
+  // located by the memo, not by its body's text (which the fallback's removal rewrote): the first `return arr` after it
+  const src = readFileSync(TREES, 'utf8'), at = src.indexOf('const groundRaws = useMemo('), ret = at < 0 ? -1 : src.indexOf('    return arr\n', at)
+  if (at < 0 || ret < 0 || ret > src.indexOf('}, [instances])', at)) { say(false, "mutant anchor gone from InstancedTrees.jsx: VariantInstances' groundRaws memo and its `return arr`") }
+  else { const r = silent(TREES, src.slice(0, ret) + src.slice(ret + '    return arr\n'.length))
     console.log(`  mutant: VariantInstances' return arr removed → ${r.out.length ? 'RED ✓' : 'GREEN ✗'}`); if (!r.out.length) bad.push('a mutant survived') }
 }
 console.log(bad.length ? `⛔ ${bad.length} failed` : '✅ every useMemo returns what it computes')
