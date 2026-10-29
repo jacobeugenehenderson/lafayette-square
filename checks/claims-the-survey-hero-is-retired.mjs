@@ -10,17 +10,18 @@
 //       first key's own focus kept, a key's 'hero' focus resolved, a null hero simply removed; a hero that is no object
 //       (centroid, landscape) and an object hero with no key to carry it are REFUSED by name. ALL OR NOTHING: a run
 //       with an unmigratable Look AFTER a migratable one writes nothing, and names every refusal.
-//   (3) EVERY LOOK: no design.json carries `heroSubject`, and no baked scene.json carries an OBJECT hero (whose focus would
-//       otherwise be lost): RED by name until `node scripts/migrate-arch-stands.mjs --write` and the re-bake. A slab's
-//       `heroSubject: null` is inert and said, not failed (it leaves at the town's next bake).
+//   (3) EVERY LOOK: no design.json carries `heroSubject` (RED by name until `node scripts/migrate-arch-stands.mjs
+//       --write`), and no baked scene.json does — bake-scene writes none now, so a slab carrying one baked BEFORE the
+//       migration's stamp is NOT CHECKED, "scene re-bake owed" (exit 2), and one baked after it is RED
+//       (archStandsMigration.mjs#slabVerdict: recorded facts only, never an mtime).
 //   MUTANTS (always run): a reader restored (`s.heroSubject` in a src file) → (1) RED · 'hero' back as the first key's
 //   default → (1) RED · a migration that drops the hero without carrying it → (2) RED · a run that writes as it goes
-//   → (2) RED.
+//   → (2) RED · a post-migration slab carrying heroSubject judged owed → (3) RED.
 //   node checks/claims-the-survey-hero-is-retired.mjs
 import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { ROOT } from './_scenes.mjs'
-import { migrateHero, runMigration } from '../scripts/archStandsMigration.mjs'
+import { migrateHero, runMigration, slabVerdict, MIGRATION_ID } from '../scripts/archStandsMigration.mjs'
 
 let red = 0
 const row = (ok, s) => { if (!ok) red++; console.log(`${ok ? '✅' : '⛔'} ${s}`) }
@@ -79,22 +80,27 @@ row(!M.length, `(2) the migration carries an object hero onto key 1, keeps an ow
 
 // (3)
 const index = JSON.parse(readFileSync(join(ROOT, 'public/looks/index.json'), 'utf8'))
-for (const { id } of index.looks) {
+const owed = []
+for (const { id, migrated } of index.looks) {
   const dp = join(ROOT, 'public/looks', id, 'design.json'), sp = join(ROOT, 'public/baked', id, 'scene.json')
   const d = existsSync(dp) ? JSON.parse(readFileSync(dp, 'utf8')) : null, sc = existsSync(sp) ? JSON.parse(readFileSync(sp, 'utf8')) : null
-  const why = []
-  if (d && 'heroSubject' in d) why.push(`design.json carries heroSubject ${JSON.stringify(d.heroSubject)} — run ${MIGRATION} --write`)
-  if (sc?.heroSubject) why.push(`the baked scene.json carries the object hero ${JSON.stringify(sc.heroSubject)} — re-bake the scene`)
-  if (why.length) row(false, `(3) ${id}: ${why.join(' · ')}`)
-  else if (sc && 'heroSubject' in sc) console.log(`➖ (3) ${id}: the slab's scene.json still carries heroSubject: null — inert; it leaves at the next bake`)
+  if (d && 'heroSubject' in d) row(false, `(3) ${id}: design.json carries heroSubject ${JSON.stringify(d.heroSubject)} — run ${MIGRATION} --write`)
+  if (!sc) continue
+  const v = slabVerdict({ carries: 'heroSubject' in sc, stamp: migrated?.[MIGRATION_ID], bakedAt: sc.bakedAt })
+  if (v.verdict === 'owed') owed.push(`${id}: ${v.why}`)
+  else if (v.verdict === 'red') row(false, `(3) ${id}: its slab carries heroSubject ${JSON.stringify(sc.heroSubject)} — ${v.why}`)
 }
+for (const o of owed) console.log(`➖ (3) NOT CHECKED — ${o}`)
+const judgeVerdict = (fn) => fn({ carries: true, stamp: 2000, bakedAt: 3000 }).verdict === 'red' && fn({ carries: true, stamp: 2000, bakedAt: 1000 }).verdict === 'owed'
+row(judgeVerdict(slabVerdict), `(3) planted: a slab carrying heroSubject baked after the migration is RED; before it, owed`)
 
 // MUTANTS
 const mutate = (name, ok) => row(!ok, `mutant: ${name} → ${ok ? 'still GREEN — the row proves nothing' : 'RED as it must be'}`)
 { const m = new Map(SRC); m.set('src/stage/StageApp.jsx', SRC.get('src/stage/StageApp.jsx') + '\nconst h = useCartographStore(s => s.heroSubject)\n'); mutate('a reader restored', !judgeSource(m).length) }
 { const m = new Map(SRC); m.set(FO, SRC.get(FO).replace('let cur = null', "let cur = 'hero'")); mutate("'hero' back as the first key's default", !judgeSource(m).length) }
 mutate('a run that writes as it goes', !judgeAllOrNothing((looks, { save }) => { for (const { id, design } of looks) { migrateHero(design, id); save(id) } }).length)
+mutate('a post-migration slab carrying heroSubject judged owed', judgeVerdict(({ carries }) => ({ verdict: carries ? 'owed' : 'clean' })))
 mutate('a migration that drops the hero without carrying it', !judgeMigration((d) => ('heroSubject' in d ? { heroKeyframes: d.heroKeyframes || [] } : null)).length)
 
-console.log(red ? `\n⛔ ${red} row(s) RED` : '\n✅ the Survey hero is retired: focus lives only on the keyframes')
-process.exit(red ? 1 : 0)
+console.log(red ? `\n⛔ ${red} row(s) RED` : owed.length ? `\n⚠️ NOT CHECKED — ${owed.length} slab(s) owe a scene re-bake; everything else holds` : '\n✅ the Survey hero is retired: focus lives only on the keyframes')
+process.exit(red ? 1 : owed.length ? 2 : 0)

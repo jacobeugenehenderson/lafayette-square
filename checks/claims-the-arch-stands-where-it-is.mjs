@@ -12,15 +12,17 @@
 //       and an unauthored rotation faces as it really stands. No Stage control authors a placement; ARCH_FLAT_DEFAULTS
 //       carries no distance, bearing or rotation.
 //   (3) THE MIGRATION drops only the retired distance/bearing: a planted LS row draws at the same height, size, facing.
-//   (4) EVERY LOOK carrying `arch` carries no retired field, in its design.json AND its baked scene.json: RED by name
-//       until `node scripts/migrate-arch-stands.mjs --write` has run and the town's scene is re-baked.
+//   (4) EVERY LOOK carrying `arch` carries no retired field in its design.json (RED by name until
+//       `node scripts/migrate-arch-stands.mjs --write`), nor in its baked scene.json — where a slab baked BEFORE the
+//       migration's stamp is NOT CHECKED, "scene re-bake owed" (exit 2), and one baked after it is RED
+//       (archStandsMigration.mjs#slabVerdict: recorded facts only, never an mtime).
 //   (5) THE GLINT MOVES WITH THE VIEWER, FROM NO TOWN'S NUMBERS: GatewayArch sets it from gatewayArch.js#glintAt (the
 //       light, the live camera, the drawn pose); glintAt holds no literal but 0, 1 and 2; and a planted camera sliding
 //       along the span toward the +X foot, sun overhead, moves the highlight toward the +X foot, monotonically.
 //   MUTANTS (always run): the authored 1690 restored → (2) RED · a camera term in the placement → (2) RED · LS's
 //   bearing back in the defaults → (2) RED · a base pivot in archPose → (2) RED · the migration dropping the authored
 //   rotation → (3) RED · LS's camera reference (−400, 230) back in glintAt → (5) RED · a glint that ignores the eye
-//   → (5) RED.
+//   → (5) RED · every carrying slab judged owed → (4) RED · owed by the stamp alone, not bakedAt → (4) RED.
 //   node checks/claims-the-arch-stands-where-it-is.mjs
 import { readFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
@@ -28,7 +30,7 @@ import { ROOT } from './_scenes.mjs'
 import { projectorOf as pourProjector } from '../cartograph/geography.mjs'
 import { projectorOf } from '../src/lib/townPlace.js'
 import { archSite, archPose, glintAt, GATEWAY_ARCH, PEAK_HEIGHT } from '../src/setpieces/gatewayArch.js'
-import { migrateArch, RETIRED_ARCH_FIELDS } from '../scripts/archStandsMigration.mjs'
+import { migrateArch, RETIRED_ARCH_FIELDS, slabVerdict, MIGRATION_ID } from '../scripts/archStandsMigration.mjs'
 
 let red = 0
 const row = (ok, s) => { if (!ok) red++; console.log(`${ok ? '✅' : '⛔'} ${s}`) }
@@ -87,16 +89,24 @@ row(!M.length, `(3) the migration drops only the retired distance/bearing; heigh
 // (4)
 const index = JSON.parse(read('public/looks/index.json'))
 const stale = (a) => !!a?.values && RETIRED_ARCH_FIELDS.some(k => k in a.values)
-for (const { id } of index.looks) {
+const owed = []
+for (const { id, migrated } of index.looks) {
   const dp = join(ROOT, 'public/looks', id, 'design.json'), sp = join(ROOT, 'public/baked', id, 'scene.json')
   const d = existsSync(dp) ? JSON.parse(readFileSync(dp, 'utf8')) : null, sc = existsSync(sp) ? JSON.parse(readFileSync(sp, 'utf8')) : null
   if (!d?.arch && !sc?.arch) continue
-  const why = []
-  if (stale(d?.arch)) why.push('design.json carries the retired distance/bearing — run scripts/migrate-arch-stands.mjs --write')
-  if (stale(sc?.arch)) why.push('the baked scene.json carries them — re-bake the scene')
-  if (!sc) why.push('no baked scene.json in this tree — NOT checked')
-  row(!why.length, `(4) ${id}: ${why.length ? why.join(' · ') : 'design and slab carry no retired field'}`)
+  if (stale(d?.arch)) row(false, `(4) ${id}: design.json carries the retired distance/bearing — run scripts/migrate-arch-stands.mjs --write`)
+  if (!sc) { owed.push(`${id}: no baked scene.json in this tree`); continue }
+  const v = slabVerdict({ carries: stale(sc.arch), stamp: migrated?.[MIGRATION_ID], bakedAt: sc.bakedAt })
+  if (v.verdict === 'owed') owed.push(`${id}: ${v.why}`)
+  else row(v.verdict === 'clean', `(4) ${id}: its slab ${v.verdict === 'clean' ? 'carries no retired field' : '— ' + v.why}`)
 }
+for (const o of owed) console.log(`➖ (4) NOT CHECKED — ${o}`)
+const judgeVerdict = (fn) => {
+  const after = fn({ carries: true, stamp: 2000, bakedAt: 3000 }).verdict, before = fn({ carries: true, stamp: 2000, bakedAt: 1000 }).verdict
+  const unstamped = fn({ carries: true, stamp: undefined, bakedAt: 1000 }).verdict, undated = fn({ carries: true, stamp: 2000, bakedAt: undefined }).verdict
+  return { ok: after === 'red' && before === 'owed' && unstamped === 'red' && undated === 'red', got: `${after} · ${before} · ${unstamped} · ${undated}` }
+}
+{ const J = judgeVerdict(slabVerdict); row(J.ok, `(4) planted: baked after the migration and still carrying it → red; before → owed; no stamp → red; no bakedAt → red (${J.got})`) }
 
 // (5)
 const judgeGlintSource = (arch, module) => {
@@ -128,7 +138,9 @@ mutate("LS's bearing back in the defaults", !judgePlace({ defaults: swap(SRC.def
 mutate('a base pivot in archPose', !judgePlace({ module: swap(SRC.module, 'y: arch.yOffset + PEAK_HEIGHT * (1 - arch.scale),', 'y: arch.yOffset,', 'pivot') }).length)
 mutate('the migration dropping the authored rotation', !judgeMigration((a, l) => { const r = migrateArch(a, l); const { rotation, ...rest } = r.values; return { values: rest } }).length)
 mutate("LS's camera reference back in glintAt", !judgeGlintSource(SRC.arch, swap(SRC.module, 'let vx = eye.x - pose.x, vy = eye.y - midY, vz = eye.z - pose.z', 'let vx = eye.x - (-400), vy = eye.y - midY, vz = eye.z - 230', 'glint-ref')).length)
+mutate('every carrying slab judged owed (the fallback shape)', judgeVerdict(({ carries }) => ({ verdict: carries ? 'owed' : 'clean' })).ok)
+mutate('owed decided by the stamp alone, not the slab\'s bakedAt', judgeVerdict(({ carries, stamp }) => ({ verdict: !carries ? 'clean' : Number.isFinite(stamp) ? 'owed' : 'red' })).ok)
 mutate('a glint that ignores the eye', judgeGlintMotion((L, e, p) => glintAt(L, { x: p.x, y: p.y + 1000, z: p.z }, p)).ok)
 
-console.log(red ? `\n⛔ ${red} row(s) RED` : '\n✅ the Arch stands where it is')
-process.exit(red ? 1 : 0)
+console.log(red ? `\n⛔ ${red} row(s) RED` : owed.length ? `\n⚠️ NOT CHECKED — ${owed.length} slab(s) owe a scene re-bake; everything else holds` : '\n✅ the Arch stands where it is')
+process.exit(red ? 1 : owed.length ? 2 : 0)

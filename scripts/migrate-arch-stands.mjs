@@ -17,7 +17,7 @@ import { readFileSync, writeFileSync, existsSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { runMigration } from './archStandsMigration.mjs'
+import { runMigration, stampIndex } from './archStandsMigration.mjs'
 
 const isMain = process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]
 if (isMain) {
@@ -27,6 +27,8 @@ if (isMain) {
   const pathOf = (id) => join(ROOT, 'public/looks', id, 'design.json')
   const looks = index.looks.map(({ id }) => ({ id, design: existsSync(pathOf(id)) ? JSON.parse(readFileSync(pathOf(id), 'utf8')) : null }))
   const changed = runMigration(looks, { write, save: (id, out) => writeFileSync(pathOf(id), JSON.stringify(out, null, 2)) })   // serve.js#writeJson's format
+  // The run's record: every Look is stamped with when it ran, so a slab baked before it reads as owed a re-bake, not wrong.
+  if (write) writeFileSync(join(ROOT, 'public/looks/index.json'), JSON.stringify(stampIndex(index, Date.now()), null, 2))
   for (const { id, notes } of changed) console.log(`${write ? '✍️ ' : '👁 '} ${id}:\n    ${notes.join('\n    ')}`)
   console.log(changed.length ? (write ? `\nwrote ${changed.length} Look(s)` : `\n${changed.length} Look(s) would change — re-run with --write`) : '\nnothing to migrate')
 }

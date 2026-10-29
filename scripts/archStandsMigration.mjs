@@ -61,3 +61,28 @@ export function runMigration(looks, { write, save }) {
   if (write) for (const { id, out } of plans) save(id, out)
   return plans.map(({ id, notes }) => ({ id, notes }))
 }
+
+/** The run's record, stamped on each Look's entry in public/looks/index.json when the migration writes. */
+export const MIGRATION_ID = 'arch-stands'
+/** The index with every Look's entry stamped `migrated[MIGRATION_ID] = at` (ms). Pure. */
+export function stampIndex(index, at) {
+  return { ...index, looks: index.looks.map(l => ({ ...l, migrated: { ...(l.migrated || {}), [MIGRATION_ID]: at } })) }
+}
+
+/**
+ * ⭐ A SLAB THAT STILL CARRIES A RETIRED FIELD: OWED A RE-BAKE, OR WRONG? Decided by RECORDED FACTS only (Zob's condition,
+ * Boz 2026-10-29): the slab's own `bakedAt` against the migration's stamp on the Look's index entry. ⛔ Never an mtime,
+ * and never "the design still has the old fields" (that would read as owed forever and never go red).
+ *   'clean'  the slab carries nothing retired
+ *   'owed'   baked BEFORE the migration ran: its re-bake is owed (a check says NOT CHECKED, exit 2 — PTown waits on its
+ *            pour, LS re-bakes in the tranche)
+ *   'red'    baked AFTER the migration and still carrying it, or no stamp (the migration never ran), or no bakedAt
+ * @returns { verdict, why }
+ */
+export function slabVerdict({ carries, stamp, bakedAt }) {
+  if (!carries) return { verdict: 'clean', why: 'carries nothing retired' }
+  if (!Number.isFinite(stamp)) return { verdict: 'red', why: `no ${MIGRATION_ID} stamp on the Look's index entry — the migration has not run (scripts/migrate-arch-stands.mjs --write)` }
+  if (!Number.isFinite(bakedAt)) return { verdict: 'red', why: 'the slab records no bakedAt — when it was baked is unknown' }
+  if (bakedAt < stamp) return { verdict: 'owed', why: `baked ${new Date(bakedAt).toISOString()}, before the migration (${new Date(stamp).toISOString()}) — scene re-bake owed` }
+  return { verdict: 'red', why: `baked ${new Date(bakedAt).toISOString()}, AFTER the migration (${new Date(stamp).toISOString()}), and still carries it` }
+}
