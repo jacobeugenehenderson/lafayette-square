@@ -14,6 +14,7 @@ import fs from 'fs'
 import clipperLib from 'clipper-lib'
 import { nodeCrossings } from '../../src/lib/latticeNode.js'
 import { facesOf } from '../../src/lib/latticeFaces.js'
+import { tagRun } from './tagRun.mjs'
 const { IntPoint, Clipper, ClipperOffset, ClipType, PolyType, PolyFillType, PolyTree, Paths, JoinType, EndType } = clipperLib
 const SCALE = 1000
 const arg = (k) => process.argv.slice(2).map(a => a.match(new RegExp(`^--${k}=(.+)$`))).find(Boolean)?.[1]
@@ -82,12 +83,12 @@ function resolveFaces(rawRings) {
   for (const p of out) for (let i = 0; i < p.length; i++) { const a = p[i], b = p[(i + 1) % p.length]; outV.add(a.X + ',' + a.Y)
     if (!verts.has(a.X + ',' + a.Y)) newV++
     if (seg.has(`${a.X},${a.Y}>${b.X},${b.Y}`) || seg.has(`${b.X},${b.Y}>${a.X},${a.Y}`)) mapped++; else unmapped++ }
-  // several tags on one eroded segment: how often, and are they always neighbours on one source ring (cyclic)?
-  let multi = 0, adjacent = 0, other = []
-  for (const tg of F.tags.flat()) { if (!Array.isArray(tg) || tg.length < 2) continue; multi++
-    const ok = tg.every(t => t.ring === tg[0].ring) && (() => { const is = tg.map(t => t.i).sort((x, y) => x - y), n = srcLen(tg[0].ring)
-      return is.every((v, k) => k === 0 || v - is[k - 1] === 1) || (is.length === 2 && is[0] === 0 && is[1] === n - 1) })()
-    if (ok) adjacent++; else if (other.length < 4) other.push(tg) }
+  // Zob's tag run (tagRun.mjs) on every eroded segment carrying several tags: the outcome per clause, and the refusals' instances
+  let multi = 0; const kinds = {}, refused = []
+  F.tags.forEach((tr, ri) => tr.forEach((tg, e) => { if (!Array.isArray(tg) || tg.length < 2) return; multi++
+    const r = tagRun(tg, SRC), k = r.ok ? `${r.kind}${r.gaps ? '+gap' : ''}` : r.clause; kinds[k] = (kinds[k] || 0) + 1
+    if (!r.ok && refused.length < 8) { const a = F.rings[ri][e], b = F.rings[ri][(e + 1) % F.rings[ri].length]; refused.push({ ...r, segment: [[a.X / SCALE, a.Y / SCALE], [b.X / SCALE, b.Y / SCALE]] }) } }))
+  const adjacent = kinds, other = refused
   const tagged = F.tags.flat().filter(t => t != null && (!Array.isArray(t) || t.length)).length
   return { out, nodeMs, unionMs, crossings: R.crossings, newV, mapped, unmapped, rawEdges: edges.length, nodedVerts: verts.size, outVerts: outV.size, newAt: [], nodedSegs: [], tagged, nullTags: F.tags.flat().length - tagged, multi, adjacent, other }
 }
