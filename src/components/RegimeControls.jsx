@@ -22,7 +22,7 @@ import { useCallback, useEffect, useRef } from 'react'
 import { useThree } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
-import { REGIMES, REGIME_LIMIT_KEYS, PLAN_MAX_LEAN_DEG } from '../lib/cameraRegimes.js'
+import { REGIMES, REGIME_LIMIT_KEYS, PLAN_MAX_LEAN_DEG, aimInPlace, applyAim } from '../lib/cameraRegimes.js'
 import { getElevation } from '../utils/elevation'
 import { prefersReducedMotion } from '../lib/reducedMotion.js'
 
@@ -66,6 +66,7 @@ function repivot(c) {
 // takes that full step for EVERY event whatever its size — 30 trackpad ticks of
 // 2 px carried the camera 60% of the way to its pivot.
 const WHEEL_PX = { 0: 1, 1: 16, 2: 800 }   // deltaMode: pixel · line · page
+const _aimSaid = new Set()
 
 export default function RegimeControls(props) {
   if (props.managed) return <ManagedControls {...props} />
@@ -125,9 +126,15 @@ function DeclaredControls({
   }, [on, regime])
 
   // ── The orbit regime's modifiers ─────────────────────────────────────────
-  // ⭐ ONE BUTTON AND TWO MODIFIERS, so a pen can do all three moves: drag
-  // orbits · ⌥-drag grabs the ground · ⌃/⌘-drag pans. Middle-drag dollies and
-  // the wheel zooms for a mouse.
+  // ⭐ ONE BUTTON AND THREE MODIFIERS, so a pen can do all four moves: drag
+  // orbits · ⌥-drag grabs the ground · ⇧-drag aims · ⌃/⌘-drag pans.
+  // Middle-drag dollies and the wheel zooms for a mouse.
+  // ⭐ ⇧ AIMS (Jacob, 2026-10-29: "plant it and point it"): the direction under
+  // the pen at pen-down stays under the pen while the camera turns IN PLACE
+  // (cameraRegimes.js#aimInPlace) — the rotational twin of the ⌥ grab. Orientation
+  // only: `target` turns with the camera at the distance it held, so nothing about
+  // depth is decided here. ⇧ is a clamp like ⌥, so OrbitControls' own ⇧-drag pan
+  // (a duplicate of ⌃/⌘) is retired: it never hears the press.
   // ⭐ ⌥ GRABS THE GROUND. Jacob: "I just want to grab the scene and drag it to
   // the left or to the right." The ground point under the pen at pen-down stays
   // under the pen: the camera slides across the ground to keep it there, like
@@ -153,12 +160,12 @@ function DeclaredControls({
         RIGHT: mod === 'ctrl' ? THREE.MOUSE.ROTATE : r.mouseButtons.RIGHT,
       }
     }
-    // ⌥ is tracked from the KEYBOARD as well as read off the press: a tablet
+    // ⌥ and ⇧ are tracked from the KEYBOARD as well as read off the press: a tablet
     // driver can deliver the pen's pointer events without the modifier flags.
-    let altHeld = false
+    let altHeld = false, shiftHeld = false
     const read = (e) => ((e.ctrlKey || e.metaKey) ? 'ctrl' : null)
-    const onKey  = (e) => { altHeld = e.altKey; setButtons(read(e)) }
-    const onBlur = () => { altHeld = false; setButtons(null) }
+    const onKey  = (e) => { altHeld = e.altKey; shiftHeld = e.shiftKey; setButtons(read(e)) }
+    const onBlur = () => { altHeld = false; shiftHeld = false; setButtons(null) }
     setButtons(null)
     // The ⌥ grab. ⛔ ⌥ IS A CLAMP: while it is held, the press is swallowed
     // before OrbitControls sees it, so nothing can orbit, dolly or pan under it
@@ -167,26 +174,42 @@ function DeclaredControls({
     // which OrbitControls tumbles whatever the modifier, and the grab ran on
     // top of it.) A press above the horizon grabs nothing and moves nothing; a
     // move whose ray runs off toward the horizon is skipped rather than flung.
-    let grab = null
+    let grab = null, aim = null
     const ray = new THREE.Raycaster(), ndc = new THREE.Vector2()
     const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0)
     const hit = new THREE.Vector3()
-    const groundAt = (c, e) => {
+    const rayAt = (c, e) => {
       const rect = c.domElement.getBoundingClientRect()
       ndc.set(((e.clientX - rect.left) / rect.width) * 2 - 1, -((e.clientY - rect.top) / rect.height) * 2 + 1)
       c.object.updateMatrixWorld()
       ray.setFromCamera(ndc, c.object)
-      if (!ray.ray.intersectPlane(plane, hit)) return null
+      return ray.ray
+    }
+    const groundAt = (c, e) => {
+      if (!rayAt(c, e).intersectPlane(plane, hit)) return null
       const reach = 50 * Math.max(Math.abs(c.object.position.y + plane.constant), 1)   // 50× height
       return hit.distanceTo(c.object.position) > reach ? null : hit
     }
     const onDown = (e) => {
       const alt = e.altKey || altHeld
+      const shift = !alt && (e.shiftKey || shiftHeld)
       setButtons(read(e))
       const c = localRef.current
       if (!c || !enabledRef.current) return
       if (!c.domElement.contains(e.target)) return   // R3F's wrapper div, not the <canvas>
       if (e.isPrimary) repivot(c)                    // turn around / grab where you are looking
+      if (shift) {
+        e.stopPropagation()                          // the clamp, whether or not this mount may turn
+        if (!e.isPrimary || !c.enableRotate) return
+        const dir = rayAt(c, e).direction.clone()
+        const said = aimInPlace(c.object, dir, ndc, c.minPolarAngle, c.maxPolarAngle).skip
+        if (said) {                                  // nothing to turn from here: said once, nothing moves
+          if (!_aimSaid.has(said)) { _aimSaid.add(said); console.error(`[camera] ⛔ the aimer will not turn: ${said}`) }
+          return
+        }
+        aim = { dir, dist: c.target.distanceTo(c.object.position) }
+        return
+      }
       if (!panRef.current || !alt) return
       e.stopPropagation()                            // the clamp: OrbitControls never hears it
       if (!e.isPrimary) return
@@ -196,6 +219,14 @@ function DeclaredControls({
     }
     const onMove = (e) => {
       const c = localRef.current
+      if (aim && c && e.isPrimary) {
+        rayAt(c, e)
+        const t = aimInPlace(c.object, aim.dir, ndc, c.minPolarAngle, c.maxPolarAngle)
+        if (t.skip) return                           // unreachable from here: skipped, never flung
+        applyAim(c, t, aim.dist)
+        invalidate()
+        return
+      }
       if (!grab || !c || !e.isPrimary) return
       const h = groundAt(c, e)
       if (!h) return
@@ -204,7 +235,7 @@ function DeclaredControls({
       c.target.add(step)
       invalidate()
     }
-    const onUp = () => { grab = null }
+    const onUp = () => { grab = null; aim = null }
     const onWheel = (e) => {
       const c = localRef.current
       if (!c || !enabledRef.current || !c.enableZoom) return
