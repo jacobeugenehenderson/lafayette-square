@@ -55,7 +55,10 @@ Provincetown."*
    (the deck ring's root), the dike strip (stripOf). Instruments that see it: claims-a-coast-finer-than-its-trace-is-not-drawn (its row (1)
    reads openCloseAtStep's call site), claims-settle-never-crosses-the-open-close, plus §4's.
 3. **Build:** one open/close for footprints AND water (the `cutOnce: false` fork deleted, three-part fix), and the deck take-out (its open AND its
-   close) with its cut ends being the source's own points. Rounded to the lattice ONCE, at the output.
+   close) with its cut ends being the source's own points. Rounded to the lattice ONCE, at the output. **As built** (`cartograph/openClose.mjs`,
+   ▶ `checks/claims-the-open-close-cuts-once.mjs`, `-huron.mjs`): the take-out's open and close go through it; its three subtractions
+   (`waterWithoutDecks`' w0, loc, thin) stay on clipper's integer booleans, a NAMED DEBT (BACKLOG; Zob, 2026-10-29). PTown does not land:
+   its traced water refuses by name (Jacob, 2026-10-29: "land the port without PTown"; `BRIEF-provincetown-pours-on-the-port.md`).
 4. **COAST_VERSION → 6** (5 is current); Huron's fixture re-derives again.
 
 ## 4. Gates
