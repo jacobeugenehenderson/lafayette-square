@@ -44,8 +44,19 @@ The combined bake also measures THE WATER TINT (below).
 
 **⏸ PARKED**
 - **PTown:** its PLAYER updates with the Ward pin on its current slab (the release order's player-first state), so live PTown gets today's
-  player fixes (DoF, All places, arrival, splash) without a new slab. Its SLAB: past the coast and the mint on v5; ground refuses at MacMillan Wharf (a 1 mm back-step in ①, an integer re-offset copy in
-  `structures.mjs#waterWithoutDecks`' sliver-taking). It waits on the float-morphology debt (PTOWN PARKS, below).
+  player fixes (DoF, All places, arrival, splash) without a new slab. Its SLAB refuses on BOTH paths (re-poured 2026-10-29 night on
+  Plumb's stack, PTown's authored state, ribbons md5 `bbb087ed2d12f823fac645d67f1df3ef`; nothing published): the SHIPPING integer path pours,
+  then ②'s stamp refuses at iaFull ring 15 vertex 72 (282.795, 113.216), Kerf's site, reproduced. The PORT (brief A) refuses earlier, at
+  bake-coast's traced water, on two unruled cases (a 1-step concurrence: fixed on a local branch, parked because Huron's ratchet rose; a
+  trimmed arc starting outside D's wedge). Whether the port clears ② at MacMillan: NOT MEASURED. A diagnostic sweep of PTown's traced
+  water tables every refusal class (count, area, share blocked) for the morning.
+- **⭐ BRIEF A (cut-once, Plumb + Zob), JACOB DECIDES:** (1) land the port without PTown (PTown refuses on both paths either way; through
+  the port Huron is copy 0, crossings 0, residual 6 + 11 pieces, 0.023 m², against the integer path's 230 pieces and 91,990 copies; PTown's decks
+  ≤ 2 mm 11 against 58), or wait for the sweep's classes. Boz recommends landing: LS and HPDM carry no coast or deck. (2) KNOWN_REFUSALS
+  for the two 10-27 PTown fixtures (MacMillan, the wharf), both a source STAIRCASE, which refuses by name ("the open/close
+  cannot read this ring: a STAIRCASE in its SOURCE at a cut"). The staircase rule did not converge (local `plumb/staircase-runs`:
+  Huron's ratchet rose, and it joined 3.65% of Huron's lidar edges), so it's its own row. Also named debts: the take-out's three
+  subtractions on integer booleans (local `plumb/takeout-on-arrangement` 3dc1a151, unpushed).
 - **Altadena:** re-fetch, the Extent fix, re-pour.
 
 **▶ NEXT TRANCHE LEADS:** float morphology (cut once without integer copies; sized LARGE: clipper-lib and Clipper2 are both integer) ·
