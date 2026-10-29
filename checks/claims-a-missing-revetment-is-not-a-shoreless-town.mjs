@@ -13,14 +13,18 @@
 // be resolved (slabNames.js#shaOf throws): every cold load of every inland town logged "FAILED to load revetment.json".
 // The answer is not a better guess at a response: it is not to ask.
 // ⭐ BEHAVIOURAL (planted manifests, a spy fetch, a spy voice) + SOURCE (both callers go through loadRevetment).
+// ⭐ AND THE MANIFEST READ ITSELF (Zob, 2026-10-29): on disk vite answers a town with no manifest.json with its HTML index
+// at 200, so slabNames.js#manifestOrNull reads not-ok or not-JSON as NO manifest — said by name by the loader, never an
+// unhandled "Unexpected token '<'". SlabRevetment catches any other rejection, by name.
 // MUTATION TEST — each must turn this RED: an unconditional fetch · a failed load treated as absent (silent) · a
-// missing manifest treated as inland (silent).
+// missing manifest treated as inland (silent) · the manifest read parsing any 200 as JSON.
 //   node checks/claims-a-missing-revetment-is-not-a-shoreless-town.mjs
 // Read-only. Exits 1 if any case resolves the wrong way.
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { ROOT } from './_scenes.mjs'
 import { loadRevetment } from '../src/lib/revetmentFromSlab.js'
+import { manifestOrNull } from '../src/lib/slabNames.js'
 
 let red = 0
 const row = (ok, s) => { if (!ok) red++; console.log(`${ok ? '✅' : '⛔'} ${s}`) }
@@ -54,6 +58,29 @@ const judge = async (load) => {
 const W = await judge(loadRevetment)
 row(!W.length, `loadRevetment: an inland town asks nothing and says nothing; a named revetment that fails is refused by name; no manifest is said (${CASES.length} cases)${W.length ? ': ' + W.join(' · ') : ''}`)
 
+// THE MANIFEST READ: a dev server's 200-HTML for a missing manifest → no manifest, said by name, no rejection.
+const judgeManifestRead = async (read) => {
+  const why = []
+  for (const [name, r, want] of [
+    ["vite's 200-HTML for a missing manifest.json", res(200, 'text/html; charset=utf-8', '<!doctype html>'), null],
+    ['a 404', res(404, 'text/html'), null],
+    ['the manifest', res(200, 'application/json', COASTAL), COASTAL],
+  ]) {
+    let m, threw = null
+    try { m = await read(r) } catch (e) { threw = e }
+    if (threw) { why.push(`${name}: rejected (${threw.message.slice(0, 50)})`); continue }
+    if (JSON.stringify(m) !== JSON.stringify(want)) { why.push(`${name}: read as ${m ? 'a manifest' : 'none'}`); continue }
+    if (want === null) { const said = []; await loadRevetment('planted', { manifest: m, fetchFile: async () => res(200, 'application/json', DOC), say: (x) => said.push(x) })
+      if (!said.some(x => /planted.*no manifest\.json/.test(x))) why.push(`${name}: the loader did not say "no manifest.json" by name`) }
+  }
+  return why
+}
+const MR = await judgeManifestRead(manifestOrNull)
+row(!MR.length, `the manifest read: a dev server's HTML or a 404 is no manifest, said by name, never a rejection; the manifest is read${MR.length ? ': ' + MR.join(' · ') : ''}`)
+{ const u = readFileSync(join(ROOT, 'src/lib/slabUrl.js'), 'utf8'), sr = readFileSync(join(ROOT, 'src/components/SlabRevetment.jsx'), 'utf8')
+  const ok = (u.match(/\.then\(manifestOrNull\)/g) || []).length === 2 && !/r\.ok \? r\.json\(\) : null/.test(u) && /\.catch\(e => \{ console\.error\(`\[revetment\] ⛔ \$\{lookId\}/.test(sr)
+  row(ok, `slabUrl.js reads both manifests (disk, remote) through manifestOrNull; SlabRevetment says any other rejection by name: ${ok}`) }
+
 // SOURCE: both callers go through it, and neither asks for revetment.json itself.
 for (const f of ['src/components/SlabRevetment.jsx', 'src/harness/lab/stage.js']) {
   const s = readFileSync(join(ROOT, f), 'utf8'), list = f.endsWith('stage.js') ? s.slice(s.indexOf('export async function listStages'), s.indexOf('\n}\n', s.indexOf('export async function listStages'))) : s
@@ -65,6 +92,7 @@ for (const f of ['src/components/SlabRevetment.jsx', 'src/harness/lab/stage.js']
 const mutate = async (name, m) => { const ok = !(await judge(m)).length; row(!ok, `mutant: ${name} → ${ok ? 'still GREEN — the row proves nothing' : 'RED as it must be'}`) }
 await mutate('an unconditional fetch', (look, o) => loadRevetment(look, { ...o, manifest: o.manifest ? { ...o.manifest, files: { ...o.manifest.files, 'revetment.json': {} } } : o.manifest }))
 await mutate('a failed load treated as absent', (look, o) => loadRevetment(look, { ...o, say: () => {} }))
+{ const ok = !(await judgeManifestRead((r) => (r.ok ? r.json() : Promise.resolve(null)))).length; row(!ok, `mutant: the manifest read parsing any 200 as JSON → ${ok ? 'still GREEN — the row proves nothing' : 'RED as it must be'}`) }
 await mutate('a missing manifest treated as inland', (look, o) => loadRevetment(look, { ...o, manifest: o.manifest ?? { files: {} } }))
 
 console.log(red ? `\n⛔ ${red} row(s) RED` : '\n✅ an inland town asks for no revetment; a shore the manifest names is never silently missing')

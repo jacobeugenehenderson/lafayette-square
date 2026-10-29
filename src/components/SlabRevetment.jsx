@@ -121,6 +121,7 @@ export default function SlabRevetment({ lookId, bakeLastMs, visible = true }) {
     slabManifest(lookId)
       .then(manifest => loadRevetment(lookId, { manifest, fetchFile: (rel) => slabFetch(lookId, rel, undefined, bakeLastMs || null), say: console.error }))
       .then(d => { if (!dead) setDoc(d) })
+      .catch(e => { console.error(`[revetment] ⛔ ${lookId}: the shore could not be read — ${e?.message || e}. No shore is drawn.`) })
     return () => { dead = true }
   }, [lookId, bakeLastMs])
 

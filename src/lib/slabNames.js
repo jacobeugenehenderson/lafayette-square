@@ -81,6 +81,18 @@ export function refRel(look, ref) {
   return ref.replace(/^\//, '')
 }
 
+/**
+ * A manifest response → the manifest, or null when the town has none. ⛔ "None" is a response that is not ok, or not
+ * JSON: on disk vite answers a missing file with its HTML index at status 200, and parsing that as the manifest rejected
+ * unhandled ("Unexpected token '<'") instead of letting the caller say "this slab has no manifest" by name (Zob,
+ * 2026-10-29: Altadena and Jackson Heights have none on disk). A JSON body that fails to parse still rejects: that is a
+ * corrupt manifest, not an absent one.  ▶ node checks/claims-a-missing-revetment-is-not-a-shoreless-town.mjs
+ */
+export function manifestOrNull(r) {
+  const ct = String(r?.headers?.get?.('content-type') || '').toLowerCase()
+  return r?.ok && ct.includes('json') ? r.json() : Promise.resolve(null)
+}
+
 /** Where a town's manifest is served: its one plain, never-renamed key. */
 export const manifestPath = (look) => `baked/${look}/manifest.json`
 
