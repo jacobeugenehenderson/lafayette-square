@@ -339,8 +339,12 @@ export function revetmentDrape({ poly, crestAt, toeAt = null, berm = null, groun
   const bld0 = Math.max(0, own0 - (stations ? normalMargin : 0))
   const bld1 = Math.min(nAlong - 1, own1 + (stations ? normalMargin : 0))
 
-  const pos = new Float32Array(nAlong * nAcross * 3)
-  const keep = new Uint8Array(nAlong * nAcross)
+  // ⭐ SIZED TO THE STATIONS THIS CALL BUILDS (bld0…bld1), never the whole face: a chunk of a 33 km face allocated, filled
+  // and remapped arrays for every station of it, so splitting a face cost the square of its length (provincetown's far
+  // layer split 4 stations a chunk: 35 s, against 1.6 s whole). Vertex k of station i is at ((i − bld0) · nAcross + j).
+  const nRows = bld1 - bld0 + 1
+  const pos = new Float32Array(nRows * nAcross * 3)
+  const keep = new Uint8Array(nRows * nAcross)
   const idx = []
   const quadStation = []      // one entry per TRIANGLE, the station it belongs to
   const inv = 1 / blk
@@ -360,6 +364,11 @@ export function revetmentDrape({ poly, crestAt, toeAt = null, berm = null, groun
     // below one course of armour is a kerb or a beach and the correct output is
     // NOTHING. (`heap.js` already refused it; the drape did not.)
     const bare = h < MIN_ARMOUR_D50_M
+    // ⭐ …AND NOTHING IS COMPUTED FOR IT. A bare column keeps none of its vertices, and a quad needs three of its four
+    // corners kept, so no triangle can reach one: its ground reads (the apron, the berm, the bury) were all thrown away
+    // — 90% of provincetown's far-layer reads (625k → 62k), 9.2 s → 1.6 s, the output identical to the byte.
+    // ▶ node checks/claims-a-bare-station-costs-nothing.mjs
+    if (bare) continue
     const run = h / TAN_REPOSE
     const toe = toeAt ? toeAt(st.t) : 1                  // ≥ 1: the face runs on below the water to the bed
     // The toe berm beyond it (references f-cem-toe-berm-size), in the face's u-units: its width and heel height.
@@ -426,7 +435,7 @@ export function revetmentDrape({ poly, crestAt, toeAt = null, berm = null, groun
           + amp * 0.22 * fbm3(x * 5 / lam0, y * 5 / lam0, z * 5 / lam0, seed + 31, 2))
       }
       x += vnx * d + gx; y += vny * d + gy; z += vnz * d + gz
-      const o = (i * nAcross + j) * 3
+      const o = ((i - bld0) * nAcross + j) * 3
       // ⭐ THE EDGE, AS A CONTOUR OF TWO FIELDS. A long one makes the band's own
       // half-width WANDER (the toe and the crest are not parallel to the arc); a
       // short one makes the boundary RAGGED at stone scale, so it ends the way a
@@ -450,11 +459,11 @@ export function revetmentDrape({ poly, crestAt, toeAt = null, berm = null, groun
         // ⭐ BURIED, NOT CUT: past either edge the rough sheet sinks a block below the ground, and the ground draws the edge.
         const past = Math.max(crestEdge - u, u - toeEdge)
         if (past > 0) { const w = smooth(Math.min(1, past / BURY_U)); y = y + (groundAt(x, z) - blk - y) * w }
-        keep[i * nAcross + j] = (!bare && u >= crestEdge - BURY_U && u <= toeEdge + BURY_U) ? 1 : 0
-      } else keep[i * nAcross + j] = (!bare && u >= crestEdge && u <= toeEdge) ? 1 : 0
+        keep[(i - bld0) * nAcross + j] = (!bare && u >= crestEdge - BURY_U && u <= toeEdge + BURY_U) ? 1 : 0
+      } else keep[(i - bld0) * nAcross + j] = (!bare && u >= crestEdge && u <= toeEdge) ? 1 : 0
       pos[o] = x; pos[o + 1] = y; pos[o + 2] = z
       if (i > bld0 && j) {
-        const a = (i - 1) * nAcross + (j - 1), b = (i - 1) * nAcross + j, c = i * nAcross + (j - 1), e = i * nAcross + j
+        const a = (i - 1 - bld0) * nAcross + (j - 1), b = (i - 1 - bld0) * nAcross + j, c = (i - bld0) * nAcross + (j - 1), e = (i - bld0) * nAcross + j
         // ⛔ A quad survives only if ALL FOUR corners are inside the contour, so the
         // boundary is a staircase of whole quads at stone scale — an edge, not a
         // feathered fade. A fade would read as fog, which is the plausible-looking
@@ -486,7 +495,7 @@ export function revetmentDrape({ poly, crestAt, toeAt = null, berm = null, groun
   const buildIdx = idx
   let geo0 = new THREE.BufferGeometry()
   {
-    const remapAll = new Int32Array(nAlong * nAcross).fill(-1)
+    const remapAll = new Int32Array(nRows * nAcross).fill(-1)
     const packedAll = []
     const idxAll = new Array(buildIdx.length)
     for (let k = 0; k < buildIdx.length; k++) {

@@ -1,14 +1,14 @@
 // oct3-weight.mjs — the NEAR layer's resolution (octaves 3) over the WHOLE armoured shore, with the drawn ground: the
-// weight bake-revetment.js's "~47 MB of drape" refers to, re-measured. Uses the range-local, bare-skip experiment
-// (byte-identical to src/ per skip-bare-ab.mjs). ▶ node scratch/far-shore/oct3-weight.mjs --town=huron --slab=../integration/public/baked
+// weight bake-revetment.js's "~47 MB of drape" refers to, re-measured. Uses src's drape (the bare skip and range-local
+// allocation, Step 1). ▶ node scratch/far-shore/oct3-weight.mjs --town=huron --slab=../integration/public/baked
 import { readFileSync } from 'node:fs'
 import { makeDrawnGround } from '../../src/lib/drawnGround.js'
 import { makeElevationSampler } from '../../src/lib/terrainCommon.js'
 import { revetmentFaces, toeFor } from '../../src/lib/revetmentFromSlab.js'
-import * as B from './revetmentDrape.local.mjs'
+import * as B from '../../src/lib/revetmentDrape.js'
 import { MIN_ARMOUR_D50_M } from '../../cartograph/shore-armour.mjs'
 import { isWaterGroupId } from '../../src/components/waterMaterial.js'
-globalThis.__SKIP_BARE = true
+
 const arg = (n, d) => process.argv.find((a) => a.startsWith(`--${n}=`))?.slice(n.length + 3) ?? d
 const town = arg('town'), dir = `${arg('slab', 'public/baked')}/${town}`
 const rd = (f) => readFileSync(`${dir}/${f}`), ab = (b) => b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength)

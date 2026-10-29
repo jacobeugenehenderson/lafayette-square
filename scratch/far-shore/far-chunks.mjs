@@ -1,15 +1,15 @@
 // far-chunks.mjs — (c): the far layer split into station ranges, with the bare-station skip. What chunk size holds the
-// 4 ms ceiling, what does splitting add, and are the chunks' triangles the whole build's? (The near layer's chunking,
+// 4 ms ceiling, what does splitting add, and are the chunks' triangles the whole build's? (Since Step 1, src's drape skips bare stations and sizes a chunk to its range. The near layer's chunking,
 // `stations` + normalMargin, is the mechanism; its seam is measured exact by scratch/boulder-chunk-sweep.mjs.)
 // ▶ node scratch/far-shore/far-chunks.mjs --town=provincetown --slab=../integration/public/baked
 import { readFileSync } from 'node:fs'
 import { makeDrawnGround } from '../../src/lib/drawnGround.js'
 import { makeElevationSampler } from '../../src/lib/terrainCommon.js'
 import { revetmentFaces, toeFor } from '../../src/lib/revetmentFromSlab.js'
-const B = await import(`./revetmentDrape.${process.argv.find(a => a.startsWith('--impl='))?.slice(7) ?? 'skipbare'}.mjs`)
+import * as B from '../../src/lib/revetmentDrape.js'
 import { MIN_ARMOUR_D50_M } from '../../cartograph/shore-armour.mjs'
 import { isWaterGroupId } from '../../src/components/waterMaterial.js'
-globalThis.__SKIP_BARE = true
+
 const arg = (n, d) => process.argv.find((a) => a.startsWith(`--${n}=`))?.slice(n.length + 3) ?? d
 const town = arg('town'), dir = `${arg('slab', 'public/baked')}/${town}`
 const rd = (f) => readFileSync(`${dir}/${f}`), ab = (b) => b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength)
