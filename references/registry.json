@@ -5188,6 +5188,15 @@
       "findings": [
         "r-a-move-tracks-a-point-or-turns-the-head"
       ]
+    },
+    {
+      "id": "q-may-the-open-close-change-a-towns-water-topology",
+      "ask": "Whether the coast's open/close may change a water body's topology (open a hole, split a part, fill or merge holes) where its definition does",
+      "neededBy": "PTown's census, 2026-10-29 (Plumb): three sites refuse exactly where clipper at 1000× changes topology",
+      "status": "answered",
+      "findings": [
+        "r-the-open-close-follows-its-definition-and-names-every-topology-change"
+      ]
     }
   ],
   "findings": [
@@ -8751,6 +8760,20 @@
       "quote": "\"why not both though?\" · \"yes, file the both-modes ruling\" · \"Isn't that what the hero object is for?\" · \"Why would the camera ever be anywhere that's not 'relative to the centroid'?\" · \"yes, amend it\"",
       "canon": "cartograph/BACKLOG.md (TO BRIEF NEXT)",
       "notes": "UNBUILT; briefs after the aimer. Readers of key.target: heroAnim (MovieCamera, the DoF rack's lam), Stage's scrub, CelestialBodies' shadow fit, bake-trees' hero tiers (re-bake), claims-the-movie-is-continuous. Amended 2026-10-29 (Jacob): the hidden handle is replaced by the focus object, else the town's centre. Its moves change where keys' stored targets differ from that (HPDM's keys name no focus object, so HPDM tracks its centre until its two objects land). Measured on LS (Gimbal, probe-focus-depth.mjs): Arch on every key takes the depth ratio 2.28 → 1.15."
+    },
+    {
+      "id": "r-the-open-close-follows-its-definition-and-names-every-topology-change",
+      "question": "q-may-the-open-close-change-a-towns-water-topology",
+      "kind": "ruling",
+      "value": {
+        "rule": "the open/close makes the topology change its definition makes (a hole opened and a part split, sub-cell holes filled, holes merged); every change is NAMED in the coast record (kind, site, m²); a change the definition does not make still refuses",
+        "why": "the open/close's job is to remove features under a cell; refusing its own definition is not a guard"
+      },
+      "by": "Jacob",
+      "date": "2026-10-29",
+      "quote": "\"PTown's singles: A\"",
+      "canon": "docs/briefs/BRIEF-provincetown-pours-on-the-port.md",
+      "notes": "UNBUILT at filing; Plumb builds it with a planted crop per kind and mutants."
     }
   ]
 }
