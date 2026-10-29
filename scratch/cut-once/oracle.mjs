@@ -107,7 +107,29 @@ export function isolated(src, stepM, name) {
     out[st] = row }
   return { name, isolated: out, largest: largest.sort((a, b) => b.m2 - a.m2).slice(0, 8) }
 }
-if (import.meta.url === `file://${process.argv[1]}` && process.env.ORACLE_ISOLATED) {
+// the closedK dump and class table (Zob, 2026-10-29): every isolated closedK definition-only piece past 2·NB (material the
+// reference's erode-back of OUR dilated region keeps and our close's back-offset C does not), with the emission rules of C's
+// points inside the piece's box grown by h (cand3.mjs#ORIGIN: which rule emitted the boundary that cuts inside the reference's)
+export function closedKDump(src, stepM, name, at = null) {
+  const r = C3.openCloseProvenance(src, stepM, name), P = up(r.P), h = (stepM / 2) * 1000 * F
+  const open = up(C3.STAGES.open), dil = up(C3.STAGES.dilate), ours = up(C3.STAGES.closedK)
+  const ref = op(ClipType.ctUnion, [...open, ...off(dil, -h)])
+  const survivesBy = (pp, b) => off(pp, -b).some(q => Clipper.Area(q) > 0)
+  const defOnly = pieces(op(ClipType.ctDifference, ref, ours)).filter(pp => survivesBy(pp, 2 * bound))
+  const emitted = [...C3.ORIGIN.entries()].map(([k2, v]) => { const [x, y] = k2.split(',').map(Number); return { x: x * F, y: y * F, v } })
+  const rows = defOnly.map(pp => { const o = pp[0]; let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity, cx = 0, cy = 0
+    for (const q of o) { x0 = Math.min(x0, q.X); y0 = Math.min(y0, q.Y); x1 = Math.max(x1, q.X); y1 = Math.max(y1, q.Y); cx += q.X; cy += q.Y }
+    const near = emitted.filter(e => e.x >= x0 - h && e.x <= x1 + h && e.y >= y0 - h && e.y <= y1 + h), kinds = {}
+    for (const e of near) for (const k2 of String(e.v).split('|')) kinds[k2] = (kinds[k2] || 0) + 1
+    return { at: [+(cx / o.length / F / 1000).toFixed(3), +(cy / o.length / F / 1000).toFixed(3)], m2: +(area(pp) / F / F / 1e6).toFixed(5), vertices: o.length, kinds,
+      piece: o.map(q => [+(q.X / F).toFixed(0), +(q.Y / F).toFixed(0)]), emittedNear: near.slice(0, 14).map(e => [+(e.x / F).toFixed(0), +(e.y / F).toFixed(0), e.v]) } }).sort((a, b) => b.m2 - a.m2)
+  const byKind = {}; for (const rw of rows) { const key = Object.keys(rw.kinds).filter(k2 => !['own', 'run-vertex'].includes(k2)).sort().join('+') || 'own/run only'; byKind[key] = (byKind[key] || 0) + 1 }
+  return { name, n: rows.length, m2: +rows.reduce((t, rw) => t + rw.m2, 0).toFixed(4), byKind, largest: rows.slice(0, 2) }
+}
+if (import.meta.url === `file://${process.argv[1]}` && process.env.ORACLE_CLOSEDK) {
+  const fx = (n) => JSON.parse(fs.readFileSync(new URL(`./fixtures/${n}.json`, import.meta.url), 'utf8')), d = fx('huron-traced')
+  console.log(JSON.stringify(closedKDump(G.ip(d.traced), d.fineM, 'huron')))
+} else if (import.meta.url === `file://${process.argv[1]}` && process.env.ORACLE_ISOLATED) {
   const fx = (n) => JSON.parse(fs.readFileSync(new URL(`./fixtures/${n}.json`, import.meta.url), 'utf8'))
   const FIX = { decks: () => { const d = fx('ptown-deck-inputs'); return [G.ip(d.inputs.flat()), d.fineM] }, breakwater: () => { const d = fx('ptown-embankments'); return [G.ip(d.paths), d.fineM] }, huron: () => { const d = fx('huron-traced'); return [G.ip(d.traced), d.fineM] } }
   for (const k of process.argv.slice(2)) { const [src, step] = ROWS[k] ? [G.ip(ROWS[k].rings), STEP_M] : FIX[k](); console.log(JSON.stringify(isolated(src, step, k))) }
