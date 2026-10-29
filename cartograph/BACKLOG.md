@@ -50,7 +50,14 @@ The combined bake also measures THE WATER TINT (below).
   bake-coast's traced water, on two unruled cases (a 1-step concurrence: fixed on a local branch, parked because Huron's ratchet rose; a
   trimmed arc starting outside D's wedge). Whether the port clears ② at MacMillan: NOT MEASURED. A diagnostic sweep of PTown's traced
   water tables every refusal class (count, area, share blocked) for the morning.
-- **⭐ BRIEF A (cut-once, Plumb + Zob), JACOB DECIDES:** (1) land the port without PTown (PTown refuses on both paths either way; through
+- **▶ PTOWN SCENE-ONLY POST** (Jacob, 2026-10-29: "get *something* posted"; Zob rehearsed it offline green, Ward confirmed the player; no code):
+  (1) Stage, PTown: author DoF (design.json has no `dof` key today) and the keys; autosave; ⛔ NO Bake press. (2) Capture share images
+  (today's are 10-25). (3) `! cd ~/Desktop/lafayette-square.nosync/.claude/worktrees/integration/cartograph && node bake-scene.js --look=provincetown`.
+  (4) `! curl -s -X POST localhost:3333/looks/provincetown/publish`. ⛔ NOT Preview's Publish button: it POSTs /bake first, which asks to
+  re-pour, and the re-pour refuses. Ships: the 10-26 pour + the new scene (focus on the Monument from the keys, his DoF) + content newer
+  than the pour (roster 3.05 → 4.14 MB, 447 listings, 33 photos; all resolve in the pour). The commit carries index.json's LS/Huron
+  bakedAt too. Then eye on staging and Promote on Jacob's word.
+- **⭐ BRIEF A (cut-once, Plumb + Zob): JACOB RULED "land the port without PTown"** (2026-10-29). Zob reviews Plumb's port, then the merge, then Huron re-bakes. The decisions as they stood: (1) land the port without PTown (PTown refuses on both paths either way; through
   the port Huron is copy 0, crossings 0, residual 6 + 11 pieces, 0.023 m², against the integer path's 230 pieces and 91,990 copies; PTown's decks
   ≤ 2 mm 11 against 58), or wait for the sweep's classes. Boz recommends landing: LS and HPDM carry no coast or deck. (2) KNOWN_REFUSALS
   for the two 10-27 PTown fixtures (MacMillan, the wharf), both a source STAIRCASE, which refuses by name ("the open/close
