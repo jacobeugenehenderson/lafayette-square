@@ -576,6 +576,9 @@ export { pieces, area }
 // P: the input's union, each edge tagged with its own line
 const unionTagged = (paths, what) => arrange([paths.map(p => p.map(q => ({ X: q.X, Y: q.Y })))], w => w[0] !== 0, `${what} union`, false, null, false).rings
   .map(r => r.map((q, i) => ({ X: q.X, Y: q.Y, tag: [[q.X, q.Y], [r[(i + 1) % r.length].X, r[(i + 1) % r.length].Y]] })))
+// the input's union as its PARTS, each [outer, …holes] (a part in a part's hole its own): the noded arrangement's own P, for a caller that
+// opens and closes part by part (structures.mjs#openCloseAtStep)
+export const partsOf = (paths, what) => { fresh(); return pieces(unionTagged(paths, what)).map(pp => pp.map(r => r.map(q => ({ X: q.X, Y: q.Y })))) }
 // open = morph(P, −h) ∩ P
 const openOf = (Pt, h, what, stat) => arrange([Pt, morph(Pt, -h, `${what} open`, stat)], w => w[0] > 0 && w[1] > 0, `${what} ∩P`, false, 0)
 // ⭐ THE OPEN AND THE CLOSE ALONE, at h = step/2, for a caller whose operation is one of them (structures.mjs#waterWithoutDecks: the

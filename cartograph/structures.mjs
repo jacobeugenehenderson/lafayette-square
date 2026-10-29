@@ -17,7 +17,7 @@ import { CARTOGRAPH_DIR } from './config.js'
 import clipperLib from 'clipper-lib'
 import { CLIP_SCALE as SCALE } from '../src/lib/lattice.js'          // clipper units per metre: 1 mm
 import { NODE_BOUND } from '../src/lib/latticeNode.js'                 // the rounding's own bound: what a sliver is
-import { openCloseCutOnce, openAt, closeAt } from './openClose.mjs'   // the open/close, cut once (openCloseAtStep, waterWithoutDecks)
+import { openCloseCutOnce, openAt, closeAt, partsOf } from './openClose.mjs'   // the open/close, cut once (openCloseAtStep, waterWithoutDecks)
 import { structureOverWater } from '../src/cartograph/streetClass.js'   // the over-water vocabulary's one home
 import { pourMeasureOf } from '../src/cartograph/streetProfiles.js'      // the pour's measure, the one rule (derive calls it too)
 import { DECK_KINDS } from '../src/cartograph/streetClass.js'   // the deck vocabulary's one home, beside isOffGradeWay
@@ -134,24 +134,21 @@ export function isRoundingSliver(pp) {
 }
 export function openCloseAtStep(paths, stepM, what) {
   if (!(stepM > 0)) throw new Error(`⛔ structures: openCloseAtStep (${what}) needs the trace's step (got ${stepM})`)
-  const tree = new PolyTree(), cu = new Clipper(); cu.AddPaths(paths, PolyType.ptSubject, true)
-  if (!cu.Execute(ClipType.ctUnion, tree, PolyFillType.pftNonZero, PolyFillType.pftNonZero)) throw new Error(`⛔ structures: the union of ${what} FAILED`)
   const m2 = (pp) => pp.reduce((t, q) => t + ringAreaU(q), 0) / SCALE / SCALE, place = (q) => [+(q[0].X / SCALE).toFixed(3), +(q[0].Y / SCALE).toFixed(3)]
   const feature = (pp) => { const xs = pp[0].map(q => q.X), ys = pp[0].map(q => q.Y)
     return { m2: +m2(pp).toFixed(4), lenM: +(Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)) / SCALE).toFixed(3), at: place(pp[0]), poly: pp.map(q => q.map(v => [v.X / SCALE, v.Y / SCALE])) } }
   const kept = new Paths(), opened = [], closed = [], belowResolution = [], dropped = [], taken = [], filled = []
   // ⛔ PER PART, NEVER ACROSS TWO: each connected part (its own outer and holes; a part in a part's hole is its own) is opened and
-  // closed alone, so two parts a metre apart stay two
-  const each = (node) => { for (const ch of node.Childs()) { const part = [ch.Contour(), ...ch.Childs().map(c => c.Contour())]
+  // closed alone, so two parts a metre apart stay two. The parts are the noded union's own (openClose.mjs#partsOf), never a
+  // second, re-rounded union's
+  for (const part of partsOf(paths, what)) {
     const r = openCloseCutOnce(part, stepM, what), at = place(part[0])
     dropped.push(...r.dropped.map(x => ({ stage: x.who, m2: +(x.u2 / SCALE / SCALE).toFixed(6), at: x.at })))
     if (!r.rings.length) belowResolution.push({ m2: +(part.reduce((t, q) => t + Clipper.Area(q), 0) / SCALE / SCALE).toFixed(3), at, ring: fromPath(part[0]) })
     else { const tm = r.tf.reduce((t, pp) => t + m2(pp), 0), fm = r.ff.reduce((t, pp) => t + m2(pp), 0)
       if (tm > 0) opened.push({ m2: +tm.toFixed(3), at }); if (fm > 0) closed.push({ m2: +fm.toFixed(3), at })
       taken.push(...r.taken.map(pp => ({ pp, kept: r.tf.includes(pp) }))); filled.push(...r.filled.map(pp => ({ pp, kept: r.ff.includes(pp) })))
-      for (const q of r.rings) { const p = new Path(); for (const v of q) p.push(new IntPoint(v.X, v.Y)); kept.push(p) } }
-    for (const hole of ch.Childs()) each(hole) } }
-  each(tree)
+      for (const q of r.rings) { const p = new Path(); for (const v of q) p.push(new IntPoint(v.X, v.Y)); kept.push(p) } } }
   const split = (xs) => { const sl = xs.filter(x => !x.kept)
     return { features: xs.filter(x => x.kept).map(x => feature(x.pp)).sort((a, b) => b.m2 - a.m2), slivers: { n: sl.length, m2: +sl.reduce((t, x) => t + m2(x.pp), 0).toFixed(4) } } }
   return { paths: kept, opened, closed, belowResolution, openedPieces: split(taken), closedPieces: split(filled), dropped }
