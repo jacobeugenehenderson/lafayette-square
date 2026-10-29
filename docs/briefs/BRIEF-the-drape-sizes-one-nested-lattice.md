@@ -66,7 +66,8 @@ edges (conformed), and the far layer on every face the new sizing changes. All t
   bit-identical to `farRow`'s, the rest on its segments (the residue of a float32 lerp is reported as measured, never called a tolerance).
 - **The trim** (Zob): the far's DRAW decides the seam, never keep[]. A far quad draws on 3 of 4 kept corners and draws both
   triangles, so its drawn edge along the boundary row isn't its kept extent. The near quads in the column touching the boundary row
-  draw iff their boundary subsegment lies in a segment that is an edge of a drawn far triangle there. That overrides 3-of-4 for that
+  draw iff their boundary subsegment lies in a segment that is an edge of a drawn far triangle in the far-side column: the visible
+  neighbour chunk's. ⛔ Never the hidden far quad that the near replaces, which says nothing about the seam (Zob). That overrides 3-of-4 for that
   column only. Gate: the near-drawn and far-drawn boundary segment sets are equal.
 - A planted row, a near chunk beside a far chunk on one face. Mutants → RED: the near computing its own boundary row; the far not through
   `farRow`; the inward ramp removed (if a ramp ships).

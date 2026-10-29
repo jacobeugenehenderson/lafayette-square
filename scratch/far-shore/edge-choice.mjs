@@ -124,6 +124,8 @@ for (const c of pick(stoneChunks.filter(c => c.A > 0 && c.f.chunks[c.k - 1]?.sto
   const F = grid(f, f.G1n, 1, [I - 1, I + 1]), N = grid(f, f.G3n, 3, [4 * I, 4 * I + 3])
   for (let J = 0; J < f.G1n.nAcross - 1; J++) {
     const fa = across(F, I, J); if (fa != null) baseFar.push(fa)
+    // ⭐ the FAR-SIDE quad (I−1, I): the visible neighbour chunk k−1 owns far stations < I. Its draw decides the seam, never the
+    // hidden far quad (I, I+1) this near chunk replaces (Zob). A drawn quad draws both triangles, so its row-I edge is drawn.
     if (!drawn(F, I, J)) continue
     const nF = nrm(V(F, I - 1, J + 1), V(F, I, J), V(F, I, J + 1))          // the far triangle on the far side of row I
     for (let s = 0; s < 4; s++) {
