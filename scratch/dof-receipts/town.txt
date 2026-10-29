@@ -1,0 +1,69 @@
+// Town-anchored blur receipt (ferrule/dof-town-anchor), evaluated in a Stage tab as text, a town with NO focus object.
+// Pinned in-tab, restored after: Amount 0.2, Softness at focus 0, the ramp. World points along a ray from the disc's centre
+// (0, 0.5R, R, 1.3R): each one's VISIBLE surface is taken from the depth buffer in pose 1; the debug paint (the law, drawn
+// last) is read there; the camera moves; the same surface points are re-read. Then the overlay's law is put on view space
+// (the camera-anchored mutant) and pose 2 re-read.
+const RAMP = window.__TOWN_RAMP || 0.5, SHIFT = window.__TOWN_SHIFT || [120, 30, 80]
+const g = async (u) => (await fetch(u)).text(), im = (s, re) => s.match(new RegExp(`from\\s+"([^"]*${re}[^"]*)"`))?.[1]
+const rp = await g('/src/components/renderPipeline.jsx'), rdU = im(rp, 'RomanceDoF'), rd = await g(rdU), drvU = im(await g(im(rp, 'DofDebug') ? '/src/components/usePostFxDriver.js' : ''), 'dofDriver')
+const drv = await g(drvU), stU = im(drv, 'sceneStencilState')
+const PP = await import(im(rp, '/deps/postprocessing\\.js')), F = await import(im(rd, '/deps/@react-three_fiber\\.js')), THREE = await import(im(rd, '/deps/three\\.js')), R = await import(rdU), ST = await import(stU)
+if (Math.abs(R._dofRefs.focusDist.current - window.__dof.dist) > 1e-6 && window.__dof.dist != null) throw new Error('not the live RomanceDoF instance')
+const st = ST.getSceneStencil(); if (!st) throw new Error('no scene stencil')
+const oC = PP.EffectComposer.prototype.render; let comp = null; PP.EffectComposer.prototype.render = function (dt) { comp = comp || this; return oC.call(this, dt) }
+const frame = (n = 3) => new Promise(res => { let k = 0; const off = F.addAfterEffect(() => { if (++k < n) { F.invalidate(); return } off(); res() }); F.invalidate() })
+await frame(2); PP.EffectComposer.prototype.render = oC
+const r = window.__renderer, gl = r.getContext(), cv = r.domElement, cam = window.__r3f.get().camera, ctl = window.__r3f.get().controls
+const vals = { maxBlur: window.__TOWN_AMOUNT || 0.2, heroBlur: 0, ramp: RAMP }, saved = {}
+for (const k of Object.keys(vals)) { saved[k] = R._dofRefs[k]; R._dofRefs[k] = { get current() { return vals[k] }, set current(x) {} } }
+const p0 = cam.position.clone(), q0 = cam.quaternion.clone(), t0 = ctl?.target?.clone()
+const depthRT = new THREE.WebGLRenderTarget(1, 1, { type: THREE.FloatType })
+const dmat = new THREE.ShaderMaterial({ uniforms: { uD: { value: null }, uUv: { value: new THREE.Vector2() } }, vertexShader: 'void main(){ gl_Position = vec4(position.xy, 0.0, 1.0); }', fragmentShader: 'uniform sampler2D uD; uniform vec2 uUv; void main(){ gl_FragColor = vec4(texture2D(uD, uUv).r, 0.0, 0.0, 1.0); }' })
+const dsc = new THREE.Scene(), dq = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), dmat); dq.frustumCulled = false; dsc.add(dq)
+const depthAt = (uv) => { const prev = r.getRenderTarget(); dmat.uniforms.uD.value = comp.inputBuffer.depthTexture; dmat.uniforms.uUv.value.set(uv[0], uv[1]); r.setRenderTarget(depthRT); r.render(dsc, new THREE.Camera()); const px = new Float32Array(4); r.readRenderTargetPixels(depthRT, 0, 0, 1, 1, px); r.setRenderTarget(prev); return Math.pow(2, px[0] * Math.log2(cam.far + 1)) - 1 }
+const toUv = (P) => { const v = P.clone().project(cam); return [v.x * 0.5 + 0.5, v.y * 0.5 + 0.5, v.z] }
+const paintAt = (uv) => { const p = new Uint8Array(4); gl.readPixels(Math.round(uv[0] * cv.width), Math.round(uv[1] * cv.height), 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, p); return p[0] }
+const onScreen = (uv) => uv[0] > 0.01 && uv[0] < 0.99 && uv[1] > 0.01 && uv[1] < 0.99 && uv[2] < 1
+const readPaint = (uvs) => new Promise(res => { window.__dofDebug = 1; let k = 0; const off = F.addAfterEffect(() => { if (++k < 4) { F.invalidate(); return } off(); res(uvs.map(uv => uv && onScreen(uv) ? paintAt(uv) : null)) }); F.invalidate() })
+const ss = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t) }
+const out = { town: location.pathname.split('/')[2], disc: { c: st.center, R: st.radius }, ramp: RAMP, amount: vals.maxBlur, points: [] }
+try {
+  window.__dofDebug = 1; await frame(4)
+  // a 10×7 grid of screen points: each one's visible surface (from depth), its world radius over the disc's; sky kept apart
+  const surf = []
+  for (let gy = 0; gy < 7; gy++) for (let gx = 0; gx < 10; gx++) {
+    const uv = [0.05 + 0.9 * gx / 9, 0.05 + 0.9 * gy / 6], d = depthAt(uv), ndc = [uv[0] * 2 - 1, uv[1] * 2 - 1], tanY = Math.tan(THREE.MathUtils.degToRad(cam.fov) / 2)
+    const P = new THREE.Vector3(ndc[0] * tanY * cam.aspect * d, ndc[1] * tanY * d, -d).applyMatrix4(cam.matrixWorld), sky = d > cam.far * 0.9
+    const rr = Math.hypot(P.x - st.center[0], P.z - st.center[1]) / st.radius
+    surf.push(P); out.points.push({ uv: uv.map(v => +v.toFixed(2)), sky, surfaceR: +rr.toFixed(3), expected: Math.round(255 * vals.maxBlur * ss(1 - RAMP, 1, rr)) })
+  }
+  const a = await readPaint(surf.map(P => toUv(P)))
+  // pose 2
+  cam.position.set(p0.x + SHIFT[0], p0.y + SHIFT[1], p0.z + SHIFT[2]); if (ctl?.target) ctl.target.copy(t0); cam.lookAt(t0 ?? C); cam.updateMatrixWorld()
+  const uv2 = surf.map(P => P && toUv(P)), b = await readPaint(uv2)
+  // the mutant: the overlay's law on VIEW space, pose 2 re-read
+  const oRender = r.render; let dbgMat = null
+  r.render = function (scene, camera) { scene.traverse?.(o => { if (o.material?.fragmentShader?.includes('townLaw') && o.material.fragmentShader.includes('uDepth')) dbgMat = o.material }); return oRender.call(this, scene, camera) }
+  await readPaint([]); r.render = oRender
+  let m = null
+  if (dbgMat) { const fs = dbgMat.fragmentShader; dbgMat.fragmentShader = fs.replace('length((uCamWorld * vec4(pView, 1.0)).xz - uDiscC)', 'length(pView.xz - uDiscC)'); dbgMat.needsUpdate = true
+    m = await readPaint(uv2); dbgMat.fragmentShader = fs; dbgMat.needsUpdate = true }
+  out.points.forEach((p, i) => { p.pose1 = a[i]; p.pose2 = b[i]; p.mutantPose2 = m ? m[i] : null })
+  // the summary: the law (pose 1 vs expected), held still (pose 2 vs pose 1 on surfaces both poses see), and the mutant
+  const both = out.points.filter(p => !p.sky && p.pose1 != null && p.pose2 != null), law = out.points.filter(p => p.pose1 != null)
+  const mx = (xs) => xs.length ? Math.max(...xs) : null
+  out.summary = { gridPoints: out.points.length, sky: out.points.filter(p => p.sky).length, surfaceR: [Math.min(...out.points.filter(p => !p.sky).map(p => p.surfaceR)), Math.max(...out.points.filter(p => !p.sky).map(p => p.surfaceR))],
+    lawMaxErr: mx(law.map(p => Math.abs(p.pose1 - p.expected))), seenFromBoth: both.length, poseMaxDiff: mx(both.map(p => Math.abs(p.pose2 - p.pose1))),
+    mutantMaxDiff: m ? mx(both.filter(p => p.mutantPose2 != null).map(p => Math.abs(p.mutantPose2 - p.pose1))) : 'no overlay found', overlayFound: !!m }
+  out.sample = [...out.points].filter(p => !p.sky).sort((x, y) => x.surfaceR - y.surfaceR).filter((_, i, arr) => i % Math.max(1, Math.floor(arr.length / 8)) === 0)
+  out.lawOff = out.points.filter(p => p.pose1 != null && Math.abs(p.pose1 - p.expected) > 2)
+  // is an off point on a depth edge? the depth one pixel either side, in pose 1
+  cam.position.copy(p0); cam.quaternion.copy(q0); cam.updateMatrixWorld(); await readPaint([])
+  for (const p of out.lawOff) { const px = 1 / cv.width, py = 1 / cv.height
+    p.depthAround = [[0, 0], [-px, 0], [px, 0], [0, -py], [0, py]].map(([dx, dy]) => Math.round(depthAt([p.uv[0] + dx, p.uv[1] + dy]))) }
+  delete out.points
+} finally {
+  for (const k of Object.keys(saved)) R._dofRefs[k] = saved[k]; window.__dofDebug = 0
+  cam.position.copy(p0); cam.quaternion.copy(q0); if (ctl?.target) ctl.target.copy(t0); cam.updateMatrixWorld(); depthRT.dispose(); dmat.dispose(); F.invalidate()
+}
+return out

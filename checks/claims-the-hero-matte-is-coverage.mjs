@@ -6,7 +6,7 @@
 // luminance within 8 px of the Arch). Now:
 //   (1) SOURCE, HeroLadder.jsx: level 0 reads the mask's alpha (the hero drawn alone, antialiased: its coverage), less
 //       where the scene is nearer than the hero box's nearest corner (uHeroNear, derived per frame in dofDriver.js — no
-//       tolerance), and only while the hero is in focus at its own distance (blurAtGround(uHeroGround)). No depth step.
+//       tolerance), and only while the hero is in focus at its own distance (objectLaw(uHeroGround)). No depth step.
 //   (2) SOURCE: the mask draws the hero with its OWN materials (so where it is drawn, terrain lift included): a camera on
 //       layer 31 alone, no override material; and a hero on screen that nothing draws is said by name and not taken out.
 //   (3) PER TOWN, every registered map: each object its Look focuses (the hero, and any keyframe's own focus) has
@@ -27,7 +27,7 @@ const row = (ok, s) => { if (!ok) red++; console.log(`${ok ? '✅' : '⛔'} ${s}
 const HL = readFileSync(join(ROOT, 'src/components/HeroLadder.jsx'), 'utf8')
 
 const judgeTap = (s) => { const a = s.indexOf('vec4 heroTap(vec2 uv) {'), tap = a < 0 ? '' : s.slice(a, s.indexOf('\n  }\n', a))
-  return /texture2D\(uMask, uv\)\.a/.test(tap) && /step\(uHeroNear, depthToDistance\(depthAt\(uv\)\)\)/.test(tap) && /blurAtGround\(uHeroGround\)/.test(tap) && !/blurAmount\(/.test(tap) }
+  return /texture2D\(uMask, uv\)\.a/.test(tap) && /step\(uHeroNear, depthToDistance\(depthAt\(uv\)\)\)/.test(tap) && /objectLaw\(uHeroGround\)/.test(tap) && !/blurAmount\(/.test(tap) }
 const judgeDraw = (s) => { const a = s.indexOf('_drawMask(renderer, rect, meshes) {'), d = a < 0 ? '' : s.slice(a, s.indexOf('\n  render(renderer', a))
   const r = s.slice(s.indexOf('\n  render(renderer'))
   return /layers\.set\(31\)/.test(d) && /mesh\.layers\.enable\(31\)/.test(d) && /renderer\.render\(scene, this\._maskCam\)/.test(d) && !/overrideMaterial/.test(d)

@@ -20,13 +20,20 @@ import {
 } from './skyLightChannels.js'
 import { withRanges } from '../lib/townRange.js'
 import useTownRanges from './useTownRanges.js'
+import { hasFocusObject } from '../lib/focusObject.js'
 
 // Generic store-bound TodChannel mount. Reads channel + 6 actions by
 // name. Same shape as the one in CartographSkyLight; lifted here too
 // to keep this file self-contained.
 // Where the blur focuses is not set here: it is an OBJECT, per hero keyframe (the town's hero unless a key names another;
 // src/lib/focusObject.js). REMOVED (Jacob, 2026-10-07): the free picked point and its Pick / ✕ row.
+// With no focus object the blur is the TOWN's (RomanceDoF.jsx#townLaw), and Window softness means the share of the town's
+// radius that ramps — said in its label and tooltip, so one control never means two things unsaid (Boz's ruling (a)).
+const TOWN_MELT = { label: 'Ramp: share of the town\'s radius', title: 'Window softness, with no focus object: the share of the town\'s radius that ramps from sharp at the centre to the Amount at the rim' }
+function dofFields(fields, town) { return fields.map(f => f.key !== 'melt' ? f : town ? { ...f, ...TOWN_MELT } : { ...f, title: 'How gently the blur comes in at the clear window\'s edges' }) }
 function DofFocusNote() {
+  const town = useCartographStore(s => !hasFocusObject(s.heroSubject, s.heroKeyframes))
+  if (town) return <div style={{ fontSize: 12, color: 'var(--on-surface-subtle)' }}>Focus: none — no hero and no key focus, so the blur is the town's: sharp at the centre, the Amount at the rim</div>
   return <div style={{ fontSize: 12, color: 'var(--on-surface-subtle)' }}>Focus: per keyframe — Hero camera (the town's hero unless a key names another)</div>
 }
 
@@ -79,6 +86,7 @@ function SectionLabel({ label }) {
 
 export default function CartographPost() {
   const ranges = useTownRanges()
+  const noFocusObject = useCartographStore(s => !hasFocusObject(s.heroSubject, s.heroKeyframes))
   return (
     <div className="space-y-1">
       <SectionLabel label="Tone & Color" />
@@ -95,7 +103,7 @@ export default function CartographPost() {
 
       <SectionLabel label="Lens & Film" />
       <StoreChannel name="dof" label="Focus (DoF)"
-        fields={withRanges(DOF_FIELDS, ranges)} flatDefaults={DOF_FLAT_DEFAULTS}>
+        fields={dofFields(withRanges(DOF_FIELDS, ranges), noFocusObject)} flatDefaults={DOF_FLAT_DEFAULTS}>
         <DofFocusNote />
       </StoreChannel>
       <StoreChannel name="grain" label="Grain"

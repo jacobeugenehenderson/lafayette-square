@@ -18,7 +18,9 @@ const frag = /* glsl */`
   #define PERSPECTIVE_CAMERA
   #include <packing>
   uniform sampler2D uDepth;
-  uniform float cameraNear, cameraFar, uFocusDist, uMaxBlur, uHeroBlur, uZone, uRamp, uLogDepth, uFocusOn;
+  uniform float cameraNear, cameraFar, uFocusDist, uMaxBlur, uHeroBlur, uZone, uRamp, uLogDepth, uFocusOn, uDiscR;
+  uniform mat4 uCamWorld;
+  uniform vec2 uDiscC;
   uniform vec2 uTanHalf;
   uniform vec3 uUpView;
   ${DOF_BLUR_GLSL}
@@ -33,8 +35,8 @@ const frag = /* glsl */`
 export function DofDebug({ composer, after }) {
   const draw = useMemo(() => {
     const mat = new THREE.ShaderMaterial({
-      uniforms: Object.fromEntries(['cameraNear', 'cameraFar', 'uFocusDist', 'uMaxBlur', 'uHeroBlur', 'uZone', 'uRamp', 'uLogDepth', 'uFocusOn'].map(k => [k, { value: 0 }])
-        .concat([['uDepth', { value: null }], ['uTanHalf', { value: new THREE.Vector2() }], ['uUpView', { value: new THREE.Vector3() }]])),
+      uniforms: Object.fromEntries(['cameraNear', 'cameraFar', 'uFocusDist', 'uMaxBlur', 'uHeroBlur', 'uZone', 'uRamp', 'uLogDepth', 'uFocusOn', 'uDiscR'].map(k => [k, { value: 0 }])
+        .concat([['uDepth', { value: null }], ['uTanHalf', { value: new THREE.Vector2() }], ['uUpView', { value: new THREE.Vector3() }], ['uCamWorld', { value: new THREE.Matrix4() }], ['uDiscC', { value: new THREE.Vector2() }]])),
       vertexShader: 'varying vec2 vUv; void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }',
       fragmentShader: frag, depthTest: false, depthWrite: false,
     })
@@ -53,6 +55,7 @@ export function DofDebug({ composer, after }) {
     u.uTanHalf.value.copy(_dofRefs.tanHalf.current); u.uUpView.value.copy(_dofRefs.upView.current)
     u.uMaxBlur.value = _dofRefs.maxBlur.current; u.uHeroBlur.value = _dofRefs.heroBlur.current
     u.uZone.value = _dofRefs.zone.current; u.uRamp.value = _dofRefs.ramp.current; u.uFocusOn.value = _dofRefs.focusOn.current
+    u.uCamWorld.value.copy(_dofRefs.camWorld.current); u.uDiscC.value.copy(_dofRefs.discC.current); u.uDiscR.value = _dofRefs.discR.current
     u.uLogDepth.value = gl.capabilities.logarithmicDepthBuffer ? 1 : 0
     const was = gl.autoClear; gl.autoClear = false; gl.setRenderTarget(null)
     gl.render(draw.scene, draw.cam)
