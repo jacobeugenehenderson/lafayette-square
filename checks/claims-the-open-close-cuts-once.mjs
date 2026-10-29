@@ -24,7 +24,7 @@ import { fileURLToPath } from 'node:url'
 import { openCloseAtStep, waterWithoutDecks } from '../cartograph/structures.mjs'
 import { partsOf, widerThanTwoH, openCloseCutOnce } from '../cartograph/openClose.mjs'
 import * as FROZEN from './fixtures/open-close-integer-frozen-464dfa5f.mjs'
-import { ip, union, e2e, definitionOf, ownEdge, crossings, short, topo } from '../cartograph/openCloseJudge.mjs'
+import { ip, union, e2e, definitionOf, residualOf, verdictOf, ownEdge, crossings, short, topo } from '../cartograph/openCloseJudge.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const fx = (n) => JSON.parse(readFileSync(join(ROOT, `checks/fixtures/cut-once-${n}.json`), 'utf8'))
@@ -171,6 +171,29 @@ const TOPO = [SQ(0, 0, 20000, 20000), rev(SQ(7000, 7000, 6000, 6000)),
   // the cross-ring token (two holes' walls, three tags): read per ring, a transition; it builds and matches the definition
   const cr = judge(openCloseAtStep, ip(fx('ptown-crossring-crop').paths), fx('ptown-crossring-crop').fineM, 'cross-ring')
   row(bar(cr), `(3b) cross-ring: two holes' walls meeting at a segment carrying three tags of the two rings, each ring read at the tag that continues its neighbour — ${cr.why ? `REFUSED: ${cr.why.slice(0, 180)}` : `${off2(cr)} · copy ${cr.copy} · crossings ${cr.cross}`}`) }
+
+// ── (3c) THE RUNTIME NET (Zob's ruling, Boz's approval, 2026-10-29): the coast step judges each open/close against its definition
+// (openCloseJudge.mjs, which bake-coast.mjs imports) and gates every piece past 2·NODE_BOUND against the town's SIGNED tolerance
+// (cartograph/data/<town>/coast-tolerance.json: count, m² and the accepted SET of piece keys, written only by sign-coast-residual.mjs
+// --accept). ⛔ Seen to fail on a real wrong output: the collapsing hole's output with the staircase rule's cell test removed (frozen once,
+// checks/fixtures/cut-once-ptown-collapse-wrong-output.json: a 4.746 m² piece only 0.929 m wide, which a cell bound let through)
+{ const cs = ip(fx('ptown-collapse-crop').paths), st = fx('ptown-collapse-crop').fineM, empty = { n: 0, m2: 0, sites: [] }
+  const wrongK = ip(fx('ptown-collapse-wrong-output').paths), wrong = residualOf(wrongK, cs, st), live = residualOf(openCloseAtStep(cs, st, 'collapse').paths, cs, st)
+  const bc = readFileSync(join(ROOT, 'cartograph/bake-coast.mjs'), 'utf8'), sg = readFileSync(join(ROOT, 'cartograph/sign-coast-residual.mjs'), 'utf8')
+  const wired = /if \(gate\) judgeNets\(\{ water: waterNet, decks: decksNet \}\)/.test(bc) && /waterNet = netOf\(oc\.paths, traced, fine\)/.test(bc) && /decksNet = netOf\(decks\.paths, deckInputs\(osm\.ground\)\.paths, fine\)/.test(bc)
+    && /const tolPath = join\(mapDir, 'coast-tolerance\.json'\)/.test(bc) && /if \(!accept\) \{/.test(sg) && !/--force|--anyway|process\.env\./.test(bc.slice(bc.indexOf('const judgeNets'), bc.indexOf('const recordOf')))
+  row(wired, `(3c) the runtime net is wired: bake-coast judges the water's and the decks' open/close against the town's tolerance before the record is written; sign-coast-residual writes only with --accept; no bake-anyway (${wired})`)
+  const v = (r, t) => verdictOf(r, t, 'planted')
+  row(v(wrong, empty).act === 'stop', `(3c) mutant: the frozen wrong output (${wrong.n} piece, ${wrong.m2} m², key ${wrong.pieces[0]?.key}) against an empty accepted set → ${v(wrong, empty).act.toUpperCase()}, RED as it must be`)
+  row(v(live, empty).act === 'pass' && v(live, null).act === 'stop', `(3c) the live output of the same crop passes an empty set (${v(live, empty).act}); with NO tolerance signed, the first pour stops (${v(live, null).act})`)
+  const signed = { n: wrong.n, m2: wrong.m2, sites: wrong.pieces.map(({ key, side, m2, at }) => ({ key, side, m2, at })) }
+  const swap = { ...wrong, pieces: wrong.pieces.map(w => ({ ...w, key: w.key.split('').reverse().join('') })) }
+  row(v(wrong, signed).act === 'pass' && v(swap, signed).act === 'stop', `(3c) the SET is gated: the signed piece passes (${v(wrong, signed).act}); mutant, one accepted piece swapped for a new one of equal count and m² → ${v(swap, signed).act.toUpperCase()}, RED`)
+  const mv = (pp) => pp.map(r => r.map(q => ({ X: q.X + 1, Y: q.Y })))
+  const shifted = residualOf(ip(mv(wrongK)), ip(mv(cs)), st)
+  row(shifted.n === wrong.n && shifted.pieces[0]?.key !== wrong.pieces[0]?.key && v(shifted, signed).act === 'stop', `(3c) a piece moved by 1 mm is a NEW key (${wrong.pieces[0]?.key} → ${shifted.pieces[0]?.key}) and stops (${v(shifted, signed).act})`)
+  const fell = v(wrong, { n: 2, m2: wrong.m2 + 1, sites: [...signed.sites, { key: 'gone0000000000000', side: 'definition only', m2: 1, at: [0, 0] }] })
+  row(fell.act === 'tighten' && fell.tightened.n === 1 && fell.tightened.sites.length === 1, `(3c) a FALL tightens the tolerance: an accepted piece gone → ${fell.act}, to ${fell.tightened?.n} piece(s), ${fell.tightened?.m2} m²`) }
 
 // ── (4) PTown's take-out (structures.mjs#waterWithoutDecks over coast v5 and its street decks): the water within two cells of a
 // deck opened, the deck and its slivers closed, both through openClose.mjs. ⛔ Its three subtractions (w0, loc, thin) are still

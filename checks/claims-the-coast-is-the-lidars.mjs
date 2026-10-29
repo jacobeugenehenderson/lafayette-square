@@ -375,11 +375,12 @@ console.log('── F2. a deck is its ways joined, opened and closed at the trac
   // ⛔ v7 MEANS THE TOPOLOGY RECORD IS PRESENT (Zob's ruling, 2026-10-29: the version is the one format gate). The writer writes both
   // fields on BOTH of its record paths, empty included, and a coast.json at this version without either is MALFORMED: every one in the
   // tree (the towns' clean/ and the fixtures) is read here, and a planted one without them is seen to fail
-  { const topoOk = (doc) => doc.version !== COAST_VERSION || (Array.isArray(doc.waterTopology) && Array.isArray(doc.decksTopology))
-    const writes = /waterTopology: \[\], decksTopology: \[\] \}\)/.test(bc) && /waterTopology: oc\.topology, decksTopology: decks\.topology/.test(bc)
+  { const isRes = (r) => r && typeof r === 'object' && Number.isFinite(r.n) && Number.isFinite(r.m2)
+    const topoOk = (doc) => doc.version !== COAST_VERSION || (Array.isArray(doc.waterTopology) && Array.isArray(doc.decksTopology) && isRes(doc.waterResidual) && isRes(doc.decksResidual))
+    const writes = /waterTopology: \[\], decksTopology: \[\], waterResidual: \{ n: 0, m2: 0, largest: null, judgedS: 0 \}, decksResidual: \{ n: 0, m2: 0, largest: null, judgedS: 0 \} \}\)/.test(bc) && /waterTopology: oc\.topology, decksTopology: decks\.topology/.test(bc) && /waterResidual: recordOf\(waterNet\), decksResidual: recordOf\(decksNet\)/.test(bc)
     const files = [...readdirSync(join(ROOT, 'cartograph/data')).map(t => join(ROOT, 'cartograph/data', t, 'clean', COAST_FILE)), ...readdirSync(join(ROOT, 'checks/fixtures')).filter(f => /^coast-.*\.json$/.test(f)).map(f => join(ROOT, 'checks/fixtures', f))].filter(f => existsSync(f))
     const bad = files.filter(f => { try { return !topoOk(JSON.parse(readFileSync(f, 'utf8'))) } catch { return true } }).map(f => relative(ROOT, f)), atV = files.filter(f => { try { return JSON.parse(readFileSync(f, 'utf8')).version === COAST_VERSION } catch { return false } }).length
-    say(writes && !bad.length, `coast v${COAST_VERSION} carries its topology record: bake-coast writes waterTopology and decksTopology on both record paths (${writes}); ${atV} of ${files.length} coast.json in the tree at v${COAST_VERSION}, ${bad.length ? `MALFORMED: ${bad.join(', ')}` : 'none without them'}`)
+    say(writes && !bad.length, `coast v${COAST_VERSION} carries its topology and residual records: bake-coast writes waterTopology, decksTopology, waterResidual and decksResidual on both record paths (${writes}); ${atV} of ${files.length} coast.json in the tree at v${COAST_VERSION}, ${bad.length ? `MALFORMED: ${bad.join(', ')}` : 'none without them'}`)
     say(!topoOk({ version: COAST_VERSION, coast: true, waterTopology: [] }), `mutant: a v${COAST_VERSION} coast.json without decksTopology reads MALFORMED, RED`) }
   say(/deckFootprints\(osm\.ground, fine\)/.test(bc) && !/followDecks/.test(bc), 'bake-coast closes its decks at the trace step, and the trace stays the trace (no deck is followed)')
 }

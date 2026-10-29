@@ -60,7 +60,11 @@ import { authoredWater, waterRecord } from './waterDatums.mjs'
 import { waterLevels } from './waterLevel.mjs'
 import { wetLoops, KIND } from './marchingSquares.mjs'
 import { coastRings } from './coastline.mjs'
-import { deckFootprints, embankmentFootprints, openCloseAtStep } from './structures.mjs'
+import { deckFootprints, deckInputs, embankmentFootprints, openCloseAtStep } from './structures.mjs'
+import { residualOf, verdictOf } from './openCloseJudge.mjs'      // the open/close's RUNTIME NET (Zob, 2026-10-29)
+import { importClosure, contentRecord } from './pour-code.mjs'
+import { terrainValueReads } from './terrainReads.mjs'
+import { fileURLToPath } from 'url'
 import { tessellateAdaptive } from './derive.js'                       // the mint's own centreline (mintInputs tessellates the same way)
 import { highwayStandard, townState } from '../src/cartograph/streetProfiles.js'
 import { CLIP_SCALE as SCALE } from '../src/lib/lattice.js'          // clipper units per metre: 1 mm
@@ -288,7 +292,7 @@ export function bodiesAtEdge(paths, R, minM2) {
   return { bodies, hollows }
 }
 
-export async function bakeCoast({ scene, outDir = null, write = true }) {
+export async function bakeCoast({ scene, outDir = null, write = true, gate = true }) {
   const mapDir = join(CARTOGRAPH_DIR, 'data', scene)
   const outPath = join(outDir || join(mapDir, 'clean'), COAST_FILE)
   for (const f of ['geography.json', 'neighborhood_boundary.json', 'raw/osm.json'])
@@ -301,6 +305,24 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
   const R = localBB(osm, toLocal)
   if (!R) throw new Error(`⛔ bake-coast: ${scene}'s raw/osm.json carries no bbox — the fetched square the coast closes against is unknown`)
 
+  // ⭐ THE RUNTIME NET (Zob's ruling, Boz's approval, 2026-10-29): every open/close the coast step runs is judged against its DEFINITION
+  // (the same operation on a lattice 1000× finer, openCloseJudge.mjs#residualOf), and every piece past 2·NODE_BOUND is weighed against
+  // the town's SIGNED tolerance (cartograph/data/<town>/coast-tolerance.json, tracked authoring, written only by sign-coast-residual.mjs
+  // --accept): its count, m² and accepted SET of piece keys. No tolerance, or any piece not accepted (even at an equal count and m²) →
+  // the pour STOPS, naming the pieces and what changed since the signature. Accepted pieces gone → the file TIGHTENS (the only automatic
+  // change). There is no bake-anyway flag
+  const netOf = (k, P, stepM) => { const t0 = Date.now(), r = residualOf(k, P, stepM); return { ...r, judgedS: +((Date.now() - t0) / 1000).toFixed(1) } }
+  const tolPath = join(mapDir, 'coast-tolerance.json')
+  const coastReads = () => contentRecord([...importClosure([fileURLToPath(import.meta.url)]), ...['clean/overlay.json', 'clean/skeleton.json', 'raw/water-datums.json'].map(f => join(mapDir, f)).filter(f => fs.existsSync(f)), { value: 'terrainValueReads', read: () => terrainValueReads(scene) }])
+  const judgeNets = (nets) => {
+    const tol = fs.existsSync(tolPath) ? JSON.parse(fs.readFileSync(tolPath, 'utf8')) : null, now = coastReads(), tightened = {}
+    const changed = () => !tol?.reads ? '' : ` What changed since the signature (${tol.signedAt}): ${Object.keys({ ...tol.reads, ...now }).filter(f => tol.reads[f] !== now[f]).join(', ') || 'none of the coast step\'s code or authored inputs'}.`
+    for (const [k, r] of Object.entries(nets)) { const v = verdictOf(r, tol ? tol[k] : null, `${scene}'s ${k}`)
+      if (v.act === 'stop') throw new Error(`⛔ bake-coast: ${v.why}.${changed()} Look at each piece; if it is the rounding, accept it: in Stage's Bake, or node cartograph/sign-coast-residual.mjs --scene=${scene} --accept. Stopping.`)
+      if (v.act === 'tighten') { tightened[k] = v.tightened; console.log(`[bake-coast] ${scene}: ${v.why}`) }
+      else console.log(`[bake-coast] ${v.why} (judged in ${r.judgedS} s)`) }
+    if (Object.keys(tightened).length && write) writeIfChanged(tolPath, JSON.stringify({ ...tol, ...tightened }, null, 1)) }
+  const recordOf = (r) => ({ n: r.n, m2: r.m2, largest: r.pieces[0] || null, judgedS: r.judgedS })
   // ── IS THIS A COASTAL TOWN? Two records answer, and they must agree. ─────────────────────────────────────────────
   const osmWater = coastRings({ ground: osm.ground || {}, buildings: osm.buildings || [], center: [disc.cx, disc.cz], discR: disc.R, bb: R })
   const hasRecord = fs.existsSync(join(mapDir, 'raw', 'water-datums.json'))
@@ -308,7 +330,7 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
   const save = () => { if (write) { fs.mkdirSync(join(outPath, '..'), { recursive: true }); writeIfChanged(outPath, JSON.stringify(out)) } }
   if (!osmWater.rings.length && !hasRecord) {
     // v7: the topology record is ALWAYS written, empty included (an inland town's open/close changes nothing)
-    Object.assign(out, { coast: false, why: 'no water record (raw/water-datums.json) and no OSM water reaching the fetched square\'s edge — an inland town', waterTopology: [], decksTopology: [] })
+    Object.assign(out, { coast: false, why: 'no water record (raw/water-datums.json) and no OSM water reaching the fetched square\'s edge — an inland town', waterTopology: [], decksTopology: [], waterResidual: { n: 0, m2: 0, largest: null, judgedS: 0 }, decksResidual: { n: 0, m2: 0, largest: null, judgedS: 0 } })
     save()
     console.log(`[bake-coast] ${scene}: inland — ${out.why}`)
     return out
@@ -336,6 +358,7 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
   const fine = Math.min(...opened.map(o => pixelMetres(o, toLL, disc.cx, disc.cz)))
   if (!(fine > 0 && Number.isFinite(fine))) throw new Error(`⛔ bake-coast: ${scene} — the lidar's pixel size could not be read`)
   const decks = deckFootprints(osm.ground, fine)
+  const decksNet = netOf(decks.paths, deckInputs(osm.ground).paths, fine)
   // ⭐ AN EMBANKMENT IS HELD AS LAND WHILE THE LINE IS TRACED (Jacob, 2026-10-28, `r-the-coast-bake-holds-an-embankment-as-land`):
   // its footprint at the pour's own measure (structures.mjs#embankmentFootprints, through the one measure rule, pourMeasureOf),
   // so the coast and the dike are ONE line by construction. Held on the coarse sheet (a barrier), HELD in the fine trace (dry;
@@ -418,6 +441,7 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
   // needle that ② could not stamp). Cut once, as the decks are. What it moves is counted and named (coast.json waterOpened /
   // waterClosed / waterBelowResolution); an input ring wholly the rounding is named in oc.dropped.
   const oc = openCloseAtStep(traced, fine, 'the traced water')
+  const waterNet = netOf(oc.paths, traced, fine)
   const sumM2 = (xs) => +xs.reduce((t, c) => t + c.m2, 0).toFixed(3)
   const opened2 = clip(ClipType.ctIntersection, clip(ClipType.ctUnion, oc.paths, null), square)
   // the embankments cut out EXACTLY after the open/close, so where the water meets one its edge IS the ring, corners included
@@ -488,6 +512,8 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
     if (a.closed) { islands.push({ pts: a.pts.length, m2: Math.round(ringArea(a.pts)), at: a.pts[0].map(Math.round) }); arcs.push([...a.pts, a.pts[0]]); continue }
     arcs.push(a.pts)
   }
+  if (gate) judgeNets({ water: waterNet, decks: decksNet })
+  else out.nets = { water: waterNet, decks: decksNet, reads: coastReads() }   // the signing command's measure (sign-coast-residual.mjs): nothing is gated or written
   Object.assign(out, {
     coast: true,
     from: `the lidar meets ${levels.highName} (${levels.tidal ? 'tidal' : 'lake'}; NAVD88 ${levels.range.high.map(v => v.toFixed(3)).join('…')} m), traced at ${+fine.toFixed(3)} m along a ${G} m sheet over the fetched square`,
@@ -505,6 +531,8 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
     // ⭐ EVERY TOPOLOGY CHANGE THE OPEN/CLOSE MADE (Jacob's ruling (a), 2026-10-29): it follows the definition (a hole filled or opened,
     // holes merged, a part split, parts joined), each NAMED here: { kind, at (m), m2, n? }. ▶ checks/claims-the-open-close-cuts-once.mjs
     waterTopology: oc.topology, decksTopology: decks.topology,
+    // the RUNTIME NET's residual per open/close, judged against the signed ceiling above: { n, m2 (past 2·NB), largest, judgedS }
+    waterResidual: recordOf(waterNet), decksResidual: recordOf(decksNet),
     edgesBelowResolution,
     settled: { moved: settled.moved, bounded: settled.bounded, unbracketed: settled.unbracketed, noValue: settled.noValue, sweepClamped: settled.sweepClamped, p50M: +settled.p50.toFixed(4), maxM: +settled.max.toFixed(4) },
     totals: { heldCells: heldN, noReturnEnteredHa: +(nrIn * G * G / 1e4).toFixed(1), noReturnNotReachedHa: +(nrOut * G * G / 1e4).toFixed(1), noCoverageHa: +(noCover * G * G / 1e4).toFixed(1), fineTiles: tiles, fineSamples: samples, fineNoValue: noValue, sentinelCrossings: crossings,

@@ -15,7 +15,7 @@ import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { openCloseAtStep } from '../cartograph/structures.mjs'
 import { partsOf } from '../cartograph/openClose.mjs'
-import { ip, e2e, definitionOf, ownEdge, crossings, short } from '../cartograph/openCloseJudge.mjs'
+import { ip, e2e, definitionOf, residualOf, verdictOf, ownEdge, crossings, short } from '../cartograph/openCloseJudge.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 let fails = 0
@@ -35,6 +35,11 @@ if (k) {
   for (const [what, v] of [['copy', o.copy], ['crossings', x], ['short', sh]]) { const why = ratchet(v, CEILING[what], what)
     const site = what !== 'copy' || !o.copy || o.copies.some(c => c.flat().join(', ').includes(COPY_AT))
     row(!why && site, `Huron, ${what === 'short' ? '≤ 2 mm edges' : what}: ${v} (ceiling ${CEILING[what]})${what === 'copy' && o.copy ? `, at (${COPY_AT}): ${site ? 'the named one' : `NOT the named one (${JSON.stringify(o.copies[0])})`}` : ''}${why ? ` — ${why}` : ''}`) }
+  // the RUNTIME NET's gate (openCloseJudge.mjs#verdictOf, as bake-coast runs it): Huron's residual against a tolerance signed on it passes;
+  // the same tolerance with one accepted key removed stops, RED
+  { const res = residualOf(k, src, d.fineM), signed = { n: res.n, m2: res.m2, sites: res.pieces.map(({ key, side, m2, at }) => ({ key, side, m2, at })) }
+    const at = verdictOf(res, signed, 'Huron'), less = verdictOf(res, { ...signed, sites: signed.sites.slice(1) }, 'Huron')
+    row(at.act === 'pass' && less.act === 'stop', `the runtime net on Huron: ${res.n} piece(s) past 2·NB, ${res.m2} m² → signed, ${at.act}; one accepted key removed → ${less.act.toUpperCase()}${less.act === 'stop' ? ', RED' : ''}`) }
   // mutant: a planted extra piece (a 2 m square of output far from every shore)
   const far = ip([[[1e9, 1e9], [1e9 + 2000, 1e9], [1e9 + 2000, 1e9 + 2000], [1e9, 1e9 + 2000]]]), m = e2e([...k, ...far], src, d.fineM, def)
   const mw = sideWhy(m['candidate only'], CEILING['candidate only'])

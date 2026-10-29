@@ -196,7 +196,7 @@
         "deletes files",
         "computed import() with no readable target — runs arbitrary modules",
         "computed import() with no readable target — runs arbitrary modules",
-        "imports cartograph/bake-coast.mjs, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/elevationSources.mjs, which can: calls fetch(), imports cartograph/fetch-lidar-flights.mjs, which can: mkdirSync"
+        "imports cartograph/bake-coast.mjs, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/elevationSources.mjs, which can: calls fetch(), imports cartograph/pour-code.mjs, which can: runs `git` — not a known-local command, runs `git` — not a known-local command, imports cartograph/fetch-lidar-flights.mjs, which can: mkdirSync"
       ]
     },
     {
@@ -2573,7 +2573,7 @@
         "writeFileSync",
         "deletes files",
         "computed import() with no readable target — runs arbitrary modules",
-        "imports cartograph/bake-coast.mjs, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/elevationSources.mjs, which can: calls fetch(), imports cartograph/fetch-lidar-flights.mjs, which can: mkdirSync"
+        "imports cartograph/bake-coast.mjs, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/elevationSources.mjs, which can: calls fetch(), imports cartograph/pour-code.mjs, which can: runs `git` — not a known-local command, runs `git` — not a known-local command, imports cartograph/fetch-lidar-flights.mjs, which can: mkdirSync"
       ]
     },
     {
