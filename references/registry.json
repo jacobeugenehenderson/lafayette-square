@@ -8737,16 +8737,20 @@
       "value": {
         "rule": "BOTH, as an authored choice per segment: TRACK (the camera keeps looking at a point as it travels; today's tween) or TURN (the look direction tweens from key to key, whatever the look-at depth)",
         "default": "TRACK, so no existing movie changes",
-        "visible": "the look-at point becomes a visible, draggable handle in Stage; a tracked point that can't be seen is the hidden-depth bend",
         "pacing": "each mode paces on its own travel: TRACK on position + target travel (today), TURN on position + turn angle",
         "separate": "the look-at point is NOT the focus object; focus stays its own channel and may shift object to object (Jacob)",
-        "why_not_two_methods": "an operator's authored choice recorded on each segment, like an ease, not two hidden code paths"
+        "why_not_two_methods": "an operator's authored choice recorded on each segment, like an ease, not two hidden code paths",
+        "previously": {
+          "visible": "the look-at point becomes a visible, draggable handle in Stage; a tracked point that can't be seen is the hidden-depth bend"
+        },
+        "tracks": "TRACK tracks the key's FOCUS OBJECT; a key with no focus object tracks the TOWN'S CENTRE (derived from the town's own extent, as the town-anchored blur is). Both are read at PLAY time from the key's focus and the town, never stored in the key, so nothing goes stale; key.target's stored depth means nothing to TRACK",
+        "grab": "the aimer's grab is orientation only (unchanged)"
       },
       "by": "Jacob",
       "date": "2026-10-29",
-      "quote": "\"why not both though?\" · \"yes, file the both-modes ruling\"",
+      "quote": "\"why not both though?\" · \"yes, file the both-modes ruling\" · \"Isn't that what the hero object is for?\" · \"Why would the camera ever be anywhere that's not 'relative to the centroid'?\" · \"yes, amend it\"",
       "canon": "cartograph/BACKLOG.md (TO BRIEF NEXT)",
-      "notes": "UNBUILT; briefs after the aimer. Readers of key.target: heroAnim (MovieCamera, the DoF rack's lam), Stage's scrub, CelestialBodies' shadow fit, bake-trees' hero tiers (re-bake), claims-the-movie-is-continuous. HPDM's 39° tracks no subject (no focus object on its keys); it re-authors when its two objects land."
+      "notes": "UNBUILT; briefs after the aimer. Readers of key.target: heroAnim (MovieCamera, the DoF rack's lam), Stage's scrub, CelestialBodies' shadow fit, bake-trees' hero tiers (re-bake), claims-the-movie-is-continuous. Amended 2026-10-29 (Jacob): the hidden handle is replaced by the focus object, else the town's centre. Its moves change where keys' stored targets differ from that (HPDM's keys name no focus object, so HPDM tracks its centre until its two objects land). Measured on LS (Gimbal, probe-focus-depth.mjs): Arch on every key takes the depth ratio 2.28 → 1.15."
     }
   ]
 }

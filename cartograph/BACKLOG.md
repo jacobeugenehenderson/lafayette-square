@@ -100,8 +100,8 @@ re-aims LS's keys with it, then LS re-bakes and its cutover follows) (`r-plant-i
 then play) · the live edge fade band (below) · a town keeps the values it grew with (`r-a-town-keeps-the-values-it-grew-with`: a
 kit-default change never re-colours a town on its next bake; today `bake-scene.js`'s `design.X || kit…` channels follow the kit).
 - **▶ BRIEF AFTER THE AIMER: a move TRACKS a point or TURNS the head, per segment** (`r-a-move-tracks-a-point-or-turns-the-head`, Jacob
-  2026-10-29). TRACK stays the default (no movie changes); the look-at point becomes a visible handle in Stage; TURN paces on position + turn
-  angle. Measured motive (Gimbal, `scratch/aimer/probe-equal-depth.mjs` in the aimer worktree): today's hidden depth moves the mid-move look by up to
+  2026-10-29). TRACK (the default) tracks the key's FOCUS OBJECT, else the TOWN'S CENTRE, read at play time, never stored (amended: no hidden
+  handle); TURN paces on position + turn angle. Movies change where stored targets differ from that. Measured motive (Gimbal, `scratch/aimer/probe-equal-depth.mjs` in the aimer worktree): today's hidden depth moves the mid-move look by up to
   LS 2.47° · PTown 17.72° · Huron 16.21° · HPDM 39.19° (HPDM tracks no subject).
 **⛔ STAGE'S EDGE FADE BAND IS BAKE-TIME, NOT LIVE (Keystone, measured on LS 2026-10-29); ruled: visual values are live
 (`r-visual-look-values-are-live-in-stage`), brief owed, not tonight.** Also: createGroupChannelActions' set<Channel> drops a write to an
