@@ -16,17 +16,22 @@
 //    otherwise two rings' tags are a TRANSITION collapsed by rounding (kind 'transition', below), guarded by the walls' distance.
 import { NODE_BOUND, lineCrossOf, sameLine } from '../../src/lib/latticeNode.js'
 
-const segOf = (R, i) => { const a = R[i], b = R[(i + 1) % R.length]; return { a: [a.X, a.Y], b: [b.X, b.Y] } }
+const segRaw = (R, i) => { const a = R[i], b = R[(i + 1) % R.length]; return { a: [a.X, a.Y], b: [b.X, b.Y] } }
+// ⭐ an edge's line is its BIRTH line when the caller has one (Zob, 2026-10-29: provenance crosses the stage boundary; the emission
+// invariant found this reading the open's rounded vertices instead), else its own two points
+let LINE_OF = null
+const segOf = (R, i, g) => { const L = LINE_OF ? LINE_OF(g, i) : null; return L ? { a: L[0], b: L[1] } : segRaw(R, i) }
 const distSeg = (p, a, b) => { const dx = b[0] - a[0], dy = b[1] - a[1], L2 = dx * dx + dy * dy, t = L2 ? Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / L2)) : 0
   return Math.hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dy) }
 const distLine = (p, a, b) => { const dx = b[0] - a[0], dy = b[1] - a[1]; return Math.abs((p[0] - a[0]) * dy - (p[1] - a[1]) * dx) / Math.hypot(dx, dy) }
 
-export function tagRun(tags, SRC, { againstDirection = false, refuseGap = false, noBand = false, twoH = null } = {}) {
+export function tagRun(tags, SRC, { againstDirection = false, refuseGap = false, noBand = false, twoH = null, lineOf = null } = {}) {
+  LINE_OF = lineOf
   if (tags.length === 1) return { ok: true, kind: 'one', ring: tags[0].ring, from: tags[0].i, to: tags[0].i, gaps: 0 }
   const rings = [...new Set(tags.map(t => t.ring))]
   if (rings.length > 1) {
-    const s0 = segOf(SRC[tags[0].ring], tags[0].i)
-    const same = tags.every(t => sameLine(s0, segOf(SRC[t.ring], t.i)))
+    const s0 = segOf(SRC[tags[0].ring], tags[0].i, tags[0].ring)
+    const same = tags.every(t => sameLine(s0, segOf(SRC[t.ring], t.i, t.ring)))
     if (same) return { ok: true, kind: 'line', ring: tags[0].ring, from: tags[0].i, to: tags[0].i, gaps: 0, rings }
     // ⭐ Zob's ruling, 2026-10-28 (PTown's deck): two rings' tags on one segment are a TRANSITION collapsed by rounding, emitted
     // as any tag change (the caller orders the two by its neighbours and cuts between them). The classifier is a GUARD: the two
@@ -34,7 +39,7 @@ export function tagRun(tags, SRC, { againstDirection = false, refuseGap = false,
     // doubles; within 1e-6 u of 2h refuses as a tie.
     if (rings.length !== 2 || tags.length !== 2) return { ok: false, clause: 'cross-ring-not-a-pair', rings, tags }
     if (!(twoH > 0)) throw new Error('⛔ tagRun: a cross-ring transition needs { twoH } (the open\'s 2h, in units) for its guard')
-    const sa = segOf(SRC[tags[0].ring], tags[0].i), sb = segOf(SRC[tags[1].ring], tags[1].i)
+    const sa = segOf(SRC[tags[0].ring], tags[0].i, tags[0].ring), sb = segOf(SRC[tags[1].ring], tags[1].i, tags[1].ring)
     const wall = Math.min(distSeg(sa.a, sb.a, sb.b), distSeg(sa.b, sb.a, sb.b), distSeg(sb.a, sa.a, sa.b), distSeg(sb.b, sa.a, sa.b))
     if (Math.abs(wall - twoH) < 1e-6) return { ok: false, clause: 'walls-at-2h-tie', rings, tags, wallU: wall }
     if (wall <= twoH) return { ok: false, clause: 'walls-meet', rings, tags, wallU: +wall.toFixed(3) }
@@ -50,7 +55,7 @@ export function tagRun(tags, SRC, { againstDirection = false, refuseGap = false,
   const named = new Set(is), gapEdges = arc.filter(j => !named.has(j))
   if (!gapEdges.length) return { ok: true, kind: 'run', ring, from, to, gaps: 0 }
   // the cut alternative's path between the run's first and last line
-  const f = segOf(R, from), l = segOf(R, to)
+  const f = segOf(R, from, ring), l = segOf(R, to, ring)
   let path
   if (sameLine(f, l)) path = (p) => distLine(p, f.a, f.b)
   else if (BigInt(f.b[0] - f.a[0]) * BigInt(l.b[1] - l.a[1]) === BigInt(f.b[1] - f.a[1]) * BigInt(l.b[0] - l.a[0])) { // parallel and DISTINCT: no cut exists; the band test (Zob (2)). Signed offsets across f's line: the band is [0, off(l)] ± NODE_BOUND
@@ -63,6 +68,10 @@ export function tagRun(tags, SRC, { againstDirection = false, refuseGap = false,
   let worst = 0, worstAt = null
   for (const j of gapEdges) for (const v of [R[j], R[(j + 1) % n]]) { const d = path([v.X, v.Y]); if (d > worst) { worst = d; worstAt = [v.X, v.Y] } }
   if (worst <= NODE_BOUND) return { ok: true, kind: 'run', ring, from, to, gaps: gapEdges.length, worst }
+  // ⭐ the run's two ends on ONE birth line, its skipped edges off it (Plumb, 2026-10-29, flagged to Zob): the segment carries both
+  // tags, so it lies on that ONE line's offset, and the boundary runs straight along it; the skipped edges are not on this
+  // segment. Emitted as that line alone (kind 'line'), no vertices; the emission invariant checks it
+  if (sameLine(f, l)) return { ok: true, kind: 'line', ring, from, to: from, gaps: gapEdges.length, sameLineSkip: true, worstU: +worst.toFixed(3) }
   if (refuseGap) return { ok: false, clause: 'gap-past-bound', ring, from, to, gaps: gapEdges.length, worstU: +worst.toFixed(3), at: worstAt, tags }   // ⛔ the mutant: clause 3 as first ruled
   return { ok: true, kind: 'cut', ring, from, to, gaps: gapEdges.length, worstU: +worst.toFixed(3), at: worstAt, X: lineCrossOf(f, l, 'tagRun') }
 }

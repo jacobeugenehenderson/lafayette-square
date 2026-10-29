@@ -91,7 +91,7 @@ function emit(E, T, SRC, d, who, stat, LINES = null) {
     const tkey = tags.length > 1 ? JSON.stringify(tags.filter(x => x?.ring != null).map(x => x.ring + ':' + x.i).sort()) : null
     if (tkey && tkey === prevRunKey) { stat.runRepeat = (stat.runRepeat || 0) + 1; continue }
     prevRunKey = tkey
-    const r = tagRun(tags, SRC, { twoH: 2 * Math.abs(d) })
+    const r = tagRun(tags, SRC, { twoH: 2 * Math.abs(d), lineOf: LINES ? lineOf : null })
     if (!r.ok) throw new Error(`[${who}] ⛔ the back-offset: the eroded segment (${[p.X, p.Y].map(v => v / SCALE)}) → (${[q.X, q.Y].map(v => v / SCALE)}) carries tags ${JSON.stringify(tags)}: ${r.clause}. Refusing.`)
     stat[r.kind] = (stat[r.kind] || 0) + 1
     if (r.kind === 'transition') { // ordered by the neighbours: the tag of the ring the previous edge carries comes first
@@ -136,9 +136,6 @@ function emit(E, T, SRC, d, who, stat, LINES = null) {
     const A = t.int || t.flt, B = u.int || u.flt
     const na = unit(A[0], A[1]), nb = unit(B[0], B[1]), cosA = na[0] * nb[0] + na[1] * nb[1], sinA = na[0] * nb[1] - nb[0] * na[1]
     if (t.int && u.int && sameLine({ a: A[0], b: A[1] }, { a: B[0], b: B[1] })) continue
-    if (t.int && u.int && t.g != null && u.g === t.g) { const v = SRC[t.g][u.i], nearV = (l) => { const dx = BigInt(l[1][0] - l[0][0]), dy = BigInt(l[1][1] - l[0][1]), cr = dx * BigInt(v.Y - l[0][1]) - dy * BigInt(v.X - l[0][0]); return 2n * cr * cr <= dx * dx + dy * dy }
-      // ⭐ ACROSS A TRANSITION, NO VERTEX (Zob, 2026-10-29; ruling (2) generalised from exactly parallel to within rounding)
-      if (cosA > 0 && nearV(A) && nearV(B) && Math.abs(sinA) < 0.5) { stat.transitionJoin = (stat.transitionJoin || 0) + 1; continue } }
     if (t.int && u.int && BigInt(A[1][0] - A[0][0]) * BigInt(B[1][1] - B[0][1]) === BigInt(A[1][1] - A[0][1]) * BigInt(B[1][0] - B[0][0])) {
       // ⭐ PARALLEL AND DISTINCT at a join: no cut exists (Zob's ruling, 2026-10-28, one rule for any order):
       //  · separation ≤ NODE_BOUND, exact (2·cross(dir, offset)² ≤ |dir|²): the lines differ by less than the lattice's own
@@ -210,6 +207,15 @@ function emit(E, T, SRC, d, who, stat, LINES = null) {
     const par = (L, q) => { const dx = L[1][0] - L[0][0], dy = L[1][1] - L[0][1]; return ((q[0] - L[0][0]) * dx + (q[1] - L[0][1]) * dy) / (dx * dx + dy * dy) }
     DETAIL.set(X[0] + ',' + X[1], { who, t: t.g != null ? { g: t.g, i: t.i } : 'new', u: u.g != null ? { g: u.g, i: u.i } : 'new', ta: +par(A, Xf).toFixed(4), tb: +par(B, Xf).toFixed(4), A, B }) }
   if (outL.length !== out.length) throw new Error(`[${who}] ⛔ the back-offset: ${out.length} points but ${outL.length} outgoing lines. Refusing.`)
+  // ⭐ THE EMISSION INVARIANT (Zob, 2026-10-29): every emitted edge lies on its tag's line, BOTH endpoints within NODE_BOUND of it
+  // (exact, BigInt: 2·cross² ≤ |dir|² per end, as the transition test). A violation refuses by name with the rule that made the
+  // edge (the start point's emission, cand3.mjs#ORIGIN), the line and both distances
+  if (!NO_EMIT_INVARIANT) for (let k = 0; k < out.length; k++) { const L = outL[k]; if (!L) continue
+    const p0 = out[k], p1 = out[(k + 1) % out.length]; if (p0[0] === p1[0] && p0[1] === p1[1]) continue
+    const dx = BigInt(L[1][0] - L[0][0]), dy = BigInt(L[1][1] - L[0][1]), D2 = dx * dx + dy * dy
+    const off = (pt) => { const cr = dx * BigInt(Math.round(pt[1]) - L[0][1]) - dy * BigInt(Math.round(pt[0]) - L[0][0]); return 2n * cr * cr > D2 }
+    if (off(p0) || off(p1)) { const dist = (pt) => +(Math.abs((pt[0] - L[0][0]) * Number(dy) - (pt[1] - L[0][1]) * Number(dx)) / Math.sqrt(Number(D2))).toFixed(3)
+      throw new Error(`[${who}] ⛔ the emission invariant: the edge (${p0.map(v => v / SCALE)}) → (${p1.map(v => v / SCALE)}) is tagged with the line ${JSON.stringify(L)} but lies ${dist(p0)} / ${dist(p1)} u off it (> NODE_BOUND); made by: start ${ORIGIN.get(p0[0] + ',' + p0[1]) || '?'}, end ${ORIGIN.get(p1[0] + ',' + p1[1]) || '?'}. Refusing.`) } }
   return out.map(([X, Y], k) => ({ X, Y, tag: TAGS_BY_SEGMENT ? null : outL[k] }))
 }
 export const ORIGIN = new Map(), DETAIL = new Map()
@@ -230,6 +236,8 @@ let NO_TOPOLOGY_GUARD = false                     // ⛔ the mutant only (setNoT
 export const setNoTopologyGuard = (v) => { NO_TOPOLOGY_GUARD = !!v }
 let FOLDED_QUAD = false, NO_FOLD_TRIANGLE = false, R_SEPARATE = false   // ⛔ the mutants only (setFoldMutant)
 export const setFoldMutant = (m) => { FOLDED_QUAD = m === 'quad'; NO_FOLD_TRIANGLE = m === 'no-triangle'; R_SEPARATE = m === 'r-separate' }
+let NO_EMIT_INVARIANT = false                     // ⛔ the mutant only (setNoEmitInvariant)
+export const setNoEmitInvariant = (v) => { NO_EMIT_INVARIANT = !!v }
 let TRIM_INVERTED = false                          // ⛔ the mutant only (setTrimInverted): the side test inverted
 export const setTrimInverted = (v) => { TRIM_INVERTED = !!v }
 const origin = (p, kind) => { const k = p[0] + ',' + p[1], o = ORIGIN.get(k); ORIGIN.set(k, o && o !== kind ? o + '|' + kind : kind) }
