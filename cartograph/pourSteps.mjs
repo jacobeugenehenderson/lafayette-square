@@ -49,6 +49,19 @@ export const groundForReaders = (lookDir) => ({
   },
 })
 
+// ⛔ scene.json#bakedAt is the pour's stamp, written by serve.js after every step has run; a step that read scene.json BY FILE
+// was stale after every Bake (trees 2026-10-04, revetment-far 2026-10-29). Its readers declare it by value, without the stamp.
+// ▶ node checks/claims-no-step-reads-what-a-later-step-writes.mjs
+export const sceneForReaders = (sceneDir) => ({
+  value: `${join(sceneDir, 'scene.json').replace(REPO_ROOT + '/', '')} without its bakedAt stamp`,
+  read: () => {
+    let sc
+    try { sc = JSON.parse(readFileSync(join(sceneDir, 'scene.json'), 'utf-8')) } catch { return null }
+    delete sc.bakedAt
+    return sc
+  },
+})
+
 /** A step's reads: its CODE is its declared scripts' whole import closure, its DATA every other declared input plus the town's
  *  record. What the Bake judges a step by, and what is recorded after it runs. */
 export function stepReads(inputs, scene) {

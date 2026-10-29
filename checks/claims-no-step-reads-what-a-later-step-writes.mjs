@@ -15,8 +15,14 @@
 //       pourSteps.mjs#GROUND_AO_FIELDS, so a fifth map it starts writing fails here, not on a town.
 //   3 · THE VALUE SEES THE GROUND, NOT THE MAPS: pourSteps.mjs#groundForReaders, run on a scratch ground.json, records the
 //       same content when only the AO maps or `timings` change, and a different one when the ground (groups, groundKey) does.
+//   4 · THE STAMP IS THE LAST WRITE: the Bake stamps scene.json#bakedAt after every step (serve.js, `<x>.bakedAt = stampedAt`
+//       on a `join(DIR, 'name')` it then writes), so judge 1 counts it as a writer after the last step; and
+//       pourSteps.mjs#sceneForReaders records the same content when only bakedAt moves, a different one when the hero keys do.
+//       Subject guard: the parse finds the stamp, or the judge is blind (revetment-far, 2026-10-29: the stamp was not a step,
+//       so judge 1 could not see it, and every Bake left revetment-far stale on Huron).
 // ⭐ MUTANTS (--mutants), each must go RED: (a) coast-distance back on the raw ground.json → 1 · (b) ground-ao's ground.json
-// output undeclared → 1 (blind) · (c) bake-ground-ao writes a new `manifest.foomap` → 2 · (d) the strip keeps `lightmap` → 3.
+// output undeclared → 1 (blind) · (c) bake-ground-ao writes a new `manifest.foomap` → 2 · (d) the strip keeps `lightmap` → 3 ·
+// (e) revetment-far back on scene.json by file → 1 · (f) the stamp unparsed → 4 (blind) · (g) the scene strip keeps bakedAt → 4.
 //   node checks/claims-no-step-reads-what-a-later-step-writes.mjs [--mutants]
 // Read-only (judge 3 writes only under its own temp dir). Exits 1 on any failing judge or any mutant left GREEN.
 import fs from 'fs'
@@ -60,10 +66,22 @@ function files(t = '') {
 function stepsOf(src) {
   return [...src.matchAll(/runIfDirty\('([\w-]+)',/g)].map((m) => { const a = args(src, m.index + m[0].length); return { label: m[1], reads: files(a[0]), writes: files(a[1]) } })
 }
+// the pour's stamp: `const p = join(DIR, 'name')` · `<x>.bakedAt = stampedAt` · `writeFileSync(p` — a write after every step
+function stampOf(src) {
+  const at = src.search(/\.bakedAt\s*=\s*stampedAt\b/)
+  if (at < 0) return null
+  const before = src.slice(Math.max(0, at - 600), at), after = src.slice(at, at + 400)
+  const decl = [...before.matchAll(/const\s+(\w+)\s*=\s*join\((\w+),\s*'([^']+)'\)/g)].pop()
+  if (!decl || !new RegExp(`writeFileSync\\(${decl[1]}\\b`).test(after)) return null
+  return { label: 'the bakedAt stamp', reads: new Set(), writes: new Set([`${decl[2]}/${decl[3]}`]) }
+}
 
-async function judge(textOf, stripOverride) {
-  const out = { 1: [], 2: [], 3: [] }
+async function judge(textOf, stripOverride, sceneOverride) {
+  const out = { 1: [], 2: [], 3: [], 4: [] }
   const steps = stepsOf(textOf(SERVE))
+  const stamp = stampOf(textOf(SERVE))
+  if (!stamp) out[4].push(`${SERVE}: the parse found no \`.bakedAt = stampedAt\` written to a join(DIR, 'name'): the judge is blind to the stamp`)
+  else steps.push(stamp)
   const ao = steps.find((s) => s.label === 'ground-ao')
   if (!steps.some((s) => s.label === 'ground') || !ao) out[1].push(`${SERVE}: the parse found no ground / ground-ao step: the judge has no subject`)
   else if (!ao.writes.has('LOOK_DIR/ground.json')) out[1].push(`${SERVE}: ground-ao does not declare ground.json, which it rewrites (bake-ground-ao.js writeIfChanged): the judge is blind to it`)
@@ -88,13 +106,25 @@ async function judge(textOf, stripOverride) {
     if (at(maps) !== h0) out[3].push('only the AO maps and timings changed, and the recorded value moved: the readers would be stale')
     if (at({ ...base, groundKey: 'bbbb', groups: [{ id: 'grass', n: 4 }] }) === h0) out[3].push('the ground itself changed, and the recorded value did not: the readers would miss a re-bake they owe')
   } finally { fs.rmSync(dir, { recursive: true, force: true }) }
+
+  const sceneForReaders = sceneOverride ?? (await import('../cartograph/pourSteps.mjs')).sceneForReaders
+  if (typeof sceneForReaders !== 'function') { out[4].push(`${STEPS} exports no sceneForReaders: nothing reads scene.json by value`); return out }
+  const sdir = fs.mkdtempSync(path.join(os.tmpdir(), 'scene-readers-'))
+  try {
+    const f = path.join(sdir, 'scene.json'), spec = sceneForReaders(sdir)
+    const at = (m) => { fs.writeFileSync(f, JSON.stringify(m)); return Object.values(contentRecord([spec]))[0] }
+    const base = { terrainExag: 2, heroKeyframes: [{ pos: [0, 1, 2] }], bakedAt: 1000 }
+    const h0 = at(base)
+    if (at({ ...base, bakedAt: 2000 }) !== h0) out[4].push('only bakedAt changed, and the recorded value moved: its readers would be stale after every Bake')
+    if (at({ ...base, heroKeyframes: [{ pos: [0, 1, 3] }] }) === h0) out[4].push('the hero keys changed, and the recorded value did not: its readers would miss a re-bake they owe')
+  } finally { fs.rmSync(sdir, { recursive: true, force: true }) }
   return out
 }
 
-const NAMES = { 1: 'no step reads by file what a later step writes', 2: "the strip covers what ground-ao writes", 3: 'the value sees the ground, not the maps' }
+const NAMES = { 1: 'no step reads by file what a later step writes', 2: "the strip covers what ground-ao writes", 3: 'the value sees the ground, not the maps', 4: 'the stamp is the last write, and its readers read past it' }
 let bad = 0
 const R = await judge(read)
-for (const k of [1, 2, 3]) {
+for (const k of [1, 2, 3, 4]) {
   console.log(`${R[k].length ? '⛔' : '✅'} ${k} ${NAMES[k]}`)
   for (const s of R[k]) console.log(`      ${s}`)
   if (R[k].length) bad++
@@ -108,10 +138,13 @@ if (process.argv.includes('--mutants')) {
     ['b', 1, swap(SERVE, "[join(LOOK_DIR, 'ground.lightmap.png'), join(LOOK_DIR, 'ground.json')]", "[join(LOOK_DIR, 'ground.lightmap.png')]")],
     ['c', 2, swap(AO, '  manifest.lightmap = {', '  manifest.foomap = null\n  manifest.lightmap = {')],
     ['d', 3, read, keepsLightmap],
+    ['e', 1, swap(SERVE, "join(LOOK_DIR, 'revetment.json'), sceneForReaders(LOOK_DIR),", "join(LOOK_DIR, 'revetment.json'), join(LOOK_DIR, 'scene.json'),")],
+    ['f', 4, swap(SERVE, 'sc.bakedAt = stampedAt', 'sc.stampedAt = stampedAt')],
+    ['g', 4, read, undefined, (d) => ({ value: 'scene.json', read: () => JSON.parse(fs.readFileSync(path.join(d, 'scene.json'), 'utf8')) })],
   ]
-  for (const [id, want, textOf, strip] of MUTANTS) {
+  for (const [id, want, textOf, strip, scene] of MUTANTS) {
     let red
-    try { red = (await judge(textOf, strip))[want].length > 0 } catch (e) { console.log(`⛔ mutant (${id}) could not be applied: ${e.message}`); bad++; continue }
+    try { red = (await judge(textOf, strip, scene))[want].length > 0 } catch (e) { console.log(`⛔ mutant (${id}) could not be applied: ${e.message}`); bad++; continue }
     console.log(`${red ? '✅' : '⛔'} mutant (${id}) → judge ${want} ${red ? 'RED' : 'still GREEN'}`)
     if (!red) bad++
   }
