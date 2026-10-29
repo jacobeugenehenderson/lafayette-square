@@ -90,6 +90,7 @@ function emit(E, T, SRC, d, who, stat, LINES = null) {
     t2.push(t) }
   while (t2.length > 1 && t2[0].kind === 'L' && t2[t2.length - 1].kind === 'L' && ((t2[0].g != null && t2[0].g === t2[t2.length - 1].g && t2[0].i === t2[t2.length - 1].i))) t2.pop()
   // the joins: between two consecutive lines with no fixed point between
+  const RUN = SRC.map((R, g) => (LINES?.[g] && !BY_EDGES ? runsOf(R, LINES[g]) : null))
   const out = [], outL = [], N = t2.length
   // the region's own arc from t's edge to u's, FORWARD IN THE RING'S OWN ORDER whatever its length (Zob, 2026-10-29; the
   // 'under n/2' heuristic is deleted), and VALID only if no interior edge of it appears elsewhere in this ring's lines (else
@@ -102,6 +103,7 @@ function emit(E, T, SRC, d, who, stat, LINES = null) {
   for (let k = 0; k < N; k++) { const t = t2[k], u = t2[(k + 1) % N]
     if (t.kind === 'V') { out.push(t.p); outL.push(u.kind === 'L' ? (u.int || null) : null); origin(t.p, t.cut ? 'cut-point' : 'run-vertex'); continue }
     if (u.kind === 'V') continue
+    if (t.g != null && u.g === t.g && RUN[t.g] && RUN[t.g].runOf[u.i] === (RUN[t.g].runOf[t.i] + 1) % RUN[t.g].runs.length) { const v = SRC[t.g][RUN[t.g].runs[RUN[t.g].runOf[u.i]].s]; out.push([v.X, v.Y]); outL.push(u.int || null); origin([v.X, v.Y], 'own'); stat.own++; continue }
     if (t.g != null && u.g === t.g && u.i === (t.i + 1) % SRC[t.g].length) { const v = SRC[t.g][u.i]; out.push([v.X, v.Y]); outL.push(u.int || null); origin([v.X, v.Y], 'own'); stat.own++; continue }
     // a cut join between two lines
     const A = t.int || t.flt, B = u.int || u.flt
@@ -166,7 +168,13 @@ function emit(E, T, SRC, d, who, stat, LINES = null) {
       const lo = (t.i - 2 + n) % n, srcV = []; for (let q = 0; q < 7; q++) { const v = SRC[t.g][(lo + q) % n]; srcV.push(`${(lo + q) % n}:(${v.X},${v.Y})`) }
       const tagsOf = (tg) => (tg == null ? [] : Array.isArray(tg) ? tg : [tg]).filter(x => x.ring === t.g).map(x => x.i)
       const eroded = E.map((q, e2) => ({ e2, q, tg: tagsOf(T[e2]) })).filter(o => o.tg.some(i => ((i - lo + n) % n) < 7)).slice(0, 14).map(o => `e${o.e2}(${o.q.X},${o.q.Y})[${o.tg.join('+')}]`)
-      if (process.env.CUTONCE_DUMP) writeFileSync(process.env.CUTONCE_DUMP, JSON.stringify({ src: srcV, eroded, tokens: around }, null, 1))
+      // Zob's confirmation: each involved region edge's BIRTH LINE (LINES: P's line as two points, or none = born from its own points)
+      const seen = t2.slice(Math.max(0, k - 6), k + 8).filter(x => x.kind === 'L' && x.g === t.g).map(x => x.i), lo2 = Math.min(...seen), hi2 = Math.max(...seen)
+      const ids = []; for (let i = lo2; i <= hi2 && ids.length < 40; i++) ids.push(i)
+      const births = ids.map(i => { const p0 = SRC[t.g][i], p1 = SRC[t.g][(i + 1) % n], L = LINES?.[t.g]?.[i]
+        return { edge: i, inTokens: seen.includes(i), lenU: +Math.hypot(p1.X - p0.X, p1.Y - p0.Y).toFixed(2), deg: +(Math.atan2(p1.Y - p0.Y, p1.X - p0.X) * 180 / Math.PI).toFixed(3),
+          line: L ? JSON.stringify(L) : 'born', lineDeg: L ? +(Math.atan2(L[1][1] - L[0][1], L[1][0] - L[0][0]) * 180 / Math.PI).toFixed(3) : null, pts: `(${p0.X},${p0.Y})→(${p1.X},${p1.Y})` } })
+      if (process.env.CUTONCE_DUMP) writeFileSync(process.env.CUTONCE_DUMP, JSON.stringify({ src: srcV, eroded, tokens: around, births }, null, 1))
       throw new Error(`[${who}] ⛔ the back-offset: a cut joins edge ${t.i} to edge ${u.i} of ring ${t.g}${area(SRC[t.g]) < 0 ? ' (a HOLE)' : ' (an outer)'} and its skipped arc's edges appear ELSEWHERE in this ring (not a forward removal: ${JSON.stringify(where)}; this join at token ${k} of ${t2.length}; tokens around [${around.join(' ')}]), lines ${JSON.stringify(A)} and ${JSON.stringify(B)}. Refusing.`) }
     out.push(X); outL.push(u.int || null); origin(X, t.flt || u.flt ? 'new-line-join' : 'cut-join'); stat.cutJoin++
     const par = (L, q) => { const dx = L[1][0] - L[0][0], dy = L[1][1] - L[0][1]; return ((q[0] - L[0][0]) * dx + (q[1] - L[0][1]) * dy) / (dx * dx + dy * dy) }
@@ -183,6 +191,8 @@ let SINGLE_POINT_BRANCH = false                   // ⛔ the mutant only (setSin
 export const setSinglePointBranch = (v) => { SINGLE_POINT_BRANCH = !!v }
 let RAW_CURVE = false                             // ⛔ the mutant only (setRawCurve): the raw curve selected by winding > 0
 export const setRawCurve = (v) => { RAW_CURVE = !!v }
+let BY_EDGES = false                              // ⛔ the mutant only (setByEdges): the close morphs the open's edges, not its runs
+export const setByEdges = (v) => { BY_EDGES = !!v }
 let TRIM_INVERTED = false                          // ⛔ the mutant only (setTrimInverted): the side test inverted
 export const setTrimInverted = (v) => { TRIM_INVERTED = !!v }
 const origin = (p, kind) => { const k = p[0] + ',' + p[1], o = ORIGIN.get(k); ORIGIN.set(k, o && o !== kind ? o + '|' + kind : kind) }
@@ -200,40 +210,54 @@ const fcross = (A, B) => { const r = [A[1][0] - A[0][0], A[1][1] - A[0][1]], s =
 // ⛔ ② (tileGround.js#offsetRingByRects) cannot share it: a variable-depth, per-owner, labelled offset with ease and water
 // joins, whose booleans are clipper's union (the integer re-rounding this brief removes); moving ② onto the face walk is a ②
 // change outside this brief. structures.mjs#stripOf widens a centreline symmetrically, not one side of an edge.
-function offsetPieces(R, d, g, squares) {
-  // ⭐ A JOIN'S CORNER IS COMPUTED ONCE AND SHARED (Zob, 2026-10-29): computed per strip (b + n_a·d and b + n_b·d) and rounded
-  // twice, a near-straight join's two copies land a unit apart, a sliver wedge or an exposed strip-end step. So each edge's piece
-  // runs between its two JOIN CORNERS [v_j, v_j+1, C_end, C_start]: a DIVERGING join's X = L_a(d) ∩ L_b(d), one point used by both
-  // pieces; past the miter limit the cap's two ends (one each) and a cap triangle [v, C_a, C_b] sharing them; a CONVERGING join
-  // the plain rectangle corners, the overlap resolved by the face walk
-  const n = R.length, N = R.map((a, j) => unit([a.X, a.Y], [R[(j + 1) % n].X, R[(j + 1) % n].Y])), pieces = []
+// ⭐ RUNS (Zob, 2026-10-29): the morph reads the region's LINE SEQUENCE, not its rounded vertex list. Consecutive edges born on the
+// SAME line are one run: a vertex between them is a rounding point, not a corner, and enters no piece. Without birth lines
+// (P itself) each edge is its own run. → per ring: runs [{ s, e, line }] (edge indices s…e) and runOf[i]
+export function runsOf(R, lines) {
+  const n = R.length, key = (i) => (lines?.[i] ? JSON.stringify(lines[i]) : `own:${i}`), runOf = new Array(n)
+  let start = 0; while (start < n && key(start) === key((start - 1 + n) % n) && n > 1) start++
+  if (start === n) start = 0
+  const runs = []
+  for (let c = 0; c < n; c++) { const i = (start + c) % n
+    if (c === 0 || key(i) !== key((i - 1 + n) % n)) runs.push({ s: i, e: i, line: lines?.[i] || [[R[i].X, R[i].Y], [R[(i + 1) % n].X, R[(i + 1) % n].Y]] })
+    else runs[runs.length - 1].e = i
+    runOf[i] = runs.length - 1 }
+  return { runs, runOf }
+}
+function offsetPieces(R, d, g, squares, lines = null) {
+  // ⭐ A JOIN'S CORNER IS COMPUTED ONCE AND SHARED (Zob, 2026-10-29), FROM THE TWO LINES (never the region's rounded points): each
+  // RUN's piece runs between its two join corners [v_s, v_e, C_end, C_start]; at each change of line, V* = the two lines' exact
+  // crossing (doubles: intermediate), and DIVERGING → X = L_a(d) ∩ L_b(d), one point for both pieces; past the miter limit the
+  // cap's two ends and a cap triangle [V*, C_a, C_b]; CONVERGING → the rectangle corners V* + n_a·d and V* + n_b·d
+  const n = R.length, { runs } = runsOf(R, lines), m = runs.length, pieces = []
   const P = (x, y) => ({ X: Math.round(x), Y: Math.round(y) })
   const ccw = (pp) => { let a2 = 0; for (let k = 0; k < pp.length; k++) { const p = pp[k], q = pp[(k + 1) % pp.length]; a2 += p.X * q.Y - q.X * p.Y }
     if (a2 > 0) return pp
     const r = pp.slice().reverse(); return r.map((q, k) => ({ ...q, tag: pp[(pp.length - 1 - k - 1 + pp.length) % pp.length].tag })) }
-  // at each vertex j (edge j−1 in, edge j out): the corner the incoming piece ENDS at, and the one the outgoing piece STARTS at
-  const endC = new Array(n), startC = new Array(n)
-  for (let j = 0; j < n; j++) { const k = (j - 1 + n) % n, v = R[j], nk = N[k], nj = N[j]
+  const N = runs.map(r => unit(r.line[0], r.line[1]))
+  const endC = new Array(m), startC = new Array(m)
+  for (let q = 0; q < m; q++) { const k = (q - 1 + m) % m, nk = N[k], nj = N[q], v = R[runs[q].s]
     const sinA = Math.max(-1, Math.min(1, nk[0] * nj[1] - nj[0] * nk[1])), cosA = nk[0] * nj[0] + nk[1] * nj[1], r = 1 + cosA
-    if (!(sinA * d > 0)) { endC[k] = P(v.X + nk[0] * d, v.Y + nk[1] * d); startC[j] = P(v.X + nj[0] * d, v.Y + nj[1] * d); continue }   // converging
+    // V*: the two lines' crossing; parallel lines (no crossing) keep the region's own vertex there
+    const Lk = runs[k].line, Lq = runs[q].line, den = (Lk[1][0] - Lk[0][0]) * (Lq[1][1] - Lq[0][1]) - (Lk[1][1] - Lk[0][1]) * (Lq[1][0] - Lq[0][0])
+    const V = m > 1 && den !== 0 ? fcross(Lk, Lq) : [v.X, v.Y]
+    if (!(sinA * d > 0)) { endC[k] = P(V[0] + nk[0] * d, V[1] + nk[1] * d); startC[q] = P(V[0] + nj[0] * d, V[1] + nj[1] * d); continue }
     if (r < MITER_LIM) { const t = Math.tan(Math.atan2(sinA, cosA) / 4); if (squares) squares.push([v.X, v.Y])
-      endC[k] = P(v.X + d * (nk[0] - nk[1] * t), v.Y + d * (nk[1] + nk[0] * t)); startC[j] = P(v.X + d * (nj[0] + nj[1] * t), v.Y + d * (nj[1] - nj[0] * t))
-      pieces.push(ccw([{ X: v.X, Y: v.Y, tag: null }, { ...endC[k], tag: null }, { ...startC[j], tag: null }])); continue }      // the cap triangle; its cap side is born
-    const q = d / r, X = P(v.X + (nk[0] + nj[0]) * q, v.Y + (nk[1] + nj[1]) * q); endC[k] = X; startC[j] = X }
-  for (let j = 0; j < n; j++) { const a = R[j], b = R[(j + 1) % n]; if (a.X === b.X && a.Y === b.Y) continue
-    const s0 = startC[j], e0 = endC[j]
-    // ⛔ a far side running AGAINST its edge (an offset edge of negative length between two diverging joins) would fold the
-    // quad into a bow-tie whose −1 lobe cancels other pieces' coverage: refused by name (unruled until measured)
-    const along = (e0.X - s0.X) * (b.X - a.X) + (e0.Y - s0.Y) * (b.Y - a.Y)
-    if (along < 0) throw new Error(`[offset] ⛔ ring ${g} edge ${j} (${a.X},${a.Y}) → (${b.X},${b.Y}): its offset runs backwards between its join corners (${s0.X},${s0.Y}) → (${e0.X},${e0.Y}) (a negative-length offset edge): the piece would fold. Refusing.`)
-    // the piece a → b → C_end → C_start: its far side C_end → C_start lies on L_j(d) (tag j); the rest is born
-    pieces.push(ccw([{ X: a.X, Y: a.Y, tag: null }, { X: b.X, Y: b.Y, tag: null }, { ...e0, tag: { ring: g, i: j } }, { ...s0, tag: null }])) }
+      endC[k] = P(V[0] + d * (nk[0] - nk[1] * t), V[1] + d * (nk[1] + nk[0] * t)); startC[q] = P(V[0] + d * (nj[0] + nj[1] * t), V[1] + d * (nj[1] - nj[0] * t))
+      pieces.push(ccw([{ X: v.X, Y: v.Y, tag: null }, { ...endC[k], tag: null }, { ...startC[q], tag: null }])); continue }
+    const qq = d / r, X = P(V[0] + (nk[0] + nj[0]) * qq, V[1] + (nk[1] + nj[1]) * qq); endC[k] = X; startC[q] = X }
+  for (let q = 0; q < m; q++) { const a = R[runs[q].s], b = R[(runs[q].e + 1) % n]; if (a.X === b.X && a.Y === b.Y && m > 1) continue
+    const s0 = startC[q], e0 = endC[q], L = runs[q].line
+    const along = (e0.X - s0.X) * (L[1][0] - L[0][0]) + (e0.Y - s0.Y) * (L[1][1] - L[0][1])
+    if (along < 0) throw new Error(`[offset] ⛔ ring ${g} run ${runs[q].s}…${runs[q].e} (${a.X},${a.Y}) → (${b.X},${b.Y}): its offset runs backwards between its join corners (${s0.X},${s0.Y}) → (${e0.X},${e0.Y}) (a negative-length offset edge): the piece would fold. Refusing.`)
+    // the piece's far side lies on the run's line at d, tagged by the run's FIRST edge (emit reads runs, not edge indices)
+    pieces.push(ccw([{ X: a.X, Y: a.Y, tag: null }, { X: b.X, Y: b.Y, tag: null }, { ...e0, tag: { ring: g, i: runs[q].s } }, { ...s0, tag: null }])) }
   return pieces
 }
 export function morph(region, d, who, stat, lines = null) {
   let F
   if (RAW_CURVE) { const raw = region.map((R, g) => rawOffset(R, d, g, (stat.squares ||= []))); F = arrange([raw], w => w[0] > 0, `${who} offset`, true) }   // ⛔ the mutant only
-  else { const pieces = region.flatMap((R, g) => offsetPieces(R, d, g, (stat.squares ||= [])))
+  else { const pieces = region.flatMap((R, g) => offsetPieces(R, d, g, (stat.squares ||= []), BY_EDGES ? null : lines?.[g]))
     const base = region.map(R => R.map(q => ({ X: q.X, Y: q.Y, tag: null })))
     F = arrange([base, pieces], d < 0 ? (w => w[0] > 0 && !(w[1] > 0)) : (w => w[0] > 0 || w[1] > 0), `${who} offset`, true) }
   return F.rings.map((E, k) => emit(E, F.tags[k], region, d, who, stat, lines))
