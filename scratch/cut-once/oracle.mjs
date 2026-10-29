@@ -6,7 +6,7 @@
 // 1000× FINER than ours, then compared region-to-region with the candidate's k. Every difference piece must be the candidate's own
 // lattice rounding: it erodes to nothing by NODE_BOUND (in OUR units, ×1000 here). A piece that survives is a disagreement with
 // the definition (in the candidate, or in the reference), listed with its place, area and widest interior distance.
-// node scratch/cut-once/oracle.mjs [decks breakwater huron | planted]
+// node scratch/cut-once/oracle.mjs [decks breakwater huron | planted]  ·  ORACLE_INTEGER=false|true: the integer path's k
 import fs from 'fs'
 import clipperLib from 'clipper-lib'
 import { NODE_BOUND } from '../../src/lib/latticeNode.js'
@@ -28,9 +28,26 @@ function reference(P, stepM, stages = {}) { const h = (stepM / 2) * 1000 * F
   const tf = pieces(op(ClipType.ctDifference, P, open)).filter(survives), ff = pieces(op(ClipType.ctDifference, closedK, open)).filter(survives)
   let k = tf.length ? op(ClipType.ctDifference, P, tf.flat()) : P; if (ff.length) k = op(ClipType.ctUnion, [...k, ...ff.flat()]); stages.k = k; return k }
 const area = (pp) => pp.reduce((t, q) => t + Clipper.Area(q), 0)
+// END TO END at both thresholds (Zob, 2026-10-29): a shipped k against the definition's own full chain from P, each side's count and
+// area past NODE_BOUND and past 2·NODE_BOUND
+const sidesOf = (K, R) => [...pieces(op(ClipType.ctDifference, K, R)).map(pp => ({ pp, side: 'candidate only' })), ...pieces(op(ClipType.ctDifference, R, K)).map(pp => ({ pp, side: 'definition only' }))]
+function e2eOf(diffs, list = null) { const e2e = {}
+  for (const x of diffs) { if (!survivesBy(x.pp, bound)) continue; const v = (e2e[x.side] ||= { nb: 0, nbM2: 0, twoNb: 0, twoNbM2: 0 }), m2 = area(x.pp) / F / F / 1e6, two = survivesBy(x.pp, 2 * bound)
+    v.nb++; v.nbM2 += m2; if (two) { v.twoNb++; v.twoNbM2 += m2 }
+    if (list && two) { const o = x.pp[0]; let cx = 0, cy = 0; for (const q of o) { cx += q.X; cy += q.Y } list.push({ side: x.side, m2: +m2.toFixed(5), at: [+(cx / o.length / F / 1000).toFixed(3), +(cy / o.length / F / 1000).toFixed(3)] }) } }
+  for (const v of Object.values(e2e)) { v.nbM2 = +v.nbM2.toFixed(4); v.twoNbM2 = +v.twoNbM2.toFixed(4) }
+  return e2e }
+// the INTEGER path's k (structures.mjs#openCloseAtStep, the form a caller ships: Huron's bake-coast passes cutOnce: false) by the same
+// end-to-end judge, with its copy (own-edge.mjs, against P) and its crossings (gate.mjs#crossings)
+export async function judgeInteger(src, stepM, name, cutOnce) {
+  const { openCloseAtStep } = await import('../../cartograph/structures.mjs'), { ownEdge } = await import('./own-edge.mjs')
+  const t0 = Date.now(), k = openCloseAtStep(src, stepM, name, { cutOnce }).paths, ms = Date.now() - t0, Pu = op(ClipType.ctUnion, src)
+  const list = [], e2e = e2eOf(sidesOf(up(k), reference(up(Pu), stepM)), list), e = ownEdge(Pu, k)
+  return { name, cutOnce, ms, e2e, wide2Nb: list.sort((a, b) => b.m2 - a.m2), copy: e.copy, crossings: G.crossings(k).length }
+}
 export function judge(src, stepM, name) {
   const t0 = Date.now(), r = C3.openCloseProvenance(src, stepM, name), P = up(r.P), K = up(r.rings), R = reference(P, stepM), ms = Date.now() - t0
-  const diffs = [...pieces(op(ClipType.ctDifference, K, R)).map(pp => ({ pp, side: 'candidate only' })), ...pieces(op(ClipType.ctDifference, R, K)).map(pp => ({ pp, side: 'definition only' }))]
+  const diffs = sidesOf(K, R)
   // the classification (Zob, 2026-10-29): each wide disagreement's max width, the candidate's emission rules within 2h of it
   // (cand3.mjs#ORIGIN), and whether it touches an output edge that carries no line
   const h2 = stepM * 1000, emitted = [...C3.ORIGIN.entries()].map(([k, v]) => { const [x, y] = k.split(',').map(Number); return { x, y, v } })
@@ -58,10 +75,7 @@ export function judge(src, stepM, name) {
   const bySide = wide.reduce((t, w) => ((t[w.side] = (t[w.side] || 0) + 1), t), {})
   // END TO END at both thresholds (Zob, 2026-10-29): the shipped k against the definition's own full chain from P, each side's count
   // and area past NODE_BOUND and past 2·NODE_BOUND
-  const e2e = {}; for (const x of diffs) { if (!survivesBy(x.pp, bound)) continue; const v = (e2e[x.side] ||= { nb: 0, nbM2: 0, twoNb: 0, twoNbM2: 0 }), m2 = area(x.pp) / F / F / 1e6
-    v.nb++; v.nbM2 += m2; if (survivesBy(x.pp, 2 * bound)) { v.twoNb++; v.twoNbM2 += m2 } }
-  for (const v of Object.values(e2e)) { v.nbM2 = +v.nbM2.toFixed(4); v.twoNbM2 = +v.twoNbM2.toFixed(4) }
-  return { name, ms, e2e, diffPieces: diffs.length, wider: wide.length, bySide, byRule, cutDump, linelessEdges: lineless.length, nearTo, widerList: wide.sort((a, b) => b.m2 - a.m2).slice(0, process.env.ORACLE_ALL ? Infinity : 10), kM2: +(area(K) / F / F / 1e6).toFixed(4), refM2: +(area(R) / F / F / 1e6).toFixed(4) }
+  return { name, ms, e2e: e2eOf(diffs), diffPieces: diffs.length, wider: wide.length, bySide, byRule, cutDump, linelessEdges: lineless.length, nearTo, widerList: wide.sort((a, b) => b.m2 - a.m2).slice(0, process.env.ORACLE_ALL ? Infinity : 10), kM2: +(area(K) / F / F / 1e6).toFixed(4), refM2: +(area(R) / F / F / 1e6).toFixed(4) }
 }
 // ⭐ STAGE-WISE (Zob, 2026-10-29): the candidate against the reference at EACH stage (the open's erode, the open, the close's dilate,
 // closedK, the final k), region to region on the fine lattice; every wide disagreement attributed to the FIRST stage where it appears
@@ -137,6 +151,10 @@ if (import.meta.url === `file://${process.argv[1]}` && process.env.ORACLE_CLOSED
   const fx = (n) => JSON.parse(fs.readFileSync(new URL(`./fixtures/${n}.json`, import.meta.url), 'utf8'))
   const FIX = { decks: () => { const d = fx('ptown-deck-inputs'); return [G.ip(d.inputs.flat()), d.fineM] }, breakwater: () => { const d = fx('ptown-embankments'); return [G.ip(d.paths), d.fineM] }, huron: () => { const d = fx('huron-traced'); return [G.ip(d.traced), d.fineM] } }
   for (const k of process.argv.slice(2)) { const [src, step] = ROWS[k] ? [G.ip(ROWS[k].rings), STEP_M] : FIX[k](); console.log(JSON.stringify(isolated(src, step, k))) }
+} else if (import.meta.url === `file://${process.argv[1]}` && process.env.ORACLE_INTEGER) {
+  const fx = (n) => JSON.parse(fs.readFileSync(new URL(`./fixtures/${n}.json`, import.meta.url), 'utf8'))
+  const FIX = { decks: () => { const d = fx('ptown-deck-inputs'); return [G.ip(d.inputs.flat()), d.fineM] }, breakwater: () => { const d = fx('ptown-embankments'); return [G.ip(d.paths), d.fineM] }, huron: () => { const d = fx('huron-traced'); return [G.ip(d.traced), d.fineM] } }
+  for (const k of process.argv.slice(2)) { const [src, step] = FIX[k](); console.log(JSON.stringify(await judgeInteger(src, step, k, process.env.ORACLE_INTEGER !== 'false'))) }
 } else if (import.meta.url === `file://${process.argv[1]}` && process.env.ORACLE_STAGEWISE) {
   const fx = (n) => JSON.parse(fs.readFileSync(new URL(`./fixtures/${n}.json`, import.meta.url), 'utf8'))
   const FIX = { decks: () => { const d = fx('ptown-deck-inputs'); return [G.ip(d.inputs.flat()), d.fineM] }, breakwater: () => { const d = fx('ptown-embankments'); return [G.ip(d.paths), d.fineM] }, huron: () => { const d = fx('huron-traced'); return [G.ip(d.traced), d.fineM] } }

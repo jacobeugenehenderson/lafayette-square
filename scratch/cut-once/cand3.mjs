@@ -193,10 +193,13 @@ function emit(E, T, SRC, d, who, stat, LINES = null) {
     // NODE_BOUND of the cut path (L_a to X, then L_b) → the two answers differ by less than the lattice's own rounding, so the
     // source vertices are emitted, never X
     const AR = t.g != null && u.g === t.g ? arcOf(t, u) : null
+    // ⭐ THE MITER LIMIT FIRST (Huron's closedK, 2026-10-29): a join past the limit is SQUARED as the definition squares it, whatever
+    // the gap rule would emit; the gap rule ran first and drew the unsquared apex (0.346 m² at (3183.18, 764.81))
+    if (!GAP_BEFORE_LIMIT && capAt(A, B, Xf, u)) continue
     if (AR && AR.valid && AR.pts.length > 1) { const sk = AR.pts; {
         const dS = (q, a, b) => { const dx = b[0] - a[0], dy = b[1] - a[1], L2 = dx * dx + dy * dy, tt = L2 ? Math.max(0, Math.min(1, ((q[0] - a[0]) * dx + (q[1] - a[1]) * dy) / L2)) : 0; return Math.hypot(q[0] - a[0] - tt * dx, q[1] - a[1] - tt * dy) }
         if (sk.every(q => Math.min(dS(q, A[0], Xf), dS(q, Xf, B[1])) <= NODE_BOUND)) { pushArc(AR, 'gap-arc', t); stat.gapArc = (stat.gapArc || 0) + 1; continue } } }
-    if (capAt(A, B, Xf, u)) continue
+    if (GAP_BEFORE_LIMIT && capAt(A, B, Xf, u)) continue
     const X = t.int && u.int ? lineCrossOf({ a: A[0], b: A[1] }, { a: B[0], b: B[1] }, who) : fcross(A, B).map(Math.round)
     // ⭐ A CUT WHOSE CROSSING THE NEXT BOOLEAN TRIMS EMITS THAT BOOLEAN'S EXACT RESULT: THE REGION'S OWN ARC (Zob's ruling,
     // 2026-10-29). L_a and L_b are the region's own edge lines: in the open, X = L_a ∩ L_b outside the region is trimmed by ∩P,
@@ -377,6 +380,8 @@ function offsetPieces(R, d, g, squares, lines = null, stat0 = {}) {
 // SPIKE: switched by setBackPieces; emit stays the reference point until the oracle's table decides
 let BACK_PIECES = !!process.env.CUTONCE_BACK_PIECES
 export const setBackPieces = (v) => { BACK_PIECES = !!v }
+let GAP_BEFORE_LIMIT = false                      // ⛔ the mutant only (setGapBeforeLimit): the gap rule ahead of the miter limit
+export const setGapBeforeLimit = (v) => { GAP_BEFORE_LIMIT = !!v }
 let CORNER_AT_MITER = false                       // ⛔ the mutant only (setCornerAtMiter): M used directly as the corner, the withdrawn (a)
 export const setCornerAtMiter = (v) => { CORNER_AT_MITER = !!v }
 function backPieces(F, region, lines, dBack, who, stat) {
