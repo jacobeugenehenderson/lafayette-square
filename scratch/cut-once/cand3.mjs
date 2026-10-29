@@ -57,7 +57,10 @@ export function arrange(sets, keep, who, allTags = false, prefer = null) {
     if (ids.length && process.env.CUTONCE_REPRO) writeFileSync(process.env.CUTONCE_REPRO, JSON.stringify({ who, error: String(e.message), rings: [...new Set(ids)].map(i => ({ i, set: setOf[i], tag: input[i].tag, p: input[i].p })) }))
     throw e }
   const edges = []
-  R.forEach((o, ri) => o.forEach((v, q) => { const w = o[(q + 1) % o.length]; edges.push({ a: v.k, b: w.k, set: setOf[ri], tag: rings[ri][v.edge]?.tag ?? null }) }))
+  R.forEach((o, ri) => o.forEach((v, q) => { const w = o[(q + 1) % o.length]; edges.push({ a: v.k, b: w.k, set: setOf[ri], tag: rings[ri][v.edge]?.tag ?? null })
+    // every vertex the noding INSERTED (src null: a hot pixel the segment was routed through), with the EMITTED segment it was
+    // routed into: the emission invariant's second tier (Zob, 2026-10-29)
+    if (v.src == null) { const r0 = rings[ri], a0 = r0[v.edge], b0 = r0[(v.edge + 1) % r0.length]; { const key = v.k[0] + ',' + v.k[1]; (INSERTED.get(key) || INSERTED.set(key, []).get(key)).push({ who, seg: [[a0.X, a0.Y], [b0.X, b0.Y]] }) } } }))
   return facesOf(edges, keep, { sets: sets.length, who, allTags, prefer })
 }
 
@@ -213,12 +216,19 @@ function emit(E, T, SRC, d, who, stat, LINES = null) {
   if (!NO_EMIT_INVARIANT) for (let k = 0; k < out.length; k++) { const L = outL[k]; if (!L) continue
     const p0 = out[k], p1 = out[(k + 1) % out.length]; if (p0[0] === p1[0] && p0[1] === p1[1]) continue
     const dx = BigInt(L[1][0] - L[0][0]), dy = BigInt(L[1][1] - L[0][1]), D2 = dx * dx + dy * dy
-    const off = (pt) => { const cr = dx * BigInt(Math.round(pt[1]) - L[0][1]) - dy * BigInt(Math.round(pt[0]) - L[0][0]); return 2n * cr * cr > D2 }
+    // TWO TIERS BY ORIGIN (Zob, 2026-10-29): an EMITTED point lies within NODE_BOUND of its line; a NODING-INSERTED vertex lies
+    // within NODE_BOUND of the emitted SEGMENT it was routed into (snap rounding's own guarantee), whatever its distance to the line
+    const offLine = (pt) => { const cr = dx * BigInt(Math.round(pt[1]) - L[0][1]) - dy * BigInt(Math.round(pt[0]) - L[0][0]); return 2n * cr * cr > D2 }
+    const dSeg = (pt, [a0, b0]) => { const ex = b0[0] - a0[0], ey = b0[1] - a0[1], L2 = ex * ex + ey * ey, t = L2 ? Math.max(0, Math.min(1, ((pt[0] - a0[0]) * ex + (pt[1] - a0[1]) * ey) / L2)) : 0; return Math.hypot(pt[0] - a0[0] - t * ex, pt[1] - a0[1] - t * ey) }
+    const off = (pt) => { const ins = INSERTED.get(Math.round(pt[0]) + ',' + Math.round(pt[1]))
+      if (!ins || TIERS_SWAPPED) return offLine(pt)
+      return !ins.some(x => dSeg(pt, x.seg) <= NODE_BOUND) }
     if (off(p0) || off(p1)) { const dist = (pt) => +(Math.abs((pt[0] - L[0][0]) * Number(dy) - (pt[1] - L[0][1]) * Number(dx)) / Math.sqrt(Number(D2))).toFixed(3)
-      throw new Error(`[${who}] ⛔ the emission invariant: the edge (${p0.map(v => v / SCALE)}) → (${p1.map(v => v / SCALE)}) is tagged with the line ${JSON.stringify(L)} but lies ${dist(p0)} / ${dist(p1)} u off it (> NODE_BOUND); made by: start ${ORIGIN.get(p0[0] + ',' + p0[1]) || '?'}, end ${ORIGIN.get(p1[0] + ',' + p1[1]) || '?'}. Refusing.`) } }
+      const tier = (pt) => (INSERTED.has(Math.round(pt[0]) + ',' + Math.round(pt[1])) ? `noding-inserted in ${INSERTED.get(Math.round(pt[0]) + ',' + Math.round(pt[1])).map(x => x.who).join(', ')}` : 'emitted')
+      throw new Error(`[${who}] ⛔ the emission invariant (start ${tier(p0)}, end ${tier(p1)}): the edge (${p0.map(v => v / SCALE)}) → (${p1.map(v => v / SCALE)}) is tagged with the line ${JSON.stringify(L)} but lies ${dist(p0)} / ${dist(p1)} u off it (> NODE_BOUND); made by: start ${ORIGIN.get(p0[0] + ',' + p0[1]) || '?'}, end ${ORIGIN.get(p1[0] + ',' + p1[1]) || '?'}. Refusing.`) } }
   return out.map(([X, Y], k) => ({ X, Y, tag: TAGS_BY_SEGMENT ? null : outL[k] }))
 }
-export const ORIGIN = new Map(), DETAIL = new Map()
+export const ORIGIN = new Map(), DETAIL = new Map(), INSERTED = new Map()
 // a piece edge's tag: its line (ring, i), BORN (a strip end, a cap: a new line), or NEAR (on the region's own edge: interior after the
 // boolean). An output edge with NO tag at all is a LOST tag (Zob's gate, 2026-10-29), counted
 const BORN = { born: true }, NEAR = { near: true }
@@ -238,6 +248,8 @@ let FOLDED_QUAD = false, NO_FOLD_TRIANGLE = false, R_SEPARATE = false   // ⛔ t
 export const setFoldMutant = (m) => { FOLDED_QUAD = m === 'quad'; NO_FOLD_TRIANGLE = m === 'no-triangle'; R_SEPARATE = m === 'r-separate' }
 let NO_EMIT_INVARIANT = false                     // ⛔ the mutant only (setNoEmitInvariant)
 export const setNoEmitInvariant = (v) => { NO_EMIT_INVARIANT = !!v }
+let TIERS_SWAPPED = false                         // ⛔ the mutant only (setTiersSwapped): a noding-inserted vertex judged against the line
+export const setTiersSwapped = (v) => { TIERS_SWAPPED = !!v }
 let TRIM_INVERTED = false                          // ⛔ the mutant only (setTrimInverted): the side test inverted
 export const setTrimInverted = (v) => { TRIM_INVERTED = !!v }
 const origin = (p, kind) => { const k = p[0] + ',' + p[1], o = ORIGIN.get(k); ORIGIN.set(k, o && o !== kind ? o + '|' + kind : kind) }

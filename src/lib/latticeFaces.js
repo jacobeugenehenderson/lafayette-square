@@ -14,7 +14,7 @@
 //  · a proper crossing left between two segments
 //  · a face reached with two different windings (the input is not a set of closed rings)
 //  · a boundary edge whose same-way input edges carry different tags (unless every claimant's line passes within the rounding of
-//    both its ends: a TRANSITION, both tags; or one is the `prefer`red set's own, which wins; or `allTags`: then every tag is the list of them,
+//    both its ends: a TRANSITION, both tags; or it is ONE lattice step long: a CONCURRENCE, all of them; or one is the `prefer`red set's own, which wins; or `allTags`: then every tag is the list of them,
 //    for a caller that names what several tags on one segment mean; ⛔ none picks one)
 // ⭐ THE RULES. Identical segments MERGE into one undirected edge carrying each set's signed multiplicity (two opposite edges
 // cancel; an edge whose multiplicities are all zero bounds nothing and is dropped). The half-edges round each vertex are sorted
@@ -120,7 +120,12 @@ export function facesOf(edges, keep, { sets, who = 'facesOf', numberOnly = false
     if (keys.size > 1) { const L = [...keys].map(k => JSON.parse(k)), A = V[org[h]], Bv = V[dst[h]]
       const within = (l, q) => { if (!Array.isArray(l) || l.length !== 2 || !Array.isArray(l[0])) return false
         const dx = BigInt(l[1][0] - l[0][0]), dy = BigInt(l[1][1] - l[0][1]), cr = dx * BigInt(q[1] - l[0][1]) - dy * BigInt(q[0] - l[0][0]); return 2n * cr * cr <= dx * dx + dy * dy }
-      if (L.every(l => within(l, A) && within(l, Bv))) return L }
+      if (L.every(l => within(l, A) && within(l, Bv))) return L
+      // ⭐ A CONCURRENCE (Zob, 2026-10-29): a segment ONE lattice step long (length² ≤ 2, straight or diagonal) carries no direction;
+      // every line passing within half a pixel claims it. Its tag set says "these lines meet here", a vertex of the boundary, not
+      // a conflict; the caller takes its neighbour's line (as for a transition)
+      const sx = Bv[0] - A[0], sy = Bv[1] - A[1]
+      if (sx * sx + sy * sy <= 2 && L.every(l => Array.isArray(l) && Array.isArray(l[0]))) return L }
     if (keys.size > 1 && prefer != null) { const own = new Set(same.filter(t => t.set === prefer).map(t => JSON.stringify(t.tag)))
       if (own.size === 1) return JSON.parse([...own][0]) }
     if (keys.size > 1) throw new Error(`[${who}] ⛔ facesOf: the boundary edge (${V[org[h]]}) → (${V[dst[h]]}) carries ${keys.size} different tags from its same-way inputs (${same.map(t => `set ${t.set}: ${JSON.stringify(t.tag)}`).join(' · ')}) — refusing to pick one.`)

@@ -71,7 +71,12 @@ export function tagRun(tags, SRC, { againstDirection = false, refuseGap = false,
   // ⭐ the run's two ends on ONE birth line, its skipped edges off it (Plumb, 2026-10-29, flagged to Zob): the segment carries both
   // tags, so it lies on that ONE line's offset, and the boundary runs straight along it; the skipped edges are not on this
   // segment. Emitted as that line alone (kind 'line'), no vertices; the emission invariant checks it
-  if (sameLine(f, l)) return { ok: true, kind: 'line', ring, from, to: from, gaps: gapEdges.length, sameLineSkip: true, worstU: +worst.toFixed(3) }
+  // bounded (Zob, 2026-10-29): the two lines IDENTICAL (sameLine, exact), and the skipped edges wholly on ONE side of it (the
+  // removed side: the line does not cross them), else refused by name
+  if (sameLine(f, l)) { const dx = BigInt(f.b[0] - f.a[0]), dy = BigInt(f.b[1] - f.a[1]), sg = (v) => { const c = dx * BigInt(v.Y - f.a[1]) - dy * BigInt(v.X - f.a[0]); return c > 0n ? 1 : c < 0n ? -1 : 0 }
+    const sides = new Set(gapEdges.flatMap(j => [R[j], R[(j + 1) % n]]).map(sg).filter(x => x !== 0))
+    if (sides.size > 1) return { ok: false, clause: 'same-line-skip-crosses-the-line', ring, from, to, tags }
+    return { ok: true, kind: 'line', ring, from, to: from, gaps: gapEdges.length, sameLineSkip: true, worstU: +worst.toFixed(3) } }
   if (refuseGap) return { ok: false, clause: 'gap-past-bound', ring, from, to, gaps: gapEdges.length, worstU: +worst.toFixed(3), at: worstAt, tags }   // ⛔ the mutant: clause 3 as first ruled
   return { ok: true, kind: 'cut', ring, from, to, gaps: gapEdges.length, worstU: +worst.toFixed(3), at: worstAt, X: lineCrossOf(f, l, 'tagRun') }
 }
