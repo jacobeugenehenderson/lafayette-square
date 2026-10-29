@@ -1,0 +1,388 @@
+{
+ "stats": {
+  "parts": 197,
+  "partsBuilt": 196,
+  "tiles": 1296,
+  "runs": 1310
+ },
+ "tile": 500,
+ "min": 62.5,
+ "win": 250,
+ "sites": [
+  {
+   "class": "the topology guard: P's hole at (…) (…) is no longer a hole of the output: it opened to the outside",
+   "at": [
+    -4871.38,
+    -1459.115
+   ],
+   "why": "[census 1] ⛔ the topology guard: P's hole at (-4871.380, -1459.115) (11.13 m²) is no longer a hole of the output: it opened to the outside. The topology change is Boz's. Refusing.",
+   "leaves": 1,
+   "m2": 53117.8,
+   "parentOnly": 1,
+   "sizes": [
+    250
+   ],
+   "verdict": "REAL"
+  },
+  {
+   "class": "the back-offset · no forward order fits both neighbours",
+   "at": [
+    -4521.321,
+    -2127.157
+   ],
+   "why": "[census 3 close] ⛔ the back-offset: the eroded segment (-4521.321,-2127.157) → (-4521.323,-2127.151) (6.32 u) carries ring 0's edges 25, 27, and no forward order fits both its predecessor (edge 25) and its successor (edge 26). Refusing.",
+   "leaves": 1,
+   "m2": 3364.1,
+   "parentOnly": 0,
+   "sizes": [
+    62.5
+   ],
+   "verdict": "REAL"
+  },
+  {
+   "class": "the open/close: a filled feature at (…) (…) is wider than a cell (…), and the definition fills nothing a disk of radius ",
+   "at": [
+    -4486.547,
+    -1424.506
+   ],
+   "why": "[census 3] ⛔ the open/close: a filled feature at (-4486.547, -1424.506) (2.74 m²) is wider than a cell (it survives an erode by half a cell), and the definition fills nothing a disk of radius h fits in. Cause not established. Refusing.",
+   "leaves": 1,
+   "m2": 1577.1,
+   "parentOnly": 0,
+   "sizes": [
+    62.5
+   ],
+   "verdict": "untiled refuses OTHERWISE: the back-offset · walls-meet at [-4362.641,-1403.795]"
+  },
+  {
+   "class": "the back-offset · walls-meet",
+   "at": [
+    -4362.641,
+    -1403.795
+   ],
+   "why": "[census 3 open] ⛔ the back-offset: the eroded segment (-4362.641,-1403.795) → (-4362.661,-1403.813) carries tags [{\"ring\":2,\"i\":3},{\"ring\":3,\"i\":2}]: walls-meet. Refusing.",
+   "leaves": 1,
+   "m2": 2357.3,
+   "parentOnly": 0,
+   "sizes": [
+    62.5
+   ],
+   "verdict": "REAL"
+  },
+  {
+   "class": "the topology guard: two parts of P (…) and (…)) are joined by the output",
+   "at": [
+    -4554.762,
+    -1330.979
+   ],
+   "why": "[census 3] ⛔ the topology guard: two parts of P (at (-4554.762, -1330.979) and (-4534.645, -1330.271)) are joined by the output. The topology change is Boz's. Refusing.",
+   "leaves": 1,
+   "m2": 389.2,
+   "parentOnly": 0,
+   "sizes": [
+    62.5
+   ],
+   "verdict": "untiled refuses OTHERWISE: the open/close: a filled feature at (…) (…) is wider than a cell (…), and the definition fills nothing a disk of radius  at [-4486.547,-1424.506]"
+  },
+  {
+   "class": "the topology guard: P's hole at (…) (…) is no longer a hole of the output: it opened to the outside",
+   "at": [
+    -4462.489,
+    -1275.338
+   ],
+   "why": "[census 3] ⛔ the topology guard: P's hole at (-4462.489, -1275.338) (24.39 m²) is no longer a hole of the output: it opened to the outside. The topology change is Boz's. Refusing.",
+   "leaves": 1,
+   "m2": 574.9,
+   "parentOnly": 0,
+   "sizes": [
+    62.5
+   ],
+   "verdict": "ARTEFACT: builds untiled"
+  },
+  {
+   "class": "the open/close: a filled feature at (…) (…) is wider than a cell (…), and the definition fills nothing a disk of radius ",
+   "at": [
+    -4123.75,
+    -1599.945
+   ],
+   "why": "[census 3] ⛔ the open/close: a filled feature at (-4123.750, -1599.945) (27.46 m²) is wider than a cell (it survives an erode by half a cell), and the definition fills nothing a disk of radius h fits in. Cause not established. Refusing.",
+   "leaves": 1,
+   "m2": 2740.9,
+   "parentOnly": 0,
+   "sizes": [
+    62.5
+   ],
+   "verdict": "untiled refuses OTHERWISE: the open/close: a filled feature at (…) (…) is wider than a cell (…), and the definition fills nothing a disk of radius  at [-4155.247,-1566.959]"
+  },
+  {
+   "class": "the open/close: a filled feature at (…) (…) is wider than a cell (…), and the definition fills nothing a disk of radius ",
+   "at": [
+    -4155.247,
+    -1566.959
+   ],
+   "why": "[census 2] ⛔ the open/close: a filled feature at (-4155.247, -1566.959) (58.91 m²) is wider than a cell (it survives an erode by half a cell), and the definition fills nothing a disk of radius h fits in. Cause not established. Refusing.",
+   "leaves": 1,
+   "m2": 12636.1,
+   "parentOnly": 1,
+   "sizes": [
+    125
+   ],
+   "verdict": "REAL"
+  },
+  {
+   "class": "the back-offset · no forward order fits both neighbours",
+   "at": [
+    -3936.813,
+    -1432.743
+   ],
+   "why": "[census 3 open] ⛔ the back-offset: the eroded segment (-3936.813,-1432.743) → (-3936.812,-1432.743) (1.00 u) carries ring 0's edges 30, 28, and no forward order fits both its predecessor (edge 29) and its successor (edge 30). Refusing.",
+   "leaves": 1,
+   "m2": 2712.5,
+   "parentOnly": 0,
+   "sizes": [
+    62.5
+   ],
+   "verdict": "REAL"
+  },
+  {
+   "class": "the topology guard: P's hole at (…) (…) is no longer a hole of the output: it opened to the outside",
+   "at": [
+    -3542.991,
+    -2213.32
+   ],
+   "why": "[census 3] ⛔ the topology guard: P's hole at (-3542.991, -2213.320) (52.32 m²) is no longer a hole of the output: it opened to the outside. The topology change is Boz's. Refusing.",
+   "leaves": 1,
+   "m2": 928.2,
+   "parentOnly": 0,
+   "sizes": [
+    62.5
+   ],
+   "verdict": "ARTEFACT: builds untiled"
+  },
+  {
+   "class": "the open/close: a filled feature at (…) (…) is wider than a cell (…), and the definition fills nothing a disk of radius ",
+   "at": [
+    -3480.067,
+    -2086.536
+   ],
+   "why": "[census 3] ⛔ the open/close: a filled feature at (-3480.067, -2086.536) (13.28 m²) is wider than a cell (it survives an erode by half a cell), and the definition fills nothing a disk of radius h fits in. Cause not established. Refusing.",
+   "leaves": 1,
+   "m2": 3411.2,
+   "parentOnly": 0,
+   "sizes": [
+    62.5
+   ],
+   "verdict": "REAL"
+  },
+  {
+   "class": "the back-offset · cross-ring-not-a-pair",
+   "at": [
+    -3577.898,
+    -1843.294
+   ],
+   "why": "[census 3 open] ⛔ the back-offset: the eroded segment (-3577.898,-1843.294) → (-3577.897,-1843.294) carries tags [{\"ring\":0,\"i\":68},{\"ring\":0,\"i\":69},{\"ring\":6,\"i\":1}]: cross-ring-not-a-pair. Refusing.",
+   "leaves": 1,
+   "m2": 3090.9,
+   "parentOnly": 0,
+   "sizes": [
+    62.5
+   ],
+   "verdict": "REAL"
+  },
+  {
+   "class": "the open/close: a filled feature at (…) (…) is wider than a cell (…), and the definition fills nothing a disk of radius ",
+   "at": [
+    -3513.191,
+    -1877.082
+   ],
+   "why": "[census 3] ⛔ the open/close: a filled feature at (-3513.191, -1877.082) (13.10 m²) is wider than a cell (it survives an erode by half a cell), and the definition fills nothing a disk of radius h fits in. Cause not established. Refusing.",
+   "leaves": 1,
+   "m2": 2189.1,
+   "parentOnly": 0,
+   "sizes": [
+    62.5
+   ],
+   "verdict": "untiled refuses OTHERWISE: the back-offset · cross-ring-not-a-pair at [-3577.898,-1843.294]"
+  },
+  {
+   "class": "the topology guard: P's hole at (…) (…) is no longer a hole of the output: it opened to the outside",
+   "at": [
+    -3661.189,
+    -1583.963
+   ],
+   "why": "[census 3] ⛔ the topology guard: P's hole at (-3661.189, -1583.963) (5.30 m²) is no longer a hole of the output: it opened to the outside. The topology change is Boz's. Refusing.",
+   "leaves": 1,
+   "m2": 3879.8,
+   "parentOnly": 0,
+   "sizes": [
+    62.5
+   ],
+   "verdict": "ARTEFACT: builds untiled"
+  },
+  {
+   "class": "the open/close: a filled feature at (…) (…) is wider than a cell (…), and the definition fills nothing a disk of radius ",
+   "at": [
+    -3523.016,
+    -1805.832
+   ],
+   "why": "[census 3] ⛔ the open/close: a filled feature at (-3523.016, -1805.832) (4.05 m²) is wider than a cell (it survives an erode by half a cell), and the definition fills nothing a disk of radius h fits in. Cause not established. Refusing.",
+   "leaves": 1,
+   "m2": 2393.6,
+   "parentOnly": 0,
+   "sizes": [
+    62.5
+   ],
+   "verdict": "untiled refuses OTHERWISE: the back-offset · cross-ring-not-a-pair at [-3577.898,-1843.294]"
+  },
+  {
+   "class": "the open/close: a filled feature at (…) (…) is wider than a cell (…), and the definition fills nothing a disk of radius ",
+   "at": [
+    -3549.982,
+    -1275.144
+   ],
+   "why": "[census 3] ⛔ the open/close: a filled feature at (-3549.982, -1275.144) (20.03 m²) is wider than a cell (it survives an erode by half a cell), and the definition fills nothing a disk of radius h fits in. Cause not established. Refusing.",
+   "leaves": 1,
+   "m2": 2280.2,
+   "parentOnly": 0,
+   "sizes": [
+    62.5
+   ],
+   "verdict": "REAL"
+  },
+  {
+   "class": "the open/close: a filled feature at (…) (…) is wider than a cell (…), and the definition fills nothing a disk of radius ",
+   "at": [
+    -3790.69,
+    -767.621
+   ],
+   "why": "[census 2] ⛔ the open/close: a filled feature at (-3790.690, -767.621) (45.84 m²) is wider than a cell (it survives an erode by half a cell), and the definition fills nothing a disk of radius h fits in. Cause not established. Refusing.",
+   "leaves": 1,
+   "m2": 7290.2,
+   "parentOnly": 1,
+   "sizes": [
+    125
+   ],
+   "verdict": "REAL"
+  },
+  {
+   "class": "the back-offset · no forward order fits both neighbours",
+   "at": [
+    -2924.358,
+    171.602
+   ],
+   "why": "[census 3 close] ⛔ the back-offset: the eroded segment (-2924.358,171.602) → (-2924.357,171.604) (2.24 u) carries ring 0's edges 6, 4, and no forward order fits both its predecessor (edge 5) and its successor (edge 6). Refusing.",
+   "leaves": 1,
+   "m2": 1216.6,
+   "parentOnly": 0,
+   "sizes": [
+    62.5
+   ],
+   "verdict": "REAL"
+  },
+  {
+   "class": "the back-offset · no forward order fits both neighbours",
+   "at": [
+    -1973.498,
+    1972.432
+   ],
+   "why": "[census 3 close] ⛔ the back-offset: the eroded segment (-1973.498,1972.432) → (-1973.498,1972.433) (1.00 u) carries ring 0's edges 88, 86, and no forward order fits both its predecessor (edge 87) and its successor (edge 88). Refusing.",
+   "leaves": 1,
+   "m2": 1851.7,
+   "parentOnly": 0,
+   "sizes": [
+    62.5
+   ],
+   "verdict": "REAL"
+  },
+  {
+   "class": "the back-offset · no forward order fits both neighbours",
+   "at": [
+    -652.026,
+    2285.18
+   ],
+   "why": "[census 3 open] ⛔ the back-offset: the eroded segment (-652.026,2285.18) → (-652.026,2285.179) (1.00 u) carries ring 0's edges 12, 14, and no forward order fits both its predecessor (edge 12) and its successor (edge 13). Refusing.",
+   "leaves": 1,
+   "m2": 968.6,
+   "parentOnly": 0,
+   "sizes": [
+    62.5
+   ],
+   "verdict": "REAL"
+  },
+  {
+   "class": "the back-offset: a trimmed arc STARTS outside D's wedge at (…)",
+   "at": [
+    -119.15,
+    313.735
+   ],
+   "why": "[census 3 open] ⛔ the back-offset: a trimmed arc STARTS outside D's wedge at (-119.15,313.735). Unruled; refusing.",
+   "leaves": 1,
+   "m2": 2900.5,
+   "parentOnly": 0,
+   "sizes": [
+    62.5
+   ],
+   "verdict": "REAL"
+  },
+  {
+   "class": "the open/close cannot read this ring: a STAIRCASE in its SOURCE at a cut",
+   "at": [
+    343.28,
+    -204.639
+   ],
+   "why": "[census 3 open] ⛔ the open/close cannot read this ring: a STAIRCASE in its SOURCE at a cut. Ring 0's edge(s) 103 (343.280, -204.639) → (343.289, -204.645), 10.8 mm lie within the lattice's rounding of edge 102's line, so their offset lines cross and are read out of order. Nothing the operator can do changes it today: the rule is BACKLOG \"the open/close refuses at a source staircase\" (unbuilt). Refusing. (detail: the cut joins edge 102 to edge 104 and edge(s) 103 it skips appear elsewhere in the ring ([{\"edge\":103,\"atTokens\":[104]}]); tokens round it [0:97 0:98 0:99 0:100 0:101 new 0:102 0:104 ",
+   "leaves": 1,
+   "m2": 2845.8,
+   "parentOnly": 0,
+   "sizes": [
+    62.5
+   ],
+   "verdict": "REAL"
+  },
+  {
+   "class": "the open/close cannot read this ring: at ring # near (…), a cut from edge # to edge # runs BACKWARD (…)",
+   "at": [
+    817.712,
+    -600.875
+   ],
+   "why": "[census 3 open] ⛔ the open/close cannot read this ring: at ring 0 near (817.712, -600.875), a cut from edge 42 to edge 40 runs BACKWARD (the offset reads the ring's lines out of order). Cause not established; no staircase within the rounding there. Nothing the operator can do changes it today: the rule is BACKLOG \"the open/close refuses at a source staircase\" (unbuilt). Refusing. (detail: the cut joins edge 42 to edge 40 and edge(s) 43, 44, 45, 46 it skips appear elsewhere in the ring ([{\"edge\":43,\"atTokens\":[44]},{\"edge\":44,\"atTokens\":[45]},{\"edge\":45,\"atTokens\":[46]},{\"edge\":46,\"atTokens\":[4",
+   "leaves": 1,
+   "m2": 1598,
+   "parentOnly": 0,
+   "sizes": [
+    62.5
+   ],
+   "verdict": "REAL"
+  },
+  {
+   "class": "the open/close cannot read this ring: a STAIRCASE in its SOURCE at a cut",
+   "at": [
+    4986.648,
+    -140.72
+   ],
+   "why": "[census 3 close] ⛔ the open/close cannot read this ring: a STAIRCASE in its SOURCE at a cut. Ring 0's edge(s) 7 (4986.648, -140.720) → (4986.655, -140.716), 8.1 mm lie within the lattice's rounding of edge 6's line, so their offset lines cross and are read out of order. Nothing the operator can do changes it today: the rule is BACKLOG \"the open/close refuses at a source staircase\" (unbuilt). Refusing. (detail: the cut joins edge 6 to edge 8 and edge(s) 7 it skips appear elsewhere in the ring ([{\"edge\":7,\"atTokens\":[6]}]); tokens round it [0:1 0:2 0:4 0:5 0:6 0:7 0:6 0:8 new 0:9 0:10 0:11 0:12 ",
+   "leaves": 1,
+   "m2": 2713.7,
+   "parentOnly": 0,
+   "sizes": [
+    62.5
+   ],
+   "verdict": "REAL"
+  },
+  {
+   "class": "the open/close cannot read this ring: at ring # near (…), a cut from edge # to edge # runs BACKWARD (…)",
+   "at": [
+    7043.034,
+    1482.312
+   ],
+   "why": "[census 2 close] ⛔ the open/close cannot read this ring: at ring 0 near (7043.034, 1482.312), a cut from edge 120 to edge 118 runs BACKWARD (the offset reads the ring's lines out of order). Cause not established; no staircase within the rounding there. Nothing the operator can do changes it today: the rule is BACKLOG \"the open/close refuses at a source staircase\" (unbuilt). Refusing. (detail: the cut joins edge 120 to edge 118 and edge(s) 121, 122, 123, 124 it skips appear elsewhere in the ring ([{\"edge\":121,\"atTokens\":[126]},{\"edge\":122,\"atTokens\":[127]},{\"edge\":123,\"atTokens\":[128]},{\"edge\":",
+   "leaves": 1,
+   "m2": 13758.9,
+   "parentOnly": 1,
+   "sizes": [
+    125
+   ],
+   "verdict": "REAL"
+  }
+ ]
+}
