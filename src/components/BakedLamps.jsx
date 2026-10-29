@@ -15,6 +15,7 @@ import StreetLights from './StreetLights'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import { slabFetch } from '../lib/slabUrl.js'
 import { currentTerrainIdentity } from '../utils/terrainShader'
+import { lampAnchorsVerdict } from '../lib/anchorGate.js'
 import { lookOf } from '../lib/lookOf.js'
 
 
@@ -38,17 +39,15 @@ export default function BakedLamps({ lookId, bakeLastMs, lanternOverride, lampsO
       .then(r => r.ok ? r.json() : null)
       .then(j => {
         if (cancelled) return
-        // ⛔ Lamp anchors must have been sampled from THIS heightfield (same guard as the trees).
-        if (j?.lamps?.some(l => typeof l.groundRaw === 'number')) {
-          const live = currentTerrainIdentity()
-          if (!j.terrain) {
-            console.warn(`[BakedLamps] lamps.json for "${resolvedLookId}" carries no terrain identity (baked before the guard) — `
-              + `cannot prove its anchors match this heightfield (${live}). Using them. ▶ re-bake lamps`)
-          } else if (j.terrain.key !== live) {
-            console.error(`[BakedLamps] ⛔ lamps.json for "${resolvedLookId}" was anchored on a DIFFERENT heightfield `
-              + `(terrain ${j.terrain.key}, baseElev ${j.terrain.baseElev}) than this slab's (${live}). `
-              + `Anchors REFUSED — lamps fall back to the smooth terrain field. ▶ re-bake lamps (node cartograph/bake-lamps.js --scene=<scene> --look=${resolvedLookId})`)
-            j = { ...j, lamps: j.lamps.map(({ groundRaw, groundY, ...l }) => l) }
+        // ⛔ THE LAMP ANCHORS BELONG TO THIS HEIGHTFIELD, EVERY LAMP CARRIES ONE, OR THE TOWN'S LAMPS ARE REFUSED (Boz ruled
+        // (b), 2026-10-29): the verdict Publish refuses a slab by (src/lib/anchorGate.js), so this is the backstop. No field
+        // fallback (it seated a lamp on the smooth field, not the drawn ground).
+        if (j?.lamps?.length) {
+          const v = lampAnchorsVerdict({ doc: j, terrainId: currentTerrainIdentity() })
+          if (!v.ok) {
+            console.error(`[BakedLamps] ⛔ "${resolvedLookId}": its lamp anchors are REFUSED — ${v.why}. No lamps are drawn. `
+              + `▶ re-bake lamps (node cartograph/bake-lamps.js --scene=<scene> --look=${resolvedLookId}) and publish the slab`)
+            j = null
           }
         }
         setData(j)

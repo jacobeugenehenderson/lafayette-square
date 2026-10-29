@@ -3,7 +3,8 @@ import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import { patchTerrainInstancedBaked, UNIFORMS as TERRAIN_UNIFORMS, TERRAIN_DECL } from '../utils/terrainShader'
-import { getElevationRaw, groundPairs } from '../utils/elevation'
+import { groundPairs } from '../utils/elevation'
+import { anchoredRaw } from '../lib/anchorGate.js'
 import { resolveGroupAtMinute, getTodSlotMinutes } from '../cartograph/animatedParam.js'
 import { LANTERN_FLAT_DEFAULTS, LANTERN_FIELD_KEYS, LANTERN_FIELDS, kitDayChannel } from '../cartograph/skyLightChannels.js'
 import { lampGlow as _lampGlow, lampGrid as _lampGrid } from '../preview/lampGlowState'
@@ -78,10 +79,10 @@ function StreetLights({ lamps: lampsProp, reach, lantern: lanternChannel, model:
 
   // Baked ground anchor per lamp (groundSampler): the raw field where the DRAWN
   // ground sits under each lamp → rigid-lift onto the rendered surface, no float
-  // (the buildings/foundations regime for point objects). Falls back to the
-  // smooth field for any lamp that predates the bake.
+  // (the buildings/foundations regime for point objects). ⛔ Never looked up: BakedLamps refuses
+  // a town whose lamp anchors fail their gate (src/lib/anchorGate.js), so every lamp here has one.
   const aGround = useMemo(
-    () => groundPairs(allLamps, l => (typeof l.groundRaw === 'number' ? l.groundRaw : getElevationRaw(l.x, l.z))),
+    () => groundPairs(allLamps, l => anchoredRaw(l, 'lamp')),
     [allLamps],
   )
 

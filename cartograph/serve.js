@@ -42,6 +42,7 @@ import { HASHED, manifestPath, servedRel } from '../src/lib/slabNames.js'
 import { TOD_SLOT_IDS } from '../src/lib/todSlots.js'
 import { parcelParts } from './parcelParts.js'
 import { stagedSlabStep, publishSlab, refuseTornCommit } from './slabStage.mjs'
+import { slabAnchorRefusals } from './anchorGate.mjs'
 
 // Promise wrapper around spawn with shell: true. Matches execSync's
 // command-string semantics + timeout option, but the event loop keeps
@@ -3435,6 +3436,10 @@ createServer(async (req, res) => {
       // name before anything is committed or uploaded (BRIEF-share-image-by-time-of-day §4.4).
       const noShare = SHARE_IMAGE_RELS.filter(rel => !existsSync(join(REPO_ROOT, 'public', 'baked', id, rel)))
       if (noShare.length) throw new Error(`"${id}" has no share image for ${noShare.length === SHARE_IMAGE_RELS.length ? 'any time of day' : noShare.join(', ')} — press Capture share images in Stage first. Nothing was committed or uploaded.`)
+      // ⛔ A SLAB WHOSE TREE OR LAMP ANCHORS DO NOT BELONG TO IT DOES NOT PUBLISH (Boz ruled, 2026-10-29): the player would refuse
+      // that town's trees or lamps by name, and a visitor would see none. The player's own verdict, on these files.
+      const unanchored = slabAnchorRefusals(join(REPO_ROOT, 'public', 'baked', id), id)
+      if (unanchored.length) throw new Error(`"${id}": its ${unanchored.map(u => `${u.what} anchors are refused (${u.why}; ▶ ${u.step})`).join(' · ')}. Nothing was committed or uploaded.`)
       // Only pass pathspecs that actually exist — `git commit -- <path>` errors
       // ("pathspec did not match any file(s)") on a spec that matches nothing.
       const specs = slabPathspecs(id).filter(p => existsSync(join(REPO_ROOT, p)))
