@@ -1,5 +1,5 @@
 // §3.1: each candidate on the three fixtures, one row each, by the same measures.
-// node scratch/cut-once/compare.mjs --cand=integer [--fixture=decks|breakwater|huron]
+// node scratch/cut-once/compare.mjs --cand=integer|provenance [--fixture=decks|breakwater|huron]
 //   own/copy/new (own-edge.mjs) · outers/holes · crossings left after the one rounding (latticeNode.js#crossOf, every pair of
 //   output edges that are not neighbours) · edges ≤ 2 mm · ms
 import fs from 'fs'
@@ -30,16 +30,20 @@ const short = (paths) => paths.reduce((t, p) => t + p.filter((a, i) => { const b
 const topo = (paths) => { let o = 0, h = 0; for (const p of paths) (Clipper.Area(p) > 0 ? o++ : h++); return { outers: o, holes: h } }
 
 const cand = arg('cand') || 'integer'
-if (cand !== 'integer') throw new Error(`no candidate ${cand} (the library route stopped, Jacob 2026-10-28: README.md)`)
+if (!['integer', 'provenance'].includes(cand)) throw new Error(`no candidate ${cand} (the library route stopped, Jacob 2026-10-28: README.md)`)
+const C3 = cand === 'provenance' ? await import('./cand3.mjs') : null
 const FIX = { decks: () => { const d = fx('ptown-deck-inputs'); return { src: ip(d.inputs.flat()), stepM: d.fineM } },
   breakwater: () => { const d = fx('ptown-embankments'); return { src: ip(d.paths), stepM: d.fineM } },
   huron: () => { const d = fx('huron-traced'); return { src: ip(d.traced), stepM: d.fineM } } }
 for (const name of (arg('fixture') ? [arg('fixture')] : Object.keys(FIX))) {
   const { src, stepM } = FIX[name](), t = tree(src), u = flat(t)
   const t0 = Date.now(); let paths
+  let stat = null
   if (cand === 'integer') paths = openCloseAtStep(src, stepM, name).paths
+  else { const r = C3.openCloseProvenance(src, stepM, name); paths = r.paths; stat = { ...r.stat, opened: r.opened.length, closed: r.closed.length, slivers: r.slivers } }
   const ms = Date.now() - t0
   // the kit unions the kept paths after (deckFootprints, bake-coast): measured on that union, as the reader sees it
   const out = flat(tree(paths)), e = ownEdge(u, out), X = crossings(out)
-  console.log(JSON.stringify({ cand, fixture: name, ms, ...topo(out), src: topo(u), own: e.own, copy: e.copy, new: e.new, copyM: e.copyM, crossings: X.length, crossAt: X.slice(0, 3), le2mm: short(out), copies: e.copies.slice(0, 3) }))
+  const holeM2 = (pp) => pp.filter(p => Clipper.Area(p) < 0).map(p => +(Clipper.Area(p) / SCALE / SCALE).toFixed(4))
+console.log(JSON.stringify({ cand, fixture: name, ms, stat, holesM2: holeM2(out), srcHolesM2: holeM2(u), ...topo(out), src: topo(u), own: e.own, copy: e.copy, new: e.new, copyM: e.copyM, crossings: X.length, crossAt: X.slice(0, 3), le2mm: short(out), copies: e.copies.slice(0, 3), news: e.news }))
 }

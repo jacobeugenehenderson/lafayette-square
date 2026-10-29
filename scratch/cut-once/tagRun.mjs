@@ -13,7 +13,7 @@
 //    within the band between the two lines widened by NODE_BOUND → the run, the jog kept; else clause
 //    'parallel-protrusion' (something stood out between them and the join would need a new line: unruled until one exists).
 //  · TWO OR MORE RINGS: every tag's source line is ONE line (latticeNode.js#sameLine, exact) → kind 'line', that one line;
-//    otherwise clause 'cross-ring-different-lines'. ⛔ Never a null tag: a fresh +h line would nearly coincide with both walls.
+//    otherwise two rings' tags are a TRANSITION collapsed by rounding (kind 'transition', below), guarded by the walls' distance.
 import { NODE_BOUND, lineCrossOf, sameLine } from '../../src/lib/latticeNode.js'
 
 const segOf = (R, i) => { const a = R[i], b = R[(i + 1) % R.length]; return { a: [a.X, a.Y], b: [b.X, b.Y] } }
@@ -21,14 +21,24 @@ const distSeg = (p, a, b) => { const dx = b[0] - a[0], dy = b[1] - a[1], L2 = dx
   return Math.hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dy) }
 const distLine = (p, a, b) => { const dx = b[0] - a[0], dy = b[1] - a[1]; return Math.abs((p[0] - a[0]) * dy - (p[1] - a[1]) * dx) / Math.hypot(dx, dy) }
 
-export function tagRun(tags, SRC, { againstDirection = false, refuseGap = false, noBand = false } = {}) {
+export function tagRun(tags, SRC, { againstDirection = false, refuseGap = false, noBand = false, twoH = null } = {}) {
   if (tags.length === 1) return { ok: true, kind: 'one', ring: tags[0].ring, from: tags[0].i, to: tags[0].i, gaps: 0 }
   const rings = [...new Set(tags.map(t => t.ring))]
   if (rings.length > 1) {
     const s0 = segOf(SRC[tags[0].ring], tags[0].i)
     const same = tags.every(t => sameLine(s0, segOf(SRC[t.ring], t.i)))
-    return same ? { ok: true, kind: 'line', ring: tags[0].ring, from: tags[0].i, to: tags[0].i, gaps: 0, rings }
-      : { ok: false, clause: 'cross-ring-different-lines', rings, tags }
+    if (same) return { ok: true, kind: 'line', ring: tags[0].ring, from: tags[0].i, to: tags[0].i, gaps: 0, rings }
+    // ⭐ Zob's ruling, 2026-10-28 (PTown's deck): two rings' tags on one segment are a TRANSITION collapsed by rounding, emitted
+    // as any tag change (the caller orders the two by its neighbours and cuts between them). The classifier is a GUARD: the two
+    // source walls no farther apart than 2h there is the walls-meet question (Boz's), refused by name. Read off the source, in
+    // doubles; within 1e-6 u of 2h refuses as a tie.
+    if (rings.length !== 2 || tags.length !== 2) return { ok: false, clause: 'cross-ring-not-a-pair', rings, tags }
+    if (!(twoH > 0)) throw new Error('⛔ tagRun: a cross-ring transition needs { twoH } (the open\'s 2h, in units) for its guard')
+    const sa = segOf(SRC[tags[0].ring], tags[0].i), sb = segOf(SRC[tags[1].ring], tags[1].i)
+    const wall = Math.min(distSeg(sa.a, sb.a, sb.b), distSeg(sa.b, sb.a, sb.b), distSeg(sb.a, sa.a, sa.b), distSeg(sb.b, sa.a, sa.b))
+    if (Math.abs(wall - twoH) < 1e-6) return { ok: false, clause: 'walls-at-2h-tie', rings, tags, wallU: wall }
+    if (wall <= twoH) return { ok: false, clause: 'walls-meet', rings, tags, wallU: +wall.toFixed(3) }
+    return { ok: true, kind: 'transition', tags, wallU: +wall.toFixed(3), gaps: 0 }
   }
   const ring = rings[0], R = SRC[ring], n = R.length, is = [...new Set(tags.map(t => t.i))].sort((x, y) => x - y)
   // the shortest arc holding them: the complement of the largest cyclic gap between consecutive indices

@@ -109,6 +109,20 @@ function resolveFaces(rawRings) {
     F.rings.forEach((r, ri) => r.forEach((q, e) => { if (!near(q)) return
       const L = r.length, around = []; for (let k = -6; k <= 6; k++) { const j = (e + k + L) % L; around.push({ k, at: [r[j].X / SCALE, r[j].Y / SCALE], tags: F.tags[ri][j] }) }
       console.log('DUMP eroded ring', ri, 'of', L, 'edges; vertex', e, JSON.stringify(around)) }))
+    // Zob's ask: every cross-ring TRANSITION in each eroded ring that comes within 20 u of the place (consecutive edges whose
+    // source-ring sets differ), its position, and its distance from the place
+    F.rings.forEach((r, ri) => { if (!r.some(near)) return
+      const rs = F.tags[ri].map(tg => [...new Set((tg == null ? [] : Array.isArray(tg) ? tg : [tg]).map(t => t.ring))].sort().join('+') || 'null')
+      const tr = []; for (let e = 0; e < r.length; e++) { const a = rs[e], b = rs[(e + 1) % r.length]; if (a === b || a === 'null' || b === 'null') continue
+        const v = r[(e + 1) % r.length]; tr.push({ edge: e, from: a, to: b, at: [v.X / SCALE, v.Y / SCALE], distU: +Math.hypot(v.X - P0[0], v.Y - P0[1]).toFixed(3) }) }
+      const nullRuns = rs.filter(x => x === 'null').length
+      // …and across null runs: the ring's tagged ring-set sequence with nulls dropped, each change and the null edges it spans
+      const seq = rs.map((x, e) => ({ x, e })).filter(o => o.x !== 'null'), across = []
+      for (let k = 0; k < seq.length; k++) { const a = seq[k], b = seq[(k + 1) % seq.length]; if (a.x === b.x) continue
+        const v = r[(a.e + 1) % r.length]; across.push({ fromEdge: a.e, toEdge: b.e, from: a.x, to: b.x, nullsBetween: ((b.e - a.e - 1) + r.length) % r.length, at: [v.X / SCALE, v.Y / SCALE], distU: +Math.hypot(v.X - P0[0], v.Y - P0[1]).toFixed(3) }) }
+      console.log('DUMP transitions across nulls, ring', ri, JSON.stringify(across))
+      console.log('DUMP null edges, ring', ri, JSON.stringify(rs.map((x, e) => x === 'null' ? { e, at: [r[e].X / SCALE, r[e].Y / SCALE], prev: rs[(e - 1 + r.length) % r.length], next: rs[(e + 1) % r.length] } : null).filter(Boolean)))
+      console.log('DUMP transitions of eroded ring', ri, JSON.stringify({ edges: r.length, nullEdges: nullRuns, ringsSeen: [...new Set(rs)], transitions: tr })) })
     const byKey = new Map(); for (const ed of edges) { const ka = ed.a.join(','), kb = ed.b.join(','), k = ka < kb ? ka + '|' + kb : kb + '|' + ka
       if (Math.hypot(ed.a[0] - P0[0], ed.a[1] - P0[1]) > 50) continue; (byKey.get(k) || byKey.set(k, []).get(k)).push({ dir: ka < kb ? 1 : -1, src: ed.tag?.ring, tag: ed.tag }) }
     for (const [k, l] of byKey) if (l.length > 1) console.log('DUMP merged segment', k, JSON.stringify(l), new Set(l.map(x => x.dir)).size > 1 && new Set(l.map(x => x.src)).size > 1 ? '⇐ CANCELLING, different source rings' : '') }
