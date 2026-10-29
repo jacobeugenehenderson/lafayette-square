@@ -48,6 +48,12 @@ keyframes only). Jacob, 2026-10-28: the Arch now "bounces" with camera motion si
 **❓ OPEN RULINGS FOR JACOB:** the (b′) chain ends · the chain join's override home · Browse → Society re-frame · a deck's width (the
 pier's OSM `width` tag) vs an embankment's (the pour measure): two rules size a street's land over water · authoring dpr.
 
+**⛔ PROMOTE CARRIES A STALE PLAYER SILENTLY (measured by Ward, 2026-10-29 02:29Z):** HPDM was promoted with its new slab while
+staging/ward/current.json still named the 10-27 player, so production got new slab + old player (symptom: "[revetment] FAILED to load
+revetment.json — manifest names no revetment.json"). The release order said player first; nothing enforced it. FIX OWED: Promote refuses
+by name when the player staging names was built on an older kit than the slab's bake (claims-no-slab-outlives-its-schema's family).
+Re-promoted by Jacob the same night on the new player (Ward 25ee07f / kit 19bb2d25).
+
 **⛔ NAMED DEBTS (each removed when its cure lands, never left as a quiet fork):**
 - `structures.mjs#openCloseAtStep`'s two behaviours: the traced water keeps the integer open/close (`cutOnce: false`) until its
   cut-once crossings are understood or float morphology lands (Huron (-4820.8, -3834.5): the cut/fill made one ring through one vertex
