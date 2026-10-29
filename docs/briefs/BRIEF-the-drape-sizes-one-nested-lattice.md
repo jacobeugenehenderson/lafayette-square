@@ -27,6 +27,10 @@ Where they meet, today, the two layers each draw their own edge.
   Huron 97:right and 111:left (crestAt is not linear between stations). toeMax's berm term blows up as h → 0: Huron 35:right's near lattice
   is 7,377 vertices across (510k near tris for 98 far).
 
+- **A lead to measure, not a cause:** the far bake now builds every near chunk for its bounds (Boz's ruling (a)), and 154 s of
+  provincetown's 179 s is drawn-ground reads (`drawnGround.js#sample` + `ulp32`). The near/far bounds excess has a long tail (huron
+  max 10.3 m, `near-vs-far-box.mjs`); a nested lattice may make the bounds derivable and the bake fast again.
+
 ## 2. The build
 1. **ONE NESTED LATTICE, SIZED FROM WHAT IT BUILDS.** hMax and toeMax are the max over the stations the drape will actually build at its
    finest step, never a fixed sample count. The toe's berm term is bounded where h → 0 (a heap's end has no berm wider than the stone

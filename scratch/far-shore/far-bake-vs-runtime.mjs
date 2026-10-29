@@ -7,7 +7,7 @@ import { bakeRevetmentFar, prepareFaces, FAR_OCTAVES } from '../../cartograph/ba
 import { drapeGlobals, revetmentDrape } from '../../src/lib/revetmentDrape.js'
 const look = process.argv.find(a => a.startsWith('--look='))?.slice(7), dir = `public/baked/${look}`
 const ab = (p) => { const b = readFileSync(p); return b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength) }
-const { doc, bins } = bakeRevetmentFar({ look, dryRun: true })
+const { doc, bins } = bakeRevetmentFar({ look, scene: look, dryRun: true })
 for (const [n, b] of Object.entries(bins)) console.log(`  ${n}: gzip ${(gzipSync(b).length / 1e6).toFixed(2)} MB`)
 const { faces, parts } = prepareFaces({ revetment: JSON.parse(readFileSync(`${dir}/revetment.json`, 'utf8')), terrainJson: JSON.parse(readFileSync(`${dir}/terrain.json`, 'utf8')),
   terrainBin: ab(`${dir}/terrain.bin`), groundJson: JSON.parse(readFileSync(`${dir}/ground.json`, 'utf8')), groundBin: ab(`${dir}/ground.bin`) })

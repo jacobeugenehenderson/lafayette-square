@@ -14,14 +14,19 @@
 //   · A GENERATOR is a function in which a tainted value reaches a GEOMETRY SINK — a BufferAttribute's construction,
 //     `setAttribute`, or an attribute's setX/setY/setZ/setXYZ — counting a call of its OWN parameters as a sample
 //     (a builder handed a groundAt, like revetmentDrape). Summaries are iterated to a fixpoint across every file.
-//   · A hook callback is RED when it generates (its own flow reaches a sink, or it calls a generator) and reads no camera
-//     (`camera`, `cam`, a `.camera`, a Frustum). A timer is not a camera.
+//   · A hook callback is RED when a generating site in it (its own flow reaching a sink, or a call of a generator) is not
+//     CAMERA-GATED: a camera value (`camera`, `cam`, `.camera`, a frustum, or what is computed from them, local helpers
+//     included) must reach the site's arguments or a test that selects it — an enclosing `if`, or an `if (…) continue |
+//     break | return` before it in its own innermost loop. A whole-frame early return does not select; a timer is not a camera.
+//   · A parameter is a sampler only where a call site hands it a sampler-valued argument at that position or key (to a
+//     fixed point): revetmentDrape's groundAt is, a water-level record's lowAt is not.
 // ⭐ AND THE FAR LAYER'S HIDE IS PER CHUNK (C7): SlabRevetment's near chunks are keyed face AND chunk, and the far meshes
 //   hide by the same key, so one near chunk on a long face leaves that face's other far chunks drawn at distance.
 // ▶ node checks/claims-the-far-shore-is-not-built-at-load.mjs [--mutants] [-v]
 //   Planted pairs (always run): a sample used only as a test → GREEN; the same sample written into a position → RED.
-//   --mutants: the far useFrame restored → RED · the same gated by a timer → RED · the whole-face hide → RED; the near
-//   layer's camera useFrame stays GREEN throughout (the control).
+//   --mutants: the far useFrame restored → RED · the same gated by a timer → RED · the far build moved INTO the near
+//   useFrame (a hook that reads the camera, but not to select it) → RED · the whole-face hide → RED; the near layer's
+//   camera useFrame stays GREEN in the others (the control).
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { join, relative, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -73,19 +78,36 @@ const paramNames = (fn) => { const out = new Set(); const walk = (p) => { if (!p
   else if (p.type === 'RestElement') walk(p.argument) }
   fn.params.forEach(walk); return out }
 
+// a function's parameter slots: [{ pos, key, name }] (key is the property name of an object-pattern parameter, else null)
+const paramSlots = (fn) => { const out = []
+  fn.params.forEach((p, pos) => { const walk = (q, key) => { if (!q) return
+    if (q.type === 'Identifier') out.push({ pos, key, name: q.name }); else if (q.type === 'AssignmentPattern') walk(q.left, key)
+    else if (q.type === 'ObjectPattern') q.properties.forEach(r => walk(r.value || r.argument, r.key?.name ?? null)) }
+    walk(p, null) })
+  return out }
+const isLoop = (p) => p.isForStatement() || p.isForOfStatement() || p.isForInStatement() || p.isWhileStatement() || p.isDoWhileStatement()
+const exits = (st) => st && (st.type === 'ContinueStatement' || st.type === 'BreakStatement' || st.type === 'ReturnStatement'
+  || (st.type === 'BlockStatement' && st.body.length === 1 && exits(st.body[0])))
+
 function analyse(files, SAMPLERS) {
-  const fns = new Map()   // name → { path, file, params }
+  const fns = new Map()   // name → { path, file, slots }
   const asts = files.map(({ file, src }) => ({ file, ast: parseSrc(src, file) }))
   for (const { file, ast } of asts) traverse(ast, { Function(p) {
     const name = p.node.id?.name || (p.parentPath.isVariableDeclarator() ? p.parentPath.node.id.name : null)
-    if (name && !fns.has(name)) fns.set(name, { path: p, file, params: paramNames(p.node) }) } })
+    if (name && !fns.has(name)) fns.set(name, { path: p, file, slots: paramSlots(p.node) }) } })
+  const fnName = (p) => { const f = p.getFunctionParent(); if (!f) return null; return f.node.id?.name || (f.parentPath.isVariableDeclarator() ? f.parentPath.node.id.name : null) }
   const summary = new Map()   // name → { generates, passes, returnsSample }
   for (const n of fns.keys()) summary.set(n, { generates: false, passes: false, returnsSample: false })
+  // ⭐ Q1 (Zob): a parameter is a SAMPLER only where a call site passes a sampler-valued argument at its position or key
+  const samplerParams = new Map([...fns.keys()].map(n => [n, new Set()]))
+  const samplerProps = new Set()   // object keys some literal binds to a sampler-valued expression (`groundAt: drawnAt1`)
+  const samplerValued = (e, inFn) => !!e && ((e.type === 'Identifier' && (SAMPLERS.has(e.name) || summary.get(e.name)?.returnsSample || samplerParams.get(inFn)?.has(e.name)))
+    || (e.type === 'MemberExpression' && !e.computed && samplerProps.has(e.property.name)))
 
-  // the flow inside ONE function body (nested arrows included), given what is already known about callees
-  function flow(fnPath, { paramsSample }) {
-    const params = paramNames(fnPath.node), tainted = new Set(), fromParam = new Set()
-    let generates = false, returnsSample = false, passes = false, why = null
+  // the flow inside ONE function body (nested arrows included), given what is known about callees; `gens` are the generating sites
+  function flow(fnPath, sParams) {
+    const params = new Set(paramSlots(fnPath.node).map(s => s.name)), tainted = new Set(), fromParam = new Set(), gens = []
+    let returnsSample = false, passes = false
     const isT = (n) => {
       if (!n) return false
       switch (n.type) {
@@ -100,7 +122,7 @@ function analyse(files, SAMPLERS) {
         case 'CallExpression': {
           const c = nameOfCallee(n.callee)
           if (c && SAMPLERS.has(c)) return true
-          if (n.callee.type === 'Identifier' && params.has(n.callee.name) && paramsSample) return true
+          if (n.callee.type === 'Identifier' && sParams.has(n.callee.name)) return true      // a sampler handed in, called
           const s = c && summary.get(c)
           if (s?.returnsSample) return true
           if (s?.passes && n.arguments.some(isT)) return true
@@ -113,6 +135,7 @@ function analyse(files, SAMPLERS) {
     const fromP = (n) => n?.type === 'Identifier' ? (params.has(n.name) || fromParam.has(n.name)) : n?.type === 'MemberExpression' ? fromP(n.object) : false
     for (let pass = 0; pass < 4; pass++) {
       const before = tainted.size + fromParam.size
+      gens.length = 0
       fnPath.traverse({
         VariableDeclarator(p) { const init = p.node.init; if (!init) return
           const names = []; const walk = (q) => { if (!q) return; if (q.type === 'Identifier') names.push(q.name); else if (q.type === 'ObjectPattern') q.properties.forEach(r => walk(r.value || r.argument)); else if (q.type === 'ArrayPattern') q.elements.forEach(walk); else if (q.type === 'AssignmentPattern') walk(q.left) }
@@ -125,43 +148,75 @@ function analyse(files, SAMPLERS) {
         CallExpression(p) { const c = nameOfCallee(p.node.callee), args = p.node.arguments
           if (c === 'push' || c === 'set' || c === 'fill') { const b = baseIdent(p.node.callee.object); if (b && args.some(isT)) tainted.add(b) }
           // sinks
-          if (c === 'setAttribute' && isT(args[1])) { generates = true; why ??= `setAttribute at line ${p.node.loc?.start.line}` }
-          if (ATTR_SETTERS.has(c) && args.slice(1).some(isT)) { generates = true; why ??= `${c} at line ${p.node.loc?.start.line}` }
-          const s = c && summary.get(c)
-          if (s?.generates) { generates = true; why ??= `calls ${c} (a generator) at line ${p.node.loc?.start.line}` } },
-        NewExpression(p) { const c = nameOfCallee(p.node.callee); if (/BufferAttribute$/.test(c || '') && p.node.arguments.some(isT)) { generates = true; why ??= `new ${c} at line ${p.node.loc?.start.line}` } },
+          if (c === 'setAttribute' && isT(args[1])) gens.push({ path: p, why: `setAttribute at line ${p.node.loc?.start.line}` })
+          if (ATTR_SETTERS.has(c) && args.slice(1).some(isT)) gens.push({ path: p, why: `${c} at line ${p.node.loc?.start.line}` })
+          if (c && summary.get(c)?.generates) gens.push({ path: p, why: `calls ${c} (a generator) at line ${p.node.loc?.start.line}` }) },
+        NewExpression(p) { const c = nameOfCallee(p.node.callee); if (/BufferAttribute$/.test(c || '') && p.node.arguments.some(isT)) gens.push({ path: p, why: `new ${c} at line ${p.node.loc?.start.line}` }) },
         ReturnStatement(p) { if (p.getFunctionParent() !== fnPath) return
           if (isT(p.node.argument)) returnsSample = true
           if (fromP(p.node.argument)) passes = true },
       })
       if (tainted.size + fromParam.size === before) break
     }
-    return { generates, returnsSample, passes, why }
+    return { generates: gens.length > 0, gens, returnsSample, passes }
   }
 
-  for (let it = 0; it < 12; it++) {
+  for (let it = 0; it < 16; it++) {
     let changed = false
+    // the call sites: which parameters are handed a sampler, and which object keys carry one
+    for (const { ast } of asts) traverse(ast, {
+      ObjectProperty(p) { const k = p.node.key?.name; if (k && !samplerProps.has(k) && samplerValued(p.node.value, fnName(p))) { samplerProps.add(k); changed = true } },
+      CallExpression(p) { const c = nameOfCallee(p.node.callee), F = c && fns.get(c); if (!F) return
+        const inFn = fnName(p)
+        p.node.arguments.forEach((a, pos) => { for (const sl of F.slots.filter(sl => sl.pos === pos)) {
+          const v = sl.key == null ? a : a.type === 'ObjectExpression' ? a.properties.find(q => q.key?.name === sl.key)?.value : null
+          if (samplerValued(v, inFn) && !samplerParams.get(c).has(sl.name)) { samplerParams.get(c).add(sl.name); changed = true } } }) } })
     for (const [n, f] of fns) {
-      const r = flow(f.path, { paramsSample: true }), s = summary.get(n)
-      // a builder handed a sampler generates only through its params; returnsSample must not leak that to every caller
-      const rs = flow(f.path, { paramsSample: false }).returnsSample
+      const r = flow(f.path, samplerParams.get(n)), s = summary.get(n)
+      // returnsSample must not leak a handed-in sampler's taint to every caller: judged with no sampler parameters
+      const rs = flow(f.path, new Set()).returnsSample
       if (r.generates !== s.generates || r.passes !== s.passes || rs !== s.returnsSample) { changed = true; summary.set(n, { generates: r.generates, passes: r.passes, returnsSample: rs }) }
     }
     if (!changed) break
   }
 
+  // ⭐ ITEM 5 (Zob): a generating site is CAMERA-GATED only when a camera value reaches its arguments, or a test that
+  // SELECTS it — an enclosing `if`, or an `if (…) continue|break|return` before it in its own innermost loop. A camera
+  // read anywhere else in the hook (an early return for the whole frame) does not select what is built.
   const hooks = []
   for (const { file, ast } of asts) traverse(ast, { CallExpression(p) {
     const hook = p.node.callee.type === 'Identifier' ? p.node.callee.name : null
     if (!HOOKS.has(hook)) return
     const cb = p.get('arguments.0'); if (!cb?.isFunction?.()) return
-    let camera = false
-    cb.traverse({ Identifier(q) { if (/^(camera|cam|frustum|Frustum)$/.test(q.node.name)) camera = true },
-      MemberExpression(q) { if (!q.node.computed && q.node.property.name === 'camera') camera = true } })
-    const r = flow(cb, { paramsSample: false })
-    if (r.generates) hooks.push({ file: relative(ROOT, file), line: p.node.loc?.start.line, hook, camera, why: r.why })
+    const r = flow(cb, new Set())
+    if (!r.generates) return
+    const camT = new Set(['camera', 'cam', 'frustum'])
+    const hasCam = (node) => { let hit = false; traverse(node, { noScope: true, Identifier(q) { if (camT.has(q.node.name)) hit = true },
+      MemberExpression(q) { if (!q.node.computed && q.node.property.name === 'camera') hit = true } }); return hit }
+    const wrap = (n) => ({ type: 'File', program: { type: 'Program', body: [{ type: 'ExpressionStatement', expression: n }] } })
+    for (let pass = 0; pass < 6; pass++) { const before = camT.size
+      cb.traverse({ VariableDeclarator(q) { const id = q.node.id; if (id.type !== 'Identifier' || !q.node.init) return
+        if (hasCam(wrap(q.node.init))) camT.add(id.name) } })
+      if (camT.size === before) break }
+    const gated = (g) => {
+      if (g.path.node.arguments?.some(a => hasCam(wrap(a)))) return true
+      let q = g.path, loop = null
+      while (q && q !== cb) { if (isLoop(q)) { loop = q; break } q = q.parentPath }
+      q = g.path
+      while (q && q !== (loop ?? cb)) {
+        const par = q.parentPath
+        if (par?.isIfStatement() && q.key !== 'test' && hasCam(wrap(par.node.test))) return true
+        if (loop && par && (par.isBlockStatement() || par.isProgram()) && Array.isArray(par.node.body)) {
+          for (const st of par.node.body.slice(0, q.key)) if (st.type === 'IfStatement' && exits(st.consequent) && hasCam(wrap(st.test))) return true
+        }
+        q = par
+      }
+      return false
+    }
+    const open = r.gens.filter(g => !gated(g))
+    hooks.push({ file: relative(ROOT, file), line: p.node.loc?.start.line, hook, camera: open.length === 0, why: (open[0] ?? r.gens[0]).why })
   } })
-  return { hooks, summary }
+  return { hooks, summary, samplerParams }
 }
 
 const repoFiles = () => { const out = []; const walk = (d) => { for (const n of readdirSync(d)) { const p = join(d, n)
@@ -176,7 +231,10 @@ function hideIsPerChunk(src) {
   traverse(ast, {
     CallExpression(p) { const c = p.node.callee
       if (c.type === 'MemberExpression' && c.property.name === 'add' && baseIdent(c.object) === 'nearKeys') added = p.node.arguments[0] },
-    ObjectProperty(p) { if (p.node.key.name === 'key' && p.parentPath.parentPath.isCallExpression() && nameOfCallee(p.parentPath.parentPath.node.callee) === 'push') keyed ??= p.node.value } })
+    ObjectProperty(p) { if (p.node.key?.name !== 'key' || !p.parentPath.parentPath.isCallExpression() || nameOfCallee(p.parentPath.parentPath.node.callee) !== 'push') return
+      // the value, or (a shorthand / an identifier) the template its binding is initialised with
+      const v = p.node.value
+      keyed ??= v.type === 'Identifier' ? (p.scope.getBinding(v.name)?.path.node.init ?? v) : v } })
   const parts = (n) => n?.type === 'TemplateLiteral' ? n.expressions.length : 0
   return { ok: parts(added) >= 2 && parts(keyed) >= 2, added: added && src.slice(added.start, added.end), keyed: keyed && src.slice(keyed.start, keyed.end) }
 }
@@ -211,10 +269,16 @@ if (process.argv.includes('--mutants')) {
   const TIMER = `  useEffect(() => { const id = setTimeout(() => { for (const f of faces) groundRelative(revetmentDrape({ poly: f.poly, crestAt: f.crestAt, groundAt: f.groundAt, octaves: 1 })) }, 1000); return () => clearTimeout(id) }, [faces])\n`
   const swap = (s2) => files.map(f => f.file === REVETMENT ? { ...f, src: s2 } : f)
   let alive = 0
-  for (const [name, s2] of [['the far useFrame restored', src.replace(anchor, FAR + anchor)], ['the far build gated by a timer', src.replace(anchor, TIMER + anchor)]]) {
+  // ⭐ Zob: the far build moved INTO the near useFrame — a hook that reads the camera, where the build used to live. The camera
+  // must select what is built there, so this is RED too.
+  const nearAnchor = '    const drape = [], stones = [], nearKeys = new Set()\n'
+  if (!src.includes(nearAnchor)) throw new Error('⛔ near-useFrame mutant anchor gone from SlabRevetment.jsx')
+  const INTO = nearAnchor + `    for (const f of faces) groundRelative(revetmentDrape({ poly: f.poly, crestAt: f.crestAt, toeAt: f.toeAt, berm: f.berm, groundAt: f.groundAt, waterY: f.waterY, octaves: 1, globals: drapeGlobals({ poly: f.poly, crestAt: f.crestAt, octaves: 1 }) }))\n`
+  for (const [name, s2] of [['the far useFrame restored', src.replace(anchor, FAR + anchor)], ['the far build gated by a timer', src.replace(anchor, TIMER + anchor)],
+    ['the far build moved into the near useFrame', src.replace(nearAnchor, INTO)]]) {
     const r = analyse(swap(s2), SAMPLERS), n = r.hooks.find(h => h.file.endsWith('SlabRevetment.jsx') && h.hook === 'useFrame' && h.camera)
-    const caught = red(r).length > reds.length
-    console.log(`  mutant: ${name} → ${caught ? 'RED ✓' : 'GREEN ✗'}${n ? '' : ' (and the near control vanished)'}`); if (!caught || !n) alive++ }
+    const into = name.includes('into the near'), caught = red(r).length > reds.length
+    console.log(`  mutant: ${name} → ${caught ? 'RED ✓' : 'GREEN ✗'}${n || into ? '' : ' (and the near control vanished)'}`); if (!caught || (!n && !into)) alive++ }
   { const a = 'nearKeys.add(`${f.key}#${k}`)'; if (!src.includes(a)) throw new Error('⛔ hide mutant target gone')
     const caught = !hideIsPerChunk(src.replace(a, 'nearKeys.add(f.key)')).ok
     console.log(`  mutant: the whole-face hide → ${caught ? 'RED ✓' : 'GREEN ✗'}`); if (!caught) alive++ }

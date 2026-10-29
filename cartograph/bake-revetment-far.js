@@ -43,16 +43,18 @@
  *   f32×3·v · far normal f32×3·v · pin f32×4·v (aDrawnRaw: has 1, raw, 0, 0, as groundRelative wrote it) · band position
  *   f32×3·v · band normal f32×3·v (up) · index u32·n (one index for both: the band is the far chunk's triangles, flat).
  * A town with no revetment.json has no shore: nothing is written and any earlier output is removed.
- * ▶ node bake-revetment-far.js --look=<id> [--dry-run]
+ * ▶ node bake-revetment-far.js --look=<id> --scene=<id> [--dry-run]
  */
 import { readFileSync, existsSync, unlinkSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createHash } from 'node:crypto'
 import { writeIfChanged } from './io.js'
+import { assertBakeTarget } from './bake-target.js'
+import { requireExplicitMap } from './scene.js'
 import { makeDrawnGround } from '../src/lib/drawnGround.js'
-import { makeElevationSampler } from '../src/lib/terrainCommon.js'
-import { revetmentFaces, toeStations, toeFromBaked } from '../src/lib/revetmentFromSlab.js'
+import { makeElevationSampler, sceneExagOf } from '../src/lib/terrainCommon.js'
+import { revetmentFaces, toeStations, toeFromBaked, chunkBox } from '../src/lib/revetmentFromSlab.js'
 import { drapeGlobals, revetmentDrape } from '../src/lib/revetmentDrape.js'
 import { CHUNK_M } from '../src/lib/shoreChunks.js'
 import { MIN_ARMOUR_D50_M, d50For } from './shore-armour.mjs'
@@ -108,41 +110,58 @@ export function chunkRanges(f) {
   return { G1, G3, ranges: out }
 }
 
-/** One face's far chunks: the drape over each chunk's stations, ground-relative, with its band. */
-export function buildFaceChunks(f, parts) {
-  const { G1, ranges } = chunkRanges(f)
+/** Every near chunk of one face: its INFO (bounds, stone size, what each layer keeps there) and, where the far layer keeps
+ *  anything, its far mesh and band. ⭐ The info is the near layer's index, written for EVERY near chunk (Zob, 2026-10-29):
+ *  an octave-1 chunk can keep nothing where octave 3 keeps stone, so the far table cannot stand in for it.
+ *  ⭐ BOUNDS FROM WHAT IS BUILT: both layers' own vertices, each split as the player lifts it (y − raw, and raw), so a box
+ *  at any exaggeration is one function of these numbers (src/lib/revetmentFromSlab.js#chunkBox). */
+export function buildFaceChunks(f, parts, onChunk = null, done = 0) {
+  const { G1, G3, ranges } = chunkRanges(f)
   const out = []
   for (const r of ranges) {
-    if (r.far[1] <= r.far[0]) continue                  // a near chunk narrower than one far step owns no far quad
-    const d = revetmentDrape({ poly: f.poly, crestAt: f.crestAt, toeAt: f.toeAt, berm: f.berm, groundAt: f.groundAt, waterY: f.waterY, octaves: FAR_OCTAVES, globals: G1, stations: r.far })
-    if (!d?.stats?.tris) continue
-    const g = d.geometry, P = g.attributes.position.array, v = P.length / 3
-    const pos = new Float32Array(P), pin = new Float32Array(v * 4), band = new Float32Array(v * 3), up = new Float32Array(v * 3)
-    let minX = Infinity, minY = Infinity, minZ = Infinity, maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity
-    for (let i = 0; i < v; i++) {
-      const x = P[i * 3], y = P[i * 3 + 1], z = P[i * 3 + 2]
-      minX = Math.min(minX, x); minY = Math.min(minY, y); minZ = Math.min(minZ, z); maxX = Math.max(maxX, x); maxY = Math.max(maxY, y); maxZ = Math.max(maxZ, z)
-      const gp = parts(x, z)
-      pin[i * 4] = 1; pin[i * 4 + 1] = gp.raw; pos[i * 3 + 1] = y - gp.raw
-      band[i * 3] = x; band[i * 3 + 1] = gp.y; band[i * 3 + 2] = z; up[i * 3 + 1] = 1
+    onChunk?.(done + out.length + 1)
+    const B = { x0: Infinity, z0: Infinity, x1: -Infinity, z1: -Infinity, rel0: Infinity, rel1: -Infinity, raw0: Infinity, raw1: -Infinity }
+    const take = (P, rawOf) => { for (let i = 0; i < P.length / 3; i++) { const x = P[i * 3], z = P[i * 3 + 2], raw = rawOf(i, x, z), rel = P[i * 3 + 1] - raw
+      if (x < B.x0) B.x0 = x; if (x > B.x1) B.x1 = x; if (z < B.z0) B.z0 = z; if (z > B.z1) B.z1 = z
+      if (rel < B.rel0) B.rel0 = rel; if (rel > B.rel1) B.rel1 = rel; if (raw < B.raw0) B.raw0 = raw; if (raw > B.raw1) B.raw1 = raw } }
+    // the near layer, as the player builds it there (octaves 3, its own lattice and range): its bounds and its triangle count
+    const near = revetmentDrape({ poly: f.poly, crestAt: f.crestAt, toeAt: f.toeAt, berm: f.berm, groundAt: f.groundAt, waterY: f.waterY, octaves: NEAR_OCTAVES, globals: G3, stations: r.near })
+    const nearTris = near?.stats?.tris || 0
+    if (nearTris) take(near.geometry.attributes.position.array, (i, x, z) => parts(x, z).raw)
+    let far = null
+    if (r.far[1] > r.far[0]) {                           // a near chunk narrower than one far step owns no far quad
+      const d = revetmentDrape({ poly: f.poly, crestAt: f.crestAt, toeAt: f.toeAt, berm: f.berm, groundAt: f.groundAt, waterY: f.waterY, octaves: FAR_OCTAVES, globals: G1, stations: r.far })
+      if (d?.stats?.tris) {
+        const g = d.geometry, P = g.attributes.position.array, v = P.length / 3
+        const pos = new Float32Array(P), pin = new Float32Array(v * 4), band = new Float32Array(v * 3), up = new Float32Array(v * 3)
+        for (let i = 0; i < v; i++) {
+          const x = P[i * 3], y = P[i * 3 + 1], z = P[i * 3 + 2], gp = parts(x, z)
+          pin[i * 4] = 1; pin[i * 4 + 1] = gp.raw; pos[i * 3 + 1] = y - gp.raw
+          band[i * 3] = x; band[i * 3 + 1] = gp.y; band[i * 3 + 2] = z; up[i * 3 + 1] = 1
+        }
+        take(P, (i) => pin[i * 4 + 1])
+        far = { tris: d.stats.tris, arrays: { pos, normal: new Float32Array(g.attributes.normal.array), pin, band, bandNormal: up, index: new Uint32Array(g.index.array) } }
+      }
     }
-    // the crest's height at the chunk's middle: what a stone is sized by (shore-armour.mjs#d50For), for the zoom rule
-    const tMid = ((r.far[0] + r.far[1]) / 2) / (G1.nAlong - 1)
-    out.push({ face: f.key, k: r.k, near: r.near, far: r.far, d50: d50For(f.crestAt(tMid)), tris: d.stats.tris,
-      bbox: [minX, minY, minZ, maxX, maxY, maxZ],
-      arrays: { pos, normal: new Float32Array(g.attributes.normal.array), pin, band, bandNormal: up, index: new Uint32Array(g.index.array) } })
+    // ⭐ the stone a chunk carries is sized by its TALLEST station (shore-armour.mjs#d50For), never its middle: a chunk bare at
+    // the middle and armoured at an end would otherwise read small and want a closer camera (Zob, 2026-10-29)
+    let hMax = 0
+    for (let i = r.near[0]; i <= r.near[1]; i++) hMax = Math.max(hMax, f.crestAt(i / (G3.nAlong - 1)))
+    out.push({ face: f.key, k: r.k, near: r.near, far: r.far, d50: d50For(hMax), nearTris, farTris: far?.tris || 0,
+      box: (nearTris || far) ? [B.x0, B.z0, B.x1, B.z1, B.rel0, B.rel1, B.raw0, B.raw1] : null, arrays: far?.arrays || null })
   }
   return out
 }
 
 /** firstSeen per chunk ∈ [0, 1] (the path parameter of the first pose whose guarded frustum holds its bounding sphere), or null. */
-export function classByMovie(chunks, scene) {
+export function classByMovie(chunks, scene, maxExag) {
   if (!Array.isArray(scene?.heroKeyframes) || !scene.heroKeyframes.length) throw new Error('bake-revetment-far: scene.json has no heroKeyframes — the movie\'s order cannot be known. ▶ bake the scene')
   const poses = heroPoses(scene.heroKeyframes, scene.heroMotion, HERO_POSES, 'bake-revetment-far')
   const { vHalf, hHalf } = heroHalfAngles(scene.heroKeyframes)
   const bases = poses.map(({ p, q }) => poseBasis(p, q))
   for (const c of chunks) {
-    const [x0, y0, z0, x1, y1, z1] = c.bbox, cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, cz = (z0 + z1) / 2, R = Math.hypot(x1 - x0, y1 - y0, z1 - z0) / 2
+    if (!c.arrays) { c.firstSeen = null; continue }      // only far meshes are ordered; the info of every chunk ships in the table
+    const [x0, y0, z0, x1, y1, z1] = chunkBox(c.box, 0, maxExag), cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, cz = (z0 + z1) / 2, R = Math.hypot(x1 - x0, y1 - y0, z1 - z0) / 2
     const k = bases.findIndex(B => insideFrustum(projectSphere(B, cx, cy, cz, R), hHalf, vHalf, HERO_SEEN_GUARD))
     c.firstSeen = k < 0 ? null : (poses.length === 1 ? 0 : k / (poses.length - 1))
   }
@@ -150,27 +169,30 @@ export function classByMovie(chunks, scene) {
 
 /** The two bins and the table. Chunks are laid out seen-first by firstSeen (ties by face, then chunk), unseen after. */
 export function pack(chunks, faces, meta) {
-  const seen = chunks.filter(c => c.firstSeen != null).sort((a, b) => a.firstSeen - b.firstSeen || (a.face < b.face ? -1 : a.face > b.face ? 1 : a.k - b.k))
-  const unseen = chunks.filter(c => c.firstSeen == null).sort((a, b) => (a.face < b.face ? -1 : a.face > b.face ? 1 : a.k - b.k))
+  const meshes = chunks.filter(c => c.arrays)
+  const seen = meshes.filter(c => c.firstSeen != null).sort((a, b) => a.firstSeen - b.firstSeen || (a.face < b.face ? -1 : a.face > b.face ? 1 : a.k - b.k))
+  const unseen = meshes.filter(c => c.firstSeen == null).sort((a, b) => (a.face < b.face ? -1 : a.face > b.face ? 1 : a.k - b.k))
   const bins = {}, table = []
   for (const [name, list] of [['revetment-far.bin', seen], ['revetment-far-unseen.bin', unseen]]) {
     const parts = []; let off = 0
     for (const c of list) {
       const A = c.arrays, at = {}
       for (const key of FAR_ARRAYS) { at[key] = off; parts.push(Buffer.from(A[key].buffer, A[key].byteOffset, A[key].byteLength)); off += A[key].byteLength }
-      table.push({ face: c.face, k: c.k, near: c.near, far: c.far, d50: c.d50, firstSeen: c.firstSeen, tris: c.tris, bbox: c.bbox,
-        bin: name, vertexCount: A.pin.length / 4, indexCount: A.index.length, offsets: at })
+      table.push({ face: c.face, k: c.k, firstSeen: c.firstSeen, tris: c.farTris, bin: name, vertexCount: A.pin.length / 4, indexCount: A.index.length, offsets: at })
     }
     bins[name] = Buffer.concat(parts, off)
   }
   const doc = { version: FAR_FORMAT, ...meta, farOctaves: FAR_OCTAVES, nearOctaves: NEAR_OCTAVES, chunkM: CHUNK_M,
     movie: { poses: HERO_POSES, guard: HERO_SEEN_GUARD },
-    faces: faces.map(f => ({ key: f.key, stations: f.stations.length, toe: f.toe })), chunks: table }
+    faces: faces.map(f => ({ key: f.key, stations: f.stations.length, toe: f.toe })),
+    // ⭐ EVERY near chunk (the near layer's index), meshes or not; box = [x0, z0, x1, z1, rel0, rel1, raw0, raw1] or null (nothing built)
+    info: chunks.map(c => ({ face: c.face, k: c.k, near: c.near, far: c.far, d50: c.d50, nearTris: c.nearTris, farTris: c.farTris, box: c.box })),
+    chunks: table }
   return { doc, bins }
 }
 
-export function bakeRevetmentFar({ look, dryRun = false } = {}) {
-  if (!look) throw new Error('bake-revetment-far: --look=<id> is required')
+export function bakeRevetmentFar({ look, scene, dryRun = false } = {}) {
+  assertBakeTarget('bake-revetment-far', look, scene)
   const dir = join(ROOT, 'public', 'baked', look)
   const outs = ['revetment-far.json', 'revetment-far.bin', 'revetment-far-unseen.bin'].map(f => join(dir, f))
   const revPath = join(dir, 'revetment.json')
@@ -185,13 +207,18 @@ export function bakeRevetmentFar({ look, dryRun = false } = {}) {
   const t0 = performance.now()
   const { faces, parts } = prepareFaces({ revetment: JSON.parse(readFileSync(revPath, 'utf8')), terrainJson: JSON.parse(readFileSync(need[2], 'utf8')),
     terrainBin: readAB(need[3]), groundJson: JSON.parse(readFileSync(need[0], 'utf8')), groundBin: readAB(need[1]) })
+  // ⭐ [progress] <what> <i>/<n>: the Bake's modal shows a real fraction (serve.js#runStep). The near chunks are the cost.
+  const total = faces.reduce((s, f) => s + chunkRanges(f).ranges.length, 0)
   const chunks = []
-  for (const f of faces) chunks.push(...buildFaceChunks(f, parts))
-  classByMovie(chunks, JSON.parse(readFileSync(need[4], 'utf8')))
+  for (const f of faces) chunks.push(...buildFaceChunks(f, parts, (n) => { if (n % 100 === 0 || n === total) console.log(`[progress] near and far chunks ${n}/${total}`) }, chunks.length))
+  const sceneJson = JSON.parse(readFileSync(need[4], 'utf8'))
+  classByMovie(chunks, sceneJson, Math.max(1, sceneExagOf(sceneJson)))
   const meta = { look, from: Object.fromEntries(['revetment.json', 'ground.bin', 'terrain.bin', 'scene.json'].map(f => [f, sha(join(dir, f))])) }
   const { doc, bins } = pack(chunks, faces, meta)
   const ms = performance.now() - t0
   const seen = doc.chunks.filter(c => c.firstSeen != null), tris = (l) => l.reduce((s, c) => s + c.tris, 0)
+  const nearOnly = doc.info.filter(c => c.nearTris && !c.farTris)
+  console.log(`  near index: ${doc.info.length} chunks · ${nearOnly.length} keep stone near and NOTHING far (${nearOnly.reduce((s, c) => s + c.nearTris, 0).toLocaleString()} near tris) · ${doc.info.filter(c => !c.box).length} keep nothing at either`)
   console.log(`[bake-revetment-far] ${look}: ${faces.length} armoured faces → ${doc.chunks.length} chunks, ${tris(doc.chunks).toLocaleString()} tris in ${ms.toFixed(0)} ms`)
   console.log(`  movie: ${seen.length} chunks seen (${tris(seen).toLocaleString()} tris, first at ${seen[0]?.firstSeen ?? '—'}), ${doc.chunks.length - seen.length} never (${tris(doc.chunks.filter(c => c.firstSeen == null)).toLocaleString()} tris)`)
   for (const [name, b] of Object.entries(bins)) console.log(`  ${name}: ${(b.length / 1e6).toFixed(2)} MB`)
@@ -205,6 +232,7 @@ export function bakeRevetmentFar({ look, dryRun = false } = {}) {
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   const arg = (n) => process.argv.find(a => a.startsWith(`--${n}=`))?.slice(n.length + 3)
-  try { bakeRevetmentFar({ look: arg('look'), dryRun: process.argv.includes('--dry-run') }) }
+  const scene = requireExplicitMap('bake-revetment-far')   // one resolver: --scene= OR CARTOGRAPH_SCENE
+  try { bakeRevetmentFar({ look: arg('look'), scene, dryRun: process.argv.includes('--dry-run') }) }
   catch (e) { console.error(`⛔ ${e.message}`); process.exit(1) }
 }

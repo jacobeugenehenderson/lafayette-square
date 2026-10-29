@@ -3121,12 +3121,18 @@ createServer(async (req, res) => {
       // built against the ground the player draws and classed by what the movie sees, so nothing is built at load.
       // After `scene` (the hero keys) and the ground (the drawn ground). A town with no revetment.json writes none.
       // not-inputs: ground.json (read by VALUE, pourSteps.mjs#groundForReaders: without the maps bake-ground-ao writes back, or its timings; this audit reports that UNKNOWN, as tree-anchors)
+      // not-inputs: index.json (guard: assertBakeTarget passes or throws; shapes no output)
+      // not-inputs: geography.json (scene.js resolves the scene's name; shapes no output)
+      // not-inputs: ribbons.json (scene.js resolves the scene's name; shapes no output)
+      // not-inputs: design.json (lookDesign.mjs, reached through scene.js; this step reads no authored value)
       await runIfDirty('revetment-far',
         [groundForReaders(LOOK_DIR), join(LOOK_DIR, 'ground.bin'), join(LOOK_DIR, 'terrain.json'), join(LOOK_DIR, 'terrain.bin'),
          join(LOOK_DIR, 'revetment.json'), join(LOOK_DIR, 'scene.json'), join(here, 'bake-revetment-far.js')],
         [join(LOOK_DIR, 'revetment-far.json'), join(LOOK_DIR, 'revetment-far.bin'), join(LOOK_DIR, 'revetment-far-unseen.bin')],
-        `node bake-revetment-far.js --look=${id}`,
-        { cwd: here, timeout: 300000, absentOk: [join(LOOK_DIR, 'revetment-far.json'), join(LOOK_DIR, 'revetment-far.bin'), join(LOOK_DIR, 'revetment-far-unseen.bin')] })
+        `node bake-revetment-far.js --look=${id} ${sceneFlag}`,
+        // ⚠️ ~3–4 min a coastal town (provincetown 179 s, huron 259 s, 2026-10-29): it builds every NEAR chunk once for its exact
+        // bounds (Boz's ruling (a)). No timeout is passed: runStep has no wall-clock kill; the step reports `[progress]`.
+        { cwd: here, absentOk: [join(LOOK_DIR, 'revetment-far.json'), join(LOOK_DIR, 'revetment-far.bin'), join(LOOK_DIR, 'revetment-far-unseen.bin')] })
       // AO bake last — slowest, benefits from updated geometry.
       // ⚠️ lamps.json + trees.json ARE inputs here, not just neighbours in the
       // chain: bake-ground-ao reads both (`bake-ground-ao.js:276/289`) to burn the

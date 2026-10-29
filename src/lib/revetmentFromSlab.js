@@ -205,12 +205,21 @@ export async function loadRevetment(look, { manifest, fetchFile, say }) {
 export async function loadRevetmentFar(look, { manifest, fetchFile, say }) {
   if (!manifest?.files?.['revetment.json']) return null
   const want = ['revetment-far.json', 'revetment-far.bin', 'revetment-far-unseen.bin'].filter(f => !manifest.files[f])
-  if (want.length) { say(`[revetment] ⛔ ${look}: its manifest names revetment.json but not ${want.join(', ')} — the far shore was never baked for this slab, and no shore is drawn. ▶ run the Bake's revetment-far step for ${look} (node cartograph/bake-revetment-far.js --look=${look}) and publish the slab`); return null }
+  if (want.length) { say(`[revetment] ⛔ ${look}: its manifest names revetment.json but not ${want.join(', ')} — the far shore was never baked for this slab, and no shore is drawn. ▶ run the Bake's revetment-far step for ${look} (node cartograph/bake-revetment-far.js --look=${look} --scene=<its scene>) and publish the slab`); return null }
   try {
     const [j, b] = await Promise.all([fetchFile('revetment-far.json'), fetchFile('revetment-far.bin')])
     if (!j.ok || !b.ok) throw new Error(`HTTP ${j.status} / ${b.status}`)
     return { far: await j.json(), bins: { 'revetment-far.bin': await b.arrayBuffer() } }
   } catch (e) { say(`[revetment] ⛔ ${look}: its far shore FAILED to load — ${e?.message || e}. No shore is drawn.`); return null }
+}
+/** A baked chunk's box [x0, y0, z0, x1, y1, z1] over exaggerations eLo…eHi. Its stored box is [x0, z0, x1, z1, rel0, rel1, raw0,
+ *  raw1]: each vertex is lifted to rel + raw × exag (the ground-relative part and the drawn raw, as patchTerrain draws it), so
+ *  at exag e it lies within rel0…rel1 plus raw0·e…raw1·e. ⭐ ONE FUNCTION for what is drawn and what is chosen: three's culling
+ *  (eLo 0 … eHi the town's ceiling) and the overhead selection (eLo = eHi = the live exaggeration). */
+export function chunkBox(box, eLo, eHi) {
+  const [x0, z0, x1, z1, rel0, rel1, raw0, raw1] = box
+  const lo = Math.min(raw0 * eLo, raw0 * eHi, raw1 * eLo, raw1 * eHi), hi = Math.max(raw0 * eLo, raw0 * eHi, raw1 * eLo, raw1 * eHi)
+  return [x0, rel0 + lo, z0, x1, rel1 + hi, z1]
 }
 /** The never-seen chunks' bin, after the reveal. ⛔ Its failure is said: those chunks stay undrawn, by name. */
 export async function loadRevetmentFarUnseen(look, { fetchFile, say }) {

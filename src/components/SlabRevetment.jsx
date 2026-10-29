@@ -40,12 +40,12 @@ import { makeRevetmentMaterial } from './revetmentMaterial.js'
 import { boulderPalette } from '../lib/boulderGeometry.js'
 import { revetmentDrape, drapeGlobals, VERTS_PER_WAVELENGTH } from '../lib/revetmentDrape.js'
 import { shoreContext, chunkStones, CHUNK_M } from '../lib/shoreChunks.js'
-import { revetmentFaces, loadRevetment, loadRevetmentFar, loadRevetmentFarUnseen, toeFromBaked } from '../lib/revetmentFromSlab.js'
+import { revetmentFaces, loadRevetment, loadRevetmentFar, loadRevetmentFarUnseen, toeFromBaked, chunkBox } from '../lib/revetmentFromSlab.js'
 import { overheadResolves } from '../lib/cameraRegimes.js'
 import { useTownShot } from './townContext.js'
 import { subscribeStartup, isRevealed } from '../lib/startupMarks.js'
 import { drawnGroundParts, onDrawnGround } from '../utils/elevation'
-import { terrainWater, terrainDatum, patchTerrain, patchTerrainInstancedBaked, onTerrainReload } from '../utils/terrainShader'
+import { terrainWater, terrainDatum, terrainExag, sceneExag, patchTerrain, patchTerrainInstancedBaked, onTerrainReload } from '../utils/terrainShader'
 import { waterLevelsIfWet } from '../../cartograph/waterLevel.mjs'
 import { phaseNow } from './WaterSurface.jsx'
 
@@ -210,6 +210,8 @@ export default function SlabRevetment({ lookId, bakeLastMs, visible = true }) {
   // empty past 90 m — the failure this layer exists to prevent. ▶ node checks/claims-the-far-shore-is-not-built-at-load.mjs)
   // ⭐ THE BAND is the overhead tier: the same chunk's triangles laid flat on the drawn ground, drawn in Browse instead of
   // the stone (Jacob, 2026-10-29). Never a stand-in for a far chunk that failed: those fail the bake.
+  // ⭐ the near layer's index: EVERY near chunk's bounds, stone size and what each layer keeps there, from the bake
+  const infoByKey = useMemo(() => new Map((doc?.far.info || []).map(c => [`${c.face}#${c.k}`, c])), [doc])
   const farChunks = useMemo(() => {
     if (!doc) return []
     const bins = { ...doc.farBins, ...(unseenBin ? { 'revetment-far-unseen.bin': unseenBin } : {}) }
@@ -225,16 +227,17 @@ export default function SlabRevetment({ lookId, bakeLastMs, visible = true }) {
       const pin = view(Float32Array, o.pin, v, 4)
       far.setAttribute('aDrawnRaw', pin); band.setAttribute('aDrawnRaw', pin)
       far.setIndex(index); band.setIndex(index)
-      // bounds for three's own culling, from the bake's absolute bbox (exag 1); the lift moves them, so they are padded by the pin's range
-      const [x0, y0, z0, x1, y1, z1] = c.bbox
-      for (const g of [far, band]) { g.boundingBox = new THREE.Box3(new THREE.Vector3(x0, -Math.abs(y0) - Math.abs(y1), z0), new THREE.Vector3(x1, Math.abs(y0) + Math.abs(y1), z1)); g.boundingSphere = g.boundingBox.getBoundingSphere(new THREE.Sphere()) }
-      out.push({ key: `${c.face}#${c.k}`, c, far, band })
+      // three's culling bounds: the chunk's box over every exaggeration it can be drawn at (0 … the town's ceiling, or 1 at Street),
+      // from the SAME function the overhead selection reads (revetmentFromSlab.js#chunkBox)
+      const key = `${c.face}#${c.k}`, info = infoByKey.get(key)
+      if (!info?.box) throw new Error(`[revetment] ⛔ far chunk ${key} has no info row — revetment-far.json is malformed. ▶ re-bake`)
+      const [x0, y0, z0, x1, y1, z1] = chunkBox(info.box, 0, Math.max(1, sceneExag()))
+      for (const g of [far, band]) { g.boundingBox = new THREE.Box3(new THREE.Vector3(x0, y0, z0), new THREE.Vector3(x1, y1, z1)); g.boundingSphere = g.boundingBox.getBoundingSphere(new THREE.Sphere()) }
+      out.push({ key, c, far, band })
     }
     return out
-  }, [doc, unseenBin])
+  }, [doc, unseenBin, infoByKey])
   useEffect(() => () => { for (const m of farChunks) { m.far.dispose(); m.band.dispose() } }, [farChunks])
-  // the near layer's overhead selection reads each chunk's bounds and stone size from the same table
-  const chunkInfo = useMemo(() => new Map((doc?.far.chunks || []).map(c => [`${c.face}#${c.k}`, c])), [doc])
 
   // ── THE NEAR LAYER — the detailed drape and the stones, by the camera ────────
   const overhead = useTownShot() === 'browse'
@@ -251,11 +254,14 @@ export default function SlabRevetment({ lookId, bakeLastMs, visible = true }) {
     // (cameraRegimes.js#overheadResolves: d50 over metres per pixel at the chunk ≥ the drape's own sampling rule). The
     // movie and Street: within NEAR_RADIUS_M of the camera. ⚠️ KNOWN OPEN: two selections until Street's brief.
     if (overhead) { camera.updateMatrixWorld(); frustum.setFromProjectionMatrix(_m.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse)) }
+    const e = terrainExag.value
     const wants = (f, k, p) => {
+      const info = infoByKey.get(`${f.key}#${k}`)
+      if (!info) throw new Error(`[revetment] ⛔ near chunk ${f.key}#${k} has no info row — revetment.json and revetment-far.json were baked apart. ▶ re-bake`)
+      if (!info.nearTris) return false                     // the bake built it: nothing is kept here at any distance
       if (!overhead) return Math.hypot(p.x - c.x, p.z - c.z) <= NEAR_RADIUS_M
-      const info = chunkInfo.get(`${f.key}#${k}`)
-      if (!info) return false                              // no far triangles there: all bare, no stone to draw
-      const [x0, y0, z0, x1, y1, z1] = info.bbox
+      // at the LIVE exaggeration: Browse draws at 0, so a box at exag 1 stands metres above what is drawn (Zob, 2026-10-29)
+      const [x0, y0, z0, x1, y1, z1] = chunkBox(info.box, e, e)
       _c.set((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2)
       return overheadResolves(camera, viewH, frustum, _c, Math.hypot(x1 - x0, y1 - y0, z1 - z0) / 2, info.d50, VERTS_PER_WAVELENGTH)
     }
@@ -274,13 +280,17 @@ export default function SlabRevetment({ lookId, bakeLastMs, visible = true }) {
         const built = f.cache.get(k)
         if (built?.stats?.tris) { drape.push(built); nearKeys.add(`${f.key}#${k}`) }
       }
-      // Stones, where their drape chunk is chosen. ⭐ margin 2 is MEASURED, not chosen: at margin 1
-      // four stones go missing at a seam, at 2 the two windows resolve identically.
-      const n = f.ctx.nChunks, per = f.ranges[0] ? f.ranges[0][1] - f.ranges[0][0] : 1
+      // Stones, where a drape chunk their span overlaps is chosen. A stone chunk spans the arc [ci·CHUNK_M, (ci+1)·CHUNK_M]
+      // (shoreChunks.js; the last is short), a drape chunk the arc of its stations: matched by ARC LENGTH, never by the
+      // stone chunk's index fraction, which runs behind by the last chunk's shortfall (Zob, 2026-10-29).
+      // ⭐ margin 2 is MEASURED, not chosen: at margin 1 four stones go missing at a seam, at 2 the two windows resolve identically.
+      const n = f.ctx.nChunks, total = f.ctx.total, per = f.ranges[0] ? f.ranges[0][1] - f.ranges[0][0] : 1, nA = f.G.nAlong - 1
+      const kAt = (s) => Math.min(f.ranges.length - 1, Math.floor(((s / total) * nA) / per))
       for (let ci = 0; ci < n; ci++) {
-        const t = (ci + 0.5) / n
-        const k = Math.min(f.ranges.length - 1, Math.floor((t * (f.G.nAlong - 1)) / per))
-        if (!chosen.has(k)) continue
+        const sA = ci * CHUNK_M, sB = Math.min(total, sA + CHUNK_M)
+        let any = false
+        for (let k = kAt(sA); k <= kAt(sB) && !any; k++) any = chosen.has(k)
+        if (!any) continue
         // ground-relative, like the drape: the drawn ground's two parts ride along as `ground` + `groundY` (the lift's aGround)
         for (const st of chunkStones(f.ctx, ci, 2)) { const g = drawnGroundParts(st.p[0], st.p[2]); stones.push({ ...st, p: [st.p[0], st.p[1] - g.raw - g.y, st.p[2]], ground: g.raw, groundY: g.y }) }
       }

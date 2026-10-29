@@ -30,6 +30,10 @@
 // planetarium → 1, browse → 0. Anything reading a constant instead of the uniform is the
 // bug `treeGroundRaw` documents at length in src/utils/elevation.js.
 export const DEFAULT_V_EXAG = 1
+/** A town's authored vertical exaggeration out of its scene.json (`terrainExag`), else the kit default. ⛔ A SENTINEL IS NOT
+ *  A VALUE: an authored 0 means FLAT and is a real choice, never promoted. ONE rule for the player (terrainShader.js's
+ *  fetchSceneExag) and the bake that must bound what the player lifts (bake-revetment-far.js). */
+export const sceneExagOf = (scene) => { const v = scene?.terrainExag; return typeof v === 'number' && isFinite(v) && v >= 0 ? v : DEFAULT_V_EXAG }
 
 // All spatial data is in compass frame (the natural output of the
 // GPS→meters projection). Cosmetic screen orientation lives on the
