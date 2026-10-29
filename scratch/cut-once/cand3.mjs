@@ -201,25 +201,33 @@ const fcross = (A, B) => { const r = [A[1][0] - A[0][0], A[1][1] - A[0][1]], s =
 // joins, whose booleans are clipper's union (the integer re-rounding this brief removes); moving ② onto the face walk is a ②
 // change outside this brief. structures.mjs#stripOf widens a centreline symmetrically, not one side of an edge.
 function offsetPieces(R, d, g, squares) {
+  // ⭐ A JOIN'S CORNER IS COMPUTED ONCE AND SHARED (Zob, 2026-10-29): computed per strip (b + n_a·d and b + n_b·d) and rounded
+  // twice, a near-straight join's two copies land a unit apart, a sliver wedge or an exposed strip-end step. So each edge's piece
+  // runs between its two JOIN CORNERS [v_j, v_j+1, C_end, C_start]: a DIVERGING join's X = L_a(d) ∩ L_b(d), one point used by both
+  // pieces; past the miter limit the cap's two ends (one each) and a cap triangle [v, C_a, C_b] sharing them; a CONVERGING join
+  // the plain rectangle corners, the overlap resolved by the face walk
   const n = R.length, N = R.map((a, j) => unit([a.X, a.Y], [R[(j + 1) % n].X, R[(j + 1) % n].Y])), pieces = []
-  const P = (x, y, tag) => ({ X: Math.round(x), Y: Math.round(y), tag })
+  const P = (x, y) => ({ X: Math.round(x), Y: Math.round(y) })
   const ccw = (pp) => { let a2 = 0; for (let k = 0; k < pp.length; k++) { const p = pp[k], q = pp[(k + 1) % pp.length]; a2 += p.X * q.Y - q.X * p.Y }
     if (a2 > 0) return pp
-    // reversed, each edge's tag moves with it (the tag names the edge leaving its point)
     const r = pp.slice().reverse(); return r.map((q, k) => ({ ...q, tag: pp[(pp.length - 1 - k - 1 + pp.length) % pp.length].tag })) }
-  for (let j = 0; j < n; j++) { const a = R[j], b = R[(j + 1) % n], nj = N[j]
-    if (a.X === b.X && a.Y === b.Y) continue
-    // the strip: a → b (born: on the region's own edge, interior after the boolean) → b + n d → a + n d (tag j) → a (born)
-    pieces.push(ccw([P(a.X, a.Y, null), P(b.X, b.Y, null), P(b.X + nj[0] * d, b.Y + nj[1] * d, { ring: g, i: j }), P(a.X + nj[0] * d, a.Y + nj[1] * d, null)]))
-    const k = (j - 1 + n) % n, nk = N[k], v = a
+  // at each vertex j (edge j−1 in, edge j out): the corner the incoming piece ENDS at, and the one the outgoing piece STARTS at
+  const endC = new Array(n), startC = new Array(n)
+  for (let j = 0; j < n; j++) { const k = (j - 1 + n) % n, v = R[j], nk = N[k], nj = N[j]
     const sinA = Math.max(-1, Math.min(1, nk[0] * nj[1] - nj[0] * nk[1])), cosA = nk[0] * nj[0] + nk[1] * nj[1], r = 1 + cosA
-    if (!(sinA * d > 0)) continue                                                    // the strips overlap here: no wedge
-    const A = P(v.X + nk[0] * d, v.Y + nk[1] * d, { ring: g, i: k }), Bp = P(v.X + nj[0] * d, v.Y + nj[1] * d, null)
+    if (!(sinA * d > 0)) { endC[k] = P(v.X + nk[0] * d, v.Y + nk[1] * d); startC[j] = P(v.X + nj[0] * d, v.Y + nj[1] * d); continue }   // converging
     if (r < MITER_LIM) { const t = Math.tan(Math.atan2(sinA, cosA) / 4); if (squares) squares.push([v.X, v.Y])
-      const c1 = P(v.X + d * (nk[0] - nk[1] * t), v.Y + d * (nk[1] + nk[0] * t), null), c2 = P(v.X + d * (nj[0] + nj[1] * t), v.Y + d * (nj[1] - nj[0] * t), { ring: g, i: j })
-      pieces.push(ccw([P(v.X, v.Y, null), A, c1, c2, Bp])); continue }
-    const q = d / r, X = P(v.X + (nk[0] + nj[0]) * q, v.Y + (nk[1] + nj[1]) * q, { ring: g, i: j })
-    pieces.push(ccw([P(v.X, v.Y, null), A, X, Bp])) }
+      endC[k] = P(v.X + d * (nk[0] - nk[1] * t), v.Y + d * (nk[1] + nk[0] * t)); startC[j] = P(v.X + d * (nj[0] + nj[1] * t), v.Y + d * (nj[1] - nj[0] * t))
+      pieces.push(ccw([{ X: v.X, Y: v.Y, tag: null }, { ...endC[k], tag: null }, { ...startC[j], tag: null }])); continue }      // the cap triangle; its cap side is born
+    const q = d / r, X = P(v.X + (nk[0] + nj[0]) * q, v.Y + (nk[1] + nj[1]) * q); endC[k] = X; startC[j] = X }
+  for (let j = 0; j < n; j++) { const a = R[j], b = R[(j + 1) % n]; if (a.X === b.X && a.Y === b.Y) continue
+    const s0 = startC[j], e0 = endC[j]
+    // ⛔ a far side running AGAINST its edge (an offset edge of negative length between two diverging joins) would fold the
+    // quad into a bow-tie whose −1 lobe cancels other pieces' coverage: refused by name (unruled until measured)
+    const along = (e0.X - s0.X) * (b.X - a.X) + (e0.Y - s0.Y) * (b.Y - a.Y)
+    if (along < 0) throw new Error(`[offset] ⛔ ring ${g} edge ${j} (${a.X},${a.Y}) → (${b.X},${b.Y}): its offset runs backwards between its join corners (${s0.X},${s0.Y}) → (${e0.X},${e0.Y}) (a negative-length offset edge): the piece would fold. Refusing.`)
+    // the piece a → b → C_end → C_start: its far side C_end → C_start lies on L_j(d) (tag j); the rest is born
+    pieces.push(ccw([{ X: a.X, Y: a.Y, tag: null }, { X: b.X, Y: b.Y, tag: null }, { ...e0, tag: { ring: g, i: j } }, { ...s0, tag: null }])) }
   return pieces
 }
 export function morph(region, d, who, stat, lines = null) {
