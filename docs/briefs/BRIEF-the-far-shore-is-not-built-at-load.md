@@ -72,8 +72,14 @@ Boz as a measured comparison before anything is built.
    which is exactly a flat band. ⭐ THE BAND IS ALSO THE OVERHEAD TIER (Jacob's correction, 2026-10-29): *"the band could stand in for
    stones in the event the user immediately clicks the society button and the map shifts down to seeing the full shoreline at
    once."* So in Browse/Society (the overhead plan, the whole shore at once) the band is the shore's drawing by design, a distance
-   tier like the near/far layers, and the geometric stones aren't needed there. This answers (d)'s Browse question: measure only
-   that the band reads as stone at overhead distance. ⛔ What stays loud: a face whose geometry fails where the movie needs it
+   tier like the near/far layers, and the geometric stones aren't needed there. This answers (d)'s Browse question: measure that the band reads as
+   stone at overhead distance. ⭐ AND ZOOMING IN BRINGS THE STONES BACK (Jacob, 2026-10-29): *"We will though need to see stones when
+   the user pinches/zooms in to the map; but only at the LoD for the elevation and for the area inside the camera view."* So in
+   Browse the stones are built by camera DISTANCE, at the same level-of-detail rule the elevation uses (find it; don't invent a
+   second threshold), and only for the faces or chunks inside the camera's view. The near layer already selects chunks by camera
+   (`SlabRevetment.jsx`'s reselect `useFrame`, `RESELECT_M`); say whether that selection serves Browse as it is, or what it lacks
+   (a frustum test: today the far layer has none, per the frustum census in `scratch/browse-perf/probe.mjs`). Gate: a planted
+   Browse zoom onto one stretch builds only that stretch's stones, at the elevation's LoD; mutant: build every face → RED. ⛔ What stays loud: a face whose geometry fails where the movie needs it
    (the far layer's existing `console.error`). The band standing in for a FAILED build in the movie's view is the fallback this kit
    forbids; the band standing in at overhead distance is the design. Combine with (d): the band everywhere at once, the stones in
    the movie's order.
