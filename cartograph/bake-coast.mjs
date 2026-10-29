@@ -307,7 +307,8 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
   const out = { version: COAST_VERSION, scene, square: R }
   const save = () => { if (write) { fs.mkdirSync(join(outPath, '..'), { recursive: true }); writeIfChanged(outPath, JSON.stringify(out)) } }
   if (!osmWater.rings.length && !hasRecord) {
-    Object.assign(out, { coast: false, why: 'no water record (raw/water-datums.json) and no OSM water reaching the fetched square\'s edge — an inland town' })
+    // v7: the topology record is ALWAYS written, empty included (an inland town's open/close changes nothing)
+    Object.assign(out, { coast: false, why: 'no water record (raw/water-datums.json) and no OSM water reaching the fetched square\'s edge — an inland town', waterTopology: [], decksTopology: [] })
     save()
     console.log(`[bake-coast] ${scene}: inland — ${out.why}`)
     return out
