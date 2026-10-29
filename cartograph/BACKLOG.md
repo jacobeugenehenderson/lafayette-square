@@ -84,6 +84,10 @@ out in the MAIN checkout (Jacob's), stays.
 - **PTOWN PARKS** (registry canon): (a) the edge rule and the way tag landed (v4); the dike is held as land (v5, `r-the-coast-bake-holds-an-embankment-as-land`).
   **(b)** the decks' 1 mm jogs: the stage is `openCloseAtStep` (PTown 0 → 57 edges ≤ 2 mm, Huron 3 → 171); cut once for the footprints
   they are 10 and 40; the rest are a source corner drawn twice by the integer re-offset; the cure is float morphology. **(c)** below.
+- **⛔ PTOWN'S PLAYER HOLDS AT ITS CURRENT PIN until its scene re-bakes** (Ward, 2026-10-29). Any player past the Hero retirement
+  (d7e5f160) reads focus only from the SLAB's keys (`Town.jsx#heroKeyframes`, `focusObject.js#keyframeFocusIds`). PTown's slab predates
+  the arch-stands stamp, so its keys carry no `focus`: the Monument stops being the focus object and the Hero blurs. A player-only press
+  makes live PTown worse. No shim (it would be the deleted fallback). The hold lifts with PTown's re-bake, after brief A.
 - **(c) THE WIDTH CLAUSE** (no neck or channel under one cell, at settle's exit) is unbuilt (ORIENTATION ⟦unbuilt⟧; `bake-coast.mjs`).
 - **RELEASE ORDER FOR THE COAST PIN** (Jacob ruled the pin): an OLD player on a NEW slab draws the bare lidar contour silently. (1) the kit
   merged; (2) the kit bundle published at that sha; (3) the Ward pin moved on `ward-pin/<date>` and publish:staging; (4) ONLY THEN the
