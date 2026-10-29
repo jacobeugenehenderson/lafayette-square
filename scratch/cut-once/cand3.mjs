@@ -46,7 +46,14 @@ const distinct3 = (r) => new Set(r.map(q => q.X + ',' + q.Y)).size >= 3
 // node `sets` (each a list of rings [{X, Y, tag?}]) together, self included, then the faces `keep` holds. → { rings, tags }
 export function arrange(sets, keep, who, allTags = false, prefer = null, withTags = true) {
   const rings = [], setOf = []
-  sets.forEach((S, si) => S.forEach(r => { const c = clean(r); if (distinct3(c)) { rings.push(c); setOf.push(si) } }))
+  // ⭐ A RING OR PIECE WHOLLY BELOW THE LATTICE IS THE ROUNDING (Zob, 2026-10-29): judged BEFORE the arrangement by the kit's OWN
+  // predicate (structures.mjs#isRoundingSliver: it erodes to nothing at NODE_BOUND, the rule that already tells a feature from the
+  // rounding), dropped, COUNTED and NAMED (DROPPED: stage, set, area, centroid); never silent. nodeCrossings still refuses any
+  // collapse that REACHES it
+  const wholly = (c) => { if (NO_SLIVER_DROP) return false; const pp = [c.map(q => new IntPoint(q.X, q.Y))]; if (area(c) < 0) pp[0].reverse(); return isRoundingSliver(pp) }
+  sets.forEach((S, si) => S.forEach(r => { const c = clean(r); if (!distinct3(c)) return
+    if (wholly(c)) { let cx = 0, cy = 0; for (const q of c) { cx += q.X; cy += q.Y } DROPPED.push({ who, set: si, u2: Math.abs(area(c)), at: [+(cx / c.length / SCALE).toFixed(3), +(cy / c.length / SCALE).toFixed(3)] }); return }
+    rings.push(c); setOf.push(si) }))
   if (!rings.length) return { rings: [], tags: [] }
   const input = rings.map((r, ri) => ({ p: r.map(q => [q.X / SCALE, q.Y / SCALE]), tag: `${who}#${ri}` }))
   let R
@@ -241,6 +248,7 @@ function emit(E, T, SRC, d, who, stat, LINES = null) {
 export const ORIGIN = new Map(), DETAIL = new Map(), INSERTED = new Map()
 // each stage's REGION (face-walk output), for the stage-wise definition oracle (scratch/cut-once/oracle.mjs); diagnostic only
 export const STAGES = {}
+export const DROPPED = []                          // every ring or piece dropped as wholly the rounding, named
 // a piece edge's tag: its line (ring, i), BORN (a strip end, a cap: a new line), or NEAR (on the region's own edge: interior after the
 // boolean). An output edge with NO tag at all is a LOST tag (Zob's gate, 2026-10-29), counted
 const BORN = { born: true }, NEAR = { near: true }
@@ -268,6 +276,8 @@ let OWN_SKIPS_LIMIT = false                       // ⛔ the mutant only (setOwn
 export const setOwnSkipsLimit = (v) => { OWN_SKIPS_LIMIT = !!v }
 let ARC_RAW = false                               // ⛔ the mutant only (setArcRaw): arcs emit raw vertices, no corner call
 export const setArcRaw = (v) => { ARC_RAW = !!v }
+let NO_SLIVER_DROP = false                        // ⛔ the mutant only (setNoSliverDrop)
+export const setNoSliverDrop = (v) => { NO_SLIVER_DROP = !!v }
 let TRIM_INVERTED = false                          // ⛔ the mutant only (setTrimInverted): the side test inverted
 export const setTrimInverted = (v) => { TRIM_INVERTED = !!v }
 const origin = (p, kind) => { const k = p[0] + ',' + p[1], o = ORIGIN.get(k); ORIGIN.set(k, o && o !== kind ? o + '|' + kind : kind) }
@@ -423,11 +433,16 @@ function backPieces(F, region, lines, dBack, who, stat) {
   const pickTag = (t) => { const ts = t == null ? [] : Array.isArray(t) && !isLine(t) ? t : [t]; return ts.find(isLine) || ts.find(x => x?.born) || null }
   if (process.env.CUTONCE_THIN) { const thin = Fb.rings.filter(r => { const pp = [r.map(q => new IntPoint(q.X, q.Y))]; if (area(r) < 0) pp[0].reverse(); return isRoundingSliver(pp) })
     console.log(`THIN ${who}: ${thin.length} of ${Fb.rings.length} back-offset ring(s) are rounding slivers (≤ one step wide), ${thin.reduce((t, r) => t + Math.abs(area(r)), 0).toFixed(0)} u² in all; e.g. ${JSON.stringify(thin.slice(0, 3).map(r => ({ n: r.length, a: Math.abs(area(r)), at: [r[0].X, r[0].Y] })))}`) }
-  // EXPERIMENT (CUTONCE_DROP_SLIVER_RINGS=1; not the method until Zob rules): a back-offset output ring that is WHOLLY a rounding
-  // sliver (structures.mjs#isRoundingSliver, the kit's own rule) is the rounding, dropped, COUNTED and NAMED (stat.droppedSlivers)
-  const keepRing = (r) => { if (!process.env.CUTONCE_DROP_SLIVER_RINGS) return true; const pp = [r.map(q => new IntPoint(q.X, q.Y))]; if (area(r) < 0) pp[0].reverse()
-    if (!isRoundingSliver(pp)) return true; (stat.droppedSlivers ||= []).push({ who, n: r.length, u2: Math.abs(area(r)), at: [r[0].X / SCALE, r[0].Y / SCALE] }); return false }
-  return Fb.rings.map((r, k) => ({ r, k })).filter(({ r }) => keepRing(r)).map(({ r, k }) => r.map((q, i) => ({ X: q.X, Y: q.Y, tag: pickTag(Fb.tags[k][i]) })))
+  const OUTb = Fb.rings.map((r, k) => r.map((q, i) => ({ X: q.X, Y: q.Y, tag: pickTag(Fb.tags[k][i]) })))
+  // ⭐ THE EMISSION INVARIANT ON THE SPIKE'S OUTPUT (Zob's condition on departure (a)): every output edge on its tag's LINE within the
+  // tiered bound (latticeFaces.js#onLineTiered); counted per stage (stat.backOffLine), the worst named
+  let offN = 0, worst = null
+  OUTb.forEach(r => r.forEach((q, i) => { const t = q.tag; if (!isLine(t) || !t.every(pt => pt.every(Number.isInteger))) return; const w = r[(i + 1) % r.length]
+    for (const pt of [q, w]) { const segs = (INSERTED.get(pt.X + ',' + pt.Y) || []).map(x => x.seg); if (!onLineTiered(t, [pt.X, pt.Y], segs)) { offN++
+      const dx = t[1][0] - t[0][0], dy = t[1][1] - t[0][1], dd = Math.abs((pt.X - t[0][0]) * dy - (pt.Y - t[0][1]) * dx) / Math.hypot(dx, dy)
+      if (!worst || dd > worst.u) worst = { u: +dd.toFixed(1), at: [pt.X / SCALE, pt.Y / SCALE], line: t }; break } } }))
+  ;(stat.backOffLine ||= {})[who] = { edges: offN, worst }
+  return OUTb
 }
 export function morph(region, d, who, stat, lines = null) {
   let F
