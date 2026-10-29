@@ -391,11 +391,14 @@ export function openCloseProvenance(paths, stepM, what) {
     open.forEach((r, g) => r.forEach((q, i) => { const w = r[(i + 1) % r.length]; if (Math.hypot(q.X - tx, q.Y - ty) > 1500) return
       console.log(`TRACE-OPEN ring ${g} e${i} (${q.X},${q.Y})→(${w.X},${w.Y}) ${Math.hypot(w.X - q.X, w.Y - q.Y).toFixed(1)} u · face-walk tag ${JSON.stringify(OPEN.tags[g][i])} · given to the close ${JSON.stringify(openLines[g][i])}`) })) }
   const C = morph(open, h, `${what} close`, stat, TAGS_BY_SEGMENT ? null : openLines)
-  const taken = pieces(arrange([Pt, open], w => w[0] > 0 && !(w[1] > 0), `${what} taken`, false, null, false).rings)
-  const closedK = arrange([open, C], w => w[0] > 0 || w[1] > 0, `${what} closedK`, false, null, false).rings
-  const filled = pieces(arrange([closedK, open], w => w[0] > 0 && !(w[1] > 0), `${what} filled`, false, null, false).rings)
+  // each ring set passed on carries its face walk's tags ON ITS POINTS (arrange reads them there), so k's edges carry their lines
+  const tagged = (F) => F.rings.map((r, k2) => r.map((q, i) => ({ X: q.X, Y: q.Y, tag: F.tags[k2]?.[i] ?? null })))
+  const openT = tagged(OPEN)
+  const taken = pieces(tagged(arrange([Pt, openT], w => w[0] > 0 && !(w[1] > 0), `${what} taken`, false, 0)))
+  const closedK = tagged(arrange([openT, C], w => w[0] > 0 || w[1] > 0, `${what} closedK`, false, 0))
+  const filled = pieces(tagged(arrange([closedK, openT], w => w[0] > 0 && !(w[1] > 0), `${what} filled`, false, 0)))
   const tf = taken.filter(pp => !isRoundingSliver(toIP(pp))), ff = filled.filter(pp => !isRoundingSliver(toIP(pp)))
-  const k = arrange([Pt, tf.flat(), ff.flat()], w => (w[0] > 0 && !(w[1] > 0)) || w[2] > 0, `${what} cut`, false, null, false).rings
+  const K = arrange([Pt, tf.flat(), ff.flat()], w => (w[0] > 0 && !(w[1] > 0)) || w[2] > 0, `${what} cut`, false, 0), k = K.rings
   // ⭐ THE TOPOLOGY GUARD ON k (Zob, 2026-10-29): a hole of P that k no longer holds (it opened to the outside), or two parts of P
   // that k joins, is the topology change Boz rules on: refused by name. Intermediate merges inside the open that the close
   // undoes are not refused. A test point per ring: half a unit to the side of its longest edge (P's material for an outer, the
@@ -412,5 +415,5 @@ export function openCloseProvenance(paths, stepM, what) {
     const seen = new Map(); for (const r of Pt.filter(r => area(r) > 0)) { const o = ownerIn(probe(r)); if (o == null) continue
       if (seen.has(o)) throw new Error(`[${what}] ⛔ the topology guard: two parts of P (at (${(seen.get(o)[0].X / SCALE).toFixed(3)}, ${(seen.get(o)[0].Y / SCALE).toFixed(3)}) and (${(r[0].X / SCALE).toFixed(3)}, ${(r[0].Y / SCALE).toFixed(3)})) are joined by the output. The topology change is Boz's. Refusing.`)
       seen.set(o, r) } }
-  return { paths: toIP(k), rings: k, P: Pt, stat, opened: tf.map(pp => +m2(pp).toFixed(3)), closed: ff.map(pp => +m2(pp).toFixed(3)), slivers: { taken: taken.length - tf.length, filled: filled.length - ff.length } }
+  return { paths: toIP(k), rings: k, tags: K.tags, P: Pt, stat, opened: tf.map(pp => +m2(pp).toFixed(3)), closed: ff.map(pp => +m2(pp).toFixed(3)), slivers: { taken: taken.length - tf.length, filled: filled.length - ff.length } }
 }

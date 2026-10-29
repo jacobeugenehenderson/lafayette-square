@@ -10,7 +10,8 @@
 import { NODE_BOUND } from '../../src/lib/latticeNode.js'
 export const COPY_U = 2
 
-export function ownEdge(source, output) {
+export function ownEdge(source, output, { srcTags = null, outTags = null } = {}) {
+  const SL = []; if (srcTags) source.forEach((p, ri) => p.forEach((a, i) => { const b = p[(i + 1) % p.length]; if (a.X !== b.X || a.Y !== b.Y) SL.push(srcTags[ri]?.[i] ?? null) }))
   const S = []; for (const p of source) for (let i = 0; i < p.length; i++) { const a = p[i], b = p[(i + 1) % p.length]; if (a.X !== b.X || a.Y !== b.Y) S.push([a, b]) }
   const C = 2000, cells = new Map(), key = (cx, cy) => cx * 1e6 + cy
   S.forEach(([a, b], k) => { for (let cx = Math.floor((Math.min(a.X, b.X) - 2) / C); cx <= Math.floor((Math.max(a.X, b.X) + 2) / C); cx++)
@@ -19,7 +20,7 @@ export function ownEdge(source, output) {
     return Math.hypot(q.X - a.X - t * dx, q.Y - a.Y - t * dy) }
   const isV = (q, [a, b]) => (q.X === a.X && q.Y === a.Y) || (q.X === b.X && q.Y === b.Y)
   const out = { own: 0, copy: 0, new: 0, ownM: 0, copyM: 0, copies: [], copiesAll: [], news: [] }
-  for (const p of output) {
+  for (const [pi, p] of output.entries()) {
     const n = p.length
     // pass 1: each edge's source edges (both ends within COPY_U), nearest first
     const along = p.map((a, i) => { const b = p[(i + 1) % n]; if (a.X === b.X && a.Y === b.Y) return []
@@ -32,7 +33,7 @@ export function ownEdge(source, output) {
       const prev = along[(i - 1 + n) % n], next = along[(i + 1) % n]
       const good = (q, nb, s) => isV(q, S[s]) || (dist(q, S[s]) <= NODE_BOUND && !nb.includes(s))
       const own = along[i].some(s => good(a, prev, s) && good(b, next, s))
-      if (own) { out.own++; out.ownM += L } else { out.copy++; out.copyM += L; out.copiesAll.push({ a: [a.X / 1000, a.Y / 1000], b: [b.X / 1000, b.Y / 1000] }); if (out.copies.length < 20) out.copies.push({ a: [a.X / 1000, a.Y / 1000], b: [b.X / 1000, b.Y / 1000], mm: +(L * 1000).toFixed(3) }) } } }
+      if (own) { out.own++; out.ownM += L } else { out.copy++; out.copyM += L; out.copiesAll.push({ a: [a.X / 1000, a.Y / 1000], b: [b.X / 1000, b.Y / 1000], A: [a.X, a.Y], B: [b.X, b.Y], s: along[i][0] != null ? S[along[i][0]].map(q => [q.X, q.Y]) : null, sLine: along[i][0] != null ? SL[along[i][0]] ?? null : null, line: outTags?.[pi]?.[i] ?? null }); if (out.copies.length < 20) out.copies.push({ a: [a.X / 1000, a.Y / 1000], b: [b.X / 1000, b.Y / 1000], mm: +(L * 1000).toFixed(3) }) } } }
   out.ownM = +out.ownM.toFixed(3); out.copyM = +out.copyM.toFixed(3)
   return out
 }

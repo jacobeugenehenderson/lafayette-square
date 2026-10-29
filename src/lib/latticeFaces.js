@@ -129,13 +129,15 @@ export function facesOf(edges, keep, { sets, who = 'facesOf', numberOnly = false
     // bound of BOTH of the segment's ends (exact: 2·cross² ≤ |dir|² per end) are one transition collapsed by rounding, not a
     // conflict: the segment carries both tags
     if (keys.size > 1) { const L = [...keys].map(k => JSON.parse(k)), A = V[org[h]], Bv = V[dst[h]]
-      const within = (l, q) => Array.isArray(l) && l.length === 2 && Array.isArray(l[0]) && onLineTiered(l, q, inserted?.get(q[0] + ',' + q[1]))
+      // a LINE is two points of two numbers (a tag may also be a pair of lines, an earlier transition's: not a line)
+      const isLine = (l) => Array.isArray(l) && l.length === 2 && l.every(pt => Array.isArray(pt) && pt.length === 2 && pt.every(Number.isFinite))
+      const within = (l, q) => isLine(l) && onLineTiered(l, q, inserted?.get(q[0] + ',' + q[1]))
       if (L.every(l => within(l, A) && within(l, Bv))) return L
       // ⭐ A CONCURRENCE (Zob, 2026-10-29): a segment ONE lattice step long (length² ≤ 2, straight or diagonal) carries no direction;
       // every line passing within half a pixel claims it. Its tag set says "these lines meet here", a vertex of the boundary, not
       // a conflict; the caller takes its neighbour's line (as for a transition)
       const sx = Bv[0] - A[0], sy = Bv[1] - A[1]
-      if (sx * sx + sy * sy <= 2 && L.every(l => Array.isArray(l) && Array.isArray(l[0]))) return L }
+      if (sx * sx + sy * sy <= 2 && L.every(isLine)) return L }
     if (keys.size > 1 && prefer != null) { const own = new Set(same.filter(t => t.set === prefer).map(t => JSON.stringify(t.tag)))
       if (own.size === 1) return JSON.parse([...own][0]) }
     if (keys.size > 1) throw new Error(`[${who}] ⛔ facesOf: the boundary edge (${V[org[h]]}) → (${V[dst[h]]}) carries ${keys.size} different tags from its same-way inputs (${same.map(t => `set ${t.set}: ${JSON.stringify(t.tag)}`).join(' · ')}) — refusing to pick one.`)
