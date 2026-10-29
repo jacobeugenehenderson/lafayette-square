@@ -95,7 +95,9 @@ Re-promoted by Jacob the same night on the new player (Ward 25ee07f / kit 19bb2d
 (breaks in worktrees) · observed wind for storminess · a cited cloudLayers → cover standard (Jacob's terms) · targetsOf's
 precipitation/wind/visibility defaults (Layer 0 fallbacks) · claims-the-wind-has-one-authority unrun (needs a server).
 
-**▶ BRIEFED, UNDISPATCHED: `docs/briefs/BRIEF-the-far-shore-is-not-built-at-load.md`** (Jacob, 2026-10-29: PTown's long load; Ward's
+**▶ BRIEFED: `docs/briefs/BRIEF-provincetown-pours-on-the-port.md`** (Jacob, 2026-10-29: "piledrive Provincetown"): Plumb, continuing
+after the port merges. The full refusal census on the merged port, then one class at a time, each a rule for any town.
+**▶ BRIEFED, DISPATCHED to Groyne: `docs/briefs/BRIEF-the-far-shore-is-not-built-at-load.md`** (Jacob, 2026-10-29: PTown's long load; Ward's
 profile: one ~3.2 s main-thread task per load is the revetment's far layer, `SlabRevetment.jsx`'s `useFrame` → `revetmentDrape`).
 **▶ TO BRIEF NEXT (Jacob, 2026-10-29):** ⭐ FIRST: an AIMER for the Stage camera (LS's staging slab is a PLACEHOLDER until it lands: Jacob
 re-aims LS's keys with it, then LS re-bakes and its cutover follows) (`r-plant-it-and-point-it`: today's navigation kept; add turn-in-place,
