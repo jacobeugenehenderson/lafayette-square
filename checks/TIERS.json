@@ -1,10 +1,10 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 512,
+  "total": 514,
   "counts": {
     "safe": 362,
     "local-effect": 30,
-    "live": 120
+    "live": 122
   },
   "checks": [
     {
@@ -49,6 +49,16 @@
         "writeFileSync — only under its own temp dir",
         "computed import of src/lib/tileGround.js — read, safe",
         "imports a mutated copy of src/lib/tileGround.js from its own temp dir — read as src/lib/tileGround.js, safe"
+      ]
+    },
+    {
+      "file": "checks/claims-a-bare-station-costs-nothing.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "writeFileSync",
+        "computed import() with no readable target — runs arbitrary modules",
+        "computed import of src/lib/revetmentDrape.js — read, safe"
       ]
     },
     {
@@ -2710,6 +2720,18 @@
       "tier": "safe",
       "why": [
         "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-the-aimer-turns-in-place.mjs",
+      "tier": "live",
+      "reasonClass": "outbound",
+      "why": [
+        "calls fetch()",
+        "opens a WebSocket",
+        "deletes files",
+        "runs `/Applications/Google Chrome.app/Contents` — not a known-local command",
+        "imports package(s) three, three-stdlib — not read from source"
       ]
     },
     {
