@@ -98,6 +98,14 @@ precipitation/wind/visibility defaults (Layer 0 fallbacks) · claims-the-wind-ha
 
 **▶ BRIEFED: `docs/briefs/BRIEF-provincetown-pours-on-the-port.md`** (Jacob, 2026-10-29: "piledrive Provincetown"): Plumb, continuing
 after the port merges. The full refusal census on the merged port, then one class at a time, each a rule for any town.
+**⛔ TO BRIEF: THE DRAPE SIZES ITS LATTICE FROM 201 SAMPLES, WHATEVER THE FACE'S LENGTH** (Groyne, measured 2026-10-29,
+`scratch/far-shore/face-empty.mjs`, `hmax-ab.mjs` on groyne/far-shore). Layer 0 Class D: `revetmentDrape.js#drapeGlobals` reads hMax/toeMax
+off 201 samples of t. On PTown 1:left (9.06 km, armoured runs ~23 m, samples ~45 m apart) it reads hMax 0, and the face builds NOTHING
+near or far (`claims-the-armoured-shore-is-never-empty` RED, named). Sampling at the stations instead empties Huron 97:right and 111:left
+(crestAt isn't linear between stations), and toeMax's berm term blows up as h → 0 (Huron 35:right's near lattice is 7,377 vertices across,
+510k near tris for 98 far). The fix is sizing from what the drape builds at its finest step, with the toe term bounded. It changes nearly
+every face's near and far geometry: the deviation probe plus an eye-gate. Kept out of the far-shore brief (Boz, 2026-10-29) so its bake
+stays byte-identical to the player.
 **▶ BRIEFED, DISPATCHED to Groyne: `docs/briefs/BRIEF-the-far-shore-is-not-built-at-load.md`** (Jacob, 2026-10-29: PTown's long load; Ward's
 profile: one ~3.2 s main-thread task per load is the revetment's far layer, `SlabRevetment.jsx`'s `useFrame` → `revetmentDrape`).
 **▶ TO BRIEF NEXT (Jacob, 2026-10-29):** ⭐ FIRST: an AIMER for the Stage camera (LS's staging slab is a PLACEHOLDER until it lands: Jacob
