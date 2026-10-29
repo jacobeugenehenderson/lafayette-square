@@ -12,7 +12,7 @@
 // Every failure refuses by name (the deck's cross-ring segment does, until Zob rules it).
 import clipperLib from 'clipper-lib'
 import { writeFileSync } from 'fs'
-import { nodeCrossings, lineCrossOf, sameLine, NODE_BOUND } from '../../src/lib/latticeNode.js'
+import { nodeCrossings, lineCrossOf, sameLine, NODE_BOUND, crossOf } from '../../src/lib/latticeNode.js'
 import { facesOf } from '../../src/lib/latticeFaces.js'
 import { isRoundingSliver } from '../../cartograph/structures.mjs'
 import { tagRun } from './tagRun.mjs'
@@ -105,7 +105,9 @@ function emit(E, T, SRC, d, who, stat, LINES = null) {
     // beyond it, and nothing if it is covered
     let from = r.from
     if (lastRun && lastRun.ring === r.ring) { const pos = (x) => (x - lastRun.from + n) % n
-      if (pos(r.from) <= pos(lastRun.to) && pos(r.to) < n / 2) { if (pos(r.to) <= pos(lastRun.to)) { stat.runCovered = (stat.runCovered || 0) + 1; continue } from = (lastRun.to + 1) % n; tok.push({ kind: 'V', p: [R[from].X, R[from].Y], own: true }); stat.runTrimmed = (stat.runTrimmed || 0) + 1 } }
+      const inside = (x) => pos(x) <= pos(lastRun.to)
+      if (inside(r.to) && !inside(r.from)) throw new Error(`[${who}] ⛔ the back-offset: a tag run ${r.from}…${r.to} of ring ${r.ring} overlaps the stretch just emitted (${lastRun.from}…${lastRun.to}) and extends BACKWARD past its start. Refusing.`)
+      if (inside(r.from)) { if (pos(r.to) <= pos(lastRun.to)) { stat.runCovered = (stat.runCovered || 0) + 1; continue } from = (lastRun.to + 1) % n; tok.push({ kind: 'V', p: [R[from].X, R[from].Y], own: true }); stat.runTrimmed = (stat.runTrimmed || 0) + 1 } }
     for (let j = from; ; j = (j + 1) % n) { tok.push(Lsrc(r.ring, j)); if (j === r.to) break; tok.push({ kind: 'V', p: [R[(j + 1) % n].X, R[(j + 1) % n].Y], own: true }) }
     lastRun = { ring: r.ring, from: lastRun && lastRun.ring === r.ring && from !== r.from ? lastRun.from : r.from, to: r.to } }
   // one line twice in a row is one line: the same region edge, or (exactly) the same line
@@ -291,6 +293,7 @@ function offsetPieces(R, d, g, squares, lines = null, stat0 = {}) {
   let left = m, work = m > 2 ? runs.map((_, q) => q) : []
   while (work.length) { const q = work.pop(); if (!alive[q] || !negative(q)) continue
     if (left <= 3) throw new Error(`[offset${d < 0 ? ' (erode)' : ' (dilate)'}] ⛔ ring ${g}: the elimination consumes the ring (the region vanishes at d = ${d / SCALE} m). Refusing.`)
+    { const s0 = C[pv[q]].start, e0 = C[q].end, L = runs[q].line, Ld = Math.hypot(L[1][0] - L[0][0], L[1][1] - L[0][1]); (stat0.elimLen ||= {})[`${g}:${runs[q].s}`] = +(((e0.X - s0.X) * (L[1][0] - L[0][0]) + (e0.Y - s0.Y) * (L[1][1] - L[0][1])) / Ld).toFixed(2) }
     const k = pv[q], r = nx[q]; alive[q] = false; left--; nx[k] = r; pv[r] = k
     C[k] = cornerOf(k, r, vAt(r)); if (C[k].conv) stat0.convergingAfterElimination = (stat0.convergingAfterElimination || 0) + 1
     stat0.eliminated = (stat0.eliminated || 0) + 1; (stat0.eliminations ||= []).push({ ring: g, d: Math.sign(d), run: `${runs[q].s}…${runs[q].e}`, at: [R[runs[q].s].X / SCALE, R[runs[q].s].Y / SCALE], k: runs[k].s, r: runs[r].s, corner: C[k].conv ? 'converging' : C[k].cap ? 'cap' : 'X', Y: [C[k].end.X / SCALE, C[k].end.Y / SCALE] }); work.push(k, r) }
@@ -304,6 +307,20 @@ function offsetPieces(R, d, g, squares, lines = null, stat0 = {}) {
       { let a2 = 0; for (let z = 0; z < base.length; z++) { const p0 = base[z], p1 = base[(z + 1) % base.length]; a2 += p0.X * p1.Y - p1.X * p0.Y }
         // the region lies LEFT of its ring: a base piece on the d side winds against the ring for d > 0 and with it for d < 0
         if (c.conv && (d > 0 ? a2 > 0 : a2 < 0)) throw new Error(`[offset${d < 0 ? ' (erode)' : ' (dilate)'}] ⛔ ring ${g}: a converging corner after an elimination (runs ${runs[k].s} and ${runs[r].s}) puts the eliminated stretch's base piece on the region's own side: no consistent side. Runs: ${JSON.stringify([pv[k], k, ...((() => { const o = []; for (let q2 = (k + 1) % m; q2 !== r; q2 = (q2 + 1) % m) o.push(q2); return o })()), r].map(q2 => { const L = runs[q2].line; return { run: `${runs[q2].s}…${runs[q2].e}`, line: L, lenU: +Math.hypot(L[1][0] - L[0][0], L[1][1] - L[0][1]).toFixed(1), deg: +(Math.atan2(L[1][1] - L[0][1], L[1][0] - L[0][0]) * 180 / Math.PI).toFixed(3), from: [R[runs[q2].s].X, R[runs[q2].s].Y] } }))}; corner end ${JSON.stringify(c.end)} start ${JSON.stringify(c.start)}; base piece ${JSON.stringify(base.map(b2 => [b2.X, b2.Y]))}. Refusing.`) }
+      { // ⭐ THE BASE POLYGON IS SIMPLE, WOUND AGAINST ITS RING FOR A DILATE AND WITH IT FOR AN ERODE (Zob, 2026-10-29, pre-ruled):
+        // built in ring order [v_s … v_e, C_after, C_before]; else refuse by name with the corner class
+        const segs = base.map((b2, z) => ({ a: [b2.X, b2.Y], b: [base[(z + 1) % base.length].X, base[(z + 1) % base.length].Y] })); let X2 = null
+        for (let u2 = 0; u2 < segs.length && !X2; u2++) for (let w2 = u2 + 2; w2 < segs.length; w2++) { if (u2 === 0 && w2 === segs.length - 1) continue; X2 = crossOf(segs[u2], segs[w2]); if (X2) break }
+        let A2 = 0n; for (let z = 0; z < base.length; z++) { const p0 = base[z], p1 = base[(z + 1) % base.length]; A2 += BigInt(p0.X) * BigInt(p1.Y) - BigInt(p1.X) * BigInt(p0.Y) }
+        const ringPos = area(R) > 0, want = d > 0 ? !ringPos : ringPos
+        if (X2 || (A2 > 0n) !== want) throw new Error(`[offset${d < 0 ? ' (erode)' : ' (dilate)'}] ⛔ ring ${g}: the eliminated stretch between runs ${runs[k].s} and ${runs[r].s} (corner ${c.conv ? 'converging' : c.cap ? 'cap' : 'X'}) gives a base polygon that is ${X2 ? `NOT SIMPLE (it crosses itself at (${X2.map(v => v / SCALE)}))` : 'wound the wrong way'}: ${JSON.stringify(base.map(b2 => [b2.X, b2.Y]))}. Refusing.`) }
+      if (process.env.CUTONCE_TRACE_AT) { const [tx, ty] = process.env.CUTONCE_TRACE_AT.split(',').map(v => +v * SCALE)
+        if (base.some(b2 => Math.hypot(b2.X - tx, b2.Y - ty) < 3000)) { let A2 = 0n; for (let z = 0; z < base.length; z++) { const p0 = base[z], p1 = base[(z + 1) % base.length]; A2 += BigInt(p0.X) * BigInt(p1.Y) - BigInt(p1.X) * BigInt(p0.Y) }
+          const segs = base.map((b2, z) => ({ a: [b2.X, b2.Y], b: [base[(z + 1) % base.length].X, base[(z + 1) % base.length].Y] })); let selfX = []
+          for (let u2 = 0; u2 < segs.length; u2++) for (let w2 = u2 + 2; w2 < segs.length; w2++) { if (u2 === 0 && w2 === segs.length - 1) continue; const X2 = crossOf(segs[u2], segs[w2]); if (X2) selfX.push({ edges: [u2, w2], at: X2 }) }
+          const elim = []; for (let q2 = (k + 1) % m; q2 !== r; q2 = (q2 + 1) % m) elim.push(`${runs[q2].s}…${runs[q2].e}`)
+          const ringA = runs.length ? area(R) : 0
+          console.log('TRACE-BASE', JSON.stringify({ who: d < 0 ? 'erode' : 'dilate', ring: g, ringOrientation: ringA > 0 ? '+' : '−', k: `${runs[k].s}…${runs[k].e}`, r: `${runs[r].s}…${runs[r].e}`, eliminated: elim, corner: c.conv ? 'converging' : c.cap ? 'cap' : 'X', Cbefore_endOfK: [c.end.X, c.end.Y], Cafter_startOfR: [c.start.X, c.start.Y], baseInBuildOrder: base.map(b2 => [b2.X, b2.Y]), signedArea2: String(A2), selfCrossings: selfX })) } }
       pieces.push(ccw(base)) }
     const s0 = C[pv[k]].start, e0 = c.end, a = R[runs[k].s], b = vAt(r === (k + 1) % m ? r : (k + 1) % m), L = runs[k].line
     const along = (e0.X - s0.X) * (L[1][0] - L[0][0]) + (e0.Y - s0.Y) * (L[1][1] - L[0][1])
