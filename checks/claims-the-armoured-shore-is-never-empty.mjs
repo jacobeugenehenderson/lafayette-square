@@ -96,7 +96,9 @@ for (const look of readdirSync(join(ROOT, 'public', 'baked'), { withFileTypes: t
   let covered = 0
   for (const a of doc.arcs || []) if (coveredArcs.has(a.index)) covered += a.armouredM || 0
   const shortfall = claimed - covered
-  const good = emptyFaces.length === 0 && shortfall <= Math.max(1, claimed * 0.01)
+  // a town heads ⛔ when any of its shore is empty at distance, near-only chunks included: the first line read is the verdict
+  const lone = nearOnly(far.info)
+  const good = emptyFaces.length === 0 && shortfall <= Math.max(1, claimed * 0.01) && lone.length === 0
   console.log(`  ${good ? '✅' : '⛔'} ${look}/revetment  ${armoured.length} armoured face(s) · far layer at octaves ${FAR_OCTAVES} (baked) · ` +
     `${tris.toLocaleString()} tris covering ${covered.toFixed(0)} m of ${claimed} m armoured`)
   for (const e of emptyFaces) console.log(`       ⛔ NO FAR GEOMETRY: face ${e} — this stretch is empty at distance`)
@@ -104,11 +106,10 @@ for (const look of readdirSync(join(ROOT, 'public', 'baked'), { withFileTypes: t
     console.log(`       ⛔ ${shortfall.toFixed(0)} m OF ARMOURED SHORE IS UNACCOUNTED FOR. The artifact claims ${claimed} m; ` +
       `the faces reaching the far layer cover ${covered.toFixed(0)} m. A face is being dropped before it is ever built.`)
   }
-  const lone = nearOnly(far.info)
   if (!Array.isArray(far.info)) { console.log(`       ⛔ ${look}: revetment-far.json has no info table (the near layer's index) — baked before it existed. ▶ re-bake`); failed = true }
   for (const c of lone) console.log(`       ⛔ NEAR-ONLY STONE: chunk ${c.face}#${c.k} keeps ${c.nearTris} near tris and NO far ones — empty past the near radius. ${KNOWN_NEAR_ONLY}`)
   if (lone.length) console.log(`       ⛔ ${lone.length} near-only chunk(s), ${lone.reduce((s, c) => s + c.nearTris, 0).toLocaleString()} near tris, are empty at distance`)
-  if (!good || lone.length) failed = true
+  if (!good) failed = true
 }
 
 console.log(`\n  ${towns} town(s) with armoured shore · ${without} without`)
