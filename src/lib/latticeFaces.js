@@ -122,5 +122,14 @@ export function facesOf(edges, keep, { sets, who = 'facesOf', numberOnly = false
       if (used[f] && f !== h) throw new Error(`[${who}] ⛔ facesOf: the boundary walk from (${V[org[h]]}) re-entered (${V[org[f]]}) without closing. Refusing.`)
       g = f } while (g !== h)
     rings.push(ring); tags.push(tg) }
+  // ⭐ THE BOOKS BALANCE (Zob, 2026-10-28; PTown's deck, a ring whose shoelace and region disagreed): the kept region's exact area,
+  // as the walk knows it (Σ over kept faces of their cycles' exact shoelace), equals Σ of the emitted rings' exact shoelace. A
+  // ring that winds twice round a lobe, or a lobe walked by no ring, breaks it; refused by name, never emitted.
+  const sh = (pts) => { let a = 0n; for (let i = 0; i < pts.length; i++) { const p = pts[i], q = pts[(i + 1) % pts.length]; a += BigInt(p[0]) * BigInt(q[1]) - BigInt(q[0]) * BigInt(p[1]) } return a }
+  let faceA = 0n
+  members.forEach((m, c) => { if (!keep(W[c])) return; faceA += sh(m.map(g => V[org[g]])) })
+  const ringA = rings.reduce((t, r) => t + sh(r.map(q => [q.X, q.Y])), 0n)
+  if (faceA !== ringA) { const worst = rings.map((r, k) => ({ k, n: r.length, at: [r[0].X, r[0].Y], a2: sh(r.map(q => [q.X, q.Y])) }))
+    throw new Error(`[${who}] ⛔ facesOf: the books do not balance — the kept faces enclose ${faceA}/2 units² and the emitted rings ${ringA}/2 (Δ ${ringA - faceA}/2) over ${rings.length} ring(s); rings: ${JSON.stringify(worst.slice(0, 12), (k, v) => typeof v === 'bigint' ? v.toString() : v)}. Refusing.`) }
   return { rings, tags }
 }

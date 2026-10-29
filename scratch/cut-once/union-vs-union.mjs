@@ -53,3 +53,9 @@ const selfX = (q) => { const o = []; for (let i = 0; i < q.length; i++) for (let
 console.log(JSON.stringify({ hPselfCrossings: selfX(hP), hOselfCrossings: selfX(hO) }))
 const nb = (q, x, y) => { const i = q.findIndex(v => v.X === x && v.Y === y); return [-2, -1, 0, 1, 2].map(k => { const v = q[(i + k + q.length) % q.length]; return [v.X / 1e3, v.Y / 1e3] }) }
 console.log(JSON.stringify({ at241: { P: nb(hP, 241520, 270460), out: nb(hO, 242209, 271040) }, at281: { P: nb(hP, 281690, 335340), out: nb(hO, 282455, 335983) } }))
+// the output hole ring ALONE, noded against itself and walked (winding ≠ 0): its region, against its shoelace
+const { nodeCrossings } = await import('../../src/lib/latticeNode.js'), { facesOf } = await import('../../src/lib/latticeFaces.js')
+for (const [nm, q] of [['hO', hO], ['hP', hP]]) { const R = nodeCrossings([{ p: q.map(v => [v.X / 1e3, v.Y / 1e3]), tag: nm }], { pairs: () => true, self: true, who: nm })
+  const E = []; R[0].forEach((v, k) => { const w = R[0][(k + 1) % R[0].length]; E.push({ a: v.k, b: w.k, set: 0 }) })
+  const F = facesOf(E, w => w[0] !== 0, { sets: 1, who: nm }), wn = facesOf(E, w => Math.abs(w[0]) >= 2, { sets: 1, who: nm })
+  console.log(nm, JSON.stringify({ shoelace: +(C3.area(q) / 1e6).toFixed(4), nodedVerts: R[0].length, inserted: R.crossings, regionRings: F.rings.map(x => +(C3.area(x) / 1e6).toFixed(4)), windingTwiceRings: wn.rings.map(x => ({ m2: +(C3.area(x) / 1e6).toFixed(5), at: [x[0].X / 1e3, x[0].Y / 1e3] })) })) }

@@ -11,6 +11,7 @@
 //   · a null tag (an erode's square cap) → a NEW line, the cap's own back-offset, its joins computed once and rounded at birth
 // Every failure refuses by name (the deck's cross-ring segment does, until Zob rules it).
 import clipperLib from 'clipper-lib'
+import { writeFileSync } from 'fs'
 import { nodeCrossings, lineCrossOf, sameLine, NODE_BOUND } from '../../src/lib/latticeNode.js'
 import { facesOf } from '../../src/lib/latticeFaces.js'
 import { isRoundingSliver } from '../../cartograph/structures.mjs'
@@ -43,7 +44,13 @@ export function arrange(sets, keep, who, allTags = false) {
   const rings = [], setOf = []
   sets.forEach((S, si) => S.forEach(r => { const c = clean(r); if (distinct3(c)) { rings.push(c); setOf.push(si) } }))
   if (!rings.length) return { rings: [], tags: [] }
-  const R = nodeCrossings(rings.map((r, ri) => ({ p: r.map(q => [q.X / SCALE, q.Y / SCALE]), tag: `${who}#${ri}` })), { pairs: () => true, self: true, who })
+  const input = rings.map((r, ri) => ({ p: r.map(q => [q.X / SCALE, q.Y / SCALE]), tag: `${who}#${ri}` }))
+  let R
+  try { R = nodeCrossings(input, { pairs: () => true, self: true, who }) }
+  catch (e) { // ⭐ Zob's minimal repro: the rings the verifier names, saved as given (before noding) with their set, to a fixture
+    const ids = [...String(e.message).matchAll(new RegExp(`${who.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}#(\\d+)`, 'g'))].map(m => +m[1])
+    if (ids.length && process.env.CUTONCE_REPRO) writeFileSync(process.env.CUTONCE_REPRO, JSON.stringify({ who, error: String(e.message), rings: [...new Set(ids)].map(i => ({ i, set: setOf[i], tag: input[i].tag, p: input[i].p })) }))
+    throw e }
   const edges = []
   R.forEach((o, ri) => o.forEach((v, q) => { const w = o[(q + 1) % o.length]; edges.push({ a: v.k, b: w.k, set: setOf[ri], tag: rings[ri][v.edge]?.tag ?? null }) }))
   return facesOf(edges, keep, { sets: sets.length, who, allTags })
