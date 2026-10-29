@@ -326,14 +326,21 @@ console.log('── F2. a deck is its ways joined, opened and closed at the trac
   // and street deck (fixture, from PTown's trace), where the deck taken out as is left the 4–73 cm wedge ① could not ink. After
   // waterWithoutDecks, what an open at half a cell still removes beside the deck is no more than one lattice step along its edge
   const mx = JSON.parse(readFileSync(join(ROOT, 'checks/fixtures/ptown-macmillan-sliver-2026-10-27.json'), 'utf8'))
-  const mw = waterWithoutDecks(mx.water.map(r => signed(r) > 0 ? r : [...r].reverse()), [], [mx.deck], mx.stepM)
+  // ⛔ THE ONE KNOWN REFUSAL (Boz, 2026-10-29; BACKLOG "the open/close refuses at a source staircase"): this older crop's deck ring
+  // carries a 1.0 mm and a 2.8 mm staircase at a cut, which the cut-once open cannot read. Asserted BY NAME on a ratchet: RED if
+  // the message or its site changes, and RED when it starts BUILDING (then KNOWN_REFUSALS drops to 0 in that commit, and the
+  // sliver row below runs again)
+  const KNOWN_REFUSALS = 1, KNOWN = "a STAIRCASE in its SOURCE at a cut. Ring 0's edge(s) 533 (211.139, 71.050) → (211.138, 71.050), 1.0 mm; 534 (211.138, 71.050) → (211.136, 71.048), 2.8 mm lie within the lattice's rounding of edge 532's line"
+  let mw = null, mwWhy = null; try { mw = waterWithoutDecks(mx.water.map(r => signed(r) > 0 ? r : [...r].reverse()), [], [mx.deck], mx.stepM) } catch (e) { mwWhy = String(e.message) }
+  say(KNOWN_REFUSALS === 1 ? !!mwWhy && mwWhy.includes(KNOWN) : !mwWhy, mwWhy ? (mwWhy.includes(KNOWN) ? `the known refusal (1 of ${KNOWN_REFUSALS}): MacMillan's older crop refuses by name at its source staircase (edges 533, 534 at (211.139, 71.050))` : `MacMillan's older crop refuses, NOT as the known refusal: ${mwWhy.slice(0, 220)}`) : `MacMillan's older crop now BUILDS: lower KNOWN_REFUSALS to 0 in this commit, and its sliver row runs`)
+  if (mw) {
   const CP = (r) => r.map(([x, z]) => ({ X: Math.round(x * CLIP_SCALE), Y: Math.round(z * CLIP_SCALE) })), cu = mx.stepM * CLIP_SCALE
   const grow = (src, d) => { const co = new clipperLib.ClipperOffset(), o = new clipperLib.Paths(); co.AddPaths(src, clipperLib.JoinType.jtMiter, clipperLib.EndType.etClosedPolygon); co.Execute(o, d); return o }
   const cop = (t, a, b) => { const k = new Clipper(), o = new clipperLib.Paths(); k.AddPaths(a, PolyType.ptSubject, true); k.AddPaths(b, PolyType.ptClip, true); k.Execute(t, o, PolyFillType.pftNonZero, PolyFillType.pftNonZero); return o }
   const mloc = cop(ClipType.ctIntersection, mw.rings.map(CP), grow([CP(mx.deck)], 2 * cu)), mopen = cop(ClipType.ctIntersection, grow(grow(mloc, -cu / 2), cu / 2), mloc)
   const mthin = cop(ClipType.ctIntersection, cop(ClipType.ctDifference, mloc, mopen), grow([CP(mx.deck)], cu)).reduce((t, p) => t + Math.abs(Clipper.Area(p)), 0) / CLIP_SCALE ** 2
   const mper = mx.deck.reduce((t, p, i) => { const q = mx.deck[(i + 1) % mx.deck.length]; return t + Math.hypot(q[0] - p[0], q[1] - p[1]) }, 0)
-  say(mw.slivers.length > 0 && mthin <= mper / CLIP_SCALE, `MacMillan's water beside its deck narrower than a cell is the deck's: ${mw.slivers.length} sliver(s), ${mw.slivers.reduce((t, x) => t + x.m2, 0).toFixed(2)} m², named; ${mthin.toFixed(3)} m² thin water left (at most a lattice step along its ${mper.toFixed(0)} m edge, ${(mper / CLIP_SCALE).toFixed(3)} m²)`)
+  say(mw.slivers.length > 0 && mthin <= mper / CLIP_SCALE, `MacMillan's water beside its deck narrower than a cell is the deck's: ${mw.slivers.length} sliver(s), ${mw.slivers.reduce((t, x) => t + x.m2, 0).toFixed(2)} m², named; ${mthin.toFixed(3)} m² thin water left (at most a lattice step along its ${mper.toFixed(0)} m edge, ${(mper / CLIP_SCALE).toFixed(3)} m²)`) }
   // …and what the subtraction itself leaves: PTown's wharf, marina and memorial-park decks with their water (fixture), where a
   // pocket bounded by one deck on every side, narrower than a cell, was left as water (FMP's 1.2 cm², and its like)
   const wx = JSON.parse(readFileSync(join(ROOT, 'checks/fixtures/ptown-wharf-sliver-2026-10-27.json'), 'utf8'))

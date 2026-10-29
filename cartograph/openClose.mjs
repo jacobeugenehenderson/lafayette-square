@@ -321,7 +321,15 @@ function emit(E, T, SRC, d, who, stat, LINES = null) {
       const births = ids.map(i => { const p0 = SRC[t.g][i], p1 = SRC[t.g][(i + 1) % n], L = LINES?.[t.g]?.[i]
         return { edge: i, inTokens: seen.includes(i), lenU: +Math.hypot(p1.X - p0.X, p1.Y - p0.Y).toFixed(2), deg: +(Math.atan2(p1.Y - p0.Y, p1.X - p0.X) * 180 / Math.PI).toFixed(3),
           line: L ? JSON.stringify(L) : 'born', lineDeg: L ? +(Math.atan2(L[1][1] - L[0][1], L[1][0] - L[0][0]) * 180 / Math.PI).toFixed(3) : null, pts: `(${p0.X},${p0.Y})→(${p1.X},${p1.Y})` } })
-      throw new Error(`[${who}] ⛔ the back-offset: a cut joins edge ${t.i} to edge ${u.i} of ring ${t.g}${area(SRC[t.g]) < 0 ? ' (a HOLE)' : ' (an outer)'} and its skipped arc's edges appear ELSEWHERE in this ring (not a forward removal: ${JSON.stringify(where)}; this join at token ${k} of ${t2.length}; tokens around [${around.join(' ')}]), lines ${JSON.stringify(A)} and ${JSON.stringify(B)}. Refusing.`) }
+      // ⭐ THE MESSAGE EXPLAINS (Boz, 2026-10-29): a source STAIRCASE at the cut is named as one, with its site and what the
+      // operator can do: the cut's own edges (those it skips, and its target) whose both ends lie within the lattice's rounding
+      // (NODE_BOUND) of the cut's line
+      const m3 = (v) => `(${(v.X / SCALE).toFixed(3)}, ${(v.Y / SCALE).toFixed(3)})`
+      const stair = [...inner, u.i].filter(i => [SRC[t.g][i], SRC[t.g][(i + 1) % n]].every(v => onLineTiered(A, [v.X, v.Y], null)))
+      const detail = `detail: the cut joins edge ${t.i} to edge ${u.i} and edge(s) ${inner.slice(0, 4).join(', ')} it skips appear elsewhere in the ring (${JSON.stringify(where)}); tokens round it [${around.join(' ')}]`
+      const todo = 'Nothing the operator can do changes it today: the rule is BACKLOG "the open/close refuses at a source staircase" (unbuilt)'
+      if (stair.length) throw new Error(`[${who}] ⛔ the open/close cannot read this ring: a STAIRCASE in its SOURCE at a cut. Ring ${t.g}'s edge(s) ${stair.map(i => `${i} ${m3(SRC[t.g][i])} → ${m3(SRC[t.g][(i + 1) % n])}, ${Math.hypot(SRC[t.g][(i + 1) % n].X - SRC[t.g][i].X, SRC[t.g][(i + 1) % n].Y - SRC[t.g][i].Y).toFixed(1)} mm`).join('; ')} lie within the lattice's rounding of edge ${t.i}'s line, so their offset lines cross and are read out of order. ${todo}. Refusing. (${detail})`)
+      throw new Error(`[${who}] ⛔ the open/close cannot read this ring: at ring ${t.g}${area(SRC[t.g]) < 0 ? ' (a hole)' : ''} near ${m3(SRC[t.g][(t.i + 1) % n])}, a cut from edge ${t.i} to edge ${u.i} runs BACKWARD (the offset reads the ring's lines out of order). Cause not established; no staircase within the rounding there. ${todo}. Refusing. (${detail})`) }
     out.push(X); outL.push(u.int || null); origin(X, t.flt || u.flt ? 'new-line-join' : 'cut-join'); stat.cutJoin++
   }
   if (outL.length !== out.length) throw new Error(`[${who}] ⛔ the back-offset: ${out.length} points but ${outL.length} outgoing lines. Refusing.`)
