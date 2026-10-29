@@ -109,14 +109,25 @@ function emit(E, T, SRC, d, who, stat) {
       if (off) throw new Error(`[${who}] ⛔ the back-offset: parallel distinct lines meet across a protrusion at (${off.map(v => v / SCALE)}) (clause parallel-protrusion: lines ${JSON.stringify(A)} and ${JSON.stringify(B)}, ${Math.abs(o).toFixed(3)} u apart; the vertex ${side(off).toFixed(3)} u across, the band [${lo.toFixed(3)}, ${hi.toFixed(3)}]; arc of ${arc.length} vertices; t = (${t.g}, ${t.i}), u = (${u.g}, ${u.i}) of ${n}). Refusing.`)
       out.push(...arc); arc.forEach(q => origin(q, 'jog')); stat.jogJoin = (stat.jogJoin || 0) + 1; continue }
     if (Math.abs(sinA) < 1e-15 && cosA > 0) throw new Error(`[${who}] ⛔ the back-offset: a new line parallel to its neighbour at (${A[1]}). Refusing.`)
-    if (1 + cosA < MITER_LIM && sinA * -d > 0) {    // squared, as clipper squares the join (parity): two points, born rounded
-      const p = E[0] /* placeholder replaced below */; void p
-      const P = [(A[1][0] + B[0][0]) / 2, (A[1][1] + B[0][1]) / 2], tt = Math.tan(Math.atan2(sinA, cosA) / 4), dd = -d
-      // the join's apex is the two lines' crossing; the square stands at distance |d| from it along the bisector, as clipper's
-      const X = t.int && u.int ? lineCrossOf({ a: A[0], b: A[1] }, { a: B[0], b: B[1] }, who) : fcross(A, B)
-      const c = [X[0] - (na[0] + nb[0]) * dd / (1 + cosA), X[1] - (na[1] + nb[1]) * dd / (1 + cosA)]   // the offset source point
-      out.push([Math.round(c[0] + dd * (na[0] - na[1] * tt)), Math.round(c[1] + dd * (na[1] + na[0] * tt))], [Math.round(c[0] + dd * (nb[0] + nb[1] * tt)), Math.round(c[1] + dd * (nb[1] - nb[0] * tt))]); void P
-      out.slice(-2).forEach(q => origin(q, 'square')); stat.squared++; (stat.squares ||= []).push(X); continue }
+    const Xf = fcross(A, B)                                                    // the lines' crossing, unrounded
+    const dLine = (q, L) => { const dx = L[1][0] - L[0][0], dy = L[1][1] - L[0][1]; return Math.abs((q[0] - L[0][0]) * dy - (q[1] - L[0][1]) * dx) / Math.hypot(dx, dy) }
+    // ⭐ THE GAP RULE AT ANY NON-ADJACENT JOIN (Zob, 2026-10-29; clause 3 made general): every skipped source vertex within
+    // NODE_BOUND of the cut path (L_a to X, then L_b) → the two answers differ by less than the lattice's own rounding, so the
+    // source vertices are emitted, never X
+    if (t.g != null && u.g === t.g) { const R = SRC[t.g], n = R.length, fwd = (u.i - t.i + n) % n
+      if (fwd > 1 && fwd < n / 2) { const sk = []; for (let j2 = (t.i + 1) % n; ; j2 = (j2 + 1) % n) { sk.push([R[j2].X, R[j2].Y]); if (j2 === u.i) break }
+        const dS = (q, a, b) => { const dx = b[0] - a[0], dy = b[1] - a[1], L2 = dx * dx + dy * dy, tt = L2 ? Math.max(0, Math.min(1, ((q[0] - a[0]) * dx + (q[1] - a[1]) * dy) / L2)) : 0; return Math.hypot(q[0] - a[0] - tt * dx, q[1] - a[1] - tt * dy) }
+        if (sk.every(q => Math.min(dS(q, A[0], Xf), dS(q, Xf, B[1])) <= NODE_BOUND)) { out.push(...sk); sk.forEach(q => origin(q, 'gap-arc')); stat.gapArc = (stat.gapArc || 0) + 1; continue } } }
+    if (1 + cosA < MITER_LIM && sinA * -d > 0) {    // squared, as clipper squares the join (parity; the limit JUSTIFIED below)
+      // ⭐ THE CAP'S ENDS ARE ITS CROSSINGS WITH ITS NEIGHBOURS (Zob, 2026-10-29): the cap is a NEW line, placed as clipper places
+      // its square (at |d| from the offset vertex, across the bisector), and each end is lineCross(L_cap, L_a) and
+      // lineCross(L_cap, L_b), rounded once; an end farther than NODE_BOUND from its neighbour line refuses by name
+      const tt = Math.tan(Math.atan2(sinA, cosA) / 4), dd = -d
+      const c = [Xf[0] - (na[0] + nb[0]) * dd / (1 + cosA), Xf[1] - (na[1] + nb[1]) * dd / (1 + cosA)]   // the offset vertex, unrounded
+      const cap = [[c[0] + dd * (na[0] - na[1] * tt), c[1] + dd * (na[1] + na[0] * tt)], [c[0] + dd * (nb[0] + nb[1] * tt), c[1] + dd * (nb[1] - nb[0] * tt)]]
+      const e1 = fcross(cap, A).map(Math.round), e2 = fcross(cap, B).map(Math.round)
+      for (const [e, L, nm] of [[e1, A, 'a'], [e2, B, 'b']]) if (dLine(e, L) > NODE_BOUND) throw new Error(`[${who}] ⛔ the back-offset: a squared join's cap end (${e.map(v => v / SCALE)}) lies ${dLine(e, L).toFixed(3)} u off its neighbour line ${nm}, past NODE_BOUND. Refusing.`)
+      out.push(e1, e2); [e1, e2].forEach(q => origin(q, 'square')); stat.squared++; (stat.squares ||= []).push(Xf.map(Math.round)); continue }
     const X = t.int && u.int ? lineCrossOf({ a: A[0], b: A[1] }, { a: B[0], b: B[1] }, who) : fcross(A, B).map(Math.round)
     // ⭐ A CUT WHOSE CROSSING THE NEXT BOOLEAN TRIMS EMITS THAT BOOLEAN'S EXACT RESULT: THE REGION'S OWN ARC (Zob's ruling,
     // 2026-10-29). L_a and L_b are the region's own edge lines: in the open, X = L_a ∩ L_b outside the region is trimmed by ∩P,
@@ -127,10 +138,12 @@ function emit(E, T, SRC, d, who, stat) {
       if (fwd > 0 && fwd < n / 2) { const arc = []; for (let j = (t.i + 1) % n; ; j = (j + 1) % n) { arc.push([R[j].X, R[j].Y]); if (j === u.i) break }
         const loop = [...arc, X]; let a2 = 0n; for (let k = 0; k < loop.length; k++) { const p = loop[k], q = loop[(k + 1) % loop.length]; a2 += BigInt(p[0]) * BigInt(q[1]) - BigInt(q[0]) * BigInt(p[1]) }
         if (TRIM_INVERTED ? !(d < 0 ? a2 < 0n : a2 > 0n) : (d < 0 ? a2 < 0n : a2 > 0n)) { out.push(...arc); arc.forEach(q => origin(q, 'trimmed-arc')); stat.trimmedArc = (stat.trimmedArc || 0) + 1; continue } } }
-    out.push(X); origin(X, t.flt || u.flt ? 'new-line-join' : 'cut-join'); stat.cutJoin++ }
+    out.push(X); origin(X, t.flt || u.flt ? 'new-line-join' : 'cut-join'); stat.cutJoin++
+    const par = (L, q) => { const dx = L[1][0] - L[0][0], dy = L[1][1] - L[0][1]; return ((q[0] - L[0][0]) * dx + (q[1] - L[0][1]) * dy) / (dx * dx + dy * dy) }
+    DETAIL.set(X[0] + ',' + X[1], { who, t: t.g != null ? { g: t.g, i: t.i } : 'new', u: u.g != null ? { g: u.g, i: u.i } : 'new', ta: +par(A, Xf).toFixed(4), tb: +par(B, Xf).toFixed(4), A, B }) }
   return out.map(([X, Y]) => ({ X, Y }))
 }
-export const ORIGIN = new Map()
+export const ORIGIN = new Map(), DETAIL = new Map()
 let TRIM_INVERTED = false                          // ⛔ the mutant only (setTrimInverted): the side test inverted
 export const setTrimInverted = (v) => { TRIM_INVERTED = !!v }
 const origin = (p, kind) => { const k = p[0] + ',' + p[1], o = ORIGIN.get(k); ORIGIN.set(k, o && o !== kind ? o + '|' + kind : kind) }
