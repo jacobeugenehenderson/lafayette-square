@@ -151,19 +151,19 @@ if (import.meta.url === `file://${process.argv[1]}` && process.env.ORACLE_CLOSED
   console.log(JSON.stringify(closedKDump(G.ip(d.traced), d.fineM, 'huron')))
 } else if (import.meta.url === `file://${process.argv[1]}` && process.env.ORACLE_ISOLATED) {
   const fx = (n) => JSON.parse(fs.readFileSync(new URL(`./fixtures/${n}.json`, import.meta.url), 'utf8'))
-  const FIX = { decks: () => { const d = fx('ptown-deck-inputs'); return [G.ip(d.inputs.flat()), d.fineM] }, breakwater: () => { const d = fx('ptown-embankments'); return [G.ip(d.paths), d.fineM] }, huron: () => { const d = fx('huron-traced'); return [G.ip(d.traced), d.fineM] } }
+  const FIX = { decks: () => { const d = fx('ptown-deck-inputs'); return [G.ip(d.inputs.flat()), d.fineM] }, breakwater: () => { const d = fx('ptown-embankments'); return [G.ip(d.paths), d.fineM] }, huron: () => { const d = fx('huron-traced'); return [G.ip(d.traced), d.fineM] }, pier: () => { const d = fx('huron-pier-deck-inputs'); return [G.ip(d.inputs.flat()), d.fineM] } }
   for (const k of process.argv.slice(2)) { const [src, step] = ROWS[k] ? [G.ip(ROWS[k].rings), STEP_M] : FIX[k](); console.log(JSON.stringify(isolated(src, step, k))) }
 } else if (import.meta.url === `file://${process.argv[1]}` && process.env.ORACLE_INTEGER) {
   const fx = (n) => JSON.parse(fs.readFileSync(new URL(`./fixtures/${n}.json`, import.meta.url), 'utf8'))
-  const FIX = { decks: () => { const d = fx('ptown-deck-inputs'); return [G.ip(d.inputs.flat()), d.fineM] }, breakwater: () => { const d = fx('ptown-embankments'); return [G.ip(d.paths), d.fineM] }, huron: () => { const d = fx('huron-traced'); return [G.ip(d.traced), d.fineM] } }
+  const FIX = { decks: () => { const d = fx('ptown-deck-inputs'); return [G.ip(d.inputs.flat()), d.fineM] }, breakwater: () => { const d = fx('ptown-embankments'); return [G.ip(d.paths), d.fineM] }, huron: () => { const d = fx('huron-traced'); return [G.ip(d.traced), d.fineM] }, pier: () => { const d = fx('huron-pier-deck-inputs'); return [G.ip(d.inputs.flat()), d.fineM] } }
   for (const k of process.argv.slice(2)) { const [src, step] = FIX[k](); console.log(JSON.stringify(await judgeInteger(src, step, k, process.env.ORACLE_INTEGER !== 'false'))) }
 } else if (import.meta.url === `file://${process.argv[1]}` && process.env.ORACLE_STAGEWISE) {
   const fx = (n) => JSON.parse(fs.readFileSync(new URL(`./fixtures/${n}.json`, import.meta.url), 'utf8'))
-  const FIX = { decks: () => { const d = fx('ptown-deck-inputs'); return [G.ip(d.inputs.flat()), d.fineM] }, breakwater: () => { const d = fx('ptown-embankments'); return [G.ip(d.paths), d.fineM] }, huron: () => { const d = fx('huron-traced'); return [G.ip(d.traced), d.fineM] } }
+  const FIX = { decks: () => { const d = fx('ptown-deck-inputs'); return [G.ip(d.inputs.flat()), d.fineM] }, breakwater: () => { const d = fx('ptown-embankments'); return [G.ip(d.paths), d.fineM] }, huron: () => { const d = fx('huron-traced'); return [G.ip(d.traced), d.fineM] }, pier: () => { const d = fx('huron-pier-deck-inputs'); return [G.ip(d.inputs.flat()), d.fineM] } }
   for (const k of process.argv.slice(2)) { const [src, step] = ROWS[k] ? [G.ip(ROWS[k].rings), STEP_M] : FIX[k](); console.log(JSON.stringify(stagewise(src, step, k))) }
 } else if (import.meta.url === `file://${process.argv[1]}`) {
   const fx = (n) => JSON.parse(fs.readFileSync(new URL(`./fixtures/${n}.json`, import.meta.url), 'utf8'))
-  const FIX = { decks: () => { const d = fx('ptown-deck-inputs'); return [G.ip(d.inputs.flat()), d.fineM] }, breakwater: () => { const d = fx('ptown-embankments'); return [G.ip(d.paths), d.fineM] }, huron: () => { const d = fx('huron-traced'); return [G.ip(d.traced), d.fineM] } }
+  const FIX = { decks: () => { const d = fx('ptown-deck-inputs'); return [G.ip(d.inputs.flat()), d.fineM] }, breakwater: () => { const d = fx('ptown-embankments'); return [G.ip(d.paths), d.fineM] }, huron: () => { const d = fx('huron-traced'); return [G.ip(d.traced), d.fineM] }, pier: () => { const d = fx('huron-pier-deck-inputs'); return [G.ip(d.inputs.flat()), d.fineM] } }
   const which = process.argv.slice(2)
   for (const k of which.includes('planted') ? Object.keys(ROWS) : which.length ? which : Object.keys(FIX)) {
     try { const [src, step] = ROWS[k] ? [G.ip(ROWS[k].rings), STEP_M] : FIX[k](); console.log(JSON.stringify(judge(src, step, k))) } catch (e) { console.log(k, 'REFUSED:', String(e.message).slice(0, 160)) } }

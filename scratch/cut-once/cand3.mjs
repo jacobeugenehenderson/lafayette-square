@@ -101,6 +101,22 @@ function emit(E, T, SRC, d, who, stat, LINES = null) {
     const tkey = tags.length > 1 ? JSON.stringify(tags.filter(x => x?.ring != null).map(x => x.ring + ':' + x.i).sort()) : null
     if (tkey && tkey === prevRunKey) { stat.runRepeat = (stat.runRepeat || 0) + 1; continue }
     prevRunKey = tkey
+    // ⭐ A MULTI-TAG TOKEN IS READ IN THE SOURCE RING'S FORWARD ORDER FROM ITS PREDECESSOR (Zob's ruling, 2026-10-29; Huron's pier: a
+    // 65 mm segment at a neck carrying {0, 10}, read 10 then 0, made the join 14 → 10 backward). Several tags of ONE ring are ordered
+    // by forward cyclic distance from the predecessor's last tag on that ring and pushed as consecutive lines, so every rule applies
+    // to each change as if they were separate segments. Exact: the last must also precede the successor's first going forward, or
+    // the call refuses by name with all three (the true non-monotone case)
+    const ringsHere = new Set(tags.map(x => x.ring))
+    if (!TAG_SET_ORDER && tags.length > 1 && ringsHere.size === 1) { const g = tags[0].ring, n = SRC[g].length, onG = (t) => (t == null ? [] : Array.isArray(t) ? t : [t]).filter(x => x?.ring === g).map(x => x.i)
+      const pv = onG(T[(e - 1 + E.length) % E.length]), pred = lastRun && lastRun.ring === g ? lastRun.to : pv.length === 1 ? pv[0] : null
+      // a tag inside the stretch just emitted on this ring is COVERED (the existing rule: a run already emitted is not re-emitted)
+      const covered = (x) => lastRun && lastRun.ring === g && x !== lastRun.to && (x - lastRun.from + n) % n <= (lastRun.to - lastRun.from + n) % n
+      if (pred != null) { const pos = (x) => (x - pred + n) % n, ids = [...new Set(tags.map(x => x.i))].filter(x => !covered(x)).sort((a, b) => pos(a) - pos(b))
+        let k2 = 1; while (k2 < E.length && JSON.stringify(onG(T[(e + k2) % E.length]).sort()) === JSON.stringify(onG(tg).sort())) k2++
+        const nx = onG(T[(e + k2) % E.length]), last = ids[ids.length - 1]
+        if (nx.length === 1 && nx[0] !== last && pos(nx[0]) < pos(last)) throw new Error(`[${who}] ⛔ the back-offset: the eroded segment (${[p.X, p.Y].map(v => v / SCALE)}) → (${[q.X, q.Y].map(v => v / SCALE)}) (${Math.hypot(q.X - p.X, q.Y - p.Y).toFixed(2)} u) carries ring ${g}'s edges ${ids.join(', ')}, and no forward order fits both its predecessor (edge ${pred}) and its successor (edge ${nx[0]}). Refusing.`)
+        for (const i of ids) tok.push(Lsrc(g, i))
+        stat.orderedTokens = (stat.orderedTokens || 0) + 1; lastRun = { ring: g, from: ids[0], to: last }; continue } }
     const r = tagRun(tags, SRC, { twoH: 2 * Math.abs(d), lineOf: LINES ? lineOf : null })
     if (!r.ok) throw new Error(`[${who}] ⛔ the back-offset: the eroded segment (${[p.X, p.Y].map(v => v / SCALE)}) → (${[q.X, q.Y].map(v => v / SCALE)}) carries tags ${JSON.stringify(tags)}: ${r.clause}. Refusing.`)
     stat[r.kind] = (stat[r.kind] || 0) + 1
@@ -306,6 +322,8 @@ let OWN_SKIPS_LIMIT = false                       // ⛔ the mutant only (setOwn
 export const setOwnSkipsLimit = (v) => { OWN_SKIPS_LIMIT = !!v }
 let SUB_SAME_WAY = false                          // ⛔ the mutant only (setSubSameWay): a difference's subtracted set left as wound, its edges untagged
 export const setSubSameWay = (v) => { SUB_SAME_WAY = !!v }
+let TAG_SET_ORDER = false                         // ⛔ the mutant only (setTagSetOrder): a multi-tag token read as a set (tagRun's arc)
+export const setTagSetOrder = (v) => { TAG_SET_ORDER = !!v }
 let TRIMMED_ARC_CORNERS = false                   // ⛔ the mutant only (setTrimmedArcCorners): a trimmed arc unclipped, its vertices by their own turns
 export const setTrimmedArcCorners = (v) => { TRIMMED_ARC_CORNERS = !!v }
 let ARC_RAW = false                               // ⛔ the mutant only (setArcRaw): arcs emit raw vertices, no corner call

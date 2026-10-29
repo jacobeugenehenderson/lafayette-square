@@ -39,7 +39,7 @@ for f, setter in [('TAGS_BY_SEGMENT', 'setTagsBySegment'), ('REFUSE_ALL_BACKWARD
                   ('RAW_CURVE', 'setRawCurve'), ('BY_EDGES', 'setByEdges'), ('NO_TOPOLOGY_GUARD', 'setNoTopologyGuard'), ('NO_EMIT_INVARIANT', 'setNoEmitInvariant'),
                   ('TIERS_SWAPPED', 'setTiersSwapped'), ('TAGS_OFF_AT', 'setTagsOffAt'), ('OWN_SKIPS_LIMIT', 'setOwnSkipsLimit'), ('SUB_SAME_WAY', 'setSubSameWay'),
                   ('TRIMMED_ARC_CORNERS', 'setTrimmedArcCorners'), ('ARC_RAW', 'setArcRaw'), ('NO_SLIVER_DROP', 'setNoSliverDrop'), ('TRIM_INVERTED', 'setTrimInverted'),
-                  ('GAP_BEFORE_LIMIT', 'setGapBeforeLimit'), ('CORNER_AT_MITER', 'setCornerAtMiter'), ('BACK_PIECES', 'setBackPieces')]:
+                  ('GAP_BEFORE_LIMIT', 'setGapBeforeLimit'), ('TAG_SET_ORDER', 'setTagSetOrder'), ('CORNER_AT_MITER', 'setCornerAtMiter'), ('BACK_PIECES', 'setBackPieces')]:
     s, n1 = re.subn(rf'^let {f} = [^\n]*\n', '', s, flags=re.M)
     s, n2 = re.subn(rf'^export const {setter} = [^\n]*\n', '', s, flags=re.M)
     if n1 != 1 or n2 != 1: sys.exit(f'port: {f}/{setter}: {n1} let, {n2} setter')
@@ -50,6 +50,7 @@ if n != 1: sys.exit('port: the fold mutants')
 sub("tag: TAGS_BY_SEGMENT ? null : outL[k]", "tag: outL[k]")
 sub("TAGS_BY_SEGMENT ? null : openLines", "openLines")
 sub("!REFUSE_ALL_BACKWARD && ", "")
+sub("if (!TAG_SET_ORDER && tags.length > 1", "if (tags.length > 1")
 sub("LINES?.[g] && !BY_EDGES ? runsOf", "LINES?.[g] ? runsOf")
 sub("if (!NO_TOPOLOGY_GUARD) {", "{")
 sub("if (!NO_EMIT_INVARIANT) for", "for")

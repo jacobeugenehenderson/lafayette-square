@@ -29,6 +29,10 @@ export const ROWS = {
   // D → the arc CLIPPED at that line by lineCrossOf (the definition: P ∩ D cuts the dip off)
   arcInside: { what: 'a trimmed arc wholly inside D is P\'s own chain, unchanged', rings: [[[0, 0], [19980, 0], [19995, 5], [20000, 20], [20000, 20000], [0, 20000]]] },
   arcClipped: { what: 'a trimmed arc with a vertex 6 u outside D is clipped at the target line', rings: [[[0, 0], [19980, 0], [19990, -6], [20000, 20], [20000, 20000], [0, 20000]]] },
+  // a 20 m square and a 1.8 m strip at 60° whose foot crosses the top edge near the corner (stub-search.mjs): the erode splits at the
+  // neck, and the eroded square's ring carries a segment claimed by two of P's edges there, read in the ring's FORWARD order from
+  // its predecessor (Huron's pier, 2026-10-29). Read as a set (tagRun's arc) the join runs backward and refuses
+  cornerStub: { what: 'a strip crossing a square\'s corner at a neck: the neck token read in forward order, no refusal', rings: [sq(0, 0, 20000, 20000), [[18721, 20550], [20279, 19650], [24779, 27444], [23221, 28344]]] },
   // an outer and its own hole, collinear end to end, the wall between 0.95 m (< 2h) along a 0.3 m stretch: the open merges, the
   // close refills, the hole is kept
   wallShort: { what: 'a sub-2h wall over a short stretch is kept (the close refills it)', rings: [sq(0, 0, 20000, 20000), rev([[5000, 5000], [15000, 5000], [15000, 17000], [10150, 17000], [10150, 19050], [9850, 19050], [9850, 17000], [5000, 17000]])] },
