@@ -1,10 +1,10 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 508,
+  "total": 509,
   "counts": {
     "safe": 360,
     "local-effect": 30,
-    "live": 118
+    "live": 119
   },
   "checks": [
     {
@@ -3166,6 +3166,15 @@
       "tier": "safe",
       "why": [
         "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-the-morning-is-observed.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "imports vite — its server resolves localhost over DNS (caught by the no-network guard)",
+        "imports package(s) vite — not read from source"
       ]
     },
     {

@@ -2,7 +2,12 @@
 
 <!-- BRIEF-STATE
 status: OPEN (premises co-signed by Zob at kit 19bb2d25, with corrections, 2026-10-28)
-dispatched: not yet (Jacob dispatches a FRESH agent)
+dispatched: 2026-10-28 night, Isotherm (fresh). Stopped at the premises: the sky read a missing cloud cover / weather code
+as 0 = clear (`targetsOf`, `weather-payload`, `windSheet`, `skyCode`), so §2.A's "the sky never reads a missing field as 0"
+could not hold in nws.js alone. Ward ruled (a): the `?? 0`s are deleted and the readers refuse by name
+(WeatherFieldMissingError), so scope widened into useWeather, windSheet, weather-payload, SidePanel, weatherAt, dawnTimeline.
+Kit part on branch isotherm/the-day-strip-has-its-line (Zob reviews). Follow-up, not built: a cited cloudLayers → cover
+standard (needs Jacob's terms approval) would let an observed hour carry cloud cover.
 written: 2026-10-28 night (Ward, at Jacob's word via Boz: "have Ward commit the brief")
 evict-when: the line spans the whole dawn-to-dawn window in every devTown on staging, the checks below are GREEN and seen
 RED, the kit part is merged on Zob's PASS and the Ward part on Ward's green, both ship with a Ward pin move, and Jacob

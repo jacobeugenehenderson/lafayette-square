@@ -182,7 +182,8 @@ Mark these "kit-global, already acquired" so town #3 never sees them as work.
 ### 2.3 ⚠️ LIVE NETWORK — the kit's one hard doctrine violation
 **The US National Weather Service** (`api.weather.gov`, public domain), read by `src/lib/nws.js` through
 `src/hooks/useWeather.js`, polled by `WeatherPoller.jsx`. Supplies temp, humidity, cloud cover, precip, visibility,
-wind, the NWS weather type (mapped to WMO) and observed pressure + a 48 h forecast; ⛔ **no radiation**. Drives
+wind, the NWS weather type (mapped to WMO) and observed pressure + a 48 h forecast, with the hours from dawn to the
+grid's first filled from station observations (no cloud cover or condition there); ⛔ **no radiation**. Drives
 **everything**: Condition selection, Degrees response, sky darkening, rain/snow/wetness/lightning, cloud advection,
 **tree sway**. *(Open-Meteo until 2026-10-20: its free API is non-commercial only.)*
 

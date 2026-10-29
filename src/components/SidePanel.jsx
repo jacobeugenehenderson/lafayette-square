@@ -23,6 +23,10 @@ import { TodStrip } from './DawnTimeline'
 import { useContact } from './ContactModal'
 import useCommunityStats from '../hooks/useCommunityStats'
 
+// A reading that lacks its condition is said once per message, not on every render.
+let _said = ''
+const sayOnce = (why) => { if (why !== _said) { _said = why; console.error(why) } }
+
 // ── Camera helpers ──────────────────────────────────────────────────
 // _buildingMap imported from shared buildings module
 
@@ -309,6 +313,9 @@ export function AlmanacTab() {
     if (!isLive && !hourlyForecast.length) return { temperatureF: null, weatherCode: null }
     try {
       const r = weatherAt(currentTime, { live: isLive, now: { temperatureF: liveTemp, weatherCode: liveCode }, hourly: hourlyForecast })
+      // An observed hour (before NWS's grid) has a temperature and no condition: the temperature shows, the condition is
+      // said lacking — never "Clear".
+      if (!isLive && r.weatherCode == null) sayOnce(`[SidePanel] ⛔ ${r.time.toISOString()}'s reading lacks weatherCode — no condition shown`)
       return { temperatureF: r.temperatureF, weatherCode: r.weatherCode }
     } catch (e) {
       if (!(e instanceof WeatherRangeError)) throw e

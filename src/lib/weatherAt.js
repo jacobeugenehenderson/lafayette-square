@@ -15,6 +15,13 @@
  *
  * ⛔ A time outside the forecast THROWS (a WeatherRangeError). It used to fall back to `now`, silently — a scrubbed
  * hour labelled with this minute's weather. The caller says it cannot show that hour.
+ * ⛔ A field the reading lacks is null — never 0. A reader that needs it asks needFields, which THROWS a
+ * WeatherFieldMissingError (a WeatherRangeError, so every reader that holds-and-says across the forecast's edge takes
+ * the same path). The hours before NWS's grid are observed, and lack cloud cover and the weather code (lib/nws.js).
+ * ⛔ An hour the station did not observe is a HOLE in the series, not a span to smooth across: an instant inside one
+ * THROWS a WeatherHoleError (a WeatherRangeError). The hole's unit is the series' own cadence, STAMPED on it by its
+ * producer (`hourly.cadence`, ms — lib/nws.js) and never inferred: a series with no two consecutive readings would infer
+ * it from the hole itself. ⛔ A series without the stamp throws by name.
  *
  * A reading: { temperatureF, cloudCover (%), precipitation (mm), visibility (m), windSpeedMs, windDirDeg, windGustsMs,
  * humidity (%), pressureMb, weatherCode, directRadiation, diffuseRadiation } — as lib/nws.js reads them from the National Weather Service (radiation always null: NWS has none), as
@@ -26,6 +33,22 @@ const SMOOTH = ['temperatureF', 'cloudCover', 'precipitation', 'visibility', 'wi
 const NEAREST = ['weatherCode', 'windDirDeg']
 
 export class WeatherRangeError extends Error {}
+/** The instant is inside the forecast, but its reading lacks a field the reader needs (named in the message and `fields`). */
+export class WeatherFieldMissingError extends WeatherRangeError {}
+/** The instant falls between two readings further apart than the series' cadence: no reading was taken there. */
+export class WeatherHoleError extends WeatherRangeError {}
+
+/** ⛔ Throws a WeatherFieldMissingError naming every one of `fields` the reading `r` lacks; else returns `r`. */
+export function needFields(r, fields, who) {
+  const lacking = fields.filter((f) => r?.[f] == null)
+  if (lacking.length) {
+    const when = r?.time instanceof Date ? r.time.toISOString() : 'this instant'
+    const e = new WeatherFieldMissingError(`[${who}] ${when}'s reading lacks ${lacking.join(', ')}${r?.source === 'observed' ? ` (observed at ${r.station?.id}, which does not report it)` : ''}`)
+    e.fields = lacking
+    throw e
+  }
+  return r
+}
 
 /** The weather at instant `t` (a Date): the current reading when `live`, else the forecast's. */
 export function weatherAt(t, { live, now, hourly }) {
@@ -39,6 +62,8 @@ export function weatherAt(t, { live, now, hourly }) {
 /** The hourly forecast at `t`. Throws a WeatherRangeError outside it. */
 export function forecastAt(t, hourly) {
   if (!(t instanceof Date) || !Number.isFinite(t.getTime())) throw new Error(`[weatherAt] ⛔ not an instant: ${t}`)
+  // ⛔ Empty FIRST: a standing preset sets an empty, unstamped series (WeatherPoller), and that is a range refusal
+  // the readers hold and say — never the cadence's throw, which they would rethrow.
   if (!hourly?.length) throw new WeatherRangeError('[weatherAt] ⛔ there is no forecast to read')
   const ms = t.getTime()
   const first = hourly[0].time.getTime(), last = hourly[hourly.length - 1].time.getTime()
@@ -49,6 +74,9 @@ export function forecastAt(t, hourly) {
   while (i < hourly.length - 1 && hourly[i + 1].time.getTime() <= ms) i++
   const b = hourly[i], a = hourly[Math.min(i + 1, hourly.length - 1)]
   if (b === a || b.time.getTime() === ms) return pick(b)
+  if (a.time - b.time > cadence(hourly)) {
+    throw new WeatherHoleError(`[weatherAt] ⛔ ${t.toISOString()} falls in a hole in the series (${b.time.toISOString()} … ${a.time.toISOString()}): no reading was taken there`)
+  }
   const t0 = b.time.getTime(), span = a.time.getTime() - t0, k = (ms - t0) / span
   const out = { time: t }
   for (const f of SMOOTH) out[f] = hermite(hourly, f, i, k, span)
@@ -59,6 +87,7 @@ export function forecastAt(t, hourly) {
 function pick(h) {
   const out = { time: h.time }
   for (const f of [...SMOOTH, ...NEAREST]) out[f] = h[f] ?? null
+  if (h.source) { out.source = h.source; out.station = h.station }
   return out
 }
 
@@ -71,16 +100,33 @@ function hermite(hourly, f, i, k, span) {
   return (2 * k3 - 3 * k2 + 1) * y0 + (k3 - 2 * k2 + k) * span * m[i] + (-2 * k3 + 3 * k2) * y1 + (k3 - k2) * span * m[i + 1]
 }
 
+/** The series' own cadence (ms), as its producer stamped it. A longer step is a hole. ⛔ Throws when unstamped. */
+function cadence(hourly) {
+  if (!(hourly.cadence > 0)) throw new Error(`[weatherAt] ⛔ the series carries no cadence (hourly.cadence, ms) — its producer must stamp its step; a hole cannot be told from a step without it`)
+  return hourly.cadence
+}
+
 const _tangents = new WeakMap()   // hourly array → { field → tangents }
 function tangents(hourly, f) {
   let byField = _tangents.get(hourly)
   if (!byField) { byField = {}; _tangents.set(hourly, byField) }
   if (byField[f]) return byField[f]
-  const n = hourly.length, d = []
-  const y = (j) => hourly[j][f] ?? 0
-  for (let j = 0; j < n - 1; j++) d.push((y(j + 1) - y(j)) / (hourly[j + 1].time - hourly[j].time))
-  const m = hourly.map((_, j) => (n < 2 ? 0 : j === 0 ? d[0] : j === n - 1 ? d[n - 2] : d[j - 1] * d[j] <= 0 ? 0 : (d[j - 1] + d[j]) / 2))
+  // A segment with a missing end, or across a hole, has no slope (null), never a slope to 0: a tangent takes only its
+  // known neighbours.
+  const n = hourly.length, d = [], step = cadence(hourly)
+  const y = (j) => hourly[j][f]
   for (let j = 0; j < n - 1; j++) {
+    const span = hourly[j + 1].time - hourly[j].time
+    d.push(y(j) == null || y(j + 1) == null || span > step ? null : (y(j + 1) - y(j)) / span)
+  }
+  const m = hourly.map((_, j) => {
+    const l = j > 0 ? d[j - 1] : null, r = j < n - 1 ? d[j] : null
+    if (l == null) return r ?? 0
+    if (r == null) return l
+    return l * r <= 0 ? 0 : (l + r) / 2
+  })
+  for (let j = 0; j < n - 1; j++) {
+    if (d[j] == null) continue
     if (d[j] === 0) { m[j] = 0; m[j + 1] = 0; continue }
     const a = m[j] / d[j], b = m[j + 1] / d[j], h = a * a + b * b
     if (h > 9) { const s = 3 / Math.sqrt(h); m[j] = s * a * d[j]; m[j + 1] = s * b * d[j] }

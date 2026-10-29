@@ -62,6 +62,7 @@ try {
   const { weatherAt, WeatherRangeError } = await vite.ssrLoadModule('/src/lib/weatherAt.js')
   const H = 3_600_000, t0 = Date.UTC(2026, 9, 4, 12)
   const hourly = [0, 1, 2, 3].map((i) => ({ time: new Date(t0 + i * H), temperatureF: 60 + i * 2, cloudCover: [0, 0, 100, 100][i], weatherCode: [0, 0, 3, 3][i], windDirDeg: 90 * i }))
+  hourly.cadence = H   // the producer's stamp (lib/nws.js)
   const now = { temperatureF: 50, cloudCover: 100, weatherCode: 3 }
   const at = (ms, live) => weatherAt(new Date(ms), { live, now, hourly })
   if (at(t0 + 0.5 * H, true) !== now) fails.push('weatherAt does not return the current reading while the clock is live')

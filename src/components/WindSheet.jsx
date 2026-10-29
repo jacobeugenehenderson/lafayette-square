@@ -23,7 +23,7 @@ import { useEffect, useMemo, useRef, useSyncExternalStore } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { WIND_FIELD, WIND_FIELD_GLSL, windAtAdvect, gustLengths } from '../lib/wind-field.js'
-import { WeatherRangeError } from '../lib/weatherAt.js'
+import { WeatherRangeError, WeatherFieldMissingError } from '../lib/weatherAt.js'
 import { windSheetLayout, windStateOfWeather, windStateOfSpecimen, windSheetUniforms, WIND_SPRING, WIND_DETAIL_DRIFT, _markWindSheetMounted, _publishWindSheetReadout, onWindSheetReadout, getWindSheetOverlay, setWindSheetOverlay, applyWindOverride, _publishLiveWind } from '../lib/windSheet.js'
 import { onSceneStencil } from './sceneStencilState.js'
 import { UNIFORMS as TERRAIN_UNIFORMS, TERRAIN_DECL } from '../utils/terrainShader'
@@ -174,7 +174,7 @@ export default function WindSheet({ extent, wind }) {
       air.current = specimenWind || applyWindOverride(windStateOfWeather(useSkyState.getState(), useTimeOfDay.getState()))
     } catch (e) {
       if (!(e instanceof WeatherRangeError)) throw e
-      if (said.current !== e.message) { said.current = e.message; console.error(`[WindSheet] ⛔ no weather for this time — holding the last wind: ${e.message}`) }
+      if (said.current !== e.message) { said.current = e.message; console.error(`[WindSheet] ⛔ ${e instanceof WeatherFieldMissingError ? '' : 'no weather for this time — '}holding the last wind: ${e.message}`) }
     }
     if (air.current.status !== status.current.weather) {
       status.current.weather = air.current.status
