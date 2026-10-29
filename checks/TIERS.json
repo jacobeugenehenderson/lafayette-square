@@ -1,10 +1,10 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 508,
+  "total": 509,
   "counts": {
     "safe": 360,
     "local-effect": 30,
-    "live": 118
+    "live": 119
   },
   "checks": [
     {
@@ -2731,6 +2731,18 @@
       "tier": "safe",
       "why": [
         "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-the-bake-re-skeletons-a-stale-town.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "writeFileSync",
+        "mkdirSync",
+        "deletes files",
+        "computed import of a temp-dir module, and not every write is shown to stay in its temp dir",
+        "imports cartograph/pourSteps.mjs, which can: writeFileSync, imports cartograph/pour-code.mjs, which can: runs `git` — not a known-local command, runs `git` — not a known-local command"
       ]
     },
     {

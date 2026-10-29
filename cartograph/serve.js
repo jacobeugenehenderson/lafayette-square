@@ -23,7 +23,7 @@ import { pourCodeClosure, pourCodeChanged, geographyReadChanged, contentChanged,
 import { treeBakeInputsForMap, treeLibraryFiles } from './tree-bake-inputs.mjs'
 import { terrainValueReads } from './terrainReads.mjs'
 import { COAST_FILE } from './coastFile.mjs'
-import { pourSteps, stepReads, recordStep, readBakeReads, runPour, groundForReaders } from './pourSteps.mjs'
+import { pourSteps, skeletonStep, runSkeleton, stepReads, recordStep, readBakeReads, runPour, groundForReaders } from './pourSteps.mjs'
 import { readBakeDesign, SEED_STRIPPED_FIELDS } from './lookDesign.mjs'
 import { productionDomainFor, askOperations } from './operations-domain.mjs'
 import { lookIdFor, isDeclaredOnly, planJoin, executeJoin } from './scene-address.mjs'
@@ -332,6 +332,12 @@ function runExtentPour(scene, { cwd, env }) {
   const pour = extentPour(scene)
   return runPour(pour.steps, { scene, mapJson: mapDataPaths(scene).map, lookIds: pour.looks,
     run: (st, onLine) => runShell(st.cmd, { cwd, env, timeout: st.timeout, ...(onLine && { onLine }) }) })
+}
+// the skeleton step outside the Bake (Extent's commit and rollback): the same step, recorded under every Look of the scene
+function runExtentSkeleton(scene, { cwd, env }) {
+  const step = skeletonStep(scene, mapDataPaths(scene))
+  return runSkeleton(step, { scene, mapJson: mapDataPaths(scene).map, lookIds: extentPour(scene).looks,
+    run: (st) => runShell(st.cmd, { cwd, env, timeout: st.timeout }) })
 }
 function mapDataPaths(scene) {
   const raw = mapRawDir(scene)
@@ -2066,8 +2072,9 @@ createServer(async (req, res) => {
         if (!sameJson(rec.geography, geo)) writeFileSync(geoPath, JSON.stringify(rec.geography, null, 2))
         const here = import.meta.dirname
         const env = { ...process.env, CARTOGRAPH_SCENE: scene }
-        // No reproject-raw — the origin didn't move. Still bake the real skeleton (the hard fetch's job) in the frozen frame.
-        await runShell('node skeleton.js', { cwd: here, env, timeout: 120000 })
+        // No reproject-raw — the origin didn't move. Still bake the real skeleton (the hard fetch's job) in the frozen frame,
+        // through the Bake's own skeleton step and recorder, so the next Bake judges it done
+        await runExtentSkeleton(scene, { cwd: here, env })
         _streetLookupCache.delete(scene)
         // The boundary: `boundary` = the 256-gon RENDER DISC derived from `radius` ("how much world do we draw");
         // `polygon` = MEMBERSHIP ("what is IN the neighborhood"), first-class and PRESERVED when none is supplied.
@@ -2135,7 +2142,7 @@ createServer(async (req, res) => {
           const here = import.meta.dirname
           const env = { ...process.env, CARTOGRAPH_SCENE: scene }
           await runShell('node reproject-raw.js', { cwd: here, env, timeout: 60000 })
-          await runShell('node skeleton.js', { cwd: here, env, timeout: 120000 })
+          await runExtentSkeleton(scene, { cwd: here, env })
           _streetLookupCache.delete(scene)
         }
         res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ ok: true, restored }))
@@ -2632,7 +2639,10 @@ createServer(async (req, res) => {
       // recorded run is that step's answer, not a stale slab; missing with no record still runs it.
       // `stage`: the step writes into a stage (`--out-dir=`) and its outputs reach the slab only when it succeeds
       // (slabStage.mjs#stagedSlabStep); `stage.published` is then the names it changed.
-      const runIfDirty = async (label, inputs, outputs, cmd, { judge, absentOk = [], requires = [], stage, ...opts } = {}) => {
+      // `force: false` holds one step out of `?force=1`; `asks`: the step runs only behind the re-pour question (a stale one, not
+      // confirmed, returns { ask: why } for the caller's 428, and a plan lists it `repour: true`). Returns { stale: why } when a plan
+      // lists it.
+      const runIfDirty = async (label, inputs, outputs, cmd, { judge, absentOk = [], requires = [], stage, force: forceThis = force, asks = false, ...opts } = {}) => {
         // ⛔ A REQUIRED INPUT THAT IS MISSING REFUSES THE BAKE, BY NAME (2026-10-28: LS's Bake called 15/15 clean with its grove's
         // atlas absent, because a missing input hashes to null both times and null === null). `requires`: [{ path, why }]. Only the
         // inputs a step cannot run without: an optional one (the coast's water datums, inland) stays an ordinary input.
@@ -2643,7 +2653,7 @@ createServer(async (req, res) => {
           if (P.plan) { P.plan.stale.push({ step: label, blocker: true, why }); return }
           throw new Error(`[bake] ⛔ ${label}: ${why.join(' · ')}`) }
         if (judge === 'mtime') {
-          if (!force && !needsRebuild(inputs, outputs)) { skip(label); return }
+          if (!forceThis && !needsRebuild(inputs, outputs)) { skip(label); return }
           if (P.plan) { P.plan.stale.push({ step: label, why: ['an authoring input is newer than its output'] }); return }
           await runStep(P, label, cmd, opts); ran(label); return
         }
@@ -2651,9 +2661,11 @@ createServer(async (req, res) => {
         const was = bakeReads[`${id}:${label}`], who = `step "${label}"`
         const why = was ? [...contentChanged(was.code, code, who), ...contentChanged(was.data, data, who)] : contentChanged(undefined, [], who)
         const missing = outputs.filter(o => !existsSync(o) && !(was && absentOk.includes(o)))
-        if (!force && !why.length && !missing.length) { skip(label); return }
-        if (P.plan) { P.plan.stale.push({ step: label, why: [...why, ...missing.map(o => `${o.replace(REPO_ROOT + '/', '')} missing`)] }); return }
-        console.log(`[bake] ${label}: ${[...why, ...missing.map(o => `${o.replace(REPO_ROOT + '/', '')} missing`)].slice(0, 5).join(', ')}`)
+        if (!forceThis && !why.length && !missing.length) { skip(label); return }
+        const stale = [...why, ...missing.map(o => `${o.replace(REPO_ROOT + '/', '')} missing`)]
+        if (P.plan) { P.plan.stale.push({ step: label, ...(asks && { repour: true }), why: stale }); return { stale } }
+        if (asks && !repourConfirmed) return { ask: stale }
+        console.log(`[bake] ${label}: ${stale.slice(0, 5).join(', ')}`)
         if (stage) stage.published = await stagedSlabStep({ ...stage, step: (dir) => runStep(P, label, `${cmd} --out-dir="${dir}"`, opts) })
         else await runStep(P, label, cmd, opts)
         // recorded AFTER the run: an input that is also an output (ground-ao's ground.json) is recorded as it left it
@@ -2688,6 +2700,20 @@ createServer(async (req, res) => {
       // ⭐ the pour's three steps, declared ONCE (pourSteps.mjs): the Bake, Extent's re-apply and its first pour all run and record these
       const POUR = Object.fromEntries(pourSteps(bakeScene, bakePaths, RIBBONS, { elevation: bakeDesign.pour?.elevation === true }).map(st => [st.label, st]))
       if (hasOsm) {
+        // ⭐ THE SKELETON BEFORE EVERYTHING (BRIEF-the-bake-re-skeletons-a-stale-town, 2026-10-28): a committed town's skeleton is
+        // re-made when what it is made of changed (its code, the street-class vocabulary included, or raw OSM / the survey), never
+        // on `force` (Extent's Bake forces every step, and its re-apply must not re-skeleton) and never unasked: it renumbers the
+        // network, so it stops at the re-pour question, naming the skeleton, and a GET plan lists it ahead of the pour. Its run
+        // refuses by name before a new skeleton re-keys the operator's authoring (reskeleton.mjs).
+        // not-inputs: overlay.json (the guard: passes or throws, shapes no output) · design.json (the guard, the same) · index.json (the guard reads which Looks are the town's)
+        // not-inputs: geography.json (config.js loads it at import; the skeleton reads only the scene's dirs, no projection) · ribbons.json (scene.js names it; never opened here)
+        POUR.skeleton = skeletonStep(bakeScene, bakePaths)
+        const skel = await runIfDirty('skeleton', POUR.skeleton.inputs, POUR.skeleton.outputs, POUR.skeleton.cmd, { cwd: here, timeout: POUR.skeleton.timeout, force: false, asks: true })
+        if (skel?.ask) {
+          res.writeHead(428, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify({ lookId: id, repour: { scene: bakeScene, files: skel.ask.map(w => `the skeleton (re-made first, then the pour) → ${w}`) } }))
+          return
+        }
         // ⭐ THE COAST BEFORE THE POUR (BRIEF-the-shore-is-one-line step 1; Boz, 2026-10-25). bake-coast traces where the
         // lidar meets high water and writes clean/coast.json, which the mint reads as data (pour-code.mjs#pourDataReads),
         // so a coast that moved re-pours through the confirm below and one that did not re-pours nothing. Its own step,
@@ -2732,7 +2758,9 @@ createServer(async (req, res) => {
         // promote-ribbons writes LS's src/data/ribbons.json; with no record of what it last read it would run, so ask.
         const lsAsks = bakeDesign.pour?.held && !bakeReads[`${id}:promote-ribbons`]
           ? [`${relative(REPO_ROOT, RIBBONS)} → promote-ribbons has no record yet, so this Bake would re-promote ${bakeScene}'s committed ribbons (its pour is held: ${bakeDesign.pour.held})`] : []
-        if (P.plan && (codeNewer.length || lsAsks.length)) P.plan.stale.push({ step: 'pipeline', repour: true, why: [...codeNewer, ...lsAsks] })
+        // a plan cannot know whether the re-made skeleton differs, so a stale skeleton lists the pour after it
+        const afterSkel = skel?.stale ? [`${relative(REPO_ROOT, POUR.skeleton.outputs[0])} → re-made by the skeleton step first; the pour re-runs if it changed`] : []
+        if (P.plan && (codeNewer.length || lsAsks.length || afterSkel.length)) P.plan.stale.push({ step: 'pipeline', repour: true, why: [...codeNewer, ...lsAsks, ...afterSkel] })
         else if ((codeNewer.length || lsAsks.length) && !repourConfirmed) {
           res.writeHead(428, { 'Content-Type': 'application/json' })
           res.end(JSON.stringify({ lookId: id, repour: { scene: bakeScene, files: [...codeNewer, ...lsAsks] } }))
