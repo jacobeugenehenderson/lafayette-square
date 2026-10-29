@@ -228,8 +228,8 @@ let BY_EDGES = false                              // ⛔ the mutant only (setByE
 export const setByEdges = (v) => { BY_EDGES = !!v }
 let NO_TOPOLOGY_GUARD = false                     // ⛔ the mutant only (setNoTopologyGuard)
 export const setNoTopologyGuard = (v) => { NO_TOPOLOGY_GUARD = !!v }
-let SINGLE_BASE = false                           // ⛔ the mutant only (setSingleBase): the eliminated stretch's base as one polygon
-export const setSingleBase = (v) => { SINGLE_BASE = !!v }
+let FOLDED_QUAD = false, NO_FOLD_TRIANGLE = false   // ⛔ the mutants only (setFoldMutant)
+export const setFoldMutant = (m) => { FOLDED_QUAD = m === 'quad'; NO_FOLD_TRIANGLE = m === 'no-triangle' }
 let TRIM_INVERTED = false                          // ⛔ the mutant only (setTrimInverted): the side test inverted
 export const setTrimInverted = (v) => { TRIM_INVERTED = !!v }
 const origin = (p, kind) => { const k = p[0] + ',' + p[1], o = ORIGIN.get(k); ORIGIN.set(k, o && o !== kind ? o + '|' + kind : kind) }
@@ -285,57 +285,26 @@ function offsetPieces(R, d, g, squares, lines = null, stat0 = {}) {
       return { end: P(V[0] + d * (nk[0] - nk[1] * t), V[1] + d * (nk[1] + nk[0] * t)), start: P(V[0] + d * (nj[0] + nj[1] * t), V[1] + d * (nj[1] - nj[0] * t)), cap: true } }
     const qq = d / rr, X = P(V[0] + (nk[0] + nj[0]) * qq, V[1] + (nk[1] + nj[1]) * qq); return { end: X, start: X, cap: false } }
   const vAt = (r) => R[runs[r].s]                                                   // the region vertex where run r starts
-  // ⭐ THE ELIMINATION PASS (Zob, 2026-10-29: the mitred offset's own rule for a swallowed run): a run whose offset length is
-  // ≤ 0 (its far side, start corner → end corner, null or backward along its own line; exact sign arithmetic) is ELIMINATED,
-  // its two neighbours re-cornered at Y = L_k(d) ∩ L_r(d), computed once; REPEATED until none is negative (a cascade)
-  const nx = runs.map((_, q) => (q + 1) % m), pv = runs.map((_, q) => (q - 1 + m) % m), alive = new Array(m).fill(true)
-  const C = new Array(m)                                                              // C[k]: the corner between alive k and nx[k]
-  for (let k = 0; k < m; k++) C[k] = cornerOf(k, nx[k], vAt(nx[k]))
-  const negative = (q) => { const s0 = C[pv[q]].start, e0 = C[q].end, L = runs[q].line; return (e0.X - s0.X) * (L[1][0] - L[0][0]) + (e0.Y - s0.Y) * (L[1][1] - L[0][1]) <= 0 }
-  let left = m, work = m > 2 ? runs.map((_, q) => q) : []
-  while (work.length) { const q = work.pop(); if (!alive[q] || !negative(q)) continue
-    if (left <= 3) throw new Error(`[offset${d < 0 ? ' (erode)' : ' (dilate)'}] ⛔ ring ${g}: the elimination consumes the ring (the region vanishes at d = ${d / SCALE} m). Refusing.`)
-    { const s0 = C[pv[q]].start, e0 = C[q].end, L = runs[q].line, Ld = Math.hypot(L[1][0] - L[0][0], L[1][1] - L[0][1]); (stat0.elimLen ||= {})[`${g}:${runs[q].s}`] = +(((e0.X - s0.X) * (L[1][0] - L[0][0]) + (e0.Y - s0.Y) * (L[1][1] - L[0][1])) / Ld).toFixed(2) }
-    const k = pv[q], r = nx[q]; alive[q] = false; left--; nx[k] = r; pv[r] = k
-    C[k] = cornerOf(k, r, vAt(r)); if (C[k].conv) stat0.convergingAfterElimination = (stat0.convergingAfterElimination || 0) + 1
-    stat0.eliminated = (stat0.eliminated || 0) + 1; (stat0.eliminations ||= []).push({ ring: g, d: Math.sign(d), run: `${runs[q].s}…${runs[q].e}`, at: [R[runs[q].s].X / SCALE, R[runs[q].s].Y / SCALE], k: runs[k].s, r: runs[r].s, corner: C[k].conv ? 'converging' : C[k].cap ? 'cap' : 'X', Y: [C[k].end.X / SCALE, C[k].end.Y / SCALE] }); work.push(k, r) }
-  // the pieces: each surviving run's quad between its final corners; each corner's cap triangle; each eliminated stretch ONE base
-  // piece through its source vertices and the new corner(s), its two sides born and interior ({ base: true }: emit refuses one)
-  for (let k = 0; k < m; k++) { if (!alive[k]) continue
-    const r = nx[k], c = C[k]
-    if (c.cap) { if (squares) squares.push([vAt(r).X, vAt(r).Y]); pieces.push(ccw([{ X: vAt(r).X, Y: vAt(r).Y, tag: BORN }, { ...c.end, tag: BORN }, { ...c.start, tag: BORN }])) }
-    if (r !== (k + 1) % m) {
-      // ⭐ THE BASE OF AN ELIMINATED STRETCH COVERS, AND NEVER FOLDS (Zob, 2026-10-29): built by the corner class, from pieces
-      // that cannot self-cross; every edge tagged base (interior; emit refuses one at the boundary)
-      const st = []; for (let q = (k + 1) % m; q !== r; q = (q + 1) % m) { for (let i2 = runs[q].s; ; i2 = (i2 + 1) % n) { st.push(R[i2]); if (i2 === runs[q].e) break } }
-      st.push(vAt(r))
-      const cls = c.conv ? 'converging' : c.cap ? 'cap' : 'X', who2 = `${runs[k].s}→${runs[r].s}`
-      const B = (pp) => pieces.push(ccw(pp.map(q => ({ X: q.X, Y: q.Y, tag: { base: true, cls, stretch: who2, stLen: st.length } }))))
-      // the half-plane test: q lies on R's side of the line L shifted by d along its normal n (the side holding L itself).
-      // ⚠ In doubles, not BigInt: L(d) is offset by a non-integer d along a unit normal (a square root), and is intermediate
-      const inside = (q, L, nn) => ((q.X - L[0][0]) * nn[0] + (q.Y - L[0][1]) * nn[1] - d) * -Math.sign(d) >= -1e-9
-      const outsideAt = (planes) => st.find(q => !planes.every(([L, nn]) => inside(q, L, nn)))
-      const where = (q) => `(${(q.X / SCALE).toFixed(3)}, ${(q.Y / SCALE).toFixed(3)})`
-      if (SINGLE_BASE) { const base = st.map(q => ({ X: q.X, Y: q.Y, tag: { base: true } })); if (c.start.X !== c.end.X || c.start.Y !== c.end.Y) base.push({ ...c.start, tag: { base: true } }); base.push({ ...c.end, tag: { base: true } }); pieces.push(ccw(base)) }   // ⛔ the mutant only
-      else if (c.conv) {                                                                 // CONVERGING: the eliminated runs' own plain rectangles
-        for (let q = (k + 1) % m; q !== r; q = (q + 1) % m) { const a = R[runs[q].s], b = R[(runs[q].e + 1) % n], nn = N[q]
-          B([a, b, P(b.X + nn[0] * d, b.Y + nn[1] * d), P(a.X + nn[0] * d, a.Y + nn[1] * d)]) }
-        stat0.baseRects = (stat0.baseRects || 0) + 1 }
-      else if (c.cap) {                                                                  // CAP: a fan from C_a, under three half-planes
-        const Ca = c.end, Cb = c.start, capN = (() => { const u = unit([Ca.X, Ca.Y], [Cb.X, Cb.Y]), v0 = vAt(r); return ((v0.X - Ca.X) * u[0] + (v0.Y - Ca.Y) * u[1] - 0) <= 0 ? u : [-u[0], -u[1]] })()
-        const off = outsideAt([[runs[k].line, N[k]], [runs[r].line, N[r]]])
-        if (off) throw new Error(`[offset${d < 0 ? ' (erode)' : ' (dilate)'}] ⛔ ring ${g}: the eliminated stretch between runs ${runs[k].s} and ${runs[r].s} (corner cap) reaches past its envelope at ${where(off)}. Refusing.`)
-        for (let z = 0; z + 1 < st.length; z++) B([Ca, st[z], st[z + 1]]); B([Ca, st[st.length - 1], Cb]); void capN
-        stat0.baseFans = (stat0.baseFans || 0) + 1 }
-      else {                                                                             // DIVERGING: a fan from Y, under two half-planes
-        const Y = c.end, off = outsideAt([[runs[k].line, N[k]], [runs[r].line, N[r]]])
-        if (off) throw new Error(`[offset${d < 0 ? ' (erode)' : ' (dilate)'}] ⛔ ring ${g}: the eliminated stretch between runs ${runs[k].s} and ${runs[r].s} (corner X) reaches past its envelope at ${where(off)}. Refusing.`)
-        for (let z = 0; z + 1 < st.length; z++) B([Y, st[z], st[z + 1]])
-        stat0.baseFans = (stat0.baseFans || 0) + 1 } }
-    const s0 = C[pv[k]].start, e0 = c.end, a = R[runs[k].s], b = vAt(r === (k + 1) % m ? r : (k + 1) % m), L = runs[k].line
-    const along = (e0.X - s0.X) * (L[1][0] - L[0][0]) + (e0.Y - s0.Y) * (L[1][1] - L[0][1])
-    if (along < 0) throw new Error(`[offset${d < 0 ? ' (erode)' : ' (dilate)'}] ⛔ ring ${g} run ${runs[k].s}…${runs[k].e}: still backward after the elimination. Refusing.`)
-    pieces.push(ccw([{ X: a.X, Y: a.Y, tag: NEAR }, { X: b.X, Y: b.Y, tag: BORN }, { ...e0, tag: { ring: g, i: runs[k].s } }, { ...s0, tag: BORN }])) }
+  // ⭐ EVERY PIECE IS LOCAL (Zob, 2026-10-29; the elimination pass, Y, the fan and the base polygon are withdrawn): the dilation is
+  // the union of EVERY run's strip and EVERY diverging join's wedge, so a run between converging neighbours can be outermost and
+  // nothing is swallowed by construction. Corners per ruling (d), computed once; C[k] the corner between run k and the next
+  const C = runs.map((_, k) => cornerOf(k, (k + 1) % m, vAt((k + 1) % m)))
+  for (let k = 0; k < m; k++) { const c = C[k], r = (k + 1) % m
+    if (c.cap) { if (squares) squares.push([vAt(r).X, vAt(r).Y]); pieces.push(ccw([{ X: vAt(r).X, Y: vAt(r).Y, tag: BORN }, { ...c.end, tag: BORN }, { ...c.start, tag: BORN }])) } }
+  for (let q = 0; q < m; q++) { const k = (q - 1 + m) % m, a = vAt(q), b = vAt((q + 1) % m), L = runs[q].line, nn = N[q]
+    if (a.X === b.X && a.Y === b.Y && m > 1) continue
+    const s0 = C[k].start, e0 = C[q].end, along = (e0.X - s0.X) * (L[1][0] - L[0][0]) + (e0.Y - s0.Y) * (L[1][1] - L[0][1])
+    const lineTag = { ring: g, i: runs[q].s }
+    if (along > 0) { pieces.push(ccw([{ X: a.X, Y: a.Y, tag: NEAR }, { X: b.X, Y: b.Y, tag: BORN }, { ...e0, tag: lineTag }, { ...s0, tag: BORN }])); continue }
+    if (along <= 0 && FOLDED_QUAD) { pieces.push(ccw([{ X: a.X, Y: a.Y, tag: NEAR }, { X: b.X, Y: b.Y, tag: BORN }, { ...e0, tag: lineTag }, { ...s0, tag: BORN }])); continue }   // ⛔ the mutant only
+    // a run whose far side would fold: its PLAIN RECTANGLE, plus at each DIVERGING end the triangle [v, X, R] (X the end's shared
+    // join point, the same integer point the neighbour's quad ends at; R this run's rectangle corner at v). With the
+    // neighbour's quad half [v, R_prev, X] it covers the true wedge [v, R_prev, X, R_next]; a converging end needs nothing
+    const Ra = P(a.X + nn[0] * d, a.Y + nn[1] * d), Rb = P(b.X + nn[0] * d, b.Y + nn[1] * d)
+    pieces.push(ccw([{ X: a.X, Y: a.Y, tag: NEAR }, { X: b.X, Y: b.Y, tag: BORN }, { ...Rb, tag: lineTag }, { ...Ra, tag: BORN }]))
+    if (!C[k].conv && !NO_FOLD_TRIANGLE) pieces.push(ccw([{ X: a.X, Y: a.Y, tag: BORN }, { ...s0, tag: lineTag }, { ...Ra, tag: BORN }]))
+    if (!C[q].conv && !NO_FOLD_TRIANGLE) pieces.push(ccw([{ X: b.X, Y: b.Y, tag: BORN }, { ...Rb, tag: lineTag }, { ...e0, tag: BORN }]))
+    stat0.folded = (stat0.folded || 0) + 1 }
   // ⭐ A BORN LINE IS ITS TWO BIRTH POINTS (Zob, 2026-10-29), the whole strip end or cap edge: never a noded fragment of it,
   // whose two rounded points a unit apart would quantise its direction to the lattice's axes (the decks' axis-aligned box)
   for (const pp of pieces) pp.forEach((q, k) => { if (q.tag === BORN) { const w = pp[(k + 1) % pp.length]; q.tag = { born: [[q.X, q.Y], [w.X, w.Y]] } } })
@@ -360,8 +329,7 @@ export function morph(region, d, who, stat, lines = null) {
   const OUT = F.rings.map((E, k) => emit(E, F.tags[k], region, d, who, stat, lines))
   if (process.env.CUTONCE_TRACE_AT) { const [tx, ty] = process.env.CUTONCE_TRACE_AT.split(',').map(v => +v * SCALE)
     OUT.forEach((E, k) => E.forEach((q, e) => { const r2 = E[(e + 1) % E.length]; if (Math.hypot(q.X - tx, q.Y - ty) > 2000) return
-      console.log(`TRACE-OUT ${who} ring ${k} v${e} (${q.X},${q.Y})→(${r2.X},${r2.Y}) line ${JSON.stringify(q.tag)}`) }))
-    for (const el of stat.eliminations || []) if (Math.hypot(el.at[0] * SCALE - tx, el.at[1] * SCALE - ty) < 5000) console.log('TRACE-ELIM', JSON.stringify(el)) }
+      console.log(`TRACE-OUT ${who} ring ${k} v${e} (${q.X},${q.Y})→(${r2.X},${r2.Y}) line ${JSON.stringify(q.tag)}`) })) }
   if (process.env.CUTONCE_LOST) console.log(`LOST ${who}: ${stat.lostTags || 0} edge(s) with no tag ${JSON.stringify(stat.lostAt || [])} · near sides out ${stat.nearOut || 0}`)
   return OUT
 }
