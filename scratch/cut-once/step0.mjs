@@ -32,10 +32,10 @@ const topo = (pp) => ({ outers: pp.filter(p => Clipper.Area(p) > 0).length, hole
 // ── step 1: one ring's raw offset curve at `d`, each point carrying `tag`: the source edge its OUTGOING raw edge offsets
 // (null for a join's own edges). ClipperOffset's rules, verbatim in effect (clipper.js OffsetPoint, DoMiter, DoSquare).
 const miterLim = 0.5                     // clipper's own constant for MiterLimit 2 (2 / MiterLimit², floored at 0.5): parity ONLY
-function rawOffset(ring, d, ringId) {
+function rawOffset(ring, d, ringId, round = true) {
   const n = ring.length, N = []
   for (let j = 0; j < n; j++) { const a = ring[j], b = ring[(j + 1) % n], dx = b.X - a.X, dy = b.Y - a.Y, f = 1 / Math.hypot(dx, dy); N.push([dy * f, -dx * f]) }
-  const out = [], R = (v) => Math.round(v), put = (x, y, tag) => out.push({ X: R(x), Y: R(y), tag })
+  const out = [], R = (v) => (round ? Math.round(v) : v), put = (x, y, tag) => out.push({ X: R(x), Y: R(y), tag })
   for (let j = 0; j < n; j++) { const k = (j - 1 + n) % n, p = ring[j], nk = N[k], nj = N[j]
     let sinA = nk[0] * nj[1] - nj[0] * nk[1]; const cosA = nk[0] * nj[0] + nk[1] * nj[1]
     const edge = { ring: ringId, i: j }                                    // the raw edge leaving this vertex's LAST point offsets source edge j
@@ -101,6 +101,17 @@ function resolveFaces(rawRings) {
     if (!r.ok && refused.length < 8) { const a = F.rings[ri][e], b = F.rings[ri][(e + 1) % F.rings[ri].length]; refused.push({ ...r, segment: [[a.X / SCALE, a.Y / SCALE], [b.X / SCALE, b.Y / SCALE]] }) } }))
   const adjacent = kinds, other = refused, cutsOut = cuts
   const tagged = F.tags.flat().filter(t => t != null && (!Array.isArray(t) || t.length)).length
+  // --dump-at=x,y (metres; Zob's ask on the deck's cross-ring segment): the eroded ring through it ±6 tags, the noded segments
+  // there arriving in OPPOSITE directions from different source rings (multiplicities that cancel), and the neck from the
+  // UNROUNDED offset lines
+  const dumpAt = arg('dump-at')?.split(',').map(Number)
+  if (dumpAt) { const P0 = dumpAt.map(v => v * SCALE), near = (q) => Math.hypot(q.X - P0[0], q.Y - P0[1]) < 20
+    F.rings.forEach((r, ri) => r.forEach((q, e) => { if (!near(q)) return
+      const L = r.length, around = []; for (let k = -6; k <= 6; k++) { const j = (e + k + L) % L; around.push({ k, at: [r[j].X / SCALE, r[j].Y / SCALE], tags: F.tags[ri][j] }) }
+      console.log('DUMP eroded ring', ri, 'of', L, 'edges; vertex', e, JSON.stringify(around)) }))
+    const byKey = new Map(); for (const ed of edges) { const ka = ed.a.join(','), kb = ed.b.join(','), k = ka < kb ? ka + '|' + kb : kb + '|' + ka
+      if (Math.hypot(ed.a[0] - P0[0], ed.a[1] - P0[1]) > 50) continue; (byKey.get(k) || byKey.set(k, []).get(k)).push({ dir: ka < kb ? 1 : -1, src: ed.tag?.ring, tag: ed.tag }) }
+    for (const [k, l] of byKey) if (l.length > 1) console.log('DUMP merged segment', k, JSON.stringify(l), new Set(l.map(x => x.dir)).size > 1 && new Set(l.map(x => x.src)).size > 1 ? '⇐ CANCELLING, different source rings' : '') }
   return { out, nodeMs, unionMs, crossings: R.crossings, newV, mapped, unmapped, rawEdges: edges.length, nodedVerts: verts.size, outVerts: outV.size, newAt: [], nodedSegs: [], tagged, nullTags: F.tags.flat().length - tagged, multi, adjacent, other, cuts: cutsOut }
 }
 
@@ -111,6 +122,12 @@ const srcLen = (g) => SRC[g].length
 for (const part of P) { part.forEach((ring) => { SRC.push(ring); raw.push(rawOffset(ring, -h, SRC.length - 1)) })
   const co = new ClipperOffset(), o = new Paths(); co.AddPaths(part, JoinType.jtMiter, EndType.etClosedPolygon); co.Execute(o, -h); ref.push(...o) }
 const r = engine === 'faces' ? resolveFaces(raw) : resolve(raw, PolyFillType.pftPositive)
+if (arg('dump-at')) { const P0 = arg('dump-at').split(',').map(v => +v * SCALE), ids = (arg('dump-rings') || '4,5').split(',').map(Number)
+  const U = ids.map(g => rawOffset(SRC[g], -h, g, false)), sd = (p, a, b) => { const dx = b.X - a.X, dy = b.Y - a.Y, L2 = dx * dx + dy * dy, t = Math.max(0, Math.min(1, ((p.X - a.X) * dx + (p.Y - a.Y) * dy) / L2)); return Math.hypot(p.X - a.X - t * dx, p.Y - a.Y - t * dy) }
+  let best = { d: Infinity }
+  for (const [A, B] of [[U[0], U[1]], [U[1], U[0]]]) for (const p of A) { if (Math.hypot(p.X - P0[0], p.Y - P0[1]) > 5000) continue
+    for (let i = 0; i < B.length; i++) { const d = sd(p, B[i], B[(i + 1) % B.length]); if (d < best.d) best = { d, at: [p.X / SCALE, p.Y / SCALE] } } }
+  console.log('DUMP neck from the UNROUNDED offset lines of rings', ids.join(' & '), JSON.stringify({ neckU: +best.d.toFixed(4), at: best.at })) }
 const x = new Clipper(), xo = new Paths(); x.AddPaths(r.out, PolyType.ptSubject, true); x.AddPaths(ref, PolyType.ptClip, true); x.Execute(ClipType.ctXor, xo, PolyFillType.pftNonZero, PolyFillType.pftNonZero)
 console.log(JSON.stringify({ fixture: name, engine, preserveCollinear: engine === 'faces' ? null : keep, tagged: r.tagged, nullTags: r.nullTags, multiTag: { edges: r.multi, adjacent: r.adjacent, other: r.other, cuts: r.cuts }, parts: P.length, rawEdges: r.rawEdges, nodeMs: r.nodeMs, unionMs: r.unionMs, crossings: r.crossings,
   a: { newAt: r.newAt.map(([X, Y]) => { let best = null; for (const k of r.nodedSegs) { const [u, w] = k.split('>').map(q => q.split(',').map(Number)), dx = w[0] - u[0], dy = w[1] - u[1], L2 = dx * dx + dy * dy, t = Math.max(0, Math.min(1, ((X - u[0]) * dx + (Y - u[1]) * dy) / L2)), d = Math.hypot(X - u[0] - t * dx, Y - u[1] - t * dy); if (!best || d < best.d) best = { d: +d.toFixed(3), seg: k, t: +t.toFixed(4) } } return { at: [X / SCALE, Y / SCALE], nearest: best } }), nodedVertices: r.nodedVerts, outputVertices: r.outVerts, newVertices: r.newV, edgesMapped: r.mapped, edgesUnmapped: r.unmapped },
