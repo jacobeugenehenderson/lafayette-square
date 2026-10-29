@@ -8609,14 +8609,14 @@
       "kind": "ruling",
       "value": {
         "capture": "a share image is exactly what is on screen: the operator poses the camera and sets up the shot in Stage, in ANY camera or view, and captures it",
-        "focus": "wherever the camera is (playing, paused, orbited, scrubbed, any shot), the depth of field focuses the focus OBJECT (the keyframe's object in effect at the playhead, else the town's hero), never the camera's aim or orbit pivot",
-        "unchanged": "Browse draws no depth of field (its own ruling)"
+        "focus": "in Hero (playing, paused, orbited, scrubbed), the depth of field focuses the focus OBJECT (the keyframe's object in effect at the playhead, else the town's hero), never the camera's aim or orbit pivot",
+        "unchanged": "Street focuses where the camera is pointing (Jacob, 2026-10-28: \"Street stays where the camera is pointing\"); Browse draws no depth of field"
       },
       "by": "Jacob",
       "date": "2026-10-28",
-      "quote": "\"[outside the movie, the depth of field takes the aim] … nonsensical and dumb and obviously not the intent\" · \"the share image images should look like what's on screen; that's why it's in the Stage so the operator can pose the camera and set up the shot\" · \"I don't think it's Hero: I think it's Stage. Any time I see a setup I like I can capture it as the share screen. That could be in any camera or view\"",
+      "quote": "\"[outside the movie, the depth of field takes the aim] … nonsensical and dumb and obviously not the intent\" · \"the share image images should look like what's on screen; that's why it's in the Stage so the operator can pose the camera and set up the shot\" · \"I don't think it's Hero: I think it's Stage. Any time I see a setup I like I can capture it as the share screen. That could be in any camera or view\" · \"And yes, Street stays where the camera is pointing\"",
       "canon": "cartograph/OPERATIONS.md (Hero shot · Focus; Image · Focus (DoF); Share image)",
-      "notes": "Today MovieCamera publishes movieFocus only while the movie plays or is held on the path; otherwise usePostFxDriver focuses the controls target and drops heroRect and the hero ladder, and OPERATIONS says Street uses the aim. Both go. Capture refusing while the Hero shot plays is to be re-read against this ruling."
+      "notes": "Today MovieCamera publishes movieFocus only while the movie plays or is held on the path; otherwise usePostFxDriver focuses the controls target and drops heroRect and the hero ladder. That fallback goes for Hero; Street keeps the aim by ruling. Capture refusing while the Hero shot plays is to be re-read against this ruling."
     }
   ]
 }
