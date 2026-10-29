@@ -60,6 +60,10 @@ revetment.json — manifest names no revetment.json"). The release order said pl
 by name when the player staging names was built on an older kit than the slab's bake (claims-no-slab-outlives-its-schema's family).
 Re-promoted by Jacob the same night on the new player (Ward 25ee07f / kit 19bb2d25).
 
+**Follow-ups from the day-strip line (Isotherm, 2026-10-28; Ward's board):** theward checks/kit.mjs resolves KIT relative to the checkout
+(breaks in worktrees) · observed wind for storminess · a cited cloudLayers → cover standard (Jacob's terms) · targetsOf's
+precipitation/wind/visibility defaults (Layer 0 fallbacks) · claims-the-wind-has-one-authority unrun (needs a server).
+
 **⛔ NAMED DEBTS (each removed when its cure lands, never left as a quiet fork):**
 - `structures.mjs#openCloseAtStep`'s two behaviours: the traced water keeps the integer open/close (`cutOnce: false`) until its
   cut-once crossings are understood or float morphology lands (Huron (-4820.8, -3834.5): the cut/fill made one ring through one vertex
