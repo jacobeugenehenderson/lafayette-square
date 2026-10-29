@@ -50,13 +50,15 @@ export const DOF_BLUR_GLSL = /* glsl */`
   // Blur by RELATIVE distance from the focus, in front and behind, measured ALONG THE GROUND: a tilt-shift's tilted
   // plane of focus. Height drops out, so a vertical subject (the monument) is one sharpness top to bottom — measured
   // along the line of sight, a narrow window cut across the shaft in a visible line (Jacob, 2026-09-27).
-  float blurAmount(float dist, vec2 uv) {
-    vec3 p = vec3((uv * 2.0 - 1.0) * uTanHalf * dist, -dist);   // view space; dist is view depth
-    float ground = length(p - dot(p, uUpView) * uUpView);
+  float blurAtGround(float ground) {
     float rel = abs(ground - uFocusDist) / max(uFocusDist, 1.0);
     // Softness at focus never exceeds Blur: at Blur 0 the effect is OFF, and the plane is never softer than the
     // field around it (it was — the picked subject blurred while the rest stayed sharp, 2026-09-27).
     return mix(min(uHeroBlur, uMaxBlur), uMaxBlur, smoothstep(uZone, uZone + uRamp, rel));
+  }
+  float blurAmount(float dist, vec2 uv) {
+    vec3 p = vec3((uv * 2.0 - 1.0) * uTanHalf * dist, -dist);   // view space; dist is view depth
+    return blurAtGround(length(p - dot(p, uUpView) * uUpView));
   }
 `
 
@@ -166,6 +168,9 @@ export const _dofRefs = {
   near:       { current: 1 },
   far:        { current: 60000 },
   heroRect:   { current: null },   // the hero's box on screen (uv x0,y0,x1,y1), or null
+  heroMeshes: { current: null },   // what draws the hero: [{ mesh, start, count }] (focusObject.js#focusMeshes), or null
+  heroNear:   { current: 0 },      // m — the view depth of the hero box's nearest corner
+  heroGround: { current: 0 },      // m — the hero's focal distance (its box centre, along the ground)
   focusDist:  { current: 1000 },
   tanHalf:    { current: new THREE.Vector2(0.2, 0.2) },
   upView:     { current: new THREE.Vector3(0, 1, 0) },

@@ -46,12 +46,16 @@ if (typeof window !== 'undefined') window.__dof = _inspect
 const _aim = new THREE.Vector3()
 const _boxC = new THREE.Vector3()
 const _corner = new THREE.Vector3()
-/** The hero's box on screen, uv (x0, y0, x1, y1), or null when there is no box or it is behind the camera. */
+/** The hero's box on screen, uv (x0, y0, x1, y1), or null when there is no box or it is behind the camera. Sets
+ *  `_heroNear`, the view depth of the box's nearest corner (what is nearer than it, at a pixel, stands in front). */
+let _heroNear = 0
 function heroRectOnScreen(box, camera) {
   if (!Array.isArray(box) || box.length !== 6) return null
   let x0 = 1, y0 = 1, x1 = 0, y1 = 0
+  _heroNear = Infinity
   for (let i = 0; i < 8; i++) {
     _corner.set(box[i & 1 ? 3 : 0], box[i & 2 ? 4 : 1], box[i & 4 ? 5 : 2]).applyMatrix4(camera.matrixWorldInverse)
+    _heroNear = Math.min(_heroNear, -_corner.z)
     if (_corner.z > -camera.near) return [0, 0, 1, 1]                       // straddles the camera: take the screen
     _corner.applyMatrix4(camera.projectionMatrix)
     const u = _corner.x * 0.5 + 0.5, v = _corner.y * 0.5 + 0.5
@@ -65,6 +69,8 @@ export function applyDofFrame({ camera, dofChannel, minute, slotMins, focusPoint
   _dofRefs.near.current = camera.near; _dofRefs.far.current = camera.far
   const lam = focus ? Math.min(1, Math.max(0, focus.lam || 0)) : 0
   _dofRefs.heroRect.current = focus ? heroRectOnScreen(lam < 0.5 ? focus.a : focus.b, camera) : null
+  _dofRefs.heroNear.current = _dofRefs.heroRect.current ? _heroNear : 0
+  _dofRefs.heroMeshes.current = _dofRefs.heroRect.current ? (focus.heroMeshes ?? null) : null
   const d = resolveGroupAtMinute(dofChannel, minute, slotMins, DOF_FIELD_KEYS, DOF_FLAT_DEFAULTS)
 
   // Browse (overhead) camera: kill DoF — from above, the scene sits at ~one
@@ -102,6 +108,7 @@ export function applyDofFrame({ camera, dofChannel, minute, slotMins, focusPoint
   const endDist = (box) => (box ? distOf(centreOf(box, _boxC)) : aim ? distOf(aim) : null)
   const dA = focus ? endDist(focus.a) : distOf(aim), dB = focus ? endDist(focus.b) : dA   // both set: checked above
   _dofRefs.focusDist.current = Math.max(1, dA + (dB - dA) * lam)
+  _dofRefs.heroGround.current = lam < 0.5 ? dA : dB
   _inspect.focus = focus; _inspect.dA = dA; _inspect.dB = dB; _inspect.dist = _dofRefs.focusDist.current
   _inspect.heroRect = _dofRefs.heroRect.current
 }

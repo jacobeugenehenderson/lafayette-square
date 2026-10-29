@@ -60,6 +60,45 @@ function namedNode(scene, name) {
   return o || null
 }
 
+// ⭐ WHAT DRAWS a focus object, for the hero ladder's coverage mask (HeroLadder.jsx): the meshes and the index range of
+// each to draw — a set-piece's own meshes whole, a slab building's range of each slab geometry, found by the per-vertex
+// aBuildingId (SlabBuildings.jsx) once per geometry and kept. Drawn with their OWN materials, so the mask sits exactly
+// where the object is drawn (terrain lift included). ⛔ null when nothing can be drawn: never a box, never a guess.
+const _slab = new WeakMap()   // scene → the slab's meshes (those carrying aBuildingId)
+const _spans = new WeakMap()  // geometry → Map(building number → [index start, count] | null)
+function slabMeshes(scene) {
+  let list = _slab.get(scene)
+  if (list && list.length && list.every(m => { let c = m; while (c.parent) c = c.parent; return c === scene })) return list
+  list = []; scene.traverse(o => { if (o.isMesh && o.geometry?.attributes?.aBuildingId && o.geometry.index) list.push(o) })
+  _slab.set(scene, list); return list
+}
+function buildingSpan(geom, num) {
+  let m = _spans.get(geom); if (!m) { m = new Map(); _spans.set(geom, m) }
+  if (m.has(num)) return m.get(num)
+  const ids = geom.attributes.aBuildingId.array, idx = geom.index.array
+  let v0 = -1, v1 = -1
+  for (let v = 0; v < ids.length; v++) if (ids[v] === num) { if (v0 < 0) v0 = v; v1 = v }
+  let span = null
+  if (v0 >= 0) {
+    let i0 = -1, i1 = -1, n = 0
+    for (let i = 0; i < idx.length; i++) if (idx[i] >= v0 && idx[i] <= v1) { if (i0 < 0) i0 = i; i1 = i; n++ }
+    // the slab appends each building's triangles in one run; a building whose run is broken is refused, not approximated
+    if (i0 >= 0 && n === i1 - i0 + 1) span = [i0, n]
+    else if (i0 >= 0) sayOnce(`span:${num}`, `[focus] ⛔ building #${num}'s triangles are not one run of its slab geometry — its coverage mask is not drawn`)
+  }
+  m.set(num, span); return span
+}
+export function focusMeshes(id, { scene, index }) {
+  if (!scene) return null
+  const node = namedNode(scene, `focus:${id}`)
+  if (node) { const out = []; node.traverse(o => { if (o.isMesh) out.push({ mesh: o, start: 0, count: Infinity }) }); return out.length ? out : null }
+  const num = index?.idToNum?.get(id)
+  if (num == null) return null
+  const out = []
+  for (const mesh of slabMeshes(scene)) { const s = buildingSpan(mesh.geometry, num); if (s) out.push({ mesh, start: s[0], count: s[1] }) }
+  return out.length ? out : null
+}
+
 const _b = new THREE.Box3(), _p = new THREE.Vector3()
 /**
  * The world box `[x0, y0, z0, x1, y1, z1]` of the object a (resolved) focus id names, or null — said once.

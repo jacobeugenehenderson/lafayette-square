@@ -35,7 +35,7 @@ import {
 } from '../cartograph/skyLightChannels.js'
 import { revealProgress, markDetail } from '../lib/startupMarks.js'
 import { applyDofFrame } from './dofDriver.js'
-import { movieFocus, resolveFocusId, focusBox } from '../lib/focusObject.js'
+import { movieFocus, resolveFocusId, focusBox, focusMeshes } from '../lib/focusObject.js'
 import useSlabBuildingIndex from '../hooks/useSlabBuildingIndex.js'
 import { terrainExag } from '../utils/terrainShader.js'
 
@@ -187,8 +187,10 @@ export function usePostFxDriver({
       if (movieFocus.on) {
         const ctx = { scene, index: useSlabBuildingIndex.getState().index, exag: terrainExag.value }
         const box = (id) => { const r = resolveFocusId(id, heroSubject); return r ? focusBox(r, ctx) : null }
+        const draws = (id) => { const r = resolveFocusId(id, heroSubject); return r ? focusMeshes(r, ctx) : null }
         const a = box(movieFocus.from), b = movieFocus.to === movieFocus.from ? a : box(movieFocus.to)
-        if (a || b) focus = { a, b, lam: movieFocus.lam }
+        // what draws the end the hero ladder takes out (the nearer one, dofDriver.js)
+        if (a || b) focus = { a, b, lam: movieFocus.lam, heroMeshes: draws(movieFocus.lam < 0.5 ? movieFocus.from : movieFocus.to) }
       }
       applyDofFrame({ camera, dofChannel, minute, slotMins, focusPoint: controls?.target, focus })
     }
