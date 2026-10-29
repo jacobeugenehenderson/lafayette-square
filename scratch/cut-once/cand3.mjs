@@ -421,7 +421,13 @@ function backPieces(F, region, lines, dBack, who, stat) {
   // every tag read; a LINE wins over a born line on a segment both claim (a strip's far side against a neighbour's strip end)
   const Fb = arrange([base, ps], dBack < 0 ? (w => w[0] > 0 && !(w[1] < 0)) : (w => w[0] > 0 || w[1] > 0), `${who} back`, true)
   const pickTag = (t) => { const ts = t == null ? [] : Array.isArray(t) && !isLine(t) ? t : [t]; return ts.find(isLine) || ts.find(x => x?.born) || null }
-  return Fb.rings.map((r, k) => r.map((q, i) => ({ X: q.X, Y: q.Y, tag: pickTag(Fb.tags[k][i]) })))
+  if (process.env.CUTONCE_THIN) { const thin = Fb.rings.filter(r => { const pp = [r.map(q => new IntPoint(q.X, q.Y))]; if (area(r) < 0) pp[0].reverse(); return isRoundingSliver(pp) })
+    console.log(`THIN ${who}: ${thin.length} of ${Fb.rings.length} back-offset ring(s) are rounding slivers (≤ one step wide), ${thin.reduce((t, r) => t + Math.abs(area(r)), 0).toFixed(0)} u² in all; e.g. ${JSON.stringify(thin.slice(0, 3).map(r => ({ n: r.length, a: Math.abs(area(r)), at: [r[0].X, r[0].Y] })))}`) }
+  // EXPERIMENT (CUTONCE_DROP_SLIVER_RINGS=1; not the method until Zob rules): a back-offset output ring that is WHOLLY a rounding
+  // sliver (structures.mjs#isRoundingSliver, the kit's own rule) is the rounding, dropped, COUNTED and NAMED (stat.droppedSlivers)
+  const keepRing = (r) => { if (!process.env.CUTONCE_DROP_SLIVER_RINGS) return true; const pp = [r.map(q => new IntPoint(q.X, q.Y))]; if (area(r) < 0) pp[0].reverse()
+    if (!isRoundingSliver(pp)) return true; (stat.droppedSlivers ||= []).push({ who, n: r.length, u2: Math.abs(area(r)), at: [r[0].X / SCALE, r[0].Y / SCALE] }); return false }
+  return Fb.rings.map((r, k) => ({ r, k })).filter(({ r }) => keepRing(r)).map(({ r, k }) => r.map((q, i) => ({ X: q.X, Y: q.Y, tag: pickTag(Fb.tags[k][i]) })))
 }
 export function morph(region, d, who, stat, lines = null) {
   let F
