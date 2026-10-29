@@ -24,7 +24,8 @@
  * (planPose.js#freeRegion) — while the sky and stars stay full-bleed. No inset = the whole canvas (a host with nothing
  * over it: the LS player, Preview). A DEGENERATE inset (no region left free) is refused by name in the console, with the
  * numbers and the canvas's size, once per value, and the splash draws its sky and stars only, with no mark or title (Ward,
- * 2026-10-28) — ⛔ never re-centred on the full canvas.
+ * 2026-10-28) — ⛔ never re-centred on the full canvas. Before the canvas has a size (its first frame can be 0×0) there is
+ * no verdict: the sky and stars alone, nothing logged, until the first measured size places the mark or refuses.
  *   ▶ node checks/claims-the-splash-centres-in-the-free-region.mjs --mutants
  */
 import { useEffect, useRef, useState } from 'react'
@@ -119,7 +120,7 @@ export default function TownSplash({ title, fadeSeconds, skyAt, identity, viewIn
       {stars > 0 && STARS.map((s, i) => (
         <div key={i} style={{ position: 'absolute', zIndex: 1, left: s.left, top: s.top, width: s.size, height: s.size, borderRadius: '9999px', background: '#fff', opacity: s.opacity * stars }} />
       ))}
-      {/* The centring box: the free region, padded in by the inset (planPose.js#freeRegion). Unmeasured or refused: none. */}
+      {/* The centring box: the free region, padded in by the inset (planPose.js#freeRegion). Unsized (null) or refused: none. */}
       {region && !region.why ? <div data-town-splash="region" style={{
         position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
         paddingTop: region.top, paddingRight: region.right, paddingBottom: region.bottom, paddingLeft: region.left, boxSizing: 'border-box',

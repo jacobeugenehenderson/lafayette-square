@@ -12,8 +12,11 @@ export function planAltitude(radius, { fov, pad, W, H, inset }) {
 }
 /** The region the app's UI leaves free, as the padding that bounds it: the inset itself, or `{ why }` when there is no
  *  region (top + bottom ≥ H, or left + right ≥ W) — the host measured its UI wrong, and a caller says so by name. The
- *  splash (TownSplash) centres in it, as the plan does through insetOffset. */
+ *  splash (TownSplash) centres in it, as the plan does through insetOffset. A canvas with no size yet (0×0: not laid
+ *  out) is no verdict: null, the region not yet known — never a refusal (staging, 2026-10-28: every cold load refused
+ *  "108,0,0,440 … of the 0×0 canvas", then drew the mark correctly a frame later). */
 export function freeRegion(inset, W, H) {
+  if (!(W > 0 && H > 0)) return null
   const i = { top: 0, right: 0, bottom: 0, left: 0, ...(inset || {}) }
   if (i.top + i.bottom >= H || i.left + i.right >= W) {
     return { why: `viewInset ${i.top},${i.right},${i.bottom},${i.left} (top,right,bottom,left) leaves no region of the ${W}×${H} canvas free` }

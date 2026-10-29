@@ -9,7 +9,8 @@
  *
  * Reads the source, never restates it:
  *   1. freeRegion (planPose.js), run: no inset → the whole canvas; an inset → that padding; top + bottom ≥ H or
- *      left + right ≥ W → `{ why }` naming the four numbers and the canvas size.
+ *      left + right ≥ W → `{ why }` naming the four numbers and the canvas size; a canvas with no size yet (0×0) → null,
+ *      no verdict, never a refusal (staging, 2026-10-28: a false refusal on every cold load).
  *   2. TownSplash.jsx: takes `viewInset`, asks freeRegion with it against its own box, pads its centring box by the
  *      region, draws the mark and title only inside that box and only when the region exists, and console.errors a
  *      refusal carrying the `why` (Ward, 2026-10-28: a refused inset draws the sky and stars only).
@@ -19,7 +20,8 @@
  *
  * ⭐ MUTANTS (--mutants), each must go RED: (a) the splash asks freeRegion without the inset · (b) freeRegion's guard
  * removed, so a degenerate inset (top + bottom > H) is padded silently · (c) the refusal's console.error removed · (d) the
- * mark and title drawn on a refused region · (e) Town stops passing viewInset.
+ * mark and title drawn on a refused region · (e) Town stops passing viewInset · (f) the 0×0 canvas judged, so a real inset
+ * on an unsized canvas is refused.
  *   node checks/claims-the-splash-centres-in-the-free-region.mjs [--mutants]
  */
 import { readFileSync, writeFileSync, mkdtempSync, rmSync } from 'node:fs'
@@ -47,6 +49,10 @@ async function judgePose(src) {
       if (!r?.why) why.push(`a degenerate inset ${JSON.stringify(inset)} on ${W}×${H} is not refused`)
       else if (!r.why.includes(`${W}×${H}`) || !Object.values(inset).every((v) => r.why.includes(String(v)))) why.push(`the refusal of ${JSON.stringify(inset)} does not carry its numbers and the canvas size: "${r.why}"`)
     }
+    for (const [W, H] of [[0, 0], [1288, 0], [0, 926]]) {
+      const r = freeRegion({ top: 108, right: 0, bottom: 0, left: 440 }, W, H)
+      if (r !== null) why.push(`a real inset on an unsized ${W}×${H} canvas is ${r?.why ? `refused ("${r.why}")` : 'given a region'} — it must be null, no verdict`)
+    }
     return why
   } finally { rmSync(dir, { recursive: true, force: true }) }
 }
@@ -73,7 +79,7 @@ const judgeTown = (src) => /<TownSplash [^>]*\bviewInset=\{viewInset\}[^>]*\/>/.
 let bad = 0
 const report = (label, why) => { console.log(`${why.length ? '⛔' : '✅'} ${label}`); for (const w of why) console.log(`      ⛔ ${w}`); if (why.length) bad++ }
 const P = await judgePose(read(POSE)), S = judgeSplash(read(SPLASH)), T = judgeTown(read(TOWN))
-report('1 freeRegion: the inset is the region; an inset leaving none is refused with its numbers', P)
+report('1 freeRegion: the inset is the region; an inset leaving none is refused with its numbers; an unsized canvas is no verdict', P)
 report('2 TownSplash pads its centring box by the region and refuses a degenerate one by name', S)
 report('3 Town passes its viewInset to TownSplash', T)
 
@@ -91,6 +97,8 @@ if (process.argv.includes('--mutants')) {
   verdict('d · the mark and title drawn on a refused region', d !== sp, judgeSplash(d).length > S.length)
   const e = tw.replace(' viewInset={viewInset} />', ' />')
   verdict('e · Town stops passing viewInset', e !== tw, judgeTown(e).length > T.length)
+  const f = po.replace(/\n  if \(!\(W > 0 && H > 0\)\) return null\n/, '\n')
+  verdict('f · the 0×0 canvas judged (a real inset refused on an unsized canvas)', f !== po, (await judgePose(f)).length > P.length)
   for (const r of res) console.log(`   mutant ${r}`)
 }
 console.log(bad ? '\n⛔ RED — the splash does not centre in the free region, or does not refuse an inset that leaves none'
