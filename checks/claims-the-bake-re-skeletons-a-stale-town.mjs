@@ -81,7 +81,8 @@ routeRow(SERVE)
 { const M = SERVE.replace('    const scene = rescopeMatch[1]\n', '    const scene = rescopeMatch[1]\n    await runExtentSkeleton(scene, {})\n')
   routeRow(M === SERVE ? '' : M, 'Extent\'s rescope re-skeletons') }
 { const R = readFileSync(join(ROOT, 'cartograph/reskeleton.mjs'), 'utf8'), g = R.indexOf('authoringReKeys('), w = R.indexOf('writeIfChanged(skPath')
-  row(g > 0 && w > g && /if \(R\.hits\.length\) throw/.test(R), `(3) reskeleton.mjs writes clean/skeleton.json only after the guard, and throws on a hit (${g > 0 && w > g})`) }
+  const next = /const NEXT = `What next: \(a\) restore[^`]*\(b\) re-author/.test(R) && (R.match(/throw new Error\(`[^`]*\$\{NEXT\}`\)/g) || []).length === 2
+  row(g > 0 && w > g && /if \(R\.hits\.length\) throw/.test(R) && next, `(3) reskeleton.mjs writes clean/skeleton.json only after the guard, and throws on a hit (${g > 0 && w > g}) · both refusals say what the operator does next: restore or re-author (${next})`) }
 
 // (4) the guard, on planted skeletons
 const AK_SRC = readFileSync(join(ROOT, 'cartograph/authoredKeys.mjs'), 'utf8')

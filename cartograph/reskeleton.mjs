@@ -24,20 +24,22 @@ const skeleton = (...args) => {
   if (r.status !== 0) throw new Error(`[reskeleton] ⛔ skeleton.js ${args.join(' ')} exited ${r.status}`)
 }
 
+// ⭐ A REFUSAL SAYS WHAT THE OPERATOR DOES NEXT (Boz, 2026-10-28): it explains, not just stops. A rollback runs this too.
+const NEXT = `What next: (a) restore the skeleton and the authoring that match each other (a rollback's snapshot, or git), so the keys name what they were drawn on; or (b) re-author the named keys on the new network (Survey, Section, the corner handles), then Bake again. Moving keys onto the new network automatically is Jacob's call (EXTENT-DESIGN §4.1; r-block-keys-are-minted-once-and-inserted-between, unbuilt).`
 const skPath = join(mapCleanDir(scene), 'skeleton.json'), tmp = mkdtempSync(join(tmpdir(), `reskeleton-${scene}-`))
 try {
   const out = join(tmp, 'skeleton.json')
   skeleton(`--out=${out}`)
   const A = authoringOf(scene)
   if (!existsSync(skPath)) {
-    if (A.ids.size) throw new Error(`[reskeleton] ⛔ ${scene}: ${A.ids.size} authored key(s) and no skeleton on disk to say what they were authored against (${[...A.ids.keys()].slice(0, 6).join(', ')}). Refusing.`)
+    if (A.ids.size) throw new Error(`[reskeleton] ⛔ ${scene}: ${A.ids.size} authored key(s) and no skeleton on disk to say what they were authored against (${[...A.ids.keys()].slice(0, 6).join(', ')}). Refusing. ${NEXT}`)
     console.log(`[reskeleton] ${scene}: the first skeleton, no authoring to keep`)
   } else {
     const R = authoringReKeys(JSON.parse(readFileSync(skPath, 'utf8')), JSON.parse(readFileSync(out, 'utf8')), A, highwayClasses())
     console.log(`[reskeleton] ${scene}: ${A.ids.size} authored key(s) — ${Object.entries(R.tally).map(([k, n]) => `${k} ${n}`).join(' · ') || 'none'}`)
     if (R.highway.length) console.log(`[reskeleton] ${R.highway.length} key(s) on a highway chain, refused in the pour by r-highway-no-authoring: ${R.highway.map(r => `${r.status} ${r.id}`).join(' · ')}`)
     for (const n of A.notJudged) console.log(`[reskeleton] ⚠️ not judged at the skeleton: ${n}`)
-    if (R.hits.length) throw new Error(`[reskeleton] ⛔ ${scene}: the new skeleton would re-key ${R.hits.length} of the operator's authored key(s), so clean/skeleton.json is left as it was: ${R.hits.join(' ‖ ')}. The key's migration is Jacob's (EXTENT-DESIGN §4.1).`)
+    if (R.hits.length) throw new Error(`[reskeleton] ⛔ ${scene}: the new skeleton would re-key ${R.hits.length} of the operator's authored key(s), so clean/skeleton.json is left as it was: ${R.hits.join(' ‖ ')}. ${NEXT}`)
   }
   const wrote = writeIfChanged(skPath, readFileSync(out), { touch: false })
   console.log(`[reskeleton] → ${skPath}${wrote ? '' : ' [unchanged]'}`)
