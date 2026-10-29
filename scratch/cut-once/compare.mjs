@@ -61,8 +61,11 @@ function changeGate(P, out, h, squares, who) {
   const books = { balance: big(addR) - big(remR) === big(outN) - big(PN), addedMinusRemoved2: String(big(addR) - big(remR)), outMinusP2: String(big(outN) - big(PN)),
     PnodedMinusRawM2: +((Number(big(PN)) / 2 - P.reduce((t, r) => t + C3.area(r), 0)) / SCALE / SCALE).toFixed(6), Pmoves: moved, worstMoveU: +worstMove.toFixed(4), movesWithinBound: worstMove <= NODE_BOUND }
   const added = C3.pieces(addR), removed = C3.pieces(remR)
+  // ⭐ THE BAR (Zob, 2026-10-29): copy = 0 EXACTLY against P AS NODED, the same arrangement as the books: there a noding move
+  // is one segment on both sides, never a copy
+  const oe = ownEdge(PN, outN), vsNoded = { own: oe.own, copy: oe.copy, new: oe.new, copies: oe.copiesAll.slice(0, 12) }
   const rows = [...table(added, 'added'), ...table(removed, 'removed')], bad = rows.filter(r => !r.accounted)
-  return { books, added: added.length, removed: removed.length, addedMm2: +rows.filter(r => r.side === 'added').reduce((t, r) => t + r.mm2, 0).toFixed(1), removedMm2: +rows.filter(r => r.side === 'removed').reduce((t, r) => t + r.mm2, 0).toFixed(1),
+  return { books, vsNoded, added: added.length, removed: removed.length, addedMm2: +rows.filter(r => r.side === 'added').reduce((t, r) => t + r.mm2, 0).toFixed(1), removedMm2: +rows.filter(r => r.side === 'removed').reduce((t, r) => t + r.mm2, 0).toFixed(1),
     byNarrow: rows.filter(r => r.narrow).length, bySquare: rows.filter(r => !r.narrow && r.squared).length, unaccounted: bad.length, unaccountedRows: bad.slice(0, 10), rows: rows.length <= 12 ? rows : undefined }
 }
 const cand = arg('cand') || 'integer'

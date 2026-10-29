@@ -118,17 +118,21 @@ function emit(E, T, SRC, d, who, stat) {
       out.push([Math.round(c[0] + dd * (na[0] - na[1] * tt)), Math.round(c[1] + dd * (na[1] + na[0] * tt))], [Math.round(c[0] + dd * (nb[0] + nb[1] * tt)), Math.round(c[1] + dd * (nb[1] - nb[0] * tt))]); void P
       out.slice(-2).forEach(q => origin(q, 'square')); stat.squared++; (stat.squares ||= []).push(X); continue }
     const X = t.int && u.int ? lineCrossOf({ a: A[0], b: A[1] }, { a: B[0], b: B[1] }, who) : fcross(A, B).map(Math.round)
-    // EXPERIMENT (CUTONCE_OUTSIDE_ARC=1; not the method until Zob rules): a cut join whose point the next boolean trims away (the
-    // open: X outside the region; the close: X inside it) emits the skipped source arc instead, which is what that boolean
-    // returns in exact arithmetic. The side by the local loop (arc then X): P lies LEFT of every ring, so clockwise = outside
-    if (process.env.CUTONCE_OUTSIDE_ARC && t.g != null && u.g === t.g) { const R = SRC[t.g], n = R.length, fwd = (u.i - t.i + n) % n
+    // ⭐ A CUT WHOSE CROSSING THE NEXT BOOLEAN TRIMS EMITS THAT BOOLEAN'S EXACT RESULT: THE REGION'S OWN ARC (Zob's ruling,
+    // 2026-10-29). L_a and L_b are the region's own edge lines: in the open, X = L_a ∩ L_b outside the region is trimmed by ∩P,
+    // which in exact arithmetic follows L_a to a's end, the skipped source arc, then L_b; the close is the mirror (X inside,
+    // unioned away). So the arc is emitted and X never is. The side, exact (BigInt): the local loop arc-then-X wound
+    // clockwise ⇔ X outside (the region lies LEFT of every ring)
+    if (t.g != null && u.g === t.g) { const R = SRC[t.g], n = R.length, fwd = (u.i - t.i + n) % n
       if (fwd > 0 && fwd < n / 2) { const arc = []; for (let j = (t.i + 1) % n; ; j = (j + 1) % n) { arc.push([R[j].X, R[j].Y]); if (j === u.i) break }
-        const loop = [...arc, X]; let a2 = 0; for (let k = 0; k < loop.length; k++) { const p = loop[k], q = loop[(k + 1) % loop.length]; a2 += p[0] * q[1] - q[0] * p[1] }
-        if (d < 0 ? a2 < 0 : a2 > 0) { out.push(...arc); arc.forEach(q => origin(q, 'trimmed-arc')); stat.trimmedArc = (stat.trimmedArc || 0) + 1; continue } } }
+        const loop = [...arc, X]; let a2 = 0n; for (let k = 0; k < loop.length; k++) { const p = loop[k], q = loop[(k + 1) % loop.length]; a2 += BigInt(p[0]) * BigInt(q[1]) - BigInt(q[0]) * BigInt(p[1]) }
+        if (TRIM_INVERTED ? !(d < 0 ? a2 < 0n : a2 > 0n) : (d < 0 ? a2 < 0n : a2 > 0n)) { out.push(...arc); arc.forEach(q => origin(q, 'trimmed-arc')); stat.trimmedArc = (stat.trimmedArc || 0) + 1; continue } } }
     out.push(X); origin(X, t.flt || u.flt ? 'new-line-join' : 'cut-join'); stat.cutJoin++ }
   return out.map(([X, Y]) => ({ X, Y }))
 }
 export const ORIGIN = new Map()
+let TRIM_INVERTED = false                          // ⛔ the mutant only (setTrimInverted): the side test inverted
+export const setTrimInverted = (v) => { TRIM_INVERTED = !!v }
 const origin = (p, kind) => { const k = p[0] + ',' + p[1], o = ORIGIN.get(k); ORIGIN.set(k, o && o !== kind ? o + '|' + kind : kind) }
 const fcross = (A, B) => { const r = [A[1][0] - A[0][0], A[1][1] - A[0][1]], s = [B[1][0] - B[0][0], B[1][1] - B[0][1]], den = r[0] * s[1] - r[1] * s[0]
   if (!den) throw new Error('⛔ the back-offset: a new line parallel to its neighbour. Refusing.')
