@@ -102,6 +102,10 @@ export function nodeAcrossGroups(entries, { bound = NODE_BOUND, maxRounds = 8, w
 // named refusal with the ring's tag and the coordinate, never a cap to raise. ⭐ EXACT AT ANY EXTENT (`crossOf`, below): the
 // predicates in doubles under 2^24 units and in BigInt past it; the crossing POINT in BigInt always, ties half-up. ⛔ No
 // extent bound: two fixed ones refused PTown in turn (2^25 absolute, 50 km out; 2^24 per segment, its 17.7 km frame side).
+// ⭐ `self` (default false; Zob's ruling (1), 2026-10-28, BRIEF-cut-once-in-full-precision): a ring is noded against ITSELF
+// too, each same-ring pair asked of `pairs(ri, ri)`, and verifyNoded reads the same rule. A raw offset curve crosses itself
+// wherever a feature is narrower than twice the offset; a noded self-crossing comes out a self-TOUCH, which the antenna pass
+// keeps. ⛔ Not by dropping the hard same-ring skip: callers pass permissive `pairs` and would start self-noding unasked.
 // `rings` [{ p: [[x, z]…] metres on the lattice, tag }], `pairs(a, b)` (ring indices) → may they cross. Returns per ring
 // [{ p, k, src, edge }] (src = input vertex index, or null for an inserted point on input edge `edge`), plus `.counts`:
 // insertions by "ringTag ← origin" (a crossing's two tags, or a vertex's tag), which the stamp's build log prints summed.
@@ -138,9 +142,22 @@ export const crossOf = (s, t, numberOnly = false) => {
   const [Rx, Ry, Sx, Sy, Ex, Ey] = [rx, ry, sx, sy, ex, ey].map(BigInt)
   let D = Rx * Sy - Ry * Sx, T = Ex * Sy - Ey * Sx
   if (!(numberOnly || small(rx, ry, sx, sy, ex, ey))) { if (!D || !inside(T, D, 0n) || !inside(Ex * Ry - Ey * Rx, D, 0n)) return null }
-  // the point: exact, once, half-up — a + r·tn/den, with den made positive
-  if (D < 0n) { D = -D; T = -T }
+  return pointOf(s, Rx, Ry, D, T) }
+// the point: exact, once, half-up — a + r·T/D, with D made positive. ONE home for crossOf and lineCrossOf (Zob's ruling (2), 2026-10-28)
+const pointOf = (s, Rx, Ry, D, T) => { if (D < 0n) { D = -D; T = -T }
   return [Number(halfUp(BigInt(s.a[0]) * D + Rx * T, D)), Number(halfUp(BigInt(s.a[1]) * D + Ry * T, D))] }
+// ⭐ THE CROSSING OF TWO LINES (BRIEF-cut-once-in-full-precision; Zob's ruling (2), 2026-10-28): the lines through s and t,
+// wherever they meet, past either segment's ends (a miter's or a cut's join), exact in BigInt and rounded once, half-up, by
+// crossOf's own point. ⛔ Parallel lines (D = 0, exact) have no crossing and refuse by name: a caller that may meet ONE line
+// twice (a spike removed from a straight wall leaves the lines either side the same) asks `sameLine` first. No epsilon.
+export const lineCrossOf = (s, t, who = 'lineCrossOf') => {
+  const [Rx, Ry, Sx, Sy, Ex, Ey] = [s.b[0] - s.a[0], s.b[1] - s.a[1], t.b[0] - t.a[0], t.b[1] - t.a[1], t.a[0] - s.a[0], t.a[1] - s.a[1]].map(BigInt)
+  const D = Rx * Sy - Ry * Sx
+  if (D === 0n) throw new Error(`[${who}] ⛔ lineCrossOf: the lines through (${s.a}) → (${s.b}) and (${t.a}) → (${t.b}) are parallel — no crossing. Refusing.`)
+  return pointOf(s, Rx, Ry, D, Ex * Sy - Ey * Sx) }
+// are s and t on ONE line? Exact: both direction cross products zero (parallel, and t.a on s's line)
+export const sameLine = (s, t) => { const [Rx, Ry, Sx, Sy, Ex, Ey] = [s.b[0] - s.a[0], s.b[1] - s.a[1], t.b[0] - t.a[0], t.b[1] - t.a[1], t.a[0] - s.a[0], t.a[1] - s.a[1]].map(BigInt)
+  return Rx * Sy - Ry * Sx === 0n && Ex * Ry - Ey * Rx === 0n }
 // does segment s ENTER hot pixel h's half-open square [X − ½, X + ½) × [Y − ½, Y + ½)? In doubled units (the square is
 // [2X−1, 2X+1)), so integer endpoints are even and a segment can lie along no pixel edge: the box test, then the four
 // corners' sides of the line, signs in doubles while every difference is under 2^24 and in BigInt past it.
@@ -172,7 +189,7 @@ export const alongOf = (s, h, numberOnly = false) => { const dx = s.b[0] - s.a[0
 // proper crossing left between two rings that may meet, no vertex that is neither an input vertex nor a hot pixel, and no
 // retrace (an antenna A,B,A).
 // `K` the input rings' lattice points, `R` the output, `tags` per ring, `hot` the hot pixels ("X,Y" keys). Throws, by name.
-export function verifyNoded(K, R, pairs, tags, who, hot, open = []) {
+export function verifyNoded(K, R, pairs, tags, who, hot, open = [], self = false) {
   const known = new Set(hot.keys())
   R.forEach((o, ri) => o.forEach((v, n) => { if (open[ri] && (n === 0 || n === o.length - 1)) return
     const u = o[(n - 1 + o.length) % o.length], w = o[(n + 1) % o.length]
@@ -181,7 +198,7 @@ export function verifyNoded(K, R, pairs, tags, who, hot, open = []) {
   const outSegs = []; R.forEach((o, ri) => o.forEach((v, n) => { if (open[ri] && n === o.length - 1) return; outSegs.push({ ri, a: v.k, b: o[(n + 1) % o.length].k }) }))
   const OG = grid(outSegs, sbox)
   for (const [c, l] of OG.cells) for (let u = 0; u < l.length; u++) for (let w = u + 1; w < l.length; w++) {
-    const s = outSegs[l[u]], t = outSegs[l[w]]; if (s.ri === t.ri || !pairs(s.ri, t.ri)) continue
+    const s = outSegs[l[u]], t = outSegs[l[w]]; if ((s.ri === t.ri && !self) || !pairs(s.ri, t.ri)) continue
     const A = OG.B[l[u]], B = OG.B[l[w]]; if (A[0] > B[2] || B[0] > A[2] || A[1] > B[3] || B[1] > A[3]) continue
     if (OG.cellOf(Math.max(A[0], B[0]), Math.max(A[1], B[1])) !== c) continue
     const X = crossOf(s, t)
@@ -192,10 +209,11 @@ export function verifyNoded(K, R, pairs, tags, who, hot, open = []) {
 // popped: the stack pass keeps the first of an A,B,A, and an open path skips the cyclic seam), and verifyNoded reads it
 // the same way. A closed ring is the default and unchanged. ⛔ `tjoin` does not take open paths (its t-join rule nodes
 // rings), and refuses rather than guess.
-export function nodeCrossings(rings, { pairs, tjoin = false, who = 'stamp' } = {}) {
+export function nodeCrossings(rings, { pairs, tjoin = false, self = false, who = 'stamp' } = {}) {
   if (typeof pairs !== 'function') throw new Error(`[${who}] ⛔ nodeCrossings: no \`pairs\` — which rings may cross is the caller's to say`)
   const open = rings.map(r => !!r.open)
   if (tjoin && open.some(Boolean)) throw new Error(`[${who}] ⛔ nodeCrossings: \`tjoin\` with an open path — the t-join rule nodes rings only. Refusing.`)
+  if (tjoin && self) throw new Error(`[${who}] ⛔ nodeCrossings: \`tjoin\` with \`self\` — the t-join rule (nodeAcrossGroups) puts one ring in each group and never nodes a ring against itself. Refusing.`)
   const K = rings.map((r, ri) => (r.p || []).map(([x, z]) => {
     const X = Math.round(x * CLIP_SCALE), Y = Math.round(z * CLIP_SCALE)
     if (Math.abs(x * CLIP_SCALE - X) > 1e-6 || Math.abs(z * CLIP_SCALE - Y) > 1e-6) throw new Error(`[${who}] ⛔ (${x}, ${z}) of ${rings[ri].tag} is off the lattice (1 / ${CLIP_SCALE} m) — every ring the noding is given must already be on it. Refusing.`)
@@ -207,7 +225,7 @@ export function nodeCrossings(rings, { pairs, tjoin = false, who = 'stamp' } = {
   K.forEach((k, ri) => k.forEach(([X, Y]) => { const key = X + ',' + Y; if (!hot.has(key)) hot.set(key, { X, Y, from: rings[ri].tag }) }))
   let crossings = 0
   for (const [c, l] of SG.cells) for (let u = 0; u < l.length; u++) for (let w = u + 1; w < l.length; w++) {
-    const s = segs[l[u]], t = segs[l[w]]; if (s.ri === t.ri || !pairs(s.ri, t.ri)) continue
+    const s = segs[l[u]], t = segs[l[w]]; if ((s.ri === t.ri && !self) || !pairs(s.ri, t.ri)) continue
     const A = SG.B[l[u]], B = SG.B[l[w]]; if (A[0] > B[2] || B[0] > A[2] || A[1] > B[3] || B[1] > A[3]) continue
     if (SG.cellOf(Math.max(A[0], B[0]), Math.max(A[1], B[1])) !== c) continue          // each pair once, in its first shared cell
     const X = crossOf(s, t); if (!X) continue
@@ -270,7 +288,7 @@ export function nodeCrossings(rings, { pairs, tjoin = false, who = 'stamp' } = {
         next.push({ p, k, src: null, edge: o[Math.max(0, m - 1)].edge }); const ck = `${rings[ri].tag} ← t-join`; counts[ck] = (counts[ck] || 0) + 1 }
       return next })
   }
-  verifyNoded(K, R, pairs, rings.map(r => r.tag), who, hot, open)
+  verifyNoded(K, R, pairs, rings.map(r => r.tag), who, hot, open, self)
   R.counts = counts; R.crossings = crossings; R.dropped = dropped; R.relabelled = relabelled
   return R
 }

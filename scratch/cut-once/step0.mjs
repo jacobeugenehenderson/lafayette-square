@@ -6,11 +6,14 @@
 //  (c) parity: the tagged erode (step 1) built point for point as clipper-lib's ClipperOffset (jtMiter, MiterLimit 2:
 //      OffsetPoint / DoMiter / DoSquare, each point rounded as clipper rounds it), resolved by (a), against
 //      ClipperOffset.Execute(−h) itself: area and part counts
-// node scratch/cut-once/step0.mjs --fixture=decks|huron [--collinear=default]  (Zob C2: clipper's PreserveCollinear defaults to
+// node scratch/cut-once/step0.mjs --fixture=decks|huron [--engine=faces|clipper] [--collinear=default]
+//   faces (Zob's ruling (ii)): nodeCrossings with `self` over the closed raw rings, then latticeFaces.js#facesOf (w > 0);
+//   clipper: one open path per edge, then clipper's union, the measurement that failed (a) on Huron  (Zob C2: clipper's PreserveCollinear defaults to
 //   false and REMOVES collinear vertices; the default run measures what that drops: unmapped edges = runs spanning two segments)
 import fs from 'fs'
 import clipperLib from 'clipper-lib'
 import { nodeCrossings } from '../../src/lib/latticeNode.js'
+import { facesOf } from '../../src/lib/latticeFaces.js'
 const { IntPoint, Clipper, ClipperOffset, ClipType, PolyType, PolyFillType, PolyTree, Paths, JoinType, EndType } = clipperLib
 const SCALE = 1000
 const arg = (k) => process.argv.slice(2).map(a => a.match(new RegExp(`^--${k}=(.+)$`))).find(Boolean)?.[1]
@@ -18,7 +21,7 @@ const fx = (n) => JSON.parse(fs.readFileSync(new URL(`./fixtures/${n}.json`, imp
 const ip = (pp) => pp.map(p => p.map(q => (Array.isArray(q) ? new IntPoint(q[0], q[1]) : new IntPoint(q.X, q.Y))))
 const FIX = { decks: () => { const d = fx('ptown-deck-inputs'); return { src: ip(d.inputs.flat()), stepM: d.fineM } },
   huron: () => { const d = fx('huron-traced'); return { src: ip(d.traced), stepM: d.fineM } } }
-const keep = arg('collinear') !== 'default', name = arg('fixture') || 'decks', { src, stepM } = FIX[name](), h = (stepM / 2) * SCALE
+const engine = arg('engine') || 'faces', keep = arg('collinear') !== 'default', name = arg('fixture') || 'decks', { src, stepM } = FIX[name](), h = (stepM / 2) * SCALE
 const uni = (pp, fill = PolyFillType.pftNonZero, keepCollinear = true) => { const c = new Clipper(), t = new PolyTree(); c.PreserveCollinear = keepCollinear; c.AddPaths(pp, PolyType.ptSubject, true); c.Execute(ClipType.ctUnion, t, fill, fill); return t }
 const flat = (t) => { const o = []; const w = (n) => { for (const ch of n.Childs()) { o.push(ch.Contour()); for (const hh of ch.Childs()) { o.push(hh.Contour()); w(hh) } } }; w(t); return o }
 const parts = (t) => { const o = []; const w = (n) => { for (const ch of n.Childs()) { o.push([ch.Contour(), ...ch.Childs().map(c => c.Contour())]); for (const hh of ch.Childs()) w(hh) } }; w(t); return o }
@@ -65,12 +68,38 @@ function resolve(rawRings, fill) {
   return { out, nodeMs, unionMs, crossings: R.crossings, newV, mapped, unmapped, rawEdges: items.length, nodedVerts: verts.size, outVerts: outV.size, newAt, nodedSegs: [...seg.keys()] }
 }
 
+// the faces engine: the raw rings as rings (consecutive repeats dropped; one under 3 distinct points carries no area), noded
+// against themselves and each other, then the faces whose winding is positive. Each noded segment's tag is its input edge's
+function resolveFaces(rawRings) {
+  const rings = rawRings.map(r => r.filter((a, i) => { const b = r[(i + 1) % r.length]; return a.X !== b.X || a.Y !== b.Y })).filter(r => new Set(r.map(q => q.X + ',' + q.Y)).size >= 3)
+  const t0 = Date.now(), R = nodeCrossings(rings.map((r, ri) => ({ p: r.map(q => [q.X / SCALE, q.Y / SCALE]), tag: `raw${ri}` })), { pairs: () => true, self: true, who: 'step0' }), nodeMs = Date.now() - t0
+  const edges = [], verts = new Set(), seg = new Set()
+  R.forEach((o, ri) => o.forEach((v, q) => { const w = o[(q + 1) % o.length]; verts.add(v.k.join(','))
+    edges.push({ a: v.k, b: w.k, set: 0, tag: rings[ri][v.edge].tag }); seg.add(`${v.k}>${w.k}`) }))
+  const t1 = Date.now(), F = facesOf(edges, w => w[0] > 0, { sets: 1, who: 'step0', allTags: true }), unionMs = Date.now() - t1
+  const out = F.rings.map(r => r.map(q => new IntPoint(q.X, q.Y)))
+  let newV = 0, unmapped = 0, mapped = 0; const outV = new Set()
+  for (const p of out) for (let i = 0; i < p.length; i++) { const a = p[i], b = p[(i + 1) % p.length]; outV.add(a.X + ',' + a.Y)
+    if (!verts.has(a.X + ',' + a.Y)) newV++
+    if (seg.has(`${a.X},${a.Y}>${b.X},${b.Y}`) || seg.has(`${b.X},${b.Y}>${a.X},${a.Y}`)) mapped++; else unmapped++ }
+  // several tags on one eroded segment: how often, and are they always neighbours on one source ring (cyclic)?
+  let multi = 0, adjacent = 0, other = []
+  for (const tg of F.tags.flat()) { if (!Array.isArray(tg) || tg.length < 2) continue; multi++
+    const ok = tg.every(t => t.ring === tg[0].ring) && (() => { const is = tg.map(t => t.i).sort((x, y) => x - y), n = srcLen(tg[0].ring)
+      return is.every((v, k) => k === 0 || v - is[k - 1] === 1) || (is.length === 2 && is[0] === 0 && is[1] === n - 1) })()
+    if (ok) adjacent++; else if (other.length < 4) other.push(tg) }
+  const tagged = F.tags.flat().filter(t => t != null && (!Array.isArray(t) || t.length)).length
+  return { out, nodeMs, unionMs, crossings: R.crossings, newV, mapped, unmapped, rawEdges: edges.length, nodedVerts: verts.size, outVerts: outV.size, newAt: [], nodedSegs: [], tagged, nullTags: F.tags.flat().length - tagged, multi, adjacent, other }
+}
+
 const t = uni(src), P = parts(t)
 let raw = [], ref = []
-for (const part of P) { part.forEach((ring, ri) => raw.push(rawOffset(ring, -h, ri)))
+const SRC = []                                      // every source ring, by its GLOBAL id (a tag is (ring, i), Zob C4)
+const srcLen = (g) => SRC[g].length
+for (const part of P) { part.forEach((ring) => { SRC.push(ring); raw.push(rawOffset(ring, -h, SRC.length - 1)) })
   const co = new ClipperOffset(), o = new Paths(); co.AddPaths(part, JoinType.jtMiter, EndType.etClosedPolygon); co.Execute(o, -h); ref.push(...o) }
-const r = resolve(raw, PolyFillType.pftPositive)
+const r = engine === 'faces' ? resolveFaces(raw) : resolve(raw, PolyFillType.pftPositive)
 const x = new Clipper(), xo = new Paths(); x.AddPaths(r.out, PolyType.ptSubject, true); x.AddPaths(ref, PolyType.ptClip, true); x.Execute(ClipType.ctXor, xo, PolyFillType.pftNonZero, PolyFillType.pftNonZero)
-console.log(JSON.stringify({ fixture: name, preserveCollinear: keep, parts: P.length, rawEdges: r.rawEdges, nodeMs: r.nodeMs, unionMs: r.unionMs, crossings: r.crossings,
+console.log(JSON.stringify({ fixture: name, engine, preserveCollinear: engine === 'faces' ? null : keep, tagged: r.tagged, nullTags: r.nullTags, multiTag: { edges: r.multi, adjacent: r.adjacent, other: r.other }, parts: P.length, rawEdges: r.rawEdges, nodeMs: r.nodeMs, unionMs: r.unionMs, crossings: r.crossings,
   a: { newAt: r.newAt.map(([X, Y]) => { let best = null; for (const k of r.nodedSegs) { const [u, w] = k.split('>').map(q => q.split(',').map(Number)), dx = w[0] - u[0], dy = w[1] - u[1], L2 = dx * dx + dy * dy, t = Math.max(0, Math.min(1, ((X - u[0]) * dx + (Y - u[1]) * dy) / L2)), d = Math.hypot(X - u[0] - t * dx, Y - u[1] - t * dy); if (!best || d < best.d) best = { d: +d.toFixed(3), seg: k, t: +t.toFixed(4) } } return { at: [X / SCALE, Y / SCALE], nearest: best } }), nodedVertices: r.nodedVerts, outputVertices: r.outVerts, newVertices: r.newV, edgesMapped: r.mapped, edgesUnmapped: r.unmapped },
   c: { tagged: { m2: +areaM2(r.out).toFixed(3), ...topo(r.out) }, clipper: { m2: +areaM2(ref).toFixed(3), ...topo(ref) }, xorM2: +areaM2(xo).toFixed(4) } }))
