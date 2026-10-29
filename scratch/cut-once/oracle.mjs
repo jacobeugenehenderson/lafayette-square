@@ -29,11 +29,26 @@ const area = (pp) => pp.reduce((t, q) => t + Clipper.Area(q), 0)
 export function judge(src, stepM, name) {
   const t0 = Date.now(), r = C3.openCloseProvenance(src, stepM, name), P = up(r.P), K = up(r.rings), R = reference(P, stepM), ms = Date.now() - t0
   const diffs = [...pieces(op(ClipType.ctDifference, K, R)).map(pp => ({ pp, side: 'candidate only' })), ...pieces(op(ClipType.ctDifference, R, K)).map(pp => ({ pp, side: 'definition only' }))]
+  // the classification (Zob, 2026-10-29): each wide disagreement's max width, the candidate's emission rules within 2h of it
+  // (cand3.mjs#ORIGIN), and whether it touches an output edge that carries no line
+  const h2 = stepM * 1000, emitted = [...C3.ORIGIN.entries()].map(([k, v]) => { const [x, y] = k.split(',').map(Number); return { x, y, v } })
+  const EG = new Map(), eg = (x, y) => Math.floor(x / h2) + ',' + Math.floor(y / h2); for (const e of emitted) { const k2 = eg(e.x, e.y); (EG.get(k2) || EG.set(k2, []).get(k2)).push(e) }
+  const isLine = (t) => Array.isArray(t) && t.length === 2 && t.every(pt => Array.isArray(pt) && pt.length === 2 && pt.every(Number.isFinite))
+  const lineless = []; r.rings.forEach((q, k2) => q.forEach((v, i) => { const t = r.tags?.[k2]?.[i]; if (!(isLine(t) || (Array.isArray(t) && t.some(isLine)))) lineless.push([v, q[(i + 1) % q.length]]) }))
+  const classify = (pp) => { const o = pp[0].map(q => [q.X / F, q.Y / F]); let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity; for (const [x, y] of o) { x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y) }
+    const rules = new Set(); for (let gx = Math.floor((x0 - h2) / h2); gx <= Math.floor((x1 + h2) / h2); gx++) for (let gy = Math.floor((y0 - h2) / h2); gy <= Math.floor((y1 + h2) / h2); gy++) for (const e of EG.get(gx + ',' + gy) || []) if (e.x >= x0 - h2 && e.x <= x1 + h2 && e.y >= y0 - h2 && e.y <= y1 + h2) for (const kd of String(e.v).split('|')) rules.add(kd)
+    const touchesLineless = lineless.some(([a2, b2]) => Math.min(a2.X, b2.X) <= x1 + 2 && Math.max(a2.X, b2.X) >= x0 - 2 && Math.min(a2.Y, b2.Y) <= y1 + 2 && Math.max(a2.Y, b2.Y) >= y0 - 2)
+    // max width: the widest sampled interior point's distance to the piece's own boundary (our units)
+    const inR = (x, y, r2) => { let c = false; for (let i = 0, j = r2.length - 1; i < r2.length; j = i++) { const a2 = r2[i], b2 = r2[j]; if ((a2[1] > y) !== (b2[1] > y) && x < (b2[0] - a2[0]) * (y - a2[1]) / (b2[1] - a2[1]) + a2[0]) c = !c } return c }
+    let wd = 0; const N = 16; for (let i = 0; i <= N; i++) for (let j = 0; j <= N; j++) { const x = x0 + (x1 - x0) * i / N, y = y0 + (y1 - y0) * j / N; if (!inR(x, y, o)) continue
+      let m = Infinity; for (let z = 0; z < o.length; z++) { const a2 = o[z], b2 = o[(z + 1) % o.length], ex = b2[0] - a2[0], ey = b2[1] - a2[1], L2 = ex * ex + ey * ey, t = L2 ? Math.max(0, Math.min(1, ((x - a2[0]) * ex + (y - a2[1]) * ey) / L2)) : 0; m = Math.min(m, Math.hypot(x - a2[0] - t * ex, y - a2[1] - t * ey)) } wd = Math.max(wd, m) }
+    return { rules: [...rules].sort(), touchesLineless, widthU: +(2 * wd).toFixed(1) } }
   const wide = diffs.filter(x => survives(x.pp)).map(x => { const o = x.pp[0]; let cx = 0, cy = 0; for (const q of o) { cx += q.X; cy += q.Y }
-    return { side: x.side, at: [+(cx / o.length / F / 1000).toFixed(3), +(cy / o.length / F / 1000).toFixed(3)], m2: +(area(x.pp) / F / F / 1e6).toFixed(5), vertices: o.length } })
+    return { side: x.side, at: [+(cx / o.length / F / 1000).toFixed(3), +(cy / o.length / F / 1000).toFixed(3)], m2: +(area(x.pp) / F / F / 1e6).toFixed(5), vertices: o.length, ...classify(x.pp) } })
+  const byRule = {}; for (const w of wide) { const key = `${w.side} · ${w.rules.length ? w.rules.filter(x => !['own', 'run-vertex'].includes(x)).join('+') || 'own/run only' : 'no emission within 2h'}${w.touchesLineless ? ' · lineless' : ''}`; byRule[key] = (byRule[key] || 0) + 1 }
   const nearTo = (process.env.ORACLE_NEAR || '').split(';').filter(Boolean).map(t => t.split(',').map(Number)).map(([x, y]) => ({ at: [x, y], nearest: wide.map(w => ({ ...w, distM: +Math.hypot(w.at[0] - x, w.at[1] - y).toFixed(3) })).sort((a, b) => a.distM - b.distM).slice(0, 2) }))
   const bySide = wide.reduce((t, w) => ((t[w.side] = (t[w.side] || 0) + 1), t), {})
-  return { name, ms, diffPieces: diffs.length, wider: wide.length, bySide, nearTo, widerList: wide.sort((a, b) => b.m2 - a.m2).slice(0, 10), kM2: +(area(K) / F / F / 1e6).toFixed(4), refM2: +(area(R) / F / F / 1e6).toFixed(4) }
+  return { name, ms, diffPieces: diffs.length, wider: wide.length, bySide, byRule, linelessEdges: lineless.length, nearTo, widerList: wide.sort((a, b) => b.m2 - a.m2).slice(0, 10), kM2: +(area(K) / F / F / 1e6).toFixed(4), refM2: +(area(R) / F / F / 1e6).toFixed(4) }
 }
 if (import.meta.url === `file://${process.argv[1]}`) {
   const fx = (n) => JSON.parse(fs.readFileSync(new URL(`./fixtures/${n}.json`, import.meta.url), 'utf8'))
