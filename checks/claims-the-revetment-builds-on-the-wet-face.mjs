@@ -34,10 +34,15 @@ import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { revetmentFaces, BUILD_SIDE } from '../src/lib/revetmentFromSlab.js'
 import { drawnWaterTest } from '../cartograph/shore-armour.mjs'
+import { waterFace } from '../cartograph/coastFile.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const only = process.argv[2] || null
-let failed = false, townsChecked = 0, townsWithout = 0
+// ⛔ Two failures, never one message: stone built toward the dry side, and a town this check could not AUDIT (no input,
+// or no station with water on exactly one side, i.e. the instrument saw no water). Calling the second "inside out" is a
+// false alarm; calling it a pass is a silent one.
+const insideOut = [], blind = []
+let townsChecked = 0, townsWithout = 0
 
 const looks = readdirSync(join(ROOT, 'public', 'baked'), { withFileTypes: true })
   .filter(d => d.isDirectory()).map(d => d.name).sort()
@@ -57,12 +62,16 @@ for (const look of looks) {
   if (!existsSync(tMeta) || !existsSync(mPath)) {
     // ⛔ Not a pass. The artifact exists and claims faces; we simply cannot audit it.
     console.log(`  ⚠️ ${look.padEnd(16)} revetment.json present but scene "${scene}" has no clean/terrain.json or clean/map.json — CANNOT VERIFY`)
-    failed = true; continue
+    blind.push(`${look}: no clean/terrain.json or clean/map.json`); continue
   }
   const tm = JSON.parse(readFileSync(tMeta, 'utf8'))
   const probeM = Math.min((tm.bounds.maxX - tm.bounds.minX) / (tm.width - 1), (tm.bounds.maxZ - tm.bounds.minZ) / (tm.height - 1))
-  const inWater = drawnWaterTest((JSON.parse(readFileSync(mPath, 'utf8')).layers?.water || [])
-    .filter(w => w?.ring?.length >= 3).map(w => w.ring.map(p => [p.x ?? p[0], p.z ?? p[1]])))
+  // ⭐ ①'s water face, read by the bake's own reader (coastFile.mjs#waterFace, which refuses a map.json with no frozen ①).
+  // ⛔ It read map.json `layers.water` through `|| []` until 2026-10-29: 87074b6d removed that layer, the fallback turned it
+  // into "no water anywhere", and every station read as unorientable for three days under an "inside out" message.
+  const rings = waterFace(JSON.parse(readFileSync(mPath, 'utf8')), `wet-face: ${scene}`)
+  if (!rings.length) { console.log(`  ⚠️ ${look.padEnd(16)} revetment.json present but ①'s water face is empty — CANNOT VERIFY`); blind.push(`${look}: ①'s water face is empty`); continue }
+  const inWater = drawnWaterTest(rings)
 
   townsChecked++
   const faces = revetmentFaces(doc)
@@ -95,12 +104,15 @@ for (const look of looks) {
   // ⭐ Not 100%: a harbour corner can put water behind a station for a step or two. The
   // threshold separates "a coast with awkward corners" from "built inside out", a landslide.
   const ok = total > 0 && pct >= 90
+  if (!total) blind.push(`${look}: no armoured station has drawn water on exactly one side (${unreadable} on both or neither) — the probe sees no shore`)
+  else if (!ok) insideOut.push(`${look}: ${pct.toFixed(1)}% toward the water`)
   console.log(`  ${ok ? '✅' : '⛔'} ${look}/revetment  ${wet}/${total} armoured stations build toward the DRAWN WATER (${pct.toFixed(1)}%) · ${unreadable} with water on both faces or neither · BUILD_SIDE=${BUILD_SIDE}`)
   for (const w of worst) console.log(`       ${w}`)
-  if (!ok) failed = true
 }
 
 console.log(`\n  ${townsChecked} revetment(s) audited · ${townsWithout} town(s) without one`)
 console.log(`  probe = the heightfield's own step · "faces the water" = the build side is inside the drawn water and the back is not`)
-if (failed) { console.log('\n⛔ stone is being built toward the DRY side — the revetment would render inside out'); process.exit(1) }
+if (insideOut.length) console.log(`\n⛔ stone is being built toward the DRY side — the revetment would render inside out:\n   ${insideOut.join('\n   ')}`)
+if (blind.length) console.log(`\n⛔ CANNOT AUDIT — the orientation is unproven, not wrong:\n   ${blind.join('\n   ')}`)
+if (insideOut.length || blind.length) process.exit(1)
 console.log('\n✅ every armoured station builds toward its water')
