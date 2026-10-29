@@ -5,7 +5,7 @@
 // cause. Now each way over the water is read through ONE vocabulary (src/cartograph/streetClass.js#structureOverWater: offGrade ·
 // deck · ground · none · unknown, over the structural keys man_made, embankment, ford), carried per run by
 // cartograph/mintInputs.mjs#gradeRunsOf (each way's own extent where a run's ways disagree, Zob), and splitOverWater refuses by
-// name a deck the take-out missed, ground (not yet drawn: BACKLOG, the dike), and an unknown structural value, BEFORE the coast.
+// name a deck the take-out missed, ground (an embankment, held as land by the coast bake: r-the-coast-bake-holds-an-embankment-as-land), and an unknown structural value, BEFORE the coast.
 //   (1) THE VOCABULARY, read from the source function: pier → deck · embankment=dyke → ground · bridge+pier → offGrade ·
 //       ford=yes → unknown · man_made=breakwater → unknown · surface=stone → none.
 //   (2) SOURCE: gradeRunsOf carries `structure` through structureOverWater, and splitOverWater judges it before byCoast.

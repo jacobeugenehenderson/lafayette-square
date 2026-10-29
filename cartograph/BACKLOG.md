@@ -29,16 +29,16 @@ Merged on it 2026-10-27 → 28 (`git log integration/2026-10-20 --since=2026-10-
 **JACOB BAKES** through Stage's Bake (the routes, never scripts): **Huron first** (its coast is pre-v5 and re-bakes), then LS and HPDM. Then
 the Ward pin move (`ward-pin/<date>`), publish:staging, his look, Promote (player and slab together: RELEASE ORDER FOR THE COAST PIN,
 below). **Huron is staging-only** until a domain is owned (huron.online is not on Operations' registrar list; Promote refuses it).
-The combined bake also measures THE WATER TINT (below). ⚠️ LS's skeleton was stale for mintInputs on 10-27 (row below): verify first.
+The combined bake also measures THE WATER TINT (below).
 
 **⏸ PARKED**
-- **PTown:** past the coast and the mint on v5; ground refuses at MacMillan Wharf (a 1 mm back-step in ①, an integer re-offset copy in
+- **PTown:** its PLAYER updates with the Ward pin on its current slab (the release order's player-first state), so live PTown gets today's
+  player fixes (DoF, All places, arrival, splash) without a new slab. Its SLAB: past the coast and the mint on v5; ground refuses at MacMillan Wharf (a 1 mm back-step in ①, an integer re-offset copy in
   `structures.mjs#waterWithoutDecks`' sliver-taking). It waits on the float-morphology debt (PTOWN PARKS, below).
 - **Altadena:** re-fetch, the Extent fix, re-pour.
 
 **▶ NEXT TRANCHE LEADS:** float morphology (cut once without integer copies; sized LARGE: clipper-lib and Clipper2 are both integer) ·
-the re-skeleton button · fractional block keys (`r-block-keys-are-minted-once-and-inserted-between`) · the listing point backfill ·
-Ferrule's town-anchored blur, if it misses the pin · the Ward-tranche list (`docs/agents/WARD.md`).
+the re-skeleton button · fractional block keys (`r-block-keys-are-minted-once-and-inserted-between`) · the listing point backfill · the Ward-tranche list (`docs/agents/WARD.md`).
 
 **❓ OPEN RULINGS FOR JACOB:** the (b′) chain ends · the chain join's override home · Browse → Society re-frame · a deck's width (the
 pier's OSM `width` tag) vs an embankment's (the pour measure): two rules size a street's land over water · authoring dpr.
@@ -70,8 +70,6 @@ out in the MAIN checkout (Jacob's), stays.
 - **THE CUT-SEPARATELY CENSUS** (cited by `tileGround.js`): its site list is in the archive; still open.
 - **ON_EDGE_M** (groundConformity's 5 mm weld): HELD; Zob's derived form √2/2·LATTICE + the float32 ulp opens 85 LS seams (363 m) the
   weld closes; re-measured after M1. Class D, not ruled.
-- **LS's skeleton is stale for mintInputs** (10-27: saint-ange-lane's segmentWays don't cover its 5 segments, so mintInputs refuses):
-  re-skeleton (commit-extent) before LS's pour, unless a merge since fixed it (unverified).
 
 ---
 
