@@ -414,8 +414,9 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
   // ⭐ THE WATER AT THE TRACE'S OWN SCALE, BOTH WAYS (Boz's ruling, 2026-10-27, on Zob's read): opened, then closed, at the trace's
   // step, by the decks' own rule (structures.mjs#openCloseAtStep), before simplify and settle. A coast feature narrower than a
   // cell is not something the lidar resolved (PTown: a 6 cm × 2.6 m spike traced at a 0.999 m step, which ① minted as a 1.3°
-  // needle that ② could not stamp). What it moves is counted and named (coast.json waterOpened / waterClosed / waterBelowResolution).
-  const oc = openCloseAtStep(traced, fine, 'the traced water', { cutOnce: false })   // ⛔ the named debt: structures.mjs#openCloseAtStep
+  // needle that ② could not stamp). Cut once, as the decks are. What it moves is counted and named (coast.json waterOpened /
+  // waterClosed / waterBelowResolution); an input ring wholly the rounding is named in oc.dropped.
+  const oc = openCloseAtStep(traced, fine, 'the traced water')
   const sumM2 = (xs) => +xs.reduce((t, c) => t + c.m2, 0).toFixed(3)
   const opened2 = clip(ClipType.ctIntersection, clip(ClipType.ctUnion, oc.paths, null), square)
   // the embankments cut out EXACTLY after the open/close, so where the water meets one its edge IS the ring, corners included

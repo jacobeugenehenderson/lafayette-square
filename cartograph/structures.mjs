@@ -17,6 +17,7 @@ import { CARTOGRAPH_DIR } from './config.js'
 import clipperLib from 'clipper-lib'
 import { CLIP_SCALE as SCALE } from '../src/lib/lattice.js'          // clipper units per metre: 1 mm
 import { NODE_BOUND } from '../src/lib/latticeNode.js'                 // the rounding's own bound: what a sliver is
+import { openCloseCutOnce, openAt, closeAt, pieces as ocPieces } from './openClose.mjs'   // the open/close, cut once (openCloseAtStep, waterWithoutDecks)
 import { structureOverWater } from '../src/cartograph/streetClass.js'   // the over-water vocabulary's one home
 import { pourMeasureOf } from '../src/cartograph/streetProfiles.js'      // the pour's measure, the one rule (derive calls it too)
 import { DECK_KINDS } from '../src/cartograph/streetClass.js'   // the deck vocabulary's one home, beside isOffGradeWay
@@ -107,87 +108,55 @@ function convexHull(pts) {
  */
 // ⭐ A FOOTPRINT AT THE TRACE'S OWN SCALE, BOTH WAYS: OPEN, THEN CLOSE, AT THE TRACE'S STEP (Boz's rulings, 2026-10-27; the
 // decks first, then the traced water, one method). A SPIKE or a GAP narrower than one cell is something neither the source nor
-// the line can resolve. Per connected part (its own paths unioned; a part in a part's hole is its own): OPEN, eroded then dilated
-// by half a cell and kept inside the part, so what is narrower than a cell goes; then CLOSE, dilated then eroded by half a cell
-// and kept with what it was, so a gap narrower than a cell is filled. ⛔ Per part, never across two: two parts a metre apart
-// stay two.
-// ⭐⭐ CUT ONCE (Boz's ruling, 2026-10-28, ORIENTATION's rounding rule): the open and the close only FIND the features; the part
-// that comes out is the SOURCE part minus each feature the open took, plus each feature the close filled. Where they change
-// nothing, the result IS the source's own edge. ⛔ It was the re-offset copy intersected back against the source: the two copies
-// of one edge lay within the rounding of each other and the boolean kept both, a 1 mm staircase (the decks' jogs, PTown 0 → 57
-// edges ≤ 2 mm, Huron 3 → 171; the Breakwater's footprint 20 verifier violations).
+// the line can resolve: the OPEN (eroded then dilated by half a cell, kept inside the source) finds what is narrower than a
+// cell, the CLOSE (dilated then eroded by half a cell, kept with the open) finds a gap narrower than a cell.
+// ⭐⭐ CUT ONCE, IN FULL PRECISION (Boz's ruling, 2026-10-28; BRIEF-cut-once-in-full-precision): the open and the close only FIND
+// the features; what comes out is the SOURCE minus each feature the open took, plus each feature the close filled, and every
+// edge of it lies on the line it was born on: the source's own edge where nothing changed, never a re-rounded copy. The means
+// is openClose.mjs (one noded arrangement per boolean, provenance on every edge). ⛔ It was clipper's integer re-offset, whose
+// copy of a source edge lay within the rounding of it (PTown's decks 109 copies, Huron's traced water 91,990).
 // ⭐ A ROUNDING SLIVER is a piece that lies wholly within the rounding of the boundary: eroded by the lattice's own bound
 // (latticeNode.js#NODE_BOUND, √½ of a step) it leaves NOTHING (Zob, 2026-10-28). It is the rounding, not the source, and is
-// dropped, counted. Anything that survives the erosion is a FEATURE: applied and named. ⛔ No area, no width, no constant (it was
-// a mean width against 2 units, which misjudged a long feature with a thin tail).
-// Counted and named: `opened` and `closed` [{ m2, at }] (the features applied); a part the open removes ENTIRELY is
-// `belowResolution` [{ m2, at, ring }], never silently lost; `openedPieces` / `closedPieces` name each feature taken or filled,
-// largest first ({ features: [{ m2, lenM: its longer bounding side, at, poly: [outer, …holes] }], slivers: { n, m2 } }); the
-// features' polygons are what bake-coast's settle may not cross (bake-coast.mjs#wallsOf).
-// ⛔⛔ A DEBT, NAMED (Boz's ruling, 2026-10-28): TWO BEHAVIOURS OF ONE FUNCTION. `cutOnce: false` is the a115eaab open/close (the
-// re-offset copy intersected back, the mean-width sliver rule), kept for the TRACED WATER only (bake-coast.mjs): cut once, its
-// booleans made touching and crossing rings (Huron, at (-4820.8, -3834.5): a ring through one vertex three times, out of the
-// cut/fill itself), mechanism not established. The traced water keeps the integer open/close until its cut-once crossings are
-// understood or float morphology lands (BACKLOG); then this fork is REMOVED, never left. The footprints (decks, embankments)
-// cut once (the default).
-// Returns the kept paths (not unioned across parts: the caller unions).
-// ▶ checks/claims-a-coast-finer-than-its-trace-is-not-drawn.mjs
+// dropped, counted. Anything that survives the erosion is a FEATURE: applied and named. ⛔ No area, no width, no constant.
+// Counted and named, per connected PART of the source (a part in a part's hole is its own): `opened` and `closed` [{ m2, at }]
+// (the features applied); a part the open removes ENTIRELY is `belowResolution` [{ m2, at, ring }], never silently lost;
+// `openedPieces` / `closedPieces` name each feature taken or filled, largest first ({ features: [{ m2, lenM: its longer bounding
+// side, at, poly: [outer, …holes] }], slivers: { n, m2 } }); the features' polygons are what bake-coast's settle may not cross
+// (bake-coast.mjs#wallsOf). `dropped` names each input ring wholly a rounding sliver, removed before the arrangement.
+// Returns the kept paths. ⛔ A hole of the source that the result opens, or two parts it joins, refuses by name (Boz's).
+// ▶ node checks/claims-the-open-close-cuts-once.mjs · checks/claims-a-coast-finer-than-its-trace-is-not-drawn.mjs
 /** ⭐ A ROUNDING SLIVER (Zob, 2026-10-28): a piece (clipper paths, outer + holes) that eroded by the lattice's own bound
  *  (latticeNode.js#NODE_BOUND) leaves nothing: it lies wholly within the rounding of the boundary. */
 export function isRoundingSliver(pp) {
   const co = new ClipperOffset(), o = new Paths(); co.AddPaths(pp, JoinType.jtMiter, EndType.etClosedPolygon); co.Execute(o, -NODE_BOUND)
   return o.every(q => Clipper.Area(q) <= 0)
 }
-export function openCloseAtStep(paths, stepM, what, { cutOnce = true } = {}) {
+export function openCloseAtStep(paths, stepM, what) {
   if (!(stepM > 0)) throw new Error(`⛔ structures: openCloseAtStep (${what}) needs the trace's step (got ${stepM})`)
-  const parts = new PolyTree(), cu = new Clipper(); cu.AddPaths(paths, PolyType.ptSubject, true)
-  if (!cu.Execute(ClipType.ctUnion, parts, PolyFillType.pftNonZero, PolyFillType.pftNonZero)) throw new Error(`⛔ structures: the union of ${what} FAILED`)
-  const h = (stepM / 2) * SCALE, kept = new Paths(), closed = [], opened = [], belowResolution = []
-  const off = (src, d) => { const co = new ClipperOffset(), o = new Paths(); co.AddPaths(src, JoinType.jtMiter, EndType.etClosedPolygon); co.Execute(o, d); return o }
-  const op = (type, a, b, name) => { const c = new Clipper(), o = new Paths(); c.AddPaths(a, PolyType.ptSubject, true); if (b) c.AddPaths(b, PolyType.ptClip, true)
-    if (!c.Execute(type, o, PolyFillType.pftNonZero, PolyFillType.pftNonZero)) throw new Error(`⛔ structures: the ${name} of ${what} FAILED`); return o }
-  const areaOf = (ps) => ps.reduce((t, q) => t + Clipper.Area(q), 0)
-  const place = (ch) => { const c0 = ch.Contour()[0]; return [+(c0.X / SCALE).toFixed(3), +(c0.Y / SCALE).toFixed(3)] }
-  // a piece is the rounding iff eroding it by the lattice's own bound leaves nothing
-  const sliver = (pp, m2, lenM) => cutOnce ? isRoundingSliver(pp)
-    : !(m2 / Math.max(lenM, 1 / SCALE) > 2 / SCALE)             // ⛔ the debt's own rule (a mean width against 2 units): see above
-  // each connected piece of a − b, { m2, lenM, at, poly, paths } (its holes subtracted), split into features and slivers
-  const pieces = (a, b) => { const c = new Clipper(), t = new PolyTree(); c.AddPaths(a, PolyType.ptSubject, true); c.AddPaths(b, PolyType.ptClip, true)
-    if (!c.Execute(ClipType.ctDifference, t, PolyFillType.pftNonZero, PolyFillType.pftNonZero)) throw new Error(`⛔ structures: the pieces of ${what} FAILED`)
-    const out = [], walk = (n) => { for (const ch of n.Childs()) { const pp = [ch.Contour(), ...ch.Childs().map(hh => hh.Contour())], m2 = areaOf(pp) / SCALE / SCALE
-      const c0 = ch.Contour(), xs = c0.map(q => q.X), ys = c0.map(q => q.Y), lenM = Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)) / SCALE
-      if (m2 > 0) out.push({ m2: +m2.toFixed(4), lenM: +lenM.toFixed(3), at: place(ch), poly: pp.map(fromPath), paths: pp, sliver: sliver(pp, +m2.toFixed(4), +lenM.toFixed(3)) }); for (const hh of ch.Childs()) walk(hh) } }
-    walk(t); return out }
-  const openedPieces = [], closedPieces = []
-  const closeAll = (node) => { for (const ch of node.Childs()) {
-    const part = [ch.Contour(), ...ch.Childs().map(c => c.Contour())], a0 = areaOf(part)
-    const open = op(ClipType.ctIntersection, off(off(part, -h), h), part, 'open'), a1 = areaOf(open)
-    if (!open.length || a1 <= 0) belowResolution.push({ m2: +(a0 / SCALE / SCALE).toFixed(3), at: place(ch), ring: fromPath(ch.Contour()) })
-    else {
-      const closedK = op(ClipType.ctUnion, [...open, ...off(off(open, h), -h)], null, 'close')
-      const taken = pieces(part, open), filled = pieces(closedK, open)
-      let k
-      if (cutOnce) {
-        const tf = taken.filter(p => !p.sliver), ff = filled.filter(p => !p.sliver)
-        // cut once: the source, minus the features the open took, plus the features the close filled
-        k = tf.length ? op(ClipType.ctDifference, part, tf.flatMap(p => p.paths), 'cut') : part
-        if (ff.length) k = op(ClipType.ctUnion, [...k, ...ff.flatMap(p => p.paths)], null, 'fill')
-        const tm = tf.reduce((t, p) => t + p.m2, 0), fm = ff.reduce((t, p) => t + p.m2, 0)
-        if (tm > 0) opened.push({ m2: +tm.toFixed(3), at: place(ch) })
-        if (fm > 0) closed.push({ m2: +fm.toFixed(3), at: place(ch) })
-      } else {                                                        // ⛔ the debt (above): the a115eaab result, the re-offset copy
-        k = closedK
-        if (a0 - a1 > 0) opened.push({ m2: +((a0 - a1) / SCALE / SCALE).toFixed(3), at: place(ch) })
-        const added = areaOf(k) - a1; if (added > 0) closed.push({ m2: +(added / SCALE / SCALE).toFixed(3), at: place(ch) })
-      }
-      openedPieces.push(...taken); closedPieces.push(...filled)
-      for (const q of k) kept.push(q) }
-    for (const hole of ch.Childs()) closeAll(hole) } }   // a part inside a part's hole is a part of its own
-  closeAll(parts)
-  const big = (a, b) => b.m2 - a.m2, strip = ({ paths: _p, sliver: _s, ...f }) => f
-  const split = (xs) => ({ features: xs.filter(f => !f.sliver).sort(big).map(strip), slivers: { n: xs.filter(f => f.sliver).length, m2: +xs.filter(f => f.sliver).reduce((t, f) => t + f.m2, 0).toFixed(4) } })
-  return { paths: kept, opened, closed, belowResolution, openedPieces: split(openedPieces), closedPieces: split(closedPieces) }
+  const r = openCloseCutOnce(paths, stepM, what), m2 = (pp) => pp.reduce((t, q) => t + ringAreaU(q), 0) / SCALE / SCALE
+  const place = (q) => [+(q[0].X / SCALE).toFixed(3), +(q[0].Y / SCALE).toFixed(3)]
+  // each piece to the source PART it belongs to: a taken piece lies in its part, a filled one against it (a notch, a hole), so the
+  // part whose boundary (outer or a hole) one of the piece's vertices lies on, within the noding's own bound (NODE_BOUND: snap
+  // rounding moves a vertex that far off the edge it was routed into), the smallest such. ⛔ None: refuses by name
+  const parts = ocPieces(r.P), onRing = (v, R) => R.some((a, i) => { const b = R[(i + 1) % R.length], dx = b.X - a.X, dy = b.Y - a.Y, L2 = dx * dx + dy * dy
+    const t = L2 ? Math.max(0, Math.min(1, ((v.X - a.X) * dx + (v.Y - a.Y) * dy) / L2)) : 0; return Math.hypot(v.X - a.X - t * dx, v.Y - a.Y - t * dy) <= NODE_BOUND })
+  const partOf = (pp) => { let best = -1
+    parts.forEach((P, i) => { if (pp[0].some(v => P.some(R => onRing(v, R))) && (best < 0 || ringAreaU(P[0]) < ringAreaU(parts[best][0]))) best = i })
+    if (best < 0) throw new Error(`⛔ structures: openCloseAtStep (${what}): a feature at (${place(pp[0])}) touches no part of the source, so it cannot be named by its part. Refusing.`)
+    return best }
+  const below = new Set(), belowResolution = []
+  for (const pp of r.taken) { const i = partOf(pp); if (i >= 0 && m2(pp) === m2(parts[i])) { below.add(i); belowResolution.push({ m2: +m2(pp).toFixed(3), at: place(parts[i][0]), ring: parts[i][0].map(q => [q.X / SCALE, q.Y / SCALE]) }) } }
+  const perPart = (pps) => { const by = new Map(); for (const pp of pps) { const i = partOf(pp); if (below.has(i)) continue; by.set(i, (by.get(i) || 0) + m2(pp)) }
+    return [...by].filter(([, v]) => v > 0).map(([i, v]) => ({ m2: +v.toFixed(3), at: place(parts[i][0]) })) }
+  const feature = (pp) => { const xs = pp[0].map(q => q.X), ys = pp[0].map(q => q.Y)
+    return { m2: +m2(pp).toFixed(4), lenM: +(Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)) / SCALE).toFixed(3), at: place(pp[0]), poly: pp.map(q => q.map(v => [v.X / SCALE, v.Y / SCALE])) } }
+  const split = (all, kept) => { const feats = kept.filter(pp => !below.has(partOf(pp))), sl = all.filter(pp => !kept.includes(pp) && !below.has(partOf(pp)))
+    return { features: feats.map(feature).sort((a, b) => b.m2 - a.m2), slivers: { n: sl.length, m2: +sl.reduce((t, pp) => t + m2(pp), 0).toFixed(4) } } }
+  const paths_ = r.rings.map(q => { const p = new Path(); for (const v of q) p.push(new IntPoint(v.X, v.Y)); return p })
+  return { paths: paths_, opened: perPart(r.tf), closed: perPart(r.ff), belowResolution, openedPieces: split(r.taken, r.tf), closedPieces: split(r.filled, r.ff),
+    dropped: r.dropped.map(x => ({ stage: x.who, m2: +(x.u2 / SCALE / SCALE).toFixed(6), at: x.at })) }
 }
+const ringAreaU = (q) => { let a = 0; for (let i = 0; i < q.length; i++) { const p = q[i], w = q[(i + 1) % q.length]; a += p.X * w.Y - w.X * p.Y } return a / 2 }
 
 /** The deck footprints' INPUTS, before the union: each area as mapped, each line buffered, each joint's hull, each one
  *  normalized on its own (below). `inputs` [[path…]] one entry per input; `paths` the same, flat, which deckFootprints unions.
@@ -421,14 +390,14 @@ export function waterWithoutDecks(rings, arcs, deckRings, stepM) {
   const cellU = stepM * SCALE, waterP = rings.map(toPath), area = (ps) => ps.reduce((t, q) => t + Clipper.Area(q), 0)
   const w0 = op(ClipType.ctDifference, waterP, deckRings.map(toPath)), slivers = []
   const ext = deckRings.map((d, k) => { const D = [toPath(d)]
-    const loc = op(ClipType.ctIntersection, w0, grow(D, 2 * cellU)), open = op(ClipType.ctIntersection, grow(grow(loc, -cellU / 2), cellU / 2), loc)
+    const loc = op(ClipType.ctIntersection, w0, grow(D, 2 * cellU)), open = openAt(loc, stepM, `deck ${k}'s water`)
     const thin = op(ClipType.ctIntersection, op(ClipType.ctDifference, loc, open), grow(D, cellU))
     const touching = thin.filter(q => Clipper.Area(q) > 0 && area(op(ClipType.ctIntersection, grow([q], 2), D)) > 0)
     for (const q of touching) { const a = fromPath(q); slivers.push({ deck: k, m2: +(Clipper.Area(q) / SCALE / SCALE).toFixed(3), at: a[0].map(v => +v.toFixed(3)) }) }
     // ⛔ a sliver meeting the deck at a single point would be left a separate piece of deck standing in the water (a hole the
     // coast did not draw: "clear of every shore" would refuse it, Zob 10-27): closed at half a cell, as each deck's footprint
     // is (deckFootprints), it joins the deck
-    const u0 = op(ClipType.ctUnion, [...D, ...touching]), e = op(ClipType.ctUnion, [...u0, ...grow(grow(u0, cellU / 2), -cellU / 2)]), outers = e.filter(q => Clipper.Area(q) > 0)
+    const u0 = op(ClipType.ctUnion, [...D, ...touching]), e = closeAt(u0, stepM, `deck ${k}`), outers = e.filter(q => Clipper.Area(q) > 0)
     // a street deck is its OUTER ring (streetDecks keeps outers; its holes are deck). A sliver meeting the deck at a single point
     // comes back from the union as an outer of its own: every piece inside the main ring or touching it (to the lattice) is this
     // deck's, taken out and tagged with it; the record keeps the main ring. A piece standing apart from it refuses by name

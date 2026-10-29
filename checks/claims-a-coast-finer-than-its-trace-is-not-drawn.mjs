@@ -8,7 +8,8 @@
 // ②'s run key holds one water as ONE run, side-blind (a deck's water its own), and the stamp refuses, at its cause, an antenna
 // that drops a water run's tip that iA keeps.
 //   (1) SOURCE: bake-coast opens and closes the traced water through openCloseAtStep, before simplifyRing and settleOnSource;
-//       deckFootprints calls the same function; the per-part erode/dilate is written once.
+//       deckFootprints calls the same function; the erode/dilate is written once (openClose.mjs#morph), and no clipper
+//       erode/dilate is left beside it (structures, bake-coast, coastFile, mintInputs).
 //   (2) PLANT: PTown's own coast at the spit (water ring 0, vertices 1100–1159, less (−3600, −1270); the arc run to the frame),
 //       opened and closed at PTown's step and simplified below half of it, as the bake does: ① mints no bare water edge, and the ground (mint, stamp, shore, the whole pass)
 //       BUILDS, with the water as ONE run per tile, side null.
@@ -35,8 +36,9 @@ const sa = (r) => r.reduce((t, p, i) => { const q = r[(i + 1) % r.length]; retur
   // the water is the open/close's output: through the embankments' exact cut and the run along their rings (bake-coast.mjs#runsAlongHeld), nothing else
   const water = /const opened2 = clip\(ClipType\.ctIntersection, clip\(ClipType\.ctUnion, oc\.paths[\s\S]*?const water0 = [^\n]*opened2[\s\S]*?const water = along \? along\.rings\.map\(toPath\) : water0/.test(bc)
   const deck = /export function deckFootprints[\s\S]*?openCloseAtStep\(paths, stepM/.test(stx)
-  const erode = stx.split('off(off(').length - 1, elsewhere = ['bake-coast.mjs', 'coastFile.mjs', 'mintInputs.mjs'].filter(f => { try { return readFileSync(join(ROOT, 'cartograph', f), 'utf8').includes('off(off(') } catch { return false } })
-  row(order && water && deck && erode === 2 && !elsewhere.length, `(1) bake-coast opens and closes the traced water through openCloseAtStep (${calls} call), before simplify and settle: ${order} · the water is its output: ${water} · deckFootprints calls the same function: ${deck} · the erode/dilate written once (structures.mjs ${erode} of 2${elsewhere.length ? `; ALSO in ${elsewhere.join(', ')}` : ''})`) }
+  const oc = readFileSync(join(ROOT, 'cartograph/openClose.mjs'), 'utf8'), erode = oc.split('export function morph(').length - 1
+  const elsewhere = ['structures.mjs', 'bake-coast.mjs', 'coastFile.mjs', 'mintInputs.mjs'].filter(f => { try { return /off\(off\(|grow\(grow\(/.test(readFileSync(join(ROOT, 'cartograph', f), 'utf8')) } catch { return false } })
+  row(order && water && deck && erode === 1 && !elsewhere.length, `(1) bake-coast opens and closes the traced water through openCloseAtStep (${calls} call), before simplify and settle: ${order} · the water is its output: ${water} · deckFootprints calls the same function: ${deck} · the erode/dilate written once (openClose.mjs#morph ${erode} of 1, none beside it${elsewhere.length ? `; ALSO in ${elsewhere.join(', ')}` : ''})`) }
 
 // (2) the plant: PTown's spit, translated; the water lies left of the coast, the arc run out to the frame at both ends
 const T = [[-126.165,-58.281],[-124.995,-57.218],[-120.776,-57.428],[-117.779,-56.529],[-115.78,-57.121],[-112.783,-56.352],[-99.317,-49.287],[-91.786,-42.849],[-86.248,-41.313],[-82.819,-38.208],[-73.658,-36.314],[-68.823,-33.115],[-65.824,-32.405],[-59.844,-26.463],[-53.835,-23.701],[-48.855,-23.721],[-44.386,-22.35],[-41.842,-20.318],[-43.281,-19.321],[-37.296,-19.373],[-26.848,-10.909],[-23.867,-6.771],[-16.881,-6.798],[-12.915,-4.466],[-9.84,-5.358],[-6.893,-3.411],[-4.4,-0.247],[2.132,1.006],[1.932,6.34],[4.562,6.24],[1.095,6.45],[-3.915,4.038],[-6.226,1.707],[-6.913,-0.704],[-13.878,2.449],[-20.789,2.282],[-30.902,-5.51],[-37.871,-8.564],[-40.871,-8.823],[-44.875,-11.655],[-49.64,-13.298],[-52.226,-15.139],[-51.048,-16.324],[-51.8,-16.911],[-56.756,-18.164],[-66.528,-23.294],[-69.118,-23.945],[-68.398,-22.382],[-62.083,-19.345],[-61.013,-16.301],[-57.755,-12.286],[-52.846,-11.957],[-40.872,-7.34],[-39.871,-5.817],[-30.441,-1.387],[-27.631,1.653],[-23.799,3.365],[-23.809,4.489],[-27.05,4.692],[-27.99,4.12]]
@@ -87,7 +89,7 @@ function mutant(rel, edits) {
   src = src.replace(/from '(\.{1,2}\/[^']+)'/g, (_, r) => `from "${pathToFileURL(join(base, r)).href}"`).replace(/from 'clipper-lib'/g, `from "${import.meta.resolve('clipper-lib')}"`)
   writeFileSync(join(dir, rel.split('/').pop()), src); return { dir, file: join(dir, rel.split('/').pop()) }
 }
-const NO_OPEN = ['  closeAll(parts)\n', '  for (const q of paths) kept.push(q)\n']
+const NO_OPEN = ['  return { paths: paths_, opened:', '  return { paths, opened:']
 const NO_GUARD = ['if ((wetEdge(x.ri, q) || wetEdge(x.ri, (q - 1 + m) % m)) && kept.has(K)) throw', 'if (false) throw']
 const SIDED = ['const key = !o ? null : isWater ? `${WATER_EDGE_SKEL}${', 'const key = !o ? null : isWater ? `${WATER_EDGE_SKEL}|${o.side}${']
 async function withMutants(stxEdits, tgEdits, f) {
