@@ -20,7 +20,7 @@
  * strengths are published to useAtmosphere.activeStrengths so the
  * editor's live indicator can read what's firing now.
  */
-import { weatherAt, WeatherRangeError } from '../lib/weatherAt.js'
+import { weatherAt, WeatherRangeError, WeatherFieldMissingError } from '../lib/weatherAt.js'
 import { targetsOf } from './useWeather.js'
 import { useEffect, useRef } from 'react'
 import { selectDirectiveWithStrengths } from '../lib/almanac-eval.js'
@@ -137,7 +137,7 @@ export default function useAtmosphereDirective(lookId) {
           weatherTargets = targetsOf(weatherAt(time, { live: false, hourly: sky.hourlyForecast }))
         } catch (e) {
           if (!(e instanceof WeatherRangeError)) throw e
-          if (_reportedRange.current !== e.message) { _reportedRange.current = e.message; console.error(`[atmosphere] ⛔ the sky cannot show this time's weather — ${e.message}`) }
+          if (_reportedRange.current !== e.message) { _reportedRange.current = e.message; console.error(`[atmosphere] ⛔ ${e instanceof WeatherFieldMissingError ? 'the sky holds its last state' : 'the sky cannot show this time\'s weather'} — ${e.message}`) }
           return
         }
       }

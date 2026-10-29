@@ -13,6 +13,8 @@
  *   · ONE weather per instant: observed hours only before the grid's first hour, every instant once
  *   · a filled hour carries only observed fields and names the rest in `missing`, and its station { id, name, lat, lon }
  *   · the seam (grid − station at the grid's first hour) is measured, in °C
+ *   · two polls in one dawn window fetch the fill ONCE (Zob's C2: per poll it is ~0.15 MB per 5 min per tab)
+ *   · an instant in a HOLE (an hour the station did not observe) is refused by name, never smoothed across (C3)
  *   · no station reaching `from` is said, and the series starts at the grid
  *   · the sky (useWeather#targetsOf), the wind (windSheet#windStateOfWeather) and the directive's payload
  *     (weather-payload#buildWeatherPayload) REFUSE a reading with no cloud cover / weather code — a WeatherFieldMissingError
@@ -33,7 +35,7 @@ const strip = (src) => src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\
 
 const MUTANTS = [
   ['a filled hour with invented cloud cover', 'src/lib/nws.js', '    h.missing = READING_FIELDS', '    h.cloudCover = 50; h.missing = READING_FIELDS'],
-  ['the fill overlaps the grid by one hour', 'src/lib/nws.js', 'await observedHours(stations, fillFrom, first,', 'await observedHours(stations, fillFrom, first + H,'],
+  ['the fill overlaps the grid by one hour', 'src/lib/nws.js', 'await theFill(stations, fillFrom, first,', 'await theFill(stations, fillFrom, first + H,'],
   ['the temperature station is any station, not one reporting temperature', 'src/lib/nws.js', '(nearest(obs, fillFrom) ? { id, obs } : null)', '({ id, obs })'],
   ['skyCode reads no cloud cover as clear', 'src/lib/nws.js', 'if (cloudCoverPct == null) return null\n  const cc = cloudCoverPct', 'const cc = cloudCoverPct ?? 0'],
   ['the sky takes a reading with no cloud/code (targetsOf guard gone)', 'src/hooks/useWeather.js', "  needFields(r, SKY_NEEDS, 'sky')\n", ''],
@@ -45,6 +47,8 @@ const MUTANTS = [
   ["the payload's cloud cover ?? 0 restored", 'src/lib/weather-payload.js', 'Math.min(1, weatherTargets.cloudCover)', 'Math.min(1, weatherTargets?.cloudCover ?? 0)'],
   ['an observed hour does not say where it was taken', 'src/lib/nws.js', 'h.station = stations.station(r.id)', 'h.station = r.id'],
   ['the seam is not measured', 'src/lib/nws.js', "seamF: atSeam ? observed(atSeam, 'temperature', r.id) : null", 'seamF: null'],
+  ['the fill is fetched on every poll', 'src/lib/nws.js', 'if (held?.key === key) return held.fill', 'if (false) return held.fill'],
+  ['weatherAt smooths across a hole', 'src/lib/weatherAt.js', 'if (a.time - b.time > cadence(hourly)) {', 'if (false) {'],
   ["weatherAt's tangents read a missing neighbour as 0", 'src/lib/weatherAt.js', 'const y = (j) => hourly[j][f]\n', 'const y = (j) => hourly[j][f] ?? 0\n'],
 ]
 
@@ -69,8 +73,9 @@ const OBS = {   // newest first is NOT assumed by the parser — it sorts
     barometricPressure: q('wmoUnit:Pa', 101000), cloudLayers: [{ amount: 'BKN' }], presentWeather: [],
   })),
 }
-function fakeFetch(stationIds) {
+function fakeFetch(stationIds, asked = []) {
   return async (url) => {
+    asked.push(url)
     const json = (status, body) => ({ ok: status < 400, status, json: async () => body })
     if (url.includes('/points/')) return json(200, { properties: { gridId: 'TST', gridX: 1, gridY: 1, forecastGridData: 'grid', observationStations: `stations:${stationIds}` } })
     if (url === 'grid') return json(200, { properties: GRID })
@@ -106,13 +111,13 @@ async function claims(mutant) {
   try {
     const load = (p) => vite.ssrLoadModule(p)
     const { nwsWeather, READING_FIELDS, OBS_UNITS } = await load('/src/lib/nws.js')
-    const { weatherAt, WeatherFieldMissingError } = await load('/src/lib/weatherAt.js')
+    const { weatherAt, WeatherFieldMissingError, WeatherHoleError } = await load('/src/lib/weatherAt.js')
     const { setTownPlace } = await load('/src/lib/townPlace.js')
     setTownPlace({ lat: 38.6, lon: -90.2, timezone: 'America/Chicago', lonToMeters: 87000, latToMeters: 111000 }, 'fixture')
     const { targetsOf } = await load('/src/hooks/useWeather.js')
     const { windStateOfWeather } = await load('/src/lib/windSheet.js')
     const { buildWeatherPayload } = await load('/src/lib/weather-payload.js')
-    const run = (ids) => nwsWeather({ lat: 38.6, lon: -90.2, name: 'fixture', from: new Date(FROM), now: new Date(NOW), hoursAhead: 3, fetchImpl: fakeFetch(ids) })
+    const run = (ids, asked) => nwsWeather({ lat: 38.6, lon: -90.2, name: 'fixture', from: new Date(FROM), now: new Date(NOW), hoursAhead: 3, fetchImpl: fakeFetch(ids, asked) })
 
     const w = await run('KPRS,KTMP')
     const obsH = w.hourly.filter((h) => h.source === 'observed'), gridFirst = w.meta.gridFrom.getTime()
@@ -147,6 +152,16 @@ async function claims(mutant) {
     const n = await run('KPRS')
     if (n.meta.fill !== null || n.hourly[0].source) fails.push('with no station observing temperature, the fill was not refused')
     if (!said.some((s) => /observed temperature at/.test(s))) fails.push('with no station observing temperature, nothing was said')
+    // two polls in one window: the fill's station is asked once (KTMP serves only the fill here; KPRS has the pressure)
+    const asked = []
+    await run('KPRS,KTMP,KTWO', asked); await run('KPRS,KTMP,KTWO', asked)
+    const fills = asked.filter((u) => u.includes('/stations/KTMP/observations')).length
+    if (fills !== 1) fails.push(`two polls in one window fetched the fill ${fills} times — it is held once per dawn window`)
+    // a hole: an hour no one observed is refused, by name
+    const holed = [0, 1, 3, 4].map((i) => ({ time: new Date(GRID0 + i * H), temperatureF: 50 + i }))
+    try { weatherAt(new Date(GRID0 + 2 * H), { live: false, hourly: holed }); fails.push('an instant in a hole (no reading between 16:00 and 18:00) was smoothed across') }
+    catch (e) { if (!(e instanceof WeatherHoleError)) fails.push(`an instant in a hole threw ${e.constructor.name}, not a WeatherHoleError`) }
+    if (!(weatherAt(new Date(GRID0 + 0.5 * H), { live: false, hourly: holed }).temperatureF > 50)) fails.push('an instant beside a hole was refused')
     // the readers refuse what is missing
     const filled = weatherAt(new Date(FROM + 20 * 60000), { live: false, hourly: w.hourly })
     const refuses = (label, go) => {

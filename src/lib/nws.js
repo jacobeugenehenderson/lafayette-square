@@ -39,7 +39,9 @@
  * reader that needs a missing field REFUSES the instant by name (weatherAt.js#needFields), never reads it as 0.
  * The temperature station is the first listed (up to STATIONS_TRIED) whose OWN temperature observations reach the
  * fill's first hour. ⛔ No station reaching it is said by name, and the series then starts at the grid (the reader
- * names the uncovered start). An hour inside the fill with no observation within 30 min is absent, and said.
+ * names the uncovered start). An hour inside the fill with no observation within 30 min is absent, and said: a HOLE
+ * that weatherAt refuses an instant inside (WeatherHoleError), never smoothed across. The fill is fetched once per dawn
+ * window (theFill), not per poll.
  * ⚠ The station is a point, the grid is the town's cell: the two can disagree at the grid's first hour (the seam).
  *   `meta.fill.seam` = { at, stepC } (the grid's temperature − the station's, at that instant), or null unobserved.
  * ▶ node checks/claims-the-morning-is-observed.mjs · node checks/claims-one-weather-per-instant.mjs
@@ -209,7 +211,7 @@ export async function nwsWeather({ lat, lon, name, from, now = new Date(), hours
       if (o) h.pressureMb = o.mb
     }
   }
-  const fill = fillFrom < first ? await observedHours(stations, fillFrom, first, obs?.station ?? null) : null
+  const fill = fillFrom < first ? await theFill(stations, fillFrom, first, obs?.station ?? null, nowMs) : null
   const seamC = fill?.seamF == null || gridHours[0]?.temperatureF == null ? null : (gridHours[0].temperatureF - fill.seamF) * 5 / 9
   const hourly = [...(fill?.hours ?? []), ...gridHours]
   return { current, hourly, meta: {
@@ -224,6 +226,22 @@ const NEAR = 30 * 60000     // an observation stands for the hour it falls withi
 const PRESSURE_REACH = 4 * 3600000   // the pressure series: the last 4 h (the reading and its 3 h trend)
 const _station = new Map()   // stations URL → the station last found reporting pressure
 const _tempStation = new Map()   // stations URL → the station last found reporting temperature back to the fill's start
+const _fills = new Map()   // stations URL → { key, fill }: the fill, fetched once per dawn window, not per poll
+
+/**
+ * The fill, once per (stations, window start, grid start, pressure station): its hours are past observations, so a poll
+ * inside the same window reuses them (one station's 7 h is ~0.15 MB, every 5 min per tab). A refusal is held too, so an
+ * unreachable morning is not re-asked of five stations each poll. A grid starting after now is not held (its later
+ * hours have yet to be observed).
+ */
+async function theFill(stations, fillFrom, gridFirst, pressureStation, nowMs) {
+  const key = `${fillFrom} ${gridFirst} ${pressureStation}`
+  const held = _fills.get(stations.url)
+  if (held?.key === key) return held.fill
+  const fill = await observedHours(stations, fillFrom, gridFirst, pressureStation)
+  if (gridFirst <= nowMs) _fills.set(stations.url, { key, fill })
+  return fill
+}
 
 /**
  * One poll's view of the town's observation stations: the listed ids (fetched once), and a station's observations over
