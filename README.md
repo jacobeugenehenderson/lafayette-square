@@ -248,7 +248,7 @@ React Three Fiber, Three.js, Zustand, Tailwind CSS, Vite, Supabase (Cary courier
 
 - **Apps Script** (`apps-script/Code.js`) — listings, reviews, events, check-ins, residence, guardian claims, QR designs.
 - **Supabase** — Cary courier system (requests, sessions, auth). Not yet live.
-- **Cloudflare Worker** (`worker.js`) — OG meta tags for social link previews.
+- **Link previews** — the site Workers (`workers/production-sites`, `workers/staging-sites`) write every town's and every place's card through `src/lib/shareCard.js`; `worker.js` is Lafayette Square's legacy until its cutover.
 - **Cartograph backend** (`cartograph/serve.js`) — local-only Node service for the authoring helpers (Looks API, bake CLI runner, overlay I/O). Not deployed; helpers are dev-time tools.
 
 ## Admin access

@@ -9,7 +9,12 @@
  *    caches a preview by URL never shows a stale slot or a previous capture.
  * ⛔ No picture is never another town's. A town whose manifest names no share image for the slot (it was published
  *    before it had a capture) gets a card with no image and an `imageError`, which `withShareCard` serves as an incomplete card, loudly.
+ * ⭐ A SHARED PLACE LINK SENDS THE PLACE'S CARD (BRIEF-share-image-by-time-of-day §7, part 2): `/place/<id>/<name>`
+ *    gets the listing's own name, its type and address, its own address as og:url, and its photo when the photo may be
+ *    shown without a credit (`PREVIEW_LICENCES`), else the town's picture for the hour. A place the town's listings
+ *    don't know gets the town's card, and the response says so by name (`card.note`), never silently.
  * ▶ node checks/claims-a-town-shares-its-own-picture.mjs · node checks/claims-a-town-page-writes-its-own-card.mjs
+ *   · node checks/claims-a-place-link-sends-its-own-card.mjs
  */
 import { TOD_SLOT_IDS, todSlotAt, SHARE_SLOT_TOLERANCE_MIN } from './todSlots.js'
 import { HASHED, servedRel } from './slabNames.js'
@@ -29,19 +34,57 @@ export function shareSlotAt(manifest, when) {
 }
 
 /**
+ * A place's address within a town (the Ward's routes.js `/place/<id>/<name>`) → { id }, { malformed: the raw segment }
+ * when it does not decode (`%E0%A4%A`), or null for any other path. ⛔ Never throws: a bad link still gets a page.
+ */
+export function placeIdOf(path) {
+  const m = /^\/place\/([^/?#]+)/.exec(path || '')
+  if (!m) return null
+  try { return { id: decodeURIComponent(m[1]) } } catch { return { malformed: m[1] } }
+}
+
+/**
+ * The town's published listings, read from its slab only for a place path (every other page needs none): the
+ * Worker's env (its `ASSETS` bucket), the slab's key prefix (`…baked/<look>/`), the manifest, the path within the town.
+ * → { listings: [listing] | null, listingsWhy: why there are none | null }, spread into `cardFor`.
+ * ⛔ A listings file the manifest names but the bucket lacks or can't parse is SAID (the page is still served, as a
+ *    town without a picture is), never read as "no such place".
+ */
+export async function placeListings(env, prefix, manifest, path) {
+  const at = placeIdOf(path)
+  if (at == null || at.malformed != null) return { listings: null, listingsWhy: null }
+  if (!manifest?.content?.['listings.json']) return { listings: null, listingsWhy: 'the town publishes no listings' }
+  try {
+    const obj = await env.ASSETS.get(`${prefix}content/listings.json`)
+    if (!obj) return { listings: null, listingsWhy: `${prefix}content/listings.json is in the manifest but not in the bucket` }
+    const body = await obj.json()
+    const listings = Array.isArray(body) ? body : body?.listings
+    return Array.isArray(listings) ? { listings, listingsWhy: null } : { listings: null, listingsWhy: `${prefix}content/listings.json has no listings array` }
+  } catch (e) { return { listings: null, listingsWhy: `${prefix}content/listings.json could not be read: ${e.message}` } }
+}
+
+/**
+ * ⛔ The licences under which a place's photo may stand in a link preview, where no credit can be shown. A messaging
+ * app draws the picture alone, so a photo whose terms ask for attribution (CC BY, CC BY-SA) or that is shown by
+ * permission (`rights`, no licence) is NOT used there: the town's picture stands in, and the response says why.
+ * Widening this is Jacob's ruling, not a code change made for coverage.
+ */
+export const PREVIEW_LICENCES = ['Public domain', 'CC0', 'CC0 1.0']
+
+/**
  * The card for a request to `path` in a town.
  *   town      — the town's towns.json entry ({ title, description, faviconUrl, mark }), or null
  *   map       — the town's id (the title when it has no entry)
- *   path      — the request path within the town. ⭐ Part 2 (§7 of the brief): a `/place/<id>/<name>` path will
- *               return the place's own title, url and picture here; every other path gets the town's card.
+ *   path      — the request path WITHIN the town ('/' for its front, '/place/<id>/<name>' for a place)
  *   manifest  — the town's published slab manifest
  *   slabBase  — the absolute URL of the town's slab directory, ending in `baked/<look>/`
- *   pageUrl   — the card's og:url
+ *   pageUrl   — the town's front page (the card's og:url, and the root a place's own url is written from)
+ *   listings  — the town's published listings ([…], from content/listings.json) for a place path; null when not read
+ *   listingsWhy — why `listings` is null for a place path (placeListings), said in the card's note
  *   when      — the instant the link is opened
- * → { title, description, image, url, icon, imageError }
+ * → { title, description, image, url, icon, imageError, note }
  */
-export function cardFor({ town, map, path, manifest, slabBase, pageUrl, when }) {
-  void path   // part 2 reads it
+export function cardFor({ town, map, path, manifest, slabBase, pageUrl, listings = null, listingsWhy = null, when }) {
   let image = null, imageError = null
   try {
     if (!manifest) throw new Error('no published manifest')
@@ -50,13 +93,37 @@ export function cardFor({ town, map, path, manifest, slabBase, pageUrl, when }) 
     if (manifest.names !== HASHED) throw new Error(`its slab is not published under content names, so "${rel}" has no address a preview cache can't confuse`)
     image = slabBase + servedRel(manifest, rel, true)
   } catch (e) { imageError = `share image for "${map}": ${e.message}` }
-  return {
+  const card = {
     title: town?.title || map,
     description: town?.description || null,
     image, imageError,
     url: pageUrl,
     icon: town?.faviconUrl || (town?.mark ? emojiIcon(town.mark) : null),
+    note: null,
   }
+  const at = placeIdOf(path)
+  if (at == null) return card
+  if (at.malformed != null) { card.note = `the town card for a place link that does not decode: "${at.malformed}"`; return card }
+  const { id } = at
+  const place = Array.isArray(listings) ? listings.find((l) => l.id === id) : null
+  if (!place) {
+    card.note = listings == null ? `the town card for place "${id}": ${listingsWhy || 'its listings were not read'}`
+      : `the town card for place "${id}": ${map}'s listings have no such place`
+    return card
+  }
+  const type = manifest?.taxonomy?.categories?.find((c) => c.id === place.category)?.types?.find((t) => t.id === place.subcategory)?.label
+  card.title = place.name
+  card.description = [type, place.address].filter(Boolean).join(' · ') || null
+  card.url = pageUrl + path.replace(/^\//, '').replace(/[?#].*$/, '')
+  const photo = (place.photos || []).map((p) => (typeof p === 'string' ? { url: p } : p)).find((p) => p?.url && manifest?.photos?.[p.url])
+  if (photo && PREVIEW_LICENCES.includes(photo.license)) {
+    // Served under its content name, as the town's picture is, so a preview cache never shows a replaced photo.
+    try {
+      if (manifest.names !== HASHED) throw new Error('the slab is not published under content names')
+      card.image = slabBase + servedRel(manifest, manifest.photos[photo.url].path, true)
+    } catch (e) { card.note = `the town's picture for "${id}": its photo has no content-named address (${e.message})` }
+  } else if (photo) card.note = `the town's picture for "${id}": its photo is ${photo.license || (photo.rights ? 'shown by permission' : 'of unstated licence')}, which a preview cannot credit`
+  return card
 }
 
 function emojiIcon(glyph) {
@@ -129,6 +196,8 @@ export async function withShareCard(rewriter, response, card, { site, map }) {
     } })
     .transform(await response)
   const res = new Response(out.body, out)
-  res.headers.set(CARD_HEADER, why ? `incomplete; ${why}`.replace(/[^\x20-\x7e]/g, '?') : 'complete')
+  // A place link that fell to the town's card says so, by name, beside the card's completeness.
+  if (card.note) console.error(`[${site}] share card for "${map}": ${card.note}`)
+  res.headers.set(CARD_HEADER, `${why ? `incomplete; ${why}` : 'complete'}${card.note ? `; ${card.note}` : ''}`.replace(/[^\x20-\x7e]/g, '?'))
   return res
 }

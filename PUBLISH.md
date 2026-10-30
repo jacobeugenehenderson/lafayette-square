@@ -191,7 +191,7 @@ The Apps Script reads/writes to a Google Sheets workbook. Key sheets:
 
 ## 3. Cloudflare Worker (`worker.js`)
 
-Injects per-place OG meta tags for social link previews on `/place/*` routes.
+⛔ **Lafayette Square legacy, until its cutover:** serves lafayette-square.com only. Every Ward town's link preview, the town's and a place's, is written by the kit's site Workers (`workers/production-sites`, `workers/staging-sites`) through `src/lib/shareCard.js`. Injects per-place OG meta tags for social link previews on `/place/*` routes.
 
 Deploy via Cloudflare dashboard: **Workers & Pages > lafayette-square-proxy > Edit Code**, paste `worker.js`, save and deploy.
 

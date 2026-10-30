@@ -27,7 +27,7 @@
  * Sibling: `workers/staging-sites` — the same shape, keyed by path instead of host.
  */
 import { route, hostKey, wwwRedirect } from './route.js'
-import { cardFor, withShareCard } from '../../../src/lib/shareCard.js'
+import { cardFor, withShareCard, placeListings } from '../../../src/lib/shareCard.js'
 import { wireHeaders } from '../../../src/lib/slabWire.js'
 const text = (body, status) => new Response(body + '\n', { status,
   headers: { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store' } })
@@ -128,9 +128,10 @@ async function townPage(response, rec, url, env, kitBase) {
   // reads the one beside the kit's player for both.
   const tObj = await env.ASSETS.get(`player/${rec.map}/towns.json`)
   const manObj = await env.ASSETS.get(`baked/${rec.look}/manifest.json`)
+  const manifest = manObj ? await manObj.json() : null
   const card = cardFor({ town: (tObj ? await tObj.json() : {})[rec.map] || null, map: rec.map, path: url.pathname,
-    manifest: manObj ? await manObj.json() : null, slabBase: `${url.origin}/baked/${rec.look}/`,
-    pageUrl: `${url.origin}/`, when: new Date() })
+    manifest, slabBase: `${url.origin}/baked/${rec.look}/`, pageUrl: `${url.origin}/`,
+    ...await placeListings(env, `baked/${rec.look}/`, manifest, url.pathname), when: new Date() })
   const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;')
   return withShareCard(new HTMLRewriter()
     .on('head', { element(el) {

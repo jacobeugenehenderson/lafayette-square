@@ -92,11 +92,17 @@ sends to a person's device when someone shares a listing."*
   is, what it makes, and what Publish refuses without it) · `SLAB-CONTRACT` (the new files). Say in each commit which
   it reached.
 
-## 7. Part 2, NOT this brief: a shared place link sends the place's card (Jacob: "not today but soon")
+## 7. Part 2: a shared place link sends the place's card. BUILT 2026-10-30 (Ward, at Boz's word), `ward/share-card-per-place`
 
-The Worker reads the place from the path (`/place/<id>/<name>`, the Ward's `routes.js`) and serves the place's name and
-`og:url`, and its own picture where one exists. ⛔ Not built here. Leave the Worker's card builder so that a
-per-path card is an addition, not a rewrite, and say in your report how part 2 would plug in.
+`shareCard.js#cardFor` reads the path within the town (both Workers hand it the same one; staging strips `/<map>`):
+`/place/<id>/<name>` gets the listing's name, "<type> · <address>" (the manifest's taxonomy), its own address as
+`og:url`, and its photo when that photo's licence is in `PREVIEW_LICENCES`, else the town's picture for the hour. The
+Workers read `content/listings.json` only for a place path (`placeListings`). A place the listings lack, or a town that
+publishes none, gets the town's card and the `ward-share-card` header says why by name.
+▶ `node checks/claims-a-place-link-sends-its-own-card.mjs`
+⛔ **Parked (Jacob, 2026-10-30: "this will have to wait"; BACKLOG row):** which photos may stand in a preview with no credit. Built narrow: public domain and CC0 only. PTown's
+place photos are CC BY / CC BY-SA (attribution required) or the PBG guide's, shown by permission (`rights`), so today
+2 of its 33 photographed places would send their photo.
 
 ## 8. Done when
 
