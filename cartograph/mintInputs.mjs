@@ -85,7 +85,7 @@ export function mintInputs({ ribbonStreets, skeletonStreets, osm, bb, disc, disc
   const streets = J.streets
   const coast = readCoast(cleanDir, bb, who)
   // the decks are closed at the step the coast was traced at (coast.json fineM), so the mint takes out the footprints the trace saw
-  const decks = coast.coast ? streetDecks(osm.ground || {}, streets, coast.doc.fineM) : { rings: [], decks: [] }
+  const decks = coast.coast ? streetDecks(osm.ground || {}, streets, coast.doc.fineM, osm.buildings) : { rings: [], decks: [] }
   const water = coast.coast ? waterWithoutDecks(coast.rings, coast.arcs, decks.rings, coast.doc.fineM) : { rings: [], arcs: [], decks: [], slivers: [] }
   // the deck as ① takes it out, the water beside it narrower than one trace cell included: what streetDecks' record freezes
   decks.decks.forEach((d, k) => { d.ring = water.decks[k] })

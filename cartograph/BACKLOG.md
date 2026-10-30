@@ -31,8 +31,8 @@ per-place share cards (1d7a0743) · PTown's tagline (64aa9fb3) · one place per 
    then `! curl -s -X POST localhost:3333/looks/<id>/promote`; then purge prefix `assets.theward.online/baked/`;
    then `! node scratch/slab-compressed-gate.mjs https://provincetown.online/ provincetown` (and hipointedemun). Exit 0.
 9. **Re-time PTown:** `scratch/browse-perf/load.mjs` cold ×3 + a throttled run (before: 7.2–8.5 s desktop, 120.9 MB).
-OPEN for Jacob: ⭐ the MARINA DOCKS (Plumb, built for his eye): under the fix the floating docks become WATER (no green stripes; the
-off-ground deck object is unbuilt), incl. Fishermen's Wharf's floating docks, which read plausibly today. Before/after frames come with it;
+OPEN for Jacob: ⭐ the MARINA DOCKS (Plumb, built for his eye): under the fix the floating docks moored at MacMillan become WATER (no
+green stripes; the off-ground deck object is unbuilt); Fishermen's floating marina stays as drawn (rule (A1)). Before/after frames come with it;
 his word merges it. · the share image fixed vs time-of-day (it works as designed; send links by day) · hours (56/447) · the
 preview-photo licence (parked) · a floating dock riding the tide · LS's cutover. In progress: Plumb on the marina docks drawn as treelawn.
 
@@ -124,13 +124,13 @@ after the port merges. The full refusal census on the merged port, then one clas
 empty; 42 near-only chunks named KNOWN in claims-the-armoured-shore-is-never-empty) and Jacob's seam ruling ("call them from the same
 place") in one rewrite of `drapeGlobals`: one nested lattice sized from what it builds, `farRow` the one producer of the near/far edge.
 Groyne, a follow-up off groyne/far-shore.
-**⛔ PTOWN'S MARINA DOCKS DRAW AS GREEN 'TREELAWN' ON THE SEABED** (Zob, measured 2026-10-30; Jacob's "markings on the sandbed are grass"):
-OSM floating piers (`highway=footway, man_made=pier, floating=yes, mooring=yes`; ways 1486114948, 1486114957–978, 289074419/420)
-reach the ground as `treelawn:<LU>` (renderOrder 32, #6E8A5E) at ground level, so at low tide they lie as green stripes on the exposed bed.
-⛔ This CONTRADICTS a standing ruling: `r-a-way-tag-decides-before-byCoast` says man_made=pier is a deck. So it's a defect, not a design
-question: which code turns a pier footway (a PATH, not a street) into treelawn is not traced. Kit-wide: any town with mapped docks.
-Open for Jacob after: what `floating=yes` means for the deck's height (the tide). Also check the ~0.9 km² salt marsh drawn as
-`treelawn:*` west of the Breakwater (plausibly the same mislabel at area scale, unverified). Next for Plumb.
+**⛔ PTOWN'S MARINA DOCKS DRAW AS GREEN 'TREELAWN' ON THE SEABED: traced and fixed on plumb/a-dock-rides-no-street, held for Jacob's eye.**
+Cause: structures.mjs#deckFootprints unioned the floating docks moored at MacMillan into its street deck, so they left ①'s water as
+parcel-less land (`treelawn:underived`, surface grass). Fix: a street rides the deck ways it crosses and, along the structure, ways of its
+own kind (Boz's (A)/(A1)). ▶ `node checks/claims-a-dock-rides-only-its-own-structure.mjs`. Left open, cause not established, each its own:
+- a named floating footway (Provincetown Marina, ways 769135305–307) is a STREET in the skeleton.
+- MacMillan's fixed pier footways (1486114953–956) ride as land with no parcel, so they still paint `underived` (about 134 triangles).
+- ~0.9 km² of salt marsh is labelled `treelawn:wetland`, a curb-side band filling whole cells (draws in the wetland colour; Zob).
 **⛔ URGENT, DISPATCHED to Gimbal: `docs/briefs/BRIEF-the-overhead-camera-resolves-its-ground.md`** (Jacob, 2026-10-30, live PTown on
 his phone: the seabed shows through the harbour in Browse and Society; desktop clean). Phone linear depth with near 1 m at ~6.5 km.
 **▶ JACOB, 2026-10-30 (not tonight): THE PUBLISH PANEL'S BUTTONS ARE CONFUSING:** "the slab/player publish/push buttons … are unnecessarily

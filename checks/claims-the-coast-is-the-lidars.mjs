@@ -246,7 +246,7 @@ console.log('── F. a deck that carries a street leaves the water; one that c
     { tags: { man_made: 'pier', width: '10' }, coords: [{ x: 50, z: -20 }, { x: 50, z: 80 }], isClosed: false },
     { tags: { man_made: 'pier', width: '10' }, coords: [{ x: 150, z: -20 }, { x: 150, z: 80 }], isClosed: false }] }
   const streets = [{ skelId: 'wharf-st', points: [[50, -40], [50, 70]] }]
-  const sd = streetDecks(ground, streets, 1)
+  const sd = streetDecks(ground, streets, 1, [])
   say(sd.decks.length === 1 && sd.decks[0].streets.join() === 'wharf-st', `by construction, only the deck the street crosses carries it (${sd.decks.length} deck: ${sd.decks.map(d => d.streets).join()})`)
   const w = waterWithoutDecks(water, arcs, sd.rings, 1), area = (r) => r.reduce((t, p, i) => { const q = r[(i + 1) % r.length]; return t + p[0] * q[1] - q[0] * p[1] }, 0) / 2
   const A = w.rings.reduce((t, r) => t + area(r), 0)
@@ -266,7 +266,7 @@ console.log('── F. a deck that carries a street leaves the water; one that c
   const shore = [[-200, -100], [0, -100], [200, -100]], lake = [...shore, [200, -200], [-200, -200]].reverse()
   const pier = [[-10, -140], [10, -140], [10, -90], [-10, -90]], mintSt = [sq('c', [[-150, 0], [150, 0]]), sq('p', [[0, -60], [0, -140]])]
   const disc = Array.from({ length: 48 }, (_, i) => [190 * Math.cos(i / 48 * 2 * Math.PI), 190 * Math.sin(i / 48 * 2 * Math.PI)])
-  const sd2 = streetDecks({ man_made: [{ tags: { man_made: 'pier', width: '20' }, coords: [{ x: 0, z: -90 }, { x: 0, z: -140 }], isClosed: false }] }, mintSt, 1)
+  const sd2 = streetDecks({ man_made: [{ tags: { man_made: 'pier', width: '20' }, coords: [{ x: 0, z: -90 }, { x: 0, z: -140 }], isClosed: false }] }, mintSt, 1, [])
   const w2 = waterWithoutDecks([sa2(lake) > 0 ? lake : [...lake].reverse()], [shore], sd2.rings, 1)
   const quiet = (f) => { const l = console.log, wn = console.warn; console.log = () => {}; console.warn = () => {}; try { return f() } catch (e) { return { refused: String(e.message) } } finally { console.log = l; console.warn = wn } }
   const MP = quiet(() => mintProtopolygon({ streets: mintSt, boundary: disc, bb: { x0: -200, x1: 200, z0: -200, z1: 200 }, coast: w2.rings, coastArcs: w2.arcs }))
@@ -320,7 +320,7 @@ console.log('── F2. a deck is its ways joined, opened and closed at the trac
   const narrow = { man_made: [{ tags: { man_made: 'pier' }, isClosed: true, coords: pt([[0, 0], [0.8, 0], [0.8, 20], [0, 20], [0, 0]]) }] }
   const nf = deckFootprints(narrow, 1)
   say(!nf.rings.length && nf.belowResolution.length === 1 && Math.abs(nf.belowResolution[0].m2 - 16) < 1e-6, `a 0.8 m pier at a 1 m step is below resolution: ${nf.belowResolution.length} listed (${nf.belowResolution[0]?.m2} m²), ${nf.rings.length} footprint(s)`)
-  let nr = null; try { streetDecks(narrow, [{ skelId: 'catwalk', points: [[0.4, -5], [0.4, 15]] }], 1) } catch (e) { nr = String(e.message) }
+  let nr = null; try { streetDecks(narrow, [{ skelId: 'catwalk', points: [[0.4, -5], [0.4, 15]] }], 1, []) } catch (e) { nr = String(e.message) }
   say(/catwalk rides a deck/.test(nr || ''), `a street riding a deck below the trace's resolution REFUSES by name (${nr ? 'refused' : 'ACCEPTED'})`)
   // ⛔ per deck, never across two: two piers 0.8 m apart, under one cell, stay two
   const two = deckFootprints({ man_made: [{ tags: { man_made: 'pier' }, isClosed: true, coords: pt([[0, 0], [5, 0], [5, 10], [0, 10], [0, 0]]) },
