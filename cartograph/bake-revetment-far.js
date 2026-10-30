@@ -7,7 +7,7 @@
  * camera-dependent and mostly never seen. The FAR layer is the whole armoured shore at octaves 1 and does not depend on
  * the camera at all, yet the player built it in a frame loop at load: one 3.2 s task on provincetown's cold load (Ward's
  * profile). Its weight is quantized (format 3, src/lib/farQuant.js; Jacob 2026-10-29: "compress, fine normals"); the bake
- * prints each bin's MB, raw and gzip.
+ * prints each bin's MB, raw and as stored (brotli: scripts/slab-wire.mjs, what a visitor downloads).
  *
  * ⭐ THE SAME BYTES THE PLAYER BUILT. Every piece is the runtime's own function on the runtime's own inputs: the look's
  * slab (the ground, terrain and revetment.json the player fetches), `revetmentFaces` → `toeFor` → `drapeLattices` /
@@ -50,7 +50,7 @@ import { readFileSync, existsSync, unlinkSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createHash } from 'node:crypto'
-import { gzipSync } from 'node:zlib'
+import { encodeBytesSync } from '../scripts/slab-wire.mjs'
 import { writeIfChanged } from './io.js'
 import { assertBakeTarget } from './bake-target.js'
 import { requireExplicitMap } from './scene.js'
@@ -227,7 +227,7 @@ export function bakeRevetmentFar({ look, scene, dryRun = false } = {}) {
   console.log(`  near index: ${doc.info.length} chunks · ${nearOnly.length} keep stone near and NOTHING far (${nearOnly.reduce((s, c) => s + c.nearTris, 0).toLocaleString()} near tris) · ${doc.info.filter(c => !c.box).length} keep nothing at either`)
   console.log(`[bake-revetment-far] ${look}: ${faces.length} armoured faces → ${doc.chunks.length} chunks, ${tris(doc.chunks).toLocaleString()} tris in ${ms.toFixed(0)} ms`)
   console.log(`  movie: ${seen.length} chunks seen (${tris(seen).toLocaleString()} tris, first at ${seen[0]?.firstSeen ?? '—'}), ${doc.chunks.length - seen.length} never (${tris(doc.chunks.filter(c => c.firstSeen == null)).toLocaleString()} tris)`)
-  for (const [name, b] of Object.entries(bins)) console.log(`  ${name}: ${(b.length / 1e6).toFixed(2)} MB, ${(gzipSync(b).length / 1e6).toFixed(2)} MB gzip`)
+  for (const [name, b] of Object.entries(bins)) console.log(`  ${name}: ${(b.length / 1e6).toFixed(2)} MB, ${(encodeBytesSync(b).length / 1e6).toFixed(2)} MB as stored (br)`)
   console.log(`  grid (format ${FAR_FORMAT}): ${step.map(s => (s * 1000).toFixed(3)).join(' × ')} mm a step, so a position is within half of it`)
   console.log(`  reads: ${Object.keys(meta.from).concat(['ground.json', 'terrain.json']).join(', ')} (public/baked/${look}/)`)
   if (dryRun) { console.log('  DRY RUN — nothing written'); return { doc, bins } }
