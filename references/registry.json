@@ -5197,6 +5197,15 @@
       "findings": [
         "r-the-open-close-follows-its-definition-and-names-every-topology-change"
       ]
+    },
+    {
+      "id": "q-what-the-tower-light-does",
+      "ask": "Whether Society's Tower Light should keep adding a lamp over the map, or show the map as a map",
+      "neededBy": "Jacob, 2026-10-29: 'I'd like to revise what it does. What would happen if we turned everything to flat shaders?'",
+      "status": "answered",
+      "findings": [
+        "r-the-tower-light-shows-the-map-as-a-map"
+      ]
     }
   ],
   "findings": [
@@ -8774,6 +8783,22 @@
       "quote": "\"PTown's singles: A\"",
       "canon": "docs/briefs/BRIEF-provincetown-pours-on-the-port.md",
       "notes": "UNBUILT at filing; Plumb builds it with a planted crop per kind and mutants."
+    },
+    {
+      "id": "r-the-tower-light-shows-the-map-as-a-map",
+      "question": "q-what-the-tower-light-does",
+      "kind": "ruling",
+      "value": {
+        "rule": "the Tower Light shows the map AS A MAP: the town drawn unlit, in flat colour, legible at any hour, instead of adding a lamp over it",
+        "keeps": "the neon and the colour bands stay as they are",
+        "replaces": "theward README §3 'The Tower Light' (a lamp added over the map, its crisp shadows, its warming pause)",
+        "open": "what the night windows, lamps, sky and water do under it; the size of the change (every custom shader needs a shared lighting weight); a mock of Society before any build"
+      },
+      "by": "Jacob",
+      "date": "2026-10-29",
+      "quote": "\"Show the map as a map. We'd want to keep the neon, or color bands, anyway\"",
+      "canon": "theward README §3 (the Tower Light), to be rewritten when built",
+      "notes": "UNBUILT. Ward sizes it (kit + Ward) and mocks Society before a brief."
     }
   ]
 }
