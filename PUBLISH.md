@@ -24,7 +24,7 @@ Every API URL in this project must use the same Apps Script deployment ID.
 
 If these drift apart you get "Unknown-action" errors, because an older deployment lacks the newer actions — a failure that reads like a broken feature rather than a stale URL. **After any `clasp deploy`, run the check.**
 
-⚠️ **Two locations are not reachable from the filesystem and the check reports them as MANUAL rather than passing them silently:** the GitHub Secret `VITE_API_URL` ([Settings > Secrets > Actions](https://github.com/jacobeugenehenderson/lafayette-square/settings/secrets/actions)) and the Supabase secret **`GAS_API_URL`**, which the `commerce-write` edge function uses to reach `guardian-check`.
+⚠️ **Locations the check cannot reach (the GitHub Secret `VITE_API_URL`, the Supabase secret `GAS_API_URL`, and theward-operations' `BACKEND_URL`) are printed by it as MANUAL rather than passed silently.** The GitHub Secret is at [Settings > Secrets > Actions](https://github.com/jacobeugenehenderson/lafayette-square/settings/secrets/actions).
 
 ⭐ **Use `clasp deploy -i <ID>`** (see Quick reference below). The `-i` reuses the existing deployment, which is what keeps the URL — and therefore all six locations — valid. A fresh `clasp deploy` mints a NEW id and breaks every one of them at once.
 

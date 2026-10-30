@@ -15,11 +15,9 @@
  * So this SEARCHES instead of listing, and it is the reason it can be trusted:
  * a new location added anywhere in the repo is picked up without editing here.
  *
- * ⚠️ Two locations cannot be reached from the filesystem and are reported as
- * MANUAL rather than silently passed — the GitHub Secret `VITE_API_URL` and the
- * Supabase secret `GAS_API_URL` (which the commerce-write edge function uses to
- * reach `guardian-check`). A check that says nothing about what it cannot see is
- * a check that lies toward "fine".
+ * ⚠️ Locations this repo's filesystem cannot reach (secrets, another repo) are
+ * printed as MANUAL below rather than silently passed. A check that says nothing
+ * about what it cannot see is a check that lies toward "fine".
  *
  *   node checks/claims-deployment-id-single-source.mjs
  */
@@ -76,6 +74,7 @@ for (const [id, locs] of hits) {
 console.log('\n  MANUAL — not reachable from the filesystem, verify by hand:')
 console.log('      GitHub Secret  VITE_API_URL   (Settings → Secrets → Actions)')
 console.log('      Supabase secret GAS_API_URL   (used by the commerce-write edge function)')
+console.log('      theward-operations wrangler.jsonc BACKEND_URL   (another repo: account recovery, SECURITY F-31)')
 if (!existsSync(envPath)) console.log('      .env            (absent here — present on the dev machine)')
 
 if (ids.length <= 1) {

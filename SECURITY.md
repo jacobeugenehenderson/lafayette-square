@@ -538,7 +538,7 @@ building cards."* ⇒ both verifiers stay; building cards carry a secret. ⛔ **
 neighbour verifies without the target device's key, and how the card's secret and the Host's verification fit
 together. The fix above is not built until that lands, and no building card prints before it.
 
-### F-24 · CRITICAL · Request values are written to the sheet as formulas  *(new, 2026-10-07; EXISTING on live)*  — ⚙️ FIXED IN DRAFT 2026-10-13, unreviewed, not deployed
+### F-24 · CRITICAL · Request values are written to the sheet as formulas  *(new, 2026-10-07; EXISTING on live)*  — ⚙️ FIXED IN DRAFT 2026-10-13, reviewed 2026-10-30 (Zob), not deployed
 `apps-script/Code.js` writes request values straight into rows (`appendRow`) and cells (`setValue`), with no check
 that a device key is one and no guard on text. Sheets evaluates a string beginning `=`, `+`, `-` or `@` as a FORMULA.
 A device key sent as a formula that points at another tab writes a row whose key IS another person's key, so the
@@ -547,16 +547,16 @@ too (exfiltration). Proven in Node against an in-memory sheet, not against live:
 as a device key and stores one as an avatar (▶ theward `backend/hotfix-harness.mjs`). Found by the Ward's security review of the shared-terminal patch.
 **Fix:** every request's device keys (`dh`, `*_hash`) must match `^[0-9a-f]{16}$` before any action runs, and every
 appended row and updated cell passes through one helper, `safeCell`, which writes a formula-shaped string as text.
-⚙️ **In the hotfix draft, awaiting its second review; ⛔ not deployed** (Jacob's deploy steps are in its header): theward `wip/backend-hotfix` (b5ebaf0), `backend/apps-script-hotfix-2026-10-07.DRAFT.patch`. ▶ theward `node backend/hotfix-harness.mjs <Code.js>` (+ `hotfix-mutations.mjs`). Its predeploy audit lists every live key the door would refuse.
+⚙️ **In the hotfix draft, second review closed 2026-10-30 (Zob); ⛔ not deployed** (Jacob's deploy steps are in its header): theward `wip/backend-hotfix` (7b5da7b), `backend/apps-script-hotfix-2026-10-07.DRAFT.patch`. ▶ theward `node backend/hotfix-harness.mjs <Code.js>` (+ `hotfix-mutations.mjs`). Its predeploy audit lists every live key the door would refuse.
 
-### F-25 · HIGH · `listing-staff` hands every staff member's device key to a Guardian  *(new, 2026-10-07; EXISTING on live)*  — ⚙️ FIXED IN DRAFT 2026-10-13, unreviewed, not deployed
+### F-25 · HIGH · `listing-staff` hands every staff member's device key to a Guardian  *(new, 2026-10-07; EXISTING on live)*  — ⚙️ FIXED IN DRAFT 2026-10-13, reviewed 2026-10-30 (Zob), not deployed
 `apps-script/Code.js` `getListingStaff` returns `device_hash` for every Guardians row of a listing. A device key is the
 credential, so any full Guardian holds every keyholder's identity, permanently. Found by the Ward's second security
 review (shared-terminal patch), which makes it worse: a signed-in shop screen would hand out its person's phone key.
 **Fix:** `listing-staff` returns an opaque staff id; the staff actions take that id, never a device key; `is_me` marks the
-requester's row, which the kit's staff panel reads (bf909fba). ⚙️ **In the hotfix draft, awaiting its second review; ⛔ not deployed** (Jacob's deploy steps are in its header): theward `wip/backend-hotfix` (b5ebaf0), `backend/apps-script-hotfix-2026-10-07.DRAFT.patch`. ▶ theward `node backend/hotfix-harness.mjs <Code.js>` (+ `hotfix-mutations.mjs`). Every staff key already handed out is owed rotation (F-27).
+requester's row, which the kit's staff panel reads (bf909fba). ⚙️ **In the hotfix draft, second review closed 2026-10-30 (Zob); ⛔ not deployed** (Jacob's deploy steps are in its header): theward `wip/backend-hotfix` (7b5da7b), `backend/apps-script-hotfix-2026-10-07.DRAFT.patch`. ▶ theward `node backend/hotfix-harness.mjs <Code.js>` (+ `hotfix-mutations.mjs`). Every staff key already handed out is owed rotation (F-27).
 
-### F-26 · MEDIUM (integrity) · `savedesign` has no authorisation  *(new, 2026-10-07; EXISTING on live; read 2026-10-13)*  — ⚙️ FIXED IN DRAFT 2026-10-13, unreviewed, not deployed
+### F-26 · MEDIUM (integrity) · `savedesign` has no authorisation  *(new, 2026-10-07; EXISTING on live; read 2026-10-13)*  — ⚙️ FIXED IN DRAFT 2026-10-13, reviewed 2026-10-30 (Zob), not deployed
 `apps-script/Code.js#saveDesign` overwrites a business's row in the town's `Designs` tab (`design_json`, any JSON
 object) for whatever business id the request names, or appends a new row for an unknown one. It checks no caller.
 **What a Design is:** per its commit (81a19b66, 2026-02-25), a business's saved styled-QR design. The designer loads it
@@ -566,7 +566,7 @@ sent no credential at all. Established: anyone can replace any business's saved 
 **Reach:** every town. A tenant id selects the town and is public (F-28).
 **Fix:** a valid admin token, or a full Guardian of the listing (`isFullGuardianOf`, the same people the player lets
 open CodeDesk); a design id must end in one of CodeDesk's own QR types, else it is refused. CodeDesk now sends the
-Guardian's key or the operator's token and shows a refused save (kit bf909fba, which ships BEFORE the backend). ⚙️ **In the hotfix draft, awaiting its second review; ⛔ not deployed** (Jacob's deploy steps are in its header): theward `wip/backend-hotfix` (b5ebaf0), `backend/apps-script-hotfix-2026-10-07.DRAFT.patch`. ▶ theward `node backend/hotfix-harness.mjs <Code.js>` (+ `hotfix-mutations.mjs`).
+Guardian's key or the operator's token and shows a refused save (kit bf909fba, which ships BEFORE the backend). ⚙️ **In the hotfix draft, second review closed 2026-10-30 (Zob); ⛔ not deployed** (Jacob's deploy steps are in its header): theward `wip/backend-hotfix` (7b5da7b), `backend/apps-script-hotfix-2026-10-07.DRAFT.patch`. ▶ theward `node backend/hotfix-harness.mjs <Code.js>` (+ `hotfix-mutations.mjs`).
 The four other writes that looked ungated (`set-handle`, `update-avatar`, `bulletin`, `remove-lobby-post`) were read
 to the end. Each is self-scoped by the caller's own `device_hash` (`bulletin` also requires a townie), so none is open
 beyond the bearer-key model F-24 and F-27 already cover.
@@ -576,12 +576,12 @@ every CodeDesk call, F-26's save included, is refused as townless; it should sen
 (`claims-a-town-has-one-sealed-id.mjs` #6 doesn't list it). (b) CodeDesk's claim-secret reads the admin token from
 `sessionStorage`, and the app keeps it in `localStorage`, so the operator's fetch carries no token.
 
-### F-27 · CRITICAL · Device keys are served publicly in events and reviews  *(new, 2026-10-07; EXISTING on live)*  — ⚙️ FIXED IN DRAFT 2026-10-13, unreviewed, not deployed
+### F-27 · CRITICAL · Device keys are served publicly in events and reviews  *(new, 2026-10-07; EXISTING on live)*  — ⚙️ FIXED IN DRAFT 2026-10-13, reviewed 2026-10-30 (Zob), not deployed
 `apps-script/Code.js` `fetchEventsData` (GET `events`, and `init`) and `getReviews` (GET `reviews`) return whole sheet
 rows, `device_hash` included, to any caller. Events are posted by staff, so every Guardian or Keyholder who ever posted
 one has a public key (usually their phone's); every reviewer's key is public too. A key is the credential: read one,
 act as that person. Found by the Ward's third security review (shared-terminal patch); not exercised against live.
-**Fix:** neither response carries `device_hash` (an `is_mine` flag if a client needs one). ⚙️ **In the hotfix draft, awaiting its second review; ⛔ not deployed** (Jacob's deploy steps are in its header): theward `wip/backend-hotfix` (b5ebaf0), `backend/apps-script-hotfix-2026-10-07.DRAFT.patch`. ▶ theward `node backend/hotfix-harness.mjs <Code.js>` (+ `hotfix-mutations.mjs`). After deploy, any key already read is still valid: rotating exposed keys is owed,
+**Fix:** neither response carries `device_hash` (an `is_mine` flag if a client needs one). ⚙️ **In the hotfix draft, second review closed 2026-10-30 (Zob); ⛔ not deployed** (Jacob's deploy steps are in its header): theward `wip/backend-hotfix` (7b5da7b), `backend/apps-script-hotfix-2026-10-07.DRAFT.patch`. ▶ theward `node backend/hotfix-harness.mjs <Code.js>` (+ `hotfix-mutations.mjs`). After deploy, any key already read is still valid: rotating exposed keys is owed,
 and ⛔ the backend has no rotation action yet (the patch header's step 6).
 
 ### F-28 · ANSWERED · Does the Apps Script authorize a town on its tenant id alone?  *(2026-10-13; a question, not a finding)*
@@ -595,16 +595,36 @@ do is decided per action:
 Knowing an id adds nothing a visit to that town doesn't. Two actions do not hold: `savedesign` checks no caller (F-26),
 and an unknown id is served and creates tabs (F-29).
 
-### F-29 · HIGH (availability) · Any well-formed unknown tenant id is served, and creates tabs  *(new, 2026-10-13; in source)*  — ⚙️ FIXED IN DRAFT 2026-10-13, unreviewed, not deployed
+### F-29 · HIGH (availability) · Any well-formed unknown tenant id is served, and creates tabs  *(new, 2026-10-13; in source)*  — ⚙️ FIXED IN DRAFT 2026-10-13, reviewed 2026-10-30 (Zob), not deployed
 `resolveTenant` accepts any id of the sealed-id shape, registered or not, and `getSheet` creates a missing tab on its first
 use (`insertSheet`), reads included. So a request naming an id no town has makes the backend create that id's tabs. With
 invented ids, it creates tabs without limit. Every town shares ONE spreadsheet, whose total size is capped by Google, so
 the end state is a backend that can no longer grow for ANY town. Not exercised; the cap's size is not measured here.
-Whether live already runs the tenant version of `Code.js` (2026-10-04, a DRAFT that Jacob deploys) is not established.
+Live (web app @71, pulled 2026-10-30) runs the tenant version of `Code.js`, so this is open on live.
 **Fix:** refuse a tenant id that is not a registered town (the backend already keeps one table keyed by every town's
 id, `TOWN_ZONES`; one registered set, and a request outside it is refused like a missing one), and never create a tab
 on a read: a missing tab reads as its header, and the first write creates it. A new town is served only once its id
-is in `TOWN_ZONES`. ⚙️ **In the hotfix draft, awaiting its second review; ⛔ not deployed** (Jacob's deploy steps are in its header): theward `wip/backend-hotfix` (b5ebaf0), `backend/apps-script-hotfix-2026-10-07.DRAFT.patch`. ▶ theward `node backend/hotfix-harness.mjs <Code.js>` (+ `hotfix-mutations.mjs`).
+is in `TOWN_ZONES`. ⚙️ **In the hotfix draft, second review closed 2026-10-30 (Zob); ⛔ not deployed** (Jacob's deploy steps are in its header): theward `wip/backend-hotfix` (7b5da7b), `backend/apps-script-hotfix-2026-10-07.DRAFT.patch`. ▶ theward `node backend/hotfix-harness.mjs <Code.js>` (+ `hotfix-mutations.mjs`).
+
+### F-31 · HIGH (by design, a door) · Operator account recovery  *(new, 2026-10-30; Jacob: "yes, build it")*  — ⚙️ BUILT IN DRAFT 2026-10-30, unreviewed, not deployed
+A handle lives only in a device's storage, per origin; there is no password. A person whose every device lost it
+(Jacob's `joyce_dewitt`) had no way back. ⛔ **Ruled (Boz):** never a hard-wired handle (a handle is text, so an
+identity that is never verified is a door for anyone), never a password. Operator power stays with the Operations
+sign-in (Access + `STAFF_EMAILS`); nothing grants power to a handle by name.
+**Built:** staff mint a one-time code for a NAMED handle in Operations (theward-operations `ward/operator-recovery`,
+`src/recovery.js`, Accounts tab). The backend action `ops-recovery` trusts only an HMAC under `OPS_BACKEND_KEY` (a
+Script Property, with the same value as Operations' Wrangler secret), checked before any sheet is read, with a
+one-minute window and a single-use nonce. The code is 32 hex, lasts five minutes, works once, and is claimed by the
+Ward's existing `/link/<code>`. The same page lists the handle's devices by opaque id and revokes one through
+`walkKeyAuthority`, which voids its Guardian, Residents and Handles rows and its thread access in every town, keeps
+what it wrote, and refuses whole if a tab has a key column it does not know. Every act is logged (`Recoveries`: who,
+when, the handle, the code's digest, the device's id). Every link claim now runs under the script lock.
+⚠️ What the code grants: like any link, it joins the device to the handle, so the device inherits every role the
+handle holds through `getLinkedHashes`. The control is who may mint (staff, signed), not what a claim gives.
+In the patch after the hotfix, same deploy: theward `wip/backend-hotfix` (b7af90b),
+`backend/apps-script-recovery-2026-10-30.DRAFT.patch`.
+▶ theward `OPS=<theward-operations> node backend/recovery-harness.mjs <Code.js> [--mutants]` · theward-operations
+`npm test` and `node scripts/test-recovery-mutants.mjs`.
 
 ### fare_config · RULED PUBLIC 2026-08-25 (not a finding)
 `fare_config_select_all [for select using (true)]` is **deliberate**. It is the price list — base fare,
@@ -805,7 +825,7 @@ supabase functions list --project-ref ngbvgjzrpnfrqmzkqvch
    prerequisite before either is. `cary/stripe/webhooks.js` has no HTTP entrypoint at all.
 7. ~~**F-13** (`contact-sms` half)~~ ✅ capped + origin-locked 2026-08-24.
 8. **F-6, F-11, F-12, F-13 (the other three functions)** — harden as the surfaces mature.
-9. **Not yet ranked in this list** (states from their §3 headings; ranking them is the security session's call): **F-16** (HIGH, launch blocker, console-side) · **F-20** · **F-19** · and **F-25**, **F-26**, **F-29**, fixed in draft 2026-10-13 with F-24/F-27, unreviewed, not deployed.
+9. **Not yet ranked in this list** (states from their §3 headings; ranking them is the security session's call): **F-16** (HIGH, launch blocker, console-side) · **F-20** · **F-19** · and **F-25**, **F-26**, **F-29**, fixed in draft 2026-10-13 with F-24/F-27, reviewed 2026-10-30 (Zob), not deployed.
 
 _Also check the Supabase **Auth** dashboard settings (OTP expiry, leaked-password protection,
 allowed redirect URLs) — those Advisor lints live in the console, not this repo._
