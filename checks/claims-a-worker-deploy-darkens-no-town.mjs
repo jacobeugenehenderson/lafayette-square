@@ -7,11 +7,15 @@
  * has `scene.json` in R2 and no `manifest.json`: the Worker in the repo 404s it; the one deployed
  * today serves it. Deploying first darkens it, and nothing else would say so.
  *
- * STAGING — for every registered town whose slab is published there (`scene.json` answers), its
- * `manifest.json` must answer. Read-only HEADs through the public bucket origin.
- * ⭐ STAGING ALSO NEEDS THE TOWN'S PLAYER RECORD (`staging/sites/<map>/player.json`, BRIEF-ward-on-staging,
- * 2026-09-28): the staging Worker 404s a town that names no player, so a town published before its record
- * would go dark. ▶ node scripts/set-staging-player.mjs --map=<t> --player=ward, then deploy.
+ * STAGING — the towns are what staging-sites reads, listed from the bucket: every map with a player record
+ * (`staging/sites/<map>/`) or a slab (`staging/baked/<map>/`), so a slab with no record is seen too. ⛔ Not the
+ * instance registry (Boz, 2026-10-30): a town on staging and missing from it was invisible. Each map goes through
+ * `index.js`'s sequence: a rename table the Worker would throw on refuses; a former name in `staging/renamed.json` is
+ * a 301 (skipped) when its new name's slab is there, else its old links 404 (dark); a slab with neither `manifest.json` nor `scene.json` is not published (skipped); otherwise
+ * the `manifest.json`, the town's player record (BRIEF-ward-on-staging, 2026-09-28 — no record is a 404, ▶ node
+ * scripts/set-staging-player.mjs --map=<t> --player=ward), and the player it names, which every town on it shares
+ * (`wardBuild`: `current.json` → its kit bundle's manifest → its index.html; or the kit's legacy player). The
+ * prefixes are read from the Worker's wrangler.jsonc vars.
  *
  * PRODUCTION — the towns are what production-sites reads: every `hosts/<host>.json` record (Promote's), listed
  * from the bucket. Each is put through the Worker's own `route.js#route` for a page, and every key the Worker asks
@@ -19,8 +23,10 @@
  * the page itself (`ward/<sha>/index.html`, or a legacy town's `player/<map>/index.html`) — `index.js`'s document
  * branch. ⛔ Not a list of towns, and not the legacy key alone (Ward, 2026-10-30): that gate counted a town as served
  * only if `player/<map>/index.html` existed, so HPDM, promoted to the Ward only, was skipped, and PTown passed on a
- * leftover. Read through the R2 API with Wrangler's sign-in, because the Worker reads R2 by its binding with no edge
- * in front, and an edge copy of a record can be stale. (lafayette-square.com's Pages site is not this Worker.)
+ * leftover. (lafayette-square.com's Pages site is not this Worker.)
+ *
+ * ⭐ BOTH ARE READ THROUGH THE R2 API with Wrangler's sign-in: each Worker reads R2 by its binding with no edge in
+ * front, and an edge copy of a record can be stale.
  *
  * ⭐ IT RUNS BEFORE EVERY `wrangler deploy` of either Worker (each wrangler.jsonc's build.command), so
  * the deploy itself refuses. ▶ The cure is the order in PUBLISH.md §0.5: (a) publish every town with
@@ -34,36 +40,50 @@
  * ⛔ It lives on the command line of one deploy, never in this file or in wrangler.jsonc.
  *
  * Usage: node checks/claims-a-worker-deploy-darkens-no-town.mjs [--env=staging|prod]   (default: both)
- *        node checks/claims-a-worker-deploy-darkens-no-town.mjs --mutants   (production's reading, on fixtures; no network)
+ *        node checks/claims-a-worker-deploy-darkens-no-town.mjs --mutants   (both readings, on fixtures; no network)
  */
 import { execFileSync, spawnSync } from 'node:child_process'
 import { readFileSync, writeFileSync, rmSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { join, dirname, basename } from 'node:path'
-import { registeredMaps } from '../src/instances/registry.js'
-import { route } from '../workers/production-sites/src/route.js'
+import { route, MAP_ID } from '../workers/production-sites/src/route.js'
 
 const REPO_ROOT = fileURLToPath(new URL('..', import.meta.url))
-const BASE = (process.env.ASSET_BASE || 'https://assets.theward.online/').replace(/\/?$/, '/')
-const ENVS = { staging: 'staging/', prod: '' }
+const ENVS = ['staging', 'prod']
 
-// ── production: what production-sites reads ────────────────────────────────────────────────────────────────
+// ── the bucket ───────────────────────────────────────────────────────────────────────────────────────────────
 
 /** The R2 objects API over `call(path, query) → {status, body}` (`path` '' lists; '/<key>' gets one object). */
 function r2Store(call) {
+  const pages = async (query, take) => {
+    const { prefix } = query
+    let cursor = null
+    do {
+      const r = await call('', { ...query, per_page: '1000', ...(cursor ? { cursor } : {}) })
+      if (r.status !== 200) throw new Error(`listing ${prefix} answered ${r.status}`)
+      const j = JSON.parse(r.body)
+      if (!j.success) throw new Error(`listing ${prefix}: ${JSON.stringify(j.errors)}`)
+      take(j)
+      cursor = j.result_info?.is_truncated ? j.result_info.cursor : null
+    } while (cursor)
+  }
   return {
     async list(prefix) {
       const keys = []
-      let cursor = null
-      do {
-        const r = await call('', { prefix, per_page: '1000', ...(cursor ? { cursor } : {}) })
-        if (r.status !== 200) throw new Error(`listing ${prefix} answered ${r.status}`)
-        const j = JSON.parse(r.body)
-        if (!j.success) throw new Error(`listing ${prefix}: ${JSON.stringify(j.errors)}`)
-        keys.push(...j.result.map((o) => o.key))
-        cursor = j.result_info?.is_truncated ? j.result_info.cursor : null
-      } while (cursor)
+      await pages({ prefix }, (j) => keys.push(...j.result.map((o) => o.key)))
       return keys
+    },
+    /** The names one level under `prefix` (`staging/sites/` → the maps). */
+    async dirs(prefix) {
+      const out = []
+      await pages({ prefix, delimiter: '/' }, (j) => out.push(...(j.result_info?.delimited || []).map((d) => d.slice(prefix.length, -1))))
+      return out
+    },
+    /** Whether `key` exists, without downloading it: the first key listed at it is itself. */
+    async has(key) {
+      const r = await call('', { prefix: key, per_page: '1' })
+      if (r.status !== 200) throw new Error(`asking for ${key} answered ${r.status}`)
+      return JSON.parse(r.body).result?.[0]?.key === key
     },
     async get(key) {
       const r = await call('/' + key.split('/').map(encodeURIComponent).join('/'))
@@ -74,6 +94,8 @@ function r2Store(call) {
   }
 }
 
+// ── production: what production-sites reads ────────────────────────────────────────────────────────────────
+
 /** What production-sites does before it serves this record's page (`index.js`, the document branch). */
 async function prodVerdict(rec, store) {
   const r = route('/', rec)
@@ -81,8 +103,8 @@ async function prodVerdict(rec, store) {
   const need = [`baked/${rec.look}/manifest.json`]
   if (r.app === 'ward') need.push(`kit/${rec.kit}/manifest.json`)
   need.push(r.key)
-  const got = await Promise.all(need.map((k) => store.get(k)))
-  const missing = need.filter((k, i) => got[i] == null)
+  const got = await Promise.all(need.map((k) => store.has(k)))
+  const missing = need.filter((k, i) => !got[i])
   return missing.length ? { dark: `nothing at ${missing.join(', ')}` } : { ok: `${r.app}: ${need.join(' · ')}` }
 }
 
@@ -113,11 +135,95 @@ async function prodRun(store, say = console) {
   return out
 }
 
+// ── staging: what staging-sites reads ──────────────────────────────────────────────────────────────────────
+
+const configOf = (env) => {
+  const at = `workers/${env === 'prod' ? 'production' : 'staging'}-sites/wrangler.jsonc`
+  const src = readFileSync(join(REPO_ROOT, at), 'utf8')
+  return (k) => { const m = src.match(new RegExp(`"${k}"\\s*:\\s*"([^"]+)"`)); if (!m) throw new Error(`${at} names no ${k}`); return m[1] }
+}
+const stagingVars = () => { const v = configOf('staging'); return { SITE: v('SITE_PREFIX'), PLAYER: v('PLAYER_PREFIX'), WARD: v('WARD_PREFIX') } }
+const SLAB = 'staging/baked/', KIT = 'staging/kit/', RENAMED = 'staging/renamed.json'   // index.js's own literals
+const isSha = (v) => typeof v === 'string' && /^[0-9a-f]{40}$/.test(v)
+
+/** The player every town naming it shares (`index.js#wardBuild`, and the legacy branch) → null when it serves, else why. */
+function sharedPlayers(store, vars) {
+  const memo = {}
+  return (player) => (memo[player] ??= (async () => {
+    if (player === 'legacy') return (await store.has(`${vars.PLAYER}index.html`)) ? null : `the kit's player is not published (nothing at ${vars.PLAYER}index.html)`
+    const pointerKey = `${vars.WARD}current.json`
+    const body = await store.get(pointerKey)
+    if (body == null) return `the Ward is not published (nothing at ${pointerKey})`
+    let cur
+    try { cur = JSON.parse(body) } catch { cur = null }
+    if (!isSha(cur?.sha) || !isSha(cur?.kit)) return `${pointerKey} names no Ward commit and kit commit: ${body.slice(0, 120)}`
+    if (!(await store.has(`${KIT}${cur.kit}/manifest.json`))) return `the kit bundle ${cur.kit} is not published (nothing at ${KIT}${cur.kit}/manifest.json)`
+    if (!(await store.has(`${vars.WARD}${cur.sha}/index.html`))) return `the Ward build ${cur.sha} has no index.html`
+    return null
+  })())
+}
+
+/** What staging-sites does before it serves `/<map>/` (`index.js`, after the rename table). */
+async function stagingVerdict(map, store, vars, shared) {
+  const recordKey = `${vars.SITE}${map}/player.json`
+  const [manifest, scene, rec] = await Promise.all([store.has(`${SLAB}${map}/manifest.json`), store.has(`${SLAB}${map}/scene.json`), store.get(recordKey)])
+  if (!manifest && !scene) return { unpublished: rec != null ? 'a player record and no slab' : 'no slab' }
+  if (!manifest) return { dark: 'published (scene.json) with NO manifest.json' }
+  if (rec == null) return { dark: `names no player (nothing at ${recordKey}) ▶ node scripts/set-staging-player.mjs --map=${map} --player=ward` }
+  let player
+  try { player = JSON.parse(rec).player } catch { player = undefined }
+  if (player !== 'ward' && player !== 'legacy') return { dark: `${recordKey} names player ${JSON.stringify(player)}` }
+  const why = await shared(player)
+  return why ? { dark: why } : { ok: `manifest.json · player record (${player}) · the ${player} player` }
+}
+
+/** → { [map]: 'ok' | 'dark' | 'accepted' | 'unpublished' | 'renamed' | 'uncertain', ['ACCEPT_DARK <t>']: 'stale' }, printing each. */
+async function stagingRun(store, accepted, say = console) {
+  const out = {}
+  let vars, maps, renamed
+  try {
+    vars = stagingVars()
+    const [sites, slabs, table] = await Promise.all([store.dirs(vars.SITE), store.dirs(SLAB), store.get(RENAMED)])
+    maps = [...new Set([...sites, ...slabs])].sort()
+    renamed = table == null ? {} : JSON.parse(table)
+    // index.js#renamedTable's own test: one bad value 500s every town on staging, so it refuses here.
+    if (!renamed || typeof renamed !== 'object' || Array.isArray(renamed) || Object.values(renamed).some((v) => typeof v !== 'string' || !MAP_ID.test(v))) {
+      throw new Error(`${RENAMED} is not a { "<old map>": "<new map>" } table — the Worker would 500 every town`)
+    }
+  } catch (err) {
+    say.error(`  ⛔ staging the towns (${vars?.SITE ?? 'staging/sites/'}, ${SLAB}) could not be listed: ${err.message} — refusing to say it is safe`)
+    return { '*': 'uncertain' }
+  }
+  const shared = sharedPlayers(store, vars)
+  for (const map of maps) {
+    const tag = `${'staging'.padEnd(8)}${map.padEnd(26)}`
+    // A former name is a 301 before any slab is asked for; the name it points at is judged as itself.
+    try {
+      if (renamed[map]) {   // the Worker 301s it only if the new name's slab is there, else 404s the old name
+        if (await store.has(`${SLAB}${renamed[map]}/manifest.json`)) { out[map] = 'renamed'; say.log(`  ·  ${tag} renamed to "${renamed[map]}" (${RENAMED}): a redirect, not a town`); continue }
+        throw Object.assign(new Error(), { dark: `renamed to "${renamed[map]}", which has no ${SLAB}${renamed[map]}/manifest.json — its old links 404` })
+      }
+      const v = await stagingVerdict(map, store, vars, shared)
+      if (v.ok) { out[map] = 'ok'; say.log(`  ✅ ${tag} ${v.ok}`) }
+      else if (v.unpublished) { out[map] = 'unpublished'; say.log(`  ·  ${tag} not published here (${v.unpublished})`) }
+      else if (accepted.has(map)) { out[map] = 'accepted'; say.warn(`  ⚠️ ${tag} goes DARK on staging BY YOUR DECISION (ACCEPT_DARK) — ${v.dark}`) }
+      else { out[map] = 'dark'; say.error(`  ⛔ ${tag} this Worker would 404 it — ${v.dark}`) }
+    } catch (err) {
+      if (err.dark && accepted.has(map)) { out[map] = 'accepted'; say.warn(`  ⚠️ ${tag} goes DARK on staging BY YOUR DECISION (ACCEPT_DARK) — ${err.dark}`); continue }
+      if (err.dark) { out[map] = 'dark'; say.error(`  ⛔ ${tag} this Worker would 404 it — ${err.dark}`); continue }
+      out[map] = 'uncertain'
+      say.error(`  ⛔ ${tag} could not be read (${err.message}) — refusing to say it is safe`)
+    }
+  }
+  for (const t of accepted) {
+    if (out[t] !== 'accepted') { out[`ACCEPT_DARK ${t}`] = 'stale'; say.error(`  ⛔ ACCEPT_DARK names "${t}", which would NOT go dark on staging here — drop it; a stale acknowledgment is a skip list`) }
+  }
+  return out
+}
+
 /** The live store: the R2 API, with the sign-in Wrangler already holds; the bucket is the Worker's binding. */
-async function liveStore() {
-  const bucket = (readFileSync(join(REPO_ROOT, 'workers/production-sites/wrangler.jsonc'), 'utf8')
-    .match(/"bucket_name"\s*:\s*"([^"]+)"/) || [])[1]
-  if (!bucket) throw new Error('workers/production-sites/wrangler.jsonc names no bucket_name')
+async function liveStore(which) {
+  const bucket = configOf(which)('bucket_name')
   const env = { ...process.env }
   for (const k of ['WATCH_REPORT_DEPENDENCIES', 'NODE_CHANNEL_FD']) delete env[k]   // see bind-production-domain.mjs
   const tok = execFileSync('npx', ['wrangler', 'auth', 'token'], { cwd: REPO_ROOT, env, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] })
@@ -167,19 +273,53 @@ function fakeApi(objects) {
       const key = decodeURIComponent(path.slice(1))
       return key in objects ? { status: 200, body: objects[key] } : { status: 404, body: '' }
     }
-    const keys = Object.keys(objects).filter((k) => k.startsWith(query.prefix)).sort()
+    let keys = Object.keys(objects).filter((k) => k.startsWith(query.prefix)).sort()
+    if (query.delimiter) {   // one directory per page, as result_info.delimited
+      const dirs = [...new Set(keys.map((k) => k.slice(0, k.indexOf('/', query.prefix.length) + 1)).filter((d) => d.length > query.prefix.length))]
+      const at = query.cursor ? dirs.indexOf(query.cursor) : 0
+      const more = at + 1 < dirs.length
+      return { status: 200, body: JSON.stringify({ success: true, errors: [], result: [],
+        result_info: { delimited: dirs.slice(at, at + 1), ...(more ? { is_truncated: true, cursor: dirs[at + 1] } : {}) } }) }
+    }
     const at = query.cursor ? keys.indexOf(query.cursor) : 0
     const more = at + 1 < keys.length
     return { status: 200, body: JSON.stringify({ success: true, errors: [], result: keys.slice(at, at + 1).map((key) => ({ key })),
       ...(more ? { result_info: { is_truncated: true, cursor: keys[at + 1] } } : {}) }) }
   }
 }
+const stWard = { 'staging/ward/current.json': JSON.stringify({ sha: W, kit: K }), [`staging/kit/${K}/manifest.json`]: '{}', [`staging/ward/${W}/index.html`]: '<!doctype html>' }
+const stTown = (map, player = 'ward') => ({ [`staging/baked/${map}/manifest.json`]: '{}', [`staging/sites/${map}/player.json`]: JSON.stringify({ player }) })
+const huronNoRecord = { ...stWard, ...stTown('provincetown'), 'staging/baked/huron/manifest.json': '{}' }
+const STAGING_CASES = [
+  ['a staging town missing from the registry is still seen', { ...stWard, ...stTown('provincetown'), ...stTown('zz-not-registered') }, [], { provincetown: 'ok', 'zz-not-registered': 'ok' }],
+  ['a slab with no player record', huronNoRecord, [], { provincetown: 'ok', huron: 'dark' }],
+  ['a record and no slab is not published', { ...stWard, 'staging/sites/lafayette-square/player.json': '{"player":"ward"}' }, [], { 'lafayette-square': 'unpublished' }],
+  ['a slab with scene.json and no manifest.json', { ...stWard, 'staging/baked/old/scene.json': '{}', 'staging/sites/old/player.json': '{"player":"ward"}' }, [], { old: 'dark' }],
+  ['the Ward not published', stTown('provincetown'), [], { provincetown: 'dark' }],
+  ['the Ward\'s kit bundle not published', { ...without(stWard, `staging/kit/${K}/manifest.json`), ...stTown('provincetown') }, [], { provincetown: 'dark' }],
+  ['the Ward build with no page', { ...without(stWard, `staging/ward/${W}/index.html`), ...stTown('provincetown') }, [], { provincetown: 'dark' }],
+  ['a legacy town with the kit\'s player', { ...stTown('ls', 'legacy'), 'staging/player/index.html': 'x' }, [], { ls: 'ok' }],
+  ['a legacy town with no kit player published', stTown('ls', 'legacy'), [], { ls: 'dark' }],
+  ['a record naming no player the Worker plays', { ...stWard, ...stTown('x', 'kit') }, [], { x: 'dark' }],
+  ['ACCEPT_DARK names a town going dark', huronNoRecord, ['huron'], { provincetown: 'ok', huron: 'accepted' }],
+  ['ACCEPT_DARK names a town that is fine', { ...stWard, ...stTown('provincetown') }, ['provincetown'], { provincetown: 'ok', 'ACCEPT_DARK provincetown': 'stale' }],
+  ['a former name with a leftover slab is a redirect', { ...stWard, ...stTown('hipointedemun'), 'staging/baked/hipointe-demun/scene.json': '{}', 'staging/renamed.json': '{"hipointe-demun":"hipointedemun"}' }, [], { hipointedemun: 'ok', 'hipointe-demun': 'renamed' }],
+  ['a former name whose new name has no slab: its old links 404', { ...stWard, 'staging/baked/hipointe-demun/scene.json': '{}', 'staging/renamed.json': '{"hipointe-demun":"hipointedemun"}' }, [], { 'hipointe-demun': 'dark' }],
+  ['a rename table with a number for a name', { ...stWard, ...stTown('provincetown'), 'staging/renamed.json': '{"old":7}' }, [], { '*': 'uncertain' }],
+  ['a rename table with a name that is not a map id', { ...stWard, ...stTown('provincetown'), 'staging/renamed.json': '{"old":"Bad Name"}' }, [], { '*': 'uncertain' }],
+  ['the towns cannot be listed', null, [], { '*': 'uncertain' }],
+]
 async function selfTest() {
-  const quiet = { log() {}, error() {} }
+  const quiet = { log() {}, warn() {}, error() {} }
   const fails = []
+  const same = (a, b) => JSON.stringify(a, Object.keys(a).sort()) === JSON.stringify(b, Object.keys(b).sort())
   for (const [name, objects, want] of CASES) {
     const got = await prodRun(r2Store(fakeApi(objects)), quiet)
-    if (JSON.stringify(got, Object.keys(got).sort()) !== JSON.stringify(want, Object.keys(want).sort())) fails.push(`${name}: got ${JSON.stringify(got)}, want ${JSON.stringify(want)}`)
+    if (!same(got, want)) fails.push(`prod: ${name}: got ${JSON.stringify(got)}, want ${JSON.stringify(want)}`)
+  }
+  for (const [name, objects, accepted, want] of STAGING_CASES) {
+    const got = await stagingRun(r2Store(fakeApi(objects)), new Set(accepted), quiet)
+    if (!same(got, want)) fails.push(`staging: ${name}: got ${JSON.stringify(got)}, want ${JSON.stringify(want)}`)
   }
   return fails
 }
@@ -191,15 +331,24 @@ const MUTANTS = [
   ['the kit manifest not asked for', "if (r.app === 'ward') need.push(`kit/${rec.kit}/manifest.json`)", ''],
   ['the page not asked for', 'need.push(r.key)', ''],
   ['only the first page of records read', 'cursor = j.result_info?.is_truncated ? j.result_info.cursor : null', 'cursor = null'],
-  ['an unlistable bucket read as no towns', "if (r.status !== 200) throw new Error(`listing ${prefix} answered ${r.status}`)", 'if (r.status !== 200) return keys'],
+  ['an unlistable bucket read as no towns', "if (r.status !== 200) throw new Error(`listing ${prefix} answered ${r.status}`)", 'if (r.status !== 200) return'],
+  ['staging: the registry\'s towns instead of the bucket\'s', 'maps = [...new Set([...sites, ...slabs])].sort()', "maps = (await import('../src/instances/registry.js')).registeredMaps()"],
+  ['staging: only the records listed (a slab with no record unseen)', '[...sites, ...slabs]', '[...sites]'],
+  ['staging: the shared player not asked for', 'const why = await shared(player)', 'const why = null'],
+  ['staging: a record with no slab called dark', "if (!manifest && !scene) return { unpublished:", "if (false) return { unpublished:"],
+  ['staging: the rename table not read', 'if (renamed[map]) {', 'if (false) {'],
+  ['staging: the rename table\'s values not tested', " || Object.values(renamed).some((v) => typeof v !== 'string' || !MAP_ID.test(v))", ''],
+  ['staging: a rename to an unpublished name read as a redirect', "if (await store.has(`${SLAB}${renamed[map]}/manifest.json`)) {", 'if (true) {'],
+  ['staging: ACCEPT_DARK ignored', 'else if (accepted.has(map))', 'else if (false)'],
+  ['staging: a stale ACCEPT_DARK passes', "if (out[t] !== 'accepted') {", 'if (false) {'],
 ]
 
 const SELF = fileURLToPath(import.meta.url)
 if (process.argv.includes('--self-test') || process.argv.includes('--mutants')) {
   const fails = await selfTest()
-  if (fails.length) { console.error(`⛔ production's reading is wrong:\n   ${fails.join('\n   ')}`); process.exit(1) }
+  if (fails.length) { console.error(`⛔ a Worker's reading is wrong:\n   ${fails.join('\n   ')}`); process.exit(1) }
   if (process.argv.includes('--self-test')) process.exit(0)
-  console.log(`✅ production's reading: ${CASES.length} fixtures`)
+  console.log(`✅ both Workers' readings: ${CASES.length} production fixtures, ${STAGING_CASES.length} staging`)
   let alive = 0
   const src = readFileSync(SELF, 'utf8')
   for (const [name, from, to] of MUTANTS) {
@@ -219,47 +368,15 @@ if (process.argv.includes('--self-test') || process.argv.includes('--mutants')) 
 // ── the gate ─────────────────────────────────────────────────────────────────────────────────────────────
 
 const want = process.argv.find((a) => a.startsWith('--env='))?.split('=')[1]
-if (want && !(want in ENVS)) { console.error(`⛔ --env=${want}: staging | prod`); process.exit(2) }
-
-const head = async (key) => {
-  for (let i = 0; i < 3; i++) {
-    try { return (await fetch(BASE + key, { method: 'HEAD', cache: 'no-store' })).status } catch { /* retry */ }
-  }
-  return 'unreachable'
-}
+if (want && !ENVS.includes(want)) { console.error(`⛔ --env=${want}: staging | prod`); process.exit(2) }
 
 const accepted = new Set((process.env.ACCEPT_DARK || '').split(',').map((t) => t.trim()).filter(Boolean))
-const acceptedUsed = new Set()
 let dark = 0, uncertain = 0
-for (const env of want ? [want] : Object.keys(ENVS)) {
-  if (env === 'prod') {
-    let store
-    try { store = await liveStore() } catch (err) { uncertain++; console.error(`  ⛔ prod    cannot read the bucket (${err.message}) — refusing to say it is safe`); continue }
-    for (const v of Object.values(await prodRun(store))) { if (v === 'dark') dark++; if (v === 'uncertain') uncertain++ }
-    continue
-  }
-  const pre = ENVS[env]
-  for (const town of registeredMaps()) {
-    const [scene, manifest] = await Promise.all([head(`${pre}baked/${town}/scene.json`), head(`${pre}baked/${town}/manifest.json`)])
-    if (scene === 'unreachable' || manifest === 'unreachable') { uncertain++; console.error(`  ⛔ ${env.padEnd(8)}${town.padEnd(26)} could not be read — refusing to say it is safe`); continue }
-    if (scene !== 200 && manifest !== 200) continue  // not published to this env
-    if (manifest === 200) {
-      const record = await head(`staging/sites/${town}/player.json`)
-      if (record === 'unreachable') { uncertain++; console.error(`  ⛔ ${env.padEnd(8)}${town.padEnd(26)} player record could not be read — refusing to say it is safe`); continue }
-      if (record === 200) { console.log(`  ✅ ${env.padEnd(8)}${town.padEnd(26)} manifest.json present · player record present`); continue }
-      if (accepted.has(town)) { acceptedUsed.add(town); console.warn(`  ⚠️ ${env.padEnd(8)}${town.padEnd(26)} goes DARK on staging BY YOUR DECISION (ACCEPT_DARK) — no player record`); continue }
-      dark++
-      console.error(`  ⛔ ${env.padEnd(8)}${town.padEnd(26)} names no player (staging/sites/${town}/player.json ${record}) — this Worker would 404 it. `
-        + `▶ node scripts/set-staging-player.mjs --map=${town} --player=ward`)
-      continue
-    }
-    if (accepted.has(town)) { acceptedUsed.add(town); console.warn(`  ⚠️ ${env.padEnd(8)}${town.padEnd(26)} goes DARK on staging BY YOUR DECISION (ACCEPT_DARK) — no manifest.json`); continue }
-    dark++
-    console.error(`  ⛔ ${env.padEnd(8)}${town.padEnd(26)} published (scene.json ${scene}) with NO manifest.json — this Worker would 404 it`)
-  }
-}
-for (const t of accepted) {
-  if (!acceptedUsed.has(t)) { dark++; console.error(`  ⛔ ACCEPT_DARK names "${t}", which would NOT go dark on staging here — drop it; a stale acknowledgment is a skip list`) }
+for (const env of want ? [want] : ENVS) {
+  let store
+  try { store = await liveStore(env) } catch (err) { uncertain++; console.error(`  ⛔ ${env.padEnd(8)}cannot read the bucket (${err.message}) — refusing to say it is safe`); continue }
+  const out = env === 'prod' ? await prodRun(store) : await stagingRun(store, accepted)
+  for (const v of Object.values(out)) { if (v === 'dark' || v === 'stale') dark++; if (v === 'uncertain') uncertain++ }
 }
 if (dark || uncertain) {
   console.error(`\n⛔ ${dark} town(s) would go dark${uncertain ? `, ${uncertain} unreadable` : ''}. On staging, publish each with its manifest first `
