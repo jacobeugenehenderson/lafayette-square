@@ -620,9 +620,14 @@ Ward's existing `/link/<code>`. The same page lists the handle's devices by opaq
 what it wrote, and refuses whole if a tab has a key column it does not know. ⛔ It never revokes a handle's only
 device (the handle would be free for anyone to take, with the name on everything its owner wrote): mint, claim, then revoke. Every act is logged (`Recoveries`: who,
 when, the handle, the code's digest, the device's id). Every link claim now runs under the script lock.
-⚠️ What the code grants: like any link, it joins the device to the handle, so the device inherits every role the
-handle holds through `getLinkedHashes`. The control is who may mint (staff, signed), not what a claim gives.
-In the patch after the hotfix, same deploy: theward `wip/backend-hotfix` (f14b265),
+⚠️ What the code grants: it joins the device to the handle, so the device inherits every role the handle holds
+through `getLinkedHashes`, Guardian included. ✅ **Ruled 2026-10-30 (Boz):** the operator who mints a recovery IS the
+Host acting: a verified Operations staff identity (Access + `STAFF_EMAILS`), logged. The code is shown in person, or
+to the operator themself, and the operator says which ('met' or 'self'); that word is signed with the request and
+recorded on the `Recoveries` row and in Operations' audit, and without it nothing is minted. A SELF-MADE 6-character
+link will carry the handle WITHOUT its roles (Jacob's ladder, adede587: no code, card or link raises a device by
+itself; Plumb's build), reading provenance from `Recoveries`' 'claim' rows.
+In the patch after the hotfix, same deploy: theward `wip/backend-hotfix` (647b651),
 `backend/apps-script-recovery-2026-10-30.DRAFT.patch`.
 ▶ theward `OPS=<theward-operations> node backend/recovery-harness.mjs <Code.js> [--mutants]` · theward-operations
 `npm test` and `node scripts/test-recovery-mutants.mjs`.
