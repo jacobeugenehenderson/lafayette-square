@@ -15,6 +15,10 @@
  *   5. the Apps Script opens only tabs its schema knows, and its schema names no tab nothing opens;
  *   6. the kit's backend clients send `tenant` from `townTenant()` and never a look;
  *   7. every registered town is in the Apps Script's TOWN_ZONES, the set it serves (SECURITY F-29).
+ *   8. each town's zone in TOWN_ZONES IS its own authored zone (cartograph/data/<map>/geography.json `timezone`, owned
+ *      by commitExtent), so a day falls on that town's calendar. TOWN_ZONES is a typed copy, and this reads both sides.
+ *      A town with a zone and no id, or an id and no zone, is RED by name; a data dir with neither is said out loud.
+ *      MUTANT, every run: one town's zone changed in a copy of the source → RED.
  *
  *   node checks/claims-a-town-has-one-sealed-id.mjs
  */
@@ -101,6 +105,35 @@ const unserved = registeredMaps().filter(m => !zoned.has(instanceForMap(m).townI
 if (!zoned.size) bad('could not read TOWN_ZONES out of apps-script/Code.js')
 else if (unserved.length) bad(`registered but not in the Apps Script's TOWN_ZONES, so the backend refuses them: ${unserved.map(m => `${m} (${instanceForMap(m).townId})`).join(', ')}`)
 else ok(`every registered town (${registeredMaps().length}) is in the Apps Script's TOWN_ZONES`)
+
+// 8 — each town's zone is its own (Boz, 2026-10-30): the Apps Script's copy against the town's authored geography.json
+function zoneMismatches(gasSrc) {
+  const at = gasSrc.indexOf('const TOWN_ZONES = {'), body = at === -1 ? '' : gasSrc.slice(at, gasSrc.indexOf('\n}', at))
+  const zones = Object.fromEntries([...body.matchAll(/^\s*'(tw-[a-z0-9]{8})'\s*:\s*'([^']+)'/gm)].map(m => [m[1], m[2]]))
+  const out = { bad: [], neither: [], held: 0 }
+  for (const map of readdirSync(dataDir)) {
+    const geo = path.join(dataDir, map, 'geography.json')
+    const tz = existsSync(geo) ? JSON.parse(readFileSync(geo, 'utf8')).timezone || null : null, id = sealed[map] || null
+    if (!tz && !id) { out.neither.push(map); continue }
+    if (!id) out.bad.push(`${map} has a zone (${tz}) and no sealed id, so no backend serves it`)
+    else if (!tz) out.bad.push(`${map} (${id}) has no timezone in its geography.json`)
+    else if (!zones[id]) out.bad.push(`${map} (${id}) has no zone in the Apps Script's TOWN_ZONES, so the backend refuses it`)
+    else if (zones[id] !== tz) out.bad.push(`${map} (${id}): TOWN_ZONES says ${zones[id]}, its geography.json says ${tz}: its days fall on the wrong calendar`)
+    else out.held++
+  }
+  return out
+}
+{
+  const z = zoneMismatches(gas)
+  if (z.bad.length) z.bad.forEach(b => bad(b))
+  else ok(`each town's zone in TOWN_ZONES is its own authored zone (${z.held} towns)`)
+  if (z.neither.length) console.log(`  ·  not a town yet (no sealed id, no zone): ${z.neither.join(', ')}`)
+  // the mutant, every run: one zone changed in a copy
+  const victim = [...gas.matchAll(/^(\s*'tw-[a-z0-9]{8}'\s*:\s*')([^']+)'/gm)][0]
+  const mutated = victim ? gas.replace(victim[0], victim[1] + (victim[2] === 'Etc/UTC' ? 'America/Chicago' : 'Etc/UTC') + "'") : gas
+  if (victim && zoneMismatches(mutated).bad.length > z.bad.length) ok('mutant: one town\'s zone changed in TOWN_ZONES → RED, as it must be')
+  else bad('mutant: a changed zone in TOWN_ZONES reads green — #8 cannot see a wrong calendar')
+}
 
 console.log(failed ? `\n${failed} FAILED` : '\nall held')
 process.exit(failed ? 1 : 0)
