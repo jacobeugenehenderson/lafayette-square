@@ -29,7 +29,8 @@
 //   5. per town whose slab ground carries pins (ground.json `drawnRaw`): along every edge of ①'s coast the DRAWN ground
 //      (drawnGround.js) crosses HIGH within the pin's tolerance of the line (water side ≤, land side ≥; Boz 2026-10-27: the
 //      waterline IS the line), and every line-adjacent vertex stands on its own side of HIGH (the residual). A coastal
-//      ground baked before the pin is NOT CHECKED, by name. `--mutants`: HIGH read 1 cm high turns the town RED.
+//      ground baked before the pin is NOT CHECKED, by name; a slab that judges NO town is NOT CHECKED (exit 2), and the slab
+//      blanked (an empty directory) is shown NOT CHECKED every run. `--mutants`: HIGH read 1 cm high turns the town RED.
 // MUTANTS (each RED; `--mutants` runs the marked ones on a copy of shoreStamp.mjs): the stamp dropped* · land written
 // (the old landward raise)* · the crossed seaward nodes take max(bed, ramp)* · the tidal cap dropped* · the tide's
 // extension takes the pure ramp (a trench)* · the mask filled per ring (an island read as water) · the island's borrowed
@@ -410,9 +411,12 @@ function judgeDrawn(gj, AB, rings, rawAt, highAt, outline = null) {
         if (miss > 1e-6) { wrong++; if (miss > wrongWorst) { wrongWorst = miss; wrongAt = [x, z] } } } } }
   return { n, worst, worstAt, off, offAt, offs, rim, tol, adj, wrong, wrongWorst, wrongAt }
 }
+// §5 over one slab directory → why it judged NO town, or null. ⛔ Judging nothing is NOT CHECKED (exit 2, _scenes.mjs's
+// convention), never a pass: a worktree with no public/baked, or a slab whose grounds all predate the pin, read green on nothing
+function judgeSlab(baked) {
 let towns = 0
-for (const t of readdirSync(join(ROOT, 'public/baked'))) {
-  const gp = join(ROOT, 'public/baked', t, 'ground.json'), bp = join(ROOT, 'public/baked', t, 'ground.bin'), mp = join(ROOT, 'cartograph/data', t, 'clean/map.json')
+for (const t of existsSync(baked) ? readdirSync(baked) : []) {
+  const gp = join(baked, t, 'ground.json'), bp = join(baked, t, 'ground.bin'), mp = join(ROOT, 'cartograph/data', t, 'clean/map.json')
   if (!existsSync(gp) || !existsSync(bp) || !existsSync(mp)) continue
   const gj = JSON.parse(readFileSync(gp, 'utf8'))
   if (predatesThePin(gj)) { const coastal = waterFace(JSON.parse(readFileSync(mp, 'utf8')), 'claims-the-shore-meets-the-field-at-high').length
@@ -434,12 +438,18 @@ for (const t of readdirSync(join(ROOT, 'public/baked'))) {
   if (process.argv.includes('--mutants')) { const m = judgeDrawn(gj, AB, rings, T.getElevationRaw, (x, z) => L.highAt(x, z) + 0.01)
     const caught = m.off > 0 || m.wrong > 0; console.log(`  mutant: ${t}'s HIGH read 1 cm high → ${caught ? 'RED ✓' : 'GREEN ✗'}`); if (!caught) bad.push(`§5 mutant survived on ${t}`) }
 }
-if (!towns) console.log('  (no town carries a pinned ground yet)')
+if (towns) { console.log(`  · §5 judged ${towns} town(s) with a pinned ground in ${baked}`); return null }
+return `no town's ground is pinned, so §5 judged nothing (${existsSync(baked) ? `no ground.json in ${baked} carries drawnRaw.pinned` : `${baked} does not exist`}; ▶ bake the ground of a coastal town)`
+}
+const notChecked = judgeSlab(join(ROOT, 'public/baked'))
+// the slab blanked: §5 over an empty directory must say NOT CHECKED, never read green on nothing (every run)
+{ const out = console.log; console.log = () => {}; let why; try { why = judgeSlab(mkdtempSync(join(tmpdir(), 'slab-'))) } finally { console.log = out }
+  say(!!why, `mutant: the slab blanked → ${why ? 'NOT CHECKED, as it must be' : 'GREEN — judging nothing passes'}`) }
 if (process.argv.includes('--mutants')) {
   const M = [
     ['the stamp dropped', '    if (!mask[k]) continue                                   // land', '    continue                                   // land'],
     ['land written (the old landward raise)', '    if (!mask[k]) continue                                   // land', '    // land'],
-    ['the crossed seaward nodes take max(bed, ramp)', 'if (b.crossed) { normalized[k] = ramp;', 'if (b.crossed) { normalized[k] = Math.max(normalized[k], ramp);'],
+    ['the crossed seaward nodes take max(bed, ramp) everywhere, not only over a capped bar', 'if (b.crossed && !(atHigh && atHigh[k] && normalized[k] > ramp)) { normalized[k] = ramp;', 'if (b.crossed) { normalized[k] = Math.max(normalized[k], ramp);'],
     ['the tidal cap dropped', 'if (s > cap) s = cap', ''],
     ['the tide\'s extension takes the pure ramp (a trench)', 'else if (ramp > normalized[k]) { normalized[k] = ramp; ramped++; stamped[k] = 1 } else bedWon++', 'else { normalized[k] = ramp; ramped++; stamped[k] = 1 }'],
     ['the island\'s borrowed slope dropped', 'for (let ri = 0; ri < face.length; ri++) if (slopeFrom[ri] !== null) sOf[ri] = sOf[slopeFrom[ri]]', ''],
@@ -459,5 +469,6 @@ if (process.argv.includes('--mutants')) {
   try { sunkMod.stampCoast(field(), W, H, B, face, bb, mask, lake(0)) } catch (e) { refused = e.message } finally { console.log = out; console.warn = warn }
   say(/deeper than the deepest bed/.test(refused ?? ''), `the deepest-bed invariant: a ramp sunk a hundredfold REFUSES by name (${refused ? refused.split(' — ')[0].slice(0, 90) : 'no refusal'})`)
 }
-if (bad.length) { console.log(`\n⛔ ${bad.length} claim(s) fail.`); process.exit(1) }
+if (bad.length) { console.log(`\n⛔ ${bad.length} claim(s) fail.${notChecked ? ` And §5 NOT CHECKED: ${notChecked}` : ''}`); process.exit(1) }
+if (notChecked) { console.log(`\n⛔ NOT CHECKED — ${notChecked}. Sections 1–4, 7 and 8 hold; this is a failure to check, not a pass.`); process.exit(2) }
 console.log('\n✅ The drawn ground meets ①\'s coast at HIGH, on the line, and the bed ramps to it.')

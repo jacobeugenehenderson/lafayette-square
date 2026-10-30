@@ -1,10 +1,10 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 521,
+  "total": 527,
   "counts": {
-    "safe": 364,
-    "local-effect": 31,
-    "live": 126
+    "safe": 365,
+    "local-effect": 30,
+    "live": 132
   },
   "checks": [
     {
@@ -288,6 +288,13 @@
       ]
     },
     {
+      "file": "checks/claims-a-dock-rides-only-its-own-structure.mjs",
+      "tier": "safe",
+      "why": [
+        "importSource of cartograph/structures.mjs — read, safe"
+      ]
+    },
+    {
       "file": "checks/claims-a-face-takes-the-land-use-that-covers-it.mjs",
       "tier": "safe",
       "why": [
@@ -313,6 +320,16 @@
         "copies/renames files",
         "importSource of cartograph/serve.js (its span: // terrain-slab: the scene terrain is owed → // Shore revetment —) — read, safe",
         "importSource of cartograph/slabStage.mjs, which can: writeFileSync, mkdirSync, deletes files, copies/renames files"
+      ]
+    },
+    {
+      "file": "checks/claims-a-failed-read-names-its-cause.mjs",
+      "tier": "live",
+      "reasonClass": "outbound",
+      "why": [
+        "imports a network module",
+        "importSource of cartograph/elevationSources.mjs, which can: calls fetch()",
+        "imports package(s) geotiff — not read from source"
       ]
     },
     {
@@ -583,6 +600,14 @@
       ]
     },
     {
+      "file": "checks/claims-a-place-link-sends-its-own-card.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "imports checks/_miniflare.mjs, which can: computed import() with no readable target — runs arbitrary modules, runs `npm` — not a known-local command"
+      ]
+    },
+    {
       "file": "checks/claims-a-pour-adds-no-gitignore-lines.mjs",
       "tier": "safe",
       "why": [
@@ -738,7 +763,7 @@
         "writeFileSync",
         "mkdirSync",
         "deletes files",
-        "imports scripts/upload-baked-to-r2.mjs, which can: calls fetch(), writeFileSync",
+        "imports scripts/upload-baked-to-r2.mjs, which can: calls fetch(), writeFileSync, imports scripts/slab-wire.mjs, which can: writeFileSync",
         "imports scripts/sweep-retired-slab-keys.mjs, which can: calls fetch(), writeFileSync — only under its own temp dir"
       ]
     },
@@ -912,6 +937,15 @@
         "computed import() with no readable target — runs arbitrary modules",
         "computed import() with no readable target — runs arbitrary modules",
         "child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
+      "file": "checks/claims-a-town-lists-each-place-once.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "import of a data: module built at run time — its body cannot be read (use checks/_importSource.mjs)",
+        "import of a data: module built at run time — its body cannot be read (use checks/_importSource.mjs)"
       ]
     },
     {
@@ -1122,7 +1156,7 @@
         "deletes files",
         "computed import of scripts/slab-publish-rule.mjs — read, safe",
         "computed import() with no readable target — runs arbitrary modules",
-        "imports scripts/upload-baked-to-r2.mjs, which can: calls fetch(), writeFileSync"
+        "imports scripts/upload-baked-to-r2.mjs, which can: calls fetch(), writeFileSync, imports scripts/slab-wire.mjs, which can: writeFileSync"
       ]
     },
     {
@@ -2994,12 +3028,14 @@
     },
     {
       "file": "checks/claims-the-drape-meets-itself-on-one-line.mjs",
-      "tier": "local-effect",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "writeFileSync — only under its own temp dir",
-        "imports a mutated copy of src/lib/revetmentDrape.js from its own temp dir — read as src/lib/revetmentDrape.js, safe",
+        "writeFileSync",
+        "computed import() with no readable target — runs arbitrary modules",
         "computed import of src/lib/revetmentDrape.js — read, safe",
-        "imports cartograph/bake-revetment-far.js, which can: deletes files, imports cartograph/io.js, which can: writeFileSync"
+        "computed import() with no readable target — runs arbitrary modules",
+        "imports cartograph/bake-revetment-far.js, which can: deletes files, imports scripts/slab-wire.mjs, which can: writeFileSync, imports cartograph/io.js, which can: writeFileSync"
       ]
     },
     {
@@ -3312,6 +3348,20 @@
       ]
     },
     {
+      "file": "checks/claims-the-overhead-camera-resolves-its-ground.mjs",
+      "tier": "live",
+      "reasonClass": "outbound",
+      "why": [
+        "calls fetch()",
+        "opens a WebSocket",
+        "writeFileSync",
+        "mkdirSync",
+        "deletes files",
+        "runs `/Applications/Google Chrome.app/Contents` — not a known-local command",
+        "imports package(s) three — not read from source"
+      ]
+    },
+    {
       "file": "checks/claims-the-overhead-core-is-baked.mjs",
       "tier": "safe",
       "why": [
@@ -3558,6 +3608,19 @@
       "tier": "safe",
       "why": [
         "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-the-slab-ships-compressed.mjs",
+      "tier": "live",
+      "reasonClass": "outbound",
+      "why": [
+        "calls fetch()",
+        "imports a network module",
+        "writeFileSync",
+        "mkdirSync",
+        "deletes files",
+        "computed import() with no readable target — runs arbitrary modules"
       ]
     },
     {
