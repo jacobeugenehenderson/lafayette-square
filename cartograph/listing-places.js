@@ -101,6 +101,36 @@ export function onePlacePerIdentity(listings, { places = {}, parcelOf = new Map(
   return { listings: kept, absorbed, conflicts, refusals, nearMisses }
 }
 
+/**
+ * ⭐ THE ONE "ABSORBED → SURVIVOR" RESOLVER, read from an authored `places.merge` (Boz, 2026-10-30). Research keyed to a
+ * listing a merge absorbed belongs to the place it was merged into: the bake's patch join (bake-content.js
+ * #applyListingOverrides) and the research check (claims-research-is-keyed-to-the-place-it-describes) both resolve through
+ * this, never a hand re-keying of the research.
+ *   places  listings.overrides.json's `places`; ids  the town's id registry `ids` (source key → display id), {} where none
+ *   → { ref(r): the survivor's ref for an absorbed ref, else r · id(d): the survivor's display id for an absorbed one, else d }
+ * A ref is a source key or an authored id, as `places.merge` names them; a display id is what research files are keyed by.
+ */
+export function survivorOf(places = {}, ids = {}) {
+  const byRef = new Map(), byId = new Map(), shown = (r) => ids[r] ?? r
+  for (const [kept, list] of Object.entries(places?.merge || {})) for (const a of list || []) { byRef.set(a, kept); byId.set(shown(a), shown(kept)) }
+  return { ref: (r) => byRef.get(r) ?? r, id: (d) => byId.get(d) ?? d }
+}
+
+// The per-field rule when an absorbed listing's research reaches its survivor (Boz, 2026-10-30): the same value → nothing;
+// the survivor holds none → the research fills it; a different value → a CONFLICT, refused by name (the kit never picks;
+// the operator deletes the field it does not want from the absorbed patch). → { fill: {field: value}, conflicts: [field] }
+const emptyValue = (v) => v == null || v === '' || (Array.isArray(v) ? !v.length : typeof v === 'object' && !Object.keys(v).length)
+// one value, whatever order its keys were written in (an hours object authored twice is the same hours)
+const canon = (v) => JSON.stringify(v, (_, x) => x && typeof x === 'object' && !Array.isArray(x) ? Object.fromEntries(Object.entries(x).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))) : x)
+export function absorbedResearch(fields, survivor) {
+  const fill = {}, conflicts = []
+  for (const [f, v] of Object.entries(fields)) {
+    if (canon(survivor[f]) === canon(v)) continue
+    if (emptyValue(survivor[f])) fill[f] = v; else conflicts.push(f)
+  }
+  return { fill, conflicts }
+}
+
 /** A listing named by its own address: its house number and its address's street (or the start of it). → listings */
 export function addressNamed(listings) {
   return listings.filter(l => {

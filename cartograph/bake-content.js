@@ -55,7 +55,7 @@ import { createVocabularyGate } from './osm-vocabulary.mjs'
 import { rankRoster } from './prominence.mjs'
 import { buildingIdOf } from './membership.mjs'
 import { addressKey, addressParts, streetKey } from '../src/lib/addressKey.js'
-import { normName, onePlacePerIdentity, addressNamed, refusePlaces } from './listing-places.js'
+import { normName, onePlacePerIdentity, addressNamed, refusePlaces, survivorOf, absorbedResearch } from './listing-places.js'
 import { registryPath as listingIdPath, loadRegistry as loadListingIds, serializeRegistry as serializeListingIds, assignListingIds, idsThatWouldMove, guardSeal, seedPrefix, sealedPrefixes } from './listing-identity.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -1055,13 +1055,18 @@ function buildBaseListingsFromOverture(artifact, buildingGrid) {
 
 export function applyListingOverrides(base, overrides, ctx) {
   const { buildingGrid, bakedIds, parcels, parcelByAddr } = ctx
-  const report = { patched: 0, added: 0, add_reanchored: 0, add_dropped: [], patch_unresolved: [], match_name_ambiguous: [] }
+  const report = { patched: 0, added: 0, add_reanchored: 0, add_dropped: [], patch_unresolved: [], match_name_ambiguous: [], absorbed_conflicts: [] }
   const patches = overrides.patches || {}
   // index base by stable key (a name-matched patch is resolved by name, below)
   const byKey = new Map(base.map(l => [l._key, l]))
+  // ⭐ a patch keyed to a listing an authored merge absorbs is that place's research: it reaches the SURVIVOR (after the adds,
+  // which a survivor may be), field by field (listing-places.js#absorbedResearch). Applied to the absorbed listing, it left
+  // with it, silently
+  const survive = survivorOf(overrides.places), absorbedPatches = []
 
   // 1) patches
   for (const [key, patch] of Object.entries(patches)) {
+    if (survive.ref(key) !== key) { absorbedPatches.push([key, survive.ref(key), patch]); continue }
     let target = byKey.get(key)
     if (!target && patch._match_name) {
       // name-match fallback (osm keys can drift): match on normName. ⛔ A name that reaches more than one listing (a chain's two
@@ -1099,6 +1104,14 @@ export function applyListingOverrides(base, overrides, ctx) {
     rec.enriched = rec.enriched ?? true
     result.push(rec)
     report.added++
+  }
+  // 3) an absorbed listing's research reaches its survivor: the same → nothing · the survivor empty → filled · different → refused
+  for (const [key, kept, patch] of absorbedPatches) {
+    const s = result.find(l => l._key === kept || l.id === kept)
+    if (!s) { report.patch_unresolved.push(`${key} (absorbed into "${kept}", which reaches no listing)`); continue }
+    const { fill, conflicts } = absorbedResearch(stripMeta(patch), s)
+    if (Object.keys(fill).length) { Object.assign(s, fill); s.enriched = true; report.patched++ }
+    for (const f of conflicts) report.absorbed_conflicts.push(`"${key}" absorbed into "${kept}" (${s.name}): its research's ${f} ${JSON.stringify(patch[f]).slice(0, 80)} differs from the survivor's ${JSON.stringify(s[f]).slice(0, 80)} — delete the one not wanted from the absorbed patch`)
   }
   // ⭐ An add beside its base twin is ONE place, decided by the operator (listing-places.js, places.merge), never superseded here
   return { listings: result, report }
@@ -1452,7 +1465,7 @@ export function bakeContent({ scene, force = false, dryRun = false } = {}) {
       { buildingGrid, bakedIds, parcels, parcelByAddr })
     report = r
     const places = onePlacePerIdentity(overridden, { places: listingOverrides.places, parcelOf })
-    places.refusals.push(...r.match_name_ambiguous.map(x => `patch ${x}`))
+    places.refusals.push(...r.match_name_ambiguous.map(x => `patch ${x}`), ...r.absorbed_conflicts.map(x => `merge ${x}`))
     judgePlaces(places)
     const merged = places.listings
     // ⭐ PERMANENT LISTING IDS — sealed by the scene's registry (`listing-identity.js`, ROADMAP H-29).

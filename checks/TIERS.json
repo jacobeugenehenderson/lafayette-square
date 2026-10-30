@@ -2,8 +2,8 @@
   "generated_by": "node checks/tier.mjs --json",
   "total": 527,
   "counts": {
-    "safe": 365,
-    "local-effect": 30,
+    "safe": 364,
+    "local-effect": 31,
     "live": 132
   },
   "checks": [
@@ -2564,9 +2564,11 @@
     },
     {
       "file": "checks/claims-research-is-keyed-to-the-place-it-describes.mjs",
-      "tier": "safe",
+      "tier": "local-effect",
       "why": [
-        "reads repo files only"
+        "importSource of cartograph/listing-places.js — read, safe",
+        "importSource of cartograph/bake-content.js (its span: applyListingOverrides, stripMeta) — read, safe",
+        "imports cartograph/bake-content.js, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync"
       ]
     },
     {

@@ -160,7 +160,7 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `scratch/claims-the-roster-light-tells-the-truth.mjs` | unreadable | imports arborist/roster-coverage.js, which can: imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command, imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files |
 | `scratch/claims-unpainted-arcs.mjs` | unreadable | writeFileSync · mkdirSync · computed import of scratch/.arc-probe/tileGround.arc.mjs, a module it writes itself — made at run time, cannot be read |
 
-## local-effect — 30. `npm run test:all`, never CI.
+## local-effect — 31. `npm run test:all`, never CI.
 
 Writes into the repo or a scratch dir.
 
@@ -183,6 +183,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-fade-derives-from-radius.mjs` | CLAIM: the circle has ONE origin, and the fade is DERIVED from it. |
 | `checks/claims-no-filename-reaches-a-plate-label.mjs` | DOES A SOURCE FILENAME (OR A SPECIES READ OFF ONE) REACH THE OPERATOR? |
 | `checks/claims-prominence-recovers-ls-landmarks.mjs` | CLAIM: the prominence rank is a SORT and never a filter, hand-promotion outranks |
+| `checks/claims-research-is-keyed-to-the-place-it-describes.mjs` | every research record's |
 | `checks/claims-the-built-ground-has-no-needles.mjs` | A CURB, A WALK OR A LAWN NEVER COMES TO A SHARP POINT. |
 | `checks/claims-the-ground-stays-in-budget.mjs` | "DOES THIS GROUND BAKE FIT UNDER ITS TOWN'S SERVED SLAB SIZE AND SERVED GROUND-BAKE TIME?" |
 | `checks/claims-the-lidar-flights-are-named.mjs` | CLAIM — WHEN THE LIDAR FLEW, AND THE GEOID IT WAS DELIVERED ON, ARE READ AND NAMED, NEVER GUESSED (fetch-lidar-flights.mjs). |
@@ -197,7 +198,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 365. This is `npm test`.
+## safe — 364. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -442,7 +443,6 @@ Writes into the repo or a scratch dir.
 | `checks/claims-reference-credits.mjs` | The acknowledgements for the Salon's reference plates — GENERATED from the dossiers, |
 | `checks/claims-references-are-sound.mjs` | the research database (references/registry.json) is internally sound. |
 | `checks/claims-repour-changes-nothing.mjs` | WHY THIS EXISTS. `promote-ribbons.js` and `ROADMAP A01` both carried a standing alarm that a |
-| `checks/claims-research-is-keyed-to-the-place-it-describes.mjs` | every research record's |
 | `checks/claims-revert-field-coverage.mjs` | CAN THE OPERATOR GET BACK? |
 | `checks/claims-ribbons-are-not-older-than-the-skeleton.mjs` | `skeleton.json` is the frame; `ribbons.json` is what Survey draws. Between them sit |
 | `checks/claims-ring-partition.mjs` | "DOES THE FROZEN RING ALREADY CARRY A PARTITION WITH AN OWNER ON EVERY ARC?" |

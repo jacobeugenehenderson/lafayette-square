@@ -3332,12 +3332,11 @@
   "osm-n851633152": {
    "_match_name": "Ace Hardware",
    "_display_id_at_research": "prov-lst-0342",
-   "name": "Ace Conwell Home Center",
-   "description": "The town's Ace Hardware, lumber yard and Benjamin Moore paint store, with garden, grill and tool departments.",
    "_source_pbg": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf p.16 (Apparel & Retail)",
    "_fetched": "2026-09-25",
    "_source": "https://conwellace.com/conwell-home-center",
-   "_hours_absent": "The site says \"07:30 am – 05:00 pm\" but names no days."
+   "_hours_absent": "The site says \"07:30 am – 05:00 pm\" but names no days.",
+   "_resolved": "Jacob, 2026-10-30 (\"accept the duplicates as proposed\", via Boz): Conwell merges into the fuller listing, prov-lst-0070, whose name (\"Conwell Home Center\") and description stand; this absorbed twin's differing name and description are deleted."
   },
   "osm-n4904330519": {
    "_match_name": "Adam's Nest",
@@ -6759,7 +6758,6 @@
    "address": "207 Commercial Street",
    "phone": "774-593-5106",
    "website": "https://aquabarptown.com",
-   "description": "A harborfront bar inside the Aquarium Marketplace, with a harbor-view deck and seven food vendors under the same roof. No reservations; a place to watch the sunset.",
    "hours": {
     "sunday": {
      "open": "11:00",
@@ -6807,7 +6805,8 @@
     "amenities"
    ],
    "_season": "unstated",
-   "_wick_notes": "Shares the Aquarium Marketplace building (205–209 Commercial) with A Salted Buttery."
+   "_wick_notes": "Shares the Aquarium Marketplace building (205–209 Commercial) with A Salted Buttery.",
+   "_resolved": "Jacob, 2026-10-30 (\"accept the duplicates as proposed\", via Boz): Aqua Bar keeps the research listing prov-lst-0421 and its description; this absorbed twin's differing description is deleted. Its amenities fill the survivor's gap."
   },
   "osm-n5652635486": {
    "_match_name": "Crown & Anchor Box Office",
@@ -6815,8 +6814,6 @@
    "name": "Crown & Anchor",
    "address": "247 Commercial Street",
    "phone": "508-487-1430",
-   "website": "https://onlyatthecrown.com",
-   "description": "A harborfront hotel and LGBTQ+ nightlife complex, now run by Tryst Hospitality, housing several bars, a dance club, a cabaret stage and a poolside day club under one roof. Tickets for shows are sold through the complex's box office and Tryst Events.",
    "history": [
     {
      "year": 1860,
@@ -6839,16 +6836,6 @@
      "event": "Rebuilt"
     }
    ],
-   "amenities": [
-    "The Paramount — oceanside dance club (DJs, drag, theme parties)",
-    "The Crown Cabaret — cabaret/drag/comedy stage",
-    "The Wave Bar — harbor-view video bar; Showtunes on Sundays and Wednesdays",
-    "The Vault — underground leather bar",
-    "The Courtyard",
-    "Tryst Beach Club — poolside day club (formerly listed as The Beach Club)",
-    "Hotel rooms",
-    "Box office"
-   ],
    "_wick_source": "https://onlyatthecrown.com",
    "_wick_fetched": "2026-09-25",
    "_wick_confidence": "Operator's own site and venue sub-pages (/the-paramount/, /the-crown-cabaret/, /the-wave-bar/, /the-vault/, /tryst-beach-club/, /history/).",
@@ -6866,7 +6853,8 @@
    "_source_pbg_images": [
     "pbg-guide-2026 p.2 (logo, cropped at 200 dpi from Jacob's copy)"
    ],
-   "_pbg_images_fetched": "2026-10-26"
+   "_pbg_images_fetched": "2026-10-26",
+   "_resolved": "Jacob, 2026-10-30 (\"accept the duplicates as proposed\", via Boz): Crown & Anchor keeps the research listing prov-lst-0423 and its values; this absorbed twin's differing website, description and amenities are deleted. Its history and logo fill the survivor's gaps."
   },
   "osm-n4905048996": {
    "_match_name": "Harbor Lounge",
@@ -6931,7 +6919,6 @@
    "address": "269 Commercial Street",
    "phone": "508-487-1648",
    "website": "https://tinpanalleyptown.com",
-   "description": "A restaurant and live piano bar serving seasonal New American food with global touches, with breads, sauces and desserts made in-house.",
    "amenities": [
     "Live piano bar",
     "Happy hour 4:45–6 daily ($10 appetizers)"
@@ -6946,7 +6933,8 @@
     "description",
     "amenities"
    ],
-   "_wick_notes": "Hours left out: site gives meal-period times without days of the week (happy hour says 'every day'). If days are daily, the bar span is 11:30–23:30."
+   "_wick_notes": "Hours left out: site gives meal-period times without days of the week (happy hour says 'every day'). If days are daily, the bar span is 11:30–23:30.",
+   "_resolved": "Jacob, 2026-10-30 (\"accept the duplicates as proposed\", via Boz): Tin Pan Alley keeps the research listing prov-lst-0429 and its description; this absorbed twin's differing description is deleted. Its amenities fill the survivor's gap."
   },
   "osm-n4904303750": {
    "_match_name": "Waters Edge Cinema",
