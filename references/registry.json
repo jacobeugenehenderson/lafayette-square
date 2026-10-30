@@ -4002,9 +4002,10 @@
         "condition": "Notice: the kit embeds a table GENERATED from the file (its four ASCII-to-ASCII mappings), so the Unicode copyright and permission notice goes beside that table in Code.js and in the generator, per (a). Never use a copyright holder's name to promote the kit (the licence's name clause).",
         "ambiguity": "§2.2 names https://www.unicode.org/Public/ and does not name /Public/security/ separately; read here as within it, since the file's own header points to the same terms (\"For terms of use and license, see https://www.unicode.org/terms_of_use.html\").",
         "note": "Status set by Plumb, not yet approved by Jacob. ⚠ RULE 1 WAS BROKEN: the file was downloaded and parsed (2026-10-30, to answer Zob's question about which mappings exist) BEFORE these terms were checked. The copy is in Plumb's session scratchpad, not in git or references/files (sha256 95bd0aad6dced5ebc63436f459c06ab21a8d107cd842fb57f5c3a1e91bca8611, 9,685 lines). Nothing from it has been committed. The terms read afterwards permit that use, but the order was wrong.",
-        "previously": "not registered"
+        "previously": "not registered",
+        "approvedBy": "Jacob, 2026-10-30"
       },
-      "status": "CANDIDATE — terms checked, awaiting Jacob's approval",
+      "status": "PERMITTED",
       "localCopy": null
     }
   ],
