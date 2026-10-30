@@ -60,6 +60,7 @@ await Promise.all(Array.from({ length: 12 }, async () => {
     } catch (e) { failed.push(`${rel}: ${e.message}`) }
   }
 }))
+mkdirSync(out, { recursive: true })   // a town with nothing in production writes no file, so the folder may not exist yet
 writeFileSync(join(out, 'BACKUP.json'), JSON.stringify({ look, at: new Date().toISOString(), base, kept, absent: absent.sort(), mismatched: mismatched.sort(), failed }, null, 1))
 console.log(`kept ${Object.keys(kept).length} · absent in production ${absent.length} · md5≠etag ${mismatched.length} · failed ${failed.length} → ${out}`)
 if (mismatched.length || failed.length) { console.error([...mismatched.map(m => 'MISMATCH ' + m), ...failed].slice(0, 20).join('\n')); process.exit(1) }
