@@ -32,8 +32,8 @@ per-place share cards (1d7a0743) · PTown's tagline (64aa9fb3) · one place per 
    then `! node scratch/slab-compressed-gate.mjs https://provincetown.online/ provincetown` (and hipointedemun). Exit 0.
 9. **Re-time PTown:** `scratch/browse-perf/load.mjs` cold ×3 + a throttled run (before: 7.2–8.5 s desktop, 120.9 MB).
 OPEN for Jacob: ⭐ the MARINA DOCKS (Plumb, built for his eye): under the fix the floating docks become WATER (no green stripes; the
-off-ground deck object is unbuilt), incl. Fishermen's Wharf's floating docks, which read plausibly today. Before/after frames come with it;
-his word merges it. · the share image fixed vs time-of-day (it works as designed; send links by day) · hours (56/447) · the
+off-ground deck object is unbuilt), incl. Fishermen's Wharf's floating docks, which read plausibly today. FRAMES: `scratch/docks-frames/` (1–2 the strokes' pose before/after: green 5,760 → 2,263 px;
+3–4 Fishermen's floating marina, unchanged by design). Branch plumb/a-dock-rides-no-street 327c78b8, with Zob. His word merges it. · the share image fixed vs time-of-day (it works as designed; send links by day) · hours (56/447) · the
 preview-photo licence (parked) · a floating dock riding the tide · LS's cutover. In progress: Plumb on the marina docks drawn as treelawn.
 
 ### ⭐ HANDOFF — 2026-10-28 (the sprint closed; Swash for Boz). Read this block first; everything below is detail.
