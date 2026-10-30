@@ -3983,6 +3983,29 @@
           ]
         }
       ]
+    },
+    {
+      "id": "unicode-uts39-confusables",
+      "title": "Unicode Security Mechanisms (UTS #39), confusables.txt, Version 16.0.0",
+      "publisher": "Unicode, Inc.",
+      "jurisdiction": "global",
+      "url": "https://www.unicode.org/Public/security/16.0.0/confusables.txt",
+      "covers": [
+        "lookalike characters: the skeleton that refuses a handle resembling another (patch four, the Ward backend; SECURITY F-23 ladder, operatorEverywhere)"
+      ],
+      "terms": {
+        "aiUse": "permitted",
+        "checkedOn": "2026-10-30",
+        "checkedBy": "Plumb (fetched both pages)",
+        "quote": "Terms of use §3.3: \"All Unicode Data Files and Unicode Software are subject to the terms and conditions of the free and open-source\" Unicode License v3, \"unless otherwise indicated by specific restriction, permission, or license identified at the point of release\". §2.2 lists \"https://www.unicode.org/Public/\" among the Data Files. Unicode License V3: \"Permission is hereby granted, free of charge, to any person obtaining a copy of data files\" ... \"to deal in the Data Files or Software without restriction, including without limitation\" ... \"the rights to use, copy, modify, merge, publish, distribute, and/or sell copies of the Data Files or Software\" ... \"provided that either\" \"(a) this copyright and permission notice appear with all copies of the Data Files or Software\", or \"(b) this copyright and permission notice appear in associated Documentation.\"",
+        "source": "https://www.unicode.org/terms_of_use.html · https://www.unicode.org/license.txt",
+        "condition": "Notice: the kit embeds a table GENERATED from the file (its four ASCII-to-ASCII mappings), so the Unicode copyright and permission notice goes beside that table in Code.js and in the generator, per (a). Never use a copyright holder's name to promote the kit (the licence's name clause).",
+        "ambiguity": "§2.2 names https://www.unicode.org/Public/ and does not name /Public/security/ separately; read here as within it, since the file's own header points to the same terms (\"For terms of use and license, see https://www.unicode.org/terms_of_use.html\").",
+        "note": "Status set by Plumb, not yet approved by Jacob. ⚠ RULE 1 WAS BROKEN: the file was downloaded and parsed (2026-10-30, to answer Zob's question about which mappings exist) BEFORE these terms were checked. The copy is in Plumb's session scratchpad, not in git or references/files (sha256 95bd0aad6dced5ebc63436f459c06ab21a8d107cd842fb57f5c3a1e91bca8611, 9,685 lines). Nothing from it has been committed. The terms read afterwards permit that use, but the order was wrong.",
+        "previously": "not registered"
+      },
+      "status": "CANDIDATE — terms checked, awaiting Jacob's approval",
+      "localCopy": null
     }
   ],
   "questions": [
