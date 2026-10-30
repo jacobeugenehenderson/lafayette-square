@@ -109,10 +109,6 @@ animated channel's unkeyed slot silently (Layer 0; refuse by name). ⚠️ LS's 
 would start 91 m out) — confirm with Jacob before LS's next bake.
 
 **⛔ NAMED DEBTS (each removed when its cure lands, never left as a quiet fork):**
-- **the take-out's three subtractions** (`structures.mjs#waterWithoutDecks`: w0, loc, thin) are still clipper's integer booleans, against
-  the cut-once brief's "every boolean"; its open and close cut once (`openClose.mjs`). On PTown's v5 take-out: copy 0, crossings 0, ≤ 2 mm 11
-  (a ratchet) ▶ `checks/claims-the-open-close-cuts-once.mjs` (4). On the arrangement instead (local `plumb/takeout-on-arrangement` 3dc1a151):
-  v5 recurs at 84–86, cause not established.
 - by-value reads in `checks/claims-a-bake-step-declares-what-it-reads.mjs`.
 - `src/data/buildings.json` in every pour's inputs (Class D).
 - derive.js reads cap ends from raw/centerlines.json by NAME (ends within 2 m), a fallback no guard sees; LS has 11 capped centerlines,
@@ -125,7 +121,8 @@ out in the MAIN checkout (Jacob's), stays.
 
 **Still-open rows cited by name elsewhere (short; their history is in the archive):**
 - **the open/close refuses at a source staircase** (cited by `openClose.mjs#emit`'s refusal). A deck ring with a millimetre staircase at a
-  cut (two lines within the lattice's rounding read out of order) refuses by name. Known refusals, by text and site, in
+  cut (two lines within the lattice's rounding read out of order) refuses by name. Known refusals, by class, site and lengths (never ring
+  indices: where the walk starts), in
   `claims-the-coast-is-the-lidars`: MacMillan's 10-27 crop and the wharf 10-27 crop (KNOWN_REFUSALS 2). The rule is unbuilt; one attempt (runs
   joined within NODE_BOUND, local `plumb/staircase-runs`) raised Huron's ratchet, cause not established; it joined Huron 3.65%, PTown decks
   0.21%, MacMillan's crop 15.4% of edges (LS, HPDM not measured): the rule cannot be "join any sub-step edge". Trace: `macmillan-trace.mjs`.
@@ -134,8 +131,11 @@ out in the MAIN checkout (Jacob's), stays.
   kept holds a terrain node"); the stage's sensitivity, cause not established.
 - **the open/close's residual against the definition** (cited by `claims-the-open-close-cuts-once-huron`): Huron's traced water past
   2·NODE_BOUND, on a ratchet; evicts at 0. PTown's take-out: 0.008 m² at (192.163, 80.195), not chased. Local `plumb/concurrence`
-  e7b78ec2 raised it (definition-only 11 → 17). ⛔ Owed: every bake reports its residual (Zob, unbuilt). COPIES, by site: Huron 1 at (720.196,
+  e7b78ec2 raised it (definition-only 11 → 17). Every coast bake judges and records it (`bake-coast.mjs#judgeNets`). COPIES, by site: Huron 1 at (720.196,
   209.874), insideRun's crop 2 at (−4312.323, −3315.972), each a cut point past NODE_BOUND off its source line; why emission passes it, not established.
+- **the take-out re-run on its own (extended) deck is not idempotent**: PTown's deck 0 takes a new 0.001 m² sliver at (118.657, 167.066). The
+  pour never re-enters (none of its 6 touching pieces is rounding); checks recompute via `mintInputsOf`. Cause not established.
+- **facesOf's tag ranking is held** (Zob, 2026-10-29): no current case; 84–86 was a folded input (now refused by name).
 - **PTOWN PARKS** (registry canon): (a) the edge rule and the way tag landed (v4); the dike is held as land (v5, `r-the-coast-bake-holds-an-embankment-as-land`).
   **(b)** the decks' 1 mm jogs: cut once (`openClose.mjs`), PTown's decks' edges ≤ 2 mm are 0 (pre-open 0) ▶ `claims-the-open-close-cuts-once` (2). **(c)** below.
 - **PTOWN'S PLAYER: A PRESS IS NOT WORSE, AND THE FOCUS RETURNS ONLY WITH THE RE-BAKE** (2026-10-29). Any player past the Hero retirement
