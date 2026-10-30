@@ -100,7 +100,12 @@ Measure before choosing. PTown's console also prints "STALE SLAB … this ground
 true state, and it clears with PTown's re-pour (BRIEF-provincetown-pours-on-the-port).
 **⟦OWED⟧ A WARD PIN REFUSES WHILE A COASTAL STAGING SLAB LACKS THE FAR BAKE** (Groyne/Zob, 2026-10-29): after the far-shore merge, a
 player past it draws no shore on a slab without `revetment-far.*`. The release order (OPERATIONS) says merge → far step + publish for
-every coastal town → only then the pin. Nothing enforces it; same family as the promote guard above.
+every coastal town → only then the pin. Nothing enforces it; same family as the promote guard above. ⭐ And the guard reads the FORMAT, not presence (Ward/Boz, 2026-10-29,
+FAR_FORMAT 3): the pin, and every Promote, refuses while a town's staging slab's `revetment-far.json` version ≠ the pinned player's
+`revetmentFromSlab.js#FAR_FORMAT`. The new player refuses an old format by name; the old player (527213c7) has no far-format gate, so a
+format-3 slab published under it is read as format-1 bytes (inferred from source, not run), and a Promote in that window carries the
+old player to production with it. Until the guard exists, this cycle's rule: both slabs publish, then kit bundle + publish:staging back
+to back, then the eye, then any Promote.
 **▶ LANDED 2026-10-29: `docs/briefs/BRIEF-the-far-shore-is-not-built-at-load.md`** (Groyne, merged; evicts after Jacob's eye on the shore) (Jacob, 2026-10-29: PTown's long load; Ward's
 profile: one ~3.2 s main-thread task per load is the revetment's far layer, `SlabRevetment.jsx`'s `useFrame` → `revetmentDrape`).
 **▶ TO BRIEF NEXT (Jacob, 2026-10-29):** ⭐ FIRST: an AIMER for the Stage camera (LS's staging slab is a PLACEHOLDER until it lands: Jacob
