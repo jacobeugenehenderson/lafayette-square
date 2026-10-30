@@ -332,11 +332,22 @@ export function embankmentFootprints(skeletonStreets, { overlay, std, tessellate
  * segment lies inside carries that street. No fraction, no threshold. The mint takes these footprints OUT of ①'s water,
  * so the deck is a land face and the street's walk and curb are built on it at the land's height; a deck that carries no
  * street stays water (the off-ground deck object, later).
+ * ⭐ A STREET RIDES THE DECK WAYS IT CROSSES, NOT THE UNION THEY TOUCH (Boz's ruling (A), 2026-10-30; PTown's floating docks
+ * moored against MacMillan Wharf rode its footprint out of the water and drew as the land-use sentinel's grass). The decks
+ * are built from the RIDING ways only (decksRidden): each way a street crosses, and, transitively along the structure, every
+ * deck way of the SAME KIND touching one that rides (Boz's ruling (A1)): FIXED with fixed (floating≠yes; no tag is fixed), so a
+ * wharf's apron or a pier spur rides with its wharf, and FLOATING with floating, so a floating marina a street runs on is one
+ * structure, rooted where its own gangway meets the wharf. A floating dock moored against a FIXED street deck stays water: the
+ * mappers' tags on both sides say it is not the wharf. ⛔ A building standing on a deck way left in the water refuses by name,
+ * and a deck that ends up clear of every shore still refuses at the mint (mintInputs: no land root).
  * @param streets [{ points: [[x, z], …], skelId? }] — the chains the mint is given
- * @returns { rings: [ring], decks: [{ ring, streets: [skelId] }] }
+ * @param buildings the fetch's buildings ([{ osmId, coords }]), for the guard; [] only where there are none
+ * @returns { rings: [ring], decks: [{ ring, streets: [skelId] }], left: [{ id, at }] } — `left`: the deck ways touching a ridden one that stay water
  */
-export function streetDecks(ground, streets, stepM) {
-  const fp = deckFootprints(ground, stepM)
+export function streetDecks(ground, streets, stepM, buildings) {
+  if (!Array.isArray(buildings)) throw new Error('⛔ structures: streetDecks needs the fetch\'s buildings ([] where there are none) — a building on a deck way left in the water must refuse')
+  const ridden = decksRidden(ground, streets, buildings)
+  const fp = deckFootprints(ridden.ground, stepM)
   // ⛔ a street rides its deck, so a deck the open removed entirely (narrower than one trace cell everywhere) that a street
   // crosses has nothing left for the street to ride: refused by name (Boz, 2026-10-27)
   for (const b of fp.belowResolution) for (const st of streets) {
@@ -361,7 +372,38 @@ export function streetDecks(ground, streets, stepM) {
     }
     if (on.length) decks.push({ ring, streets: on })
   }
-  return { rings: decks.map(d => d.ring), decks }
+  return { rings: decks.map(d => d.ring), decks, left: ridden.left }
+}
+
+// does a street's centreline lie inside a shape (clipper paths) along at least one segment: streetDecks' own test, per shape
+const carries = (shape, streets) => streets.some(st => { const line = toPath(st.points || []); if (line.length < 2) return false
+  const c = new Clipper(), tree = new PolyTree(); c.AddPath(line, PolyType.ptSubject, false); c.AddPaths(shape, PolyType.ptClip, true)
+  c.Execute(ClipType.ctIntersection, tree, PolyFillType.pftNonZero, PolyFillType.pftNonZero); return Clipper.OpenPathsFromPolyTree(tree).some(p => p.length >= 2) })
+const meets = (a, b) => { const g = (ps) => { const co = new ClipperOffset(), o = new Paths(); co.AddPaths(ps, JoinType.jtMiter, EndType.etClosedPolygon); co.Execute(o, 1); return o }   // touching: 1 clipper unit (the lattice)
+  const c = new Clipper(), o = new Paths(); c.AddPaths(g(a), PolyType.ptSubject, true); c.AddPaths(b, PolyType.ptClip, true); c.Execute(ClipType.ctIntersection, o, PolyFillType.pftNonZero, PolyFillType.pftNonZero); return o.length > 0 }
+const overlaps = (a, b) => { const c = new Clipper(), o = new Paths(); c.AddPaths(a, PolyType.ptSubject, true); c.AddPaths(b, PolyType.ptClip, true); c.Execute(ClipType.ctIntersection, o, PolyFillType.pftNonZero, PolyFillType.pftNonZero); return o.some(q => Clipper.Area(q) !== 0) }
+
+/** The deck ways a street rides (streetDecks' rule (A1)): `ground` with every other deck way removed, and the ones left in the water
+ *  that touch a ridden way. Each way's own shape: an area as mapped, a line at its width (its own, else the kit's), as deckInputs draws it. */
+export function decksRidden(ground, streets, buildings) {
+  const ways = [], seen = new Set()
+  let typical = null
+  for (const bucket of Object.values(ground || {})) { if (!Array.isArray(bucket)) continue
+    for (const f of bucket) { if (!kindOf(f) || seen.has(f)) continue; seen.add(f); const p = pts(f)
+      let shape
+      if (f.isClosed && p.length >= 4) shape = union([toPath(p.slice(0, -1))])
+      else if (p.length >= 2) { const co = new ClipperOffset(), o = new Paths(); co.AddPath(toPath(p), JoinType.jtMiter, EndType.etOpenButt); co.Execute(o, ((widthM(f.tags) ?? (typical ??= defaultDeckWidthM())) / 2) * SCALE); shape = o }
+      else continue
+      ways.push({ f, shape, floating: f.tags?.floating === 'yes', rides: false }) } }
+  const queue = ways.filter(w => carries(w.shape, streets)); for (const w of queue) w.rides = true
+  while (queue.length) { const w = queue.shift(); for (const v of ways) if (!v.rides && v.floating === w.floating && meets(w.shape, v.shape)) { v.rides = true; queue.push(v) } }
+  const ridden = ways.filter(w => w.rides), left = ways.filter(w => !w.rides && ridden.some(r => meets(r.shape, w.shape)))
+  // ⛔ a building stands on land: one on a deck way left in the water would stand on the water
+  for (const w of left) for (const b of buildings) { const bp = pts(b); if (bp.length < 4) continue
+    if (overlaps([toPath(bp.slice(0, -1))], w.shape)) throw new Error(`⛔ structures: building ${b.osmId ?? '?'} stands on deck way ${w.f.osmId ?? '?'} (man_made=${w.f.tags?.man_made}, floating=${w.f.tags?.floating ?? 'untagged'}), which no street crosses and no ridden way of its kind touches, so it stays water and the building would stand on the water. Refusing: is the way floating, or the building mapped on it?`) }
+  const drop = new Set(ways.filter(w => !w.rides).map(w => w.f))
+  const out = Object.fromEntries(Object.entries(ground || {}).map(([k, v]) => [k, Array.isArray(v) ? v.filter(f => !drop.has(f)) : v]))
+  return { ground: out, left: left.map(w => ({ id: w.f.osmId ?? null, at: fromPath(w.shape[0] || [])[0] || null })) }
 }
 
 /** ①'s water rings and shoreline arcs with the street decks taken OUT: the rings minus the decks (outers positive, holes
