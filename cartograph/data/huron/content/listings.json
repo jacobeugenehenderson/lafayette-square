@@ -5,8 +5,8 @@
   "layer": "Layer 2 — listings (business POIs, building_id → slab id, 0..N per building)",
   "generated": "2026-07-07",
   "generator": "bake-content.js",
-  "count": 288,
-  "enriched": 212,
+  "count": 287,
+  "enriched": 211,
   "note": "BASE = OSM-POI spatial join onto the baked set; hand-authoring lives in listings.overrides.json (adds + patches) and wins. Every building_id ∈ baked set by construction."
  },
  "listings": [
@@ -488,75 +488,6 @@
    "enriched": true,
    "source_key": "ovt-adb13f3a-46f2-4dd7-8ba2-7b6441437f55",
    "prominence_rank": 275
-  },
-  {
-   "id": "huro-lst-0095",
-   "building_id": "msbf-3955",
-   "name": "Holiday Harbor Marina",
-   "category": "parks",
-   "subcategory": "recreation",
-   "address": "944 Main St",
-   "phone": "(419) 433-2140",
-   "website": "https://www.huronlagoons.com/holiday-harbor/",
-   "logo": null,
-   "hours": {
-    "monday": {
-     "open": "08:00",
-     "close": "17:00"
-    },
-    "tuesday": {
-     "open": "08:00",
-     "close": "17:00"
-    },
-    "wednesday": {
-     "open": "08:00",
-     "close": "17:00"
-    },
-    "thursday": {
-     "open": "08:00",
-     "close": "17:00"
-    },
-    "friday": {
-     "open": "08:00",
-     "close": "17:00"
-    },
-    "saturday": {
-     "open": "08:00",
-     "close": "17:00"
-    },
-    "sunday": {
-     "open": "08:00",
-     "close": "17:00"
-    }
-   },
-   "opening_hours_raw": null,
-   "photos": [],
-   "amenities": [
-    "Drive-up docks",
-    "Jet ski docks",
-    "Fixed and floating docks",
-    "Dockside parking",
-    "Heated pool",
-    "Free Wi-Fi",
-    "Ships store",
-    "Boat service and repair (boats up to 20 tons)",
-    "Winter boat storage",
-    "Shrink wrapping",
-    "Ohio Clean Marina - Gold"
-   ],
-   "tags": [],
-   "description": "A family-owned full-service marina on the Huron River about one mile from Lake Erie, offering seasonal dockage, boat service and winter storage. It is the sister facility to Huron Lagoons Marina and holds Gold status in the Ohio Clean Marina Program.",
-   "history": null,
-   "menu_url": null,
-   "reservation_url": null,
-   "status": "unverified",
-   "source": "overture",
-   "osm_type": null,
-   "overture_category": "marina",
-   "overture_confidence": 0.9591095447540283,
-   "enriched": true,
-   "source_key": "ovt-626f8f69-34cb-42c2-925c-4c61778541f8",
-   "prominence_rank": 1747
   },
   {
    "id": "huro-lst-0144",
