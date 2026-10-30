@@ -33,10 +33,14 @@ export function shareSlotAt(manifest, when) {
   return todSlotAt(when, { lat: g.lat, lon: g.lon, tz: g.timezone }, SHARE_SLOT_TOLERANCE_MIN)
 }
 
-/** A place's address within a town (the Ward's routes.js `/place/<id>/<name>`) → its id, or null. */
+/**
+ * A place's address within a town (the Ward's routes.js `/place/<id>/<name>`) → { id }, { malformed: the raw segment }
+ * when it does not decode (`%E0%A4%A`), or null for any other path. ⛔ Never throws: a bad link still gets a page.
+ */
 export function placeIdOf(path) {
   const m = /^\/place\/([^/?#]+)/.exec(path || '')
-  return m ? decodeURIComponent(m[1]) : null
+  if (!m) return null
+  try { return { id: decodeURIComponent(m[1]) } } catch { return { malformed: m[1] } }
 }
 
 /**
@@ -47,7 +51,8 @@ export function placeIdOf(path) {
  *    town without a picture is), never read as "no such place".
  */
 export async function placeListings(env, prefix, manifest, path) {
-  if (placeIdOf(path) == null) return { listings: null, listingsWhy: null }
+  const at = placeIdOf(path)
+  if (at == null || at.malformed != null) return { listings: null, listingsWhy: null }
   if (!manifest?.content?.['listings.json']) return { listings: null, listingsWhy: 'the town publishes no listings' }
   try {
     const obj = await env.ASSETS.get(`${prefix}content/listings.json`)
@@ -96,8 +101,10 @@ export function cardFor({ town, map, path, manifest, slabBase, pageUrl, listings
     icon: town?.faviconUrl || (town?.mark ? emojiIcon(town.mark) : null),
     note: null,
   }
-  const id = placeIdOf(path)
-  if (id == null) return card
+  const at = placeIdOf(path)
+  if (at == null) return card
+  if (at.malformed != null) { card.note = `the town card for a place link that does not decode: "${at.malformed}"`; return card }
+  const { id } = at
   const place = Array.isArray(listings) ? listings.find((l) => l.id === id) : null
   if (!place) {
     card.note = listings == null ? `the town card for place "${id}": ${listingsWhy || 'its listings were not read'}`
@@ -109,8 +116,13 @@ export function cardFor({ town, map, path, manifest, slabBase, pageUrl, listings
   card.description = [type, place.address].filter(Boolean).join(' · ') || null
   card.url = pageUrl + path.replace(/^\//, '').replace(/[?#].*$/, '')
   const photo = (place.photos || []).map((p) => (typeof p === 'string' ? { url: p } : p)).find((p) => p?.url && manifest?.photos?.[p.url])
-  if (photo && PREVIEW_LICENCES.includes(photo.license)) card.image = slabBase + manifest.photos[photo.url].path
-  else if (photo) card.note = `the town's picture for "${id}": its photo is ${photo.license || (photo.rights ? 'shown by permission' : 'of unstated licence')}, which a preview cannot credit`
+  if (photo && PREVIEW_LICENCES.includes(photo.license)) {
+    // Served under its content name, as the town's picture is, so a preview cache never shows a replaced photo.
+    try {
+      if (manifest.names !== HASHED) throw new Error('the slab is not published under content names')
+      card.image = slabBase + servedRel(manifest, manifest.photos[photo.url].path, true)
+    } catch (e) { card.note = `the town's picture for "${id}": its photo has no content-named address (${e.message})` }
+  } else if (photo) card.note = `the town's picture for "${id}": its photo is ${photo.license || (photo.rights ? 'shown by permission' : 'of unstated licence')}, which a preview cannot credit`
   return card
 }
 

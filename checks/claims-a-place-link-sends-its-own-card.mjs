@@ -8,15 +8,18 @@
  *
  * Drives each Worker's real `fetch` in Miniflare against an in-memory R2 holding a town with listings, a taxonomy and
  * photos, and reads the served `<head>` and the `ward-share-card` header:
- *   1. a place whose photo is public domain → its name, "<type> · <address>", its own address, ITS photo; no note.
+ *   1. a place whose photo is public domain → its name, "<type> · <address>", its own address, ITS photo under its
+ *      content name (slabNames.js, as the town's picture); no note.
  *   2. a place whose photo is CC BY-SA → its name and address, the TOWN's picture; the header names the licence.
  *   3. a place with no photo → its name, the town's picture; no note.
  *   4. a place id the listings lack → the town's card; the header names the place and "no such place".
  *   5. a town that publishes no listings → the town's card; the header says so.
- *   6. the town's front page → the town's card, unchanged, header exactly `complete`.
+ *   6. a place link that does not decode (`%E0%A4%A`) → served (200), the town's card; the header names the segment.
+ *   7. the town's front page → the town's card, unchanged, header exactly `complete`.
  * Which licences may stand in a preview is read from `shareCard.js#PREVIEW_LICENCES`, never restated.
  * Mutants, run every time, each must turn it RED: (a) cardFor ignores the path; (b) the licence gate removed;
- * (c) the fallback said nowhere; (d) staging hands cardFor its whole path (`/<town>/place/…`).
+ * (c) the fallback said nowhere; (d) the malformed-link guard removed (the page crashed: Zob, 2026-10-30); (e) the photo
+ * on its plain path; (f) staging hands cardFor its whole path (`/<town>/place/…`).
  *   node checks/claims-a-place-link-sends-its-own-card.mjs
  */
 import { join } from 'node:path'
@@ -37,7 +40,7 @@ const LISTINGS = [
   { id: 'p-bysa', name: 'Credit Museum', category: 'arts', subcategory: 'museum', address: '2 High Street', photos: [{ url: 'photos/bysa/01.jpg', license: 'CC BY-SA 3.0' }] },
   { id: 'p-none', name: 'Plain Place', category: 'arts', subcategory: 'museum', address: '3 Low Street' },
 ]
-const PHOTOS = { 'photos/free/01.jpg': { path: 'content/photos/free/01.jpg' }, 'photos/bysa/01.jpg': { path: 'content/photos/bysa/01.jpg' } }
+const PHOTOS = { 'photos/free/01.jpg': { path: 'content/photos/free/01.jpg', sha256: sha() }, 'photos/bysa/01.jpg': { path: 'content/photos/bysa/01.jpg', sha256: sha() } }
 const manifest = (map, withListings) => {
   const files = {}
   for (const rel of SHARE_IMAGE_RELS) files[rel] = { sha256: sha() }
@@ -83,11 +86,12 @@ async function run(site, mutate) {
   }
   const townImages = (t) => new Set(SHARE_IMAGE_RELS.map((rel) => at[t].slab + contentName(rel, mans[t].files[rel].sha256)))
   const cases = [
-    [town, 'place/p-free/the-free-inn', 'a place with a public-domain photo', { title: LISTINGS[0].name, description: 'Hotels · 1 Front Street', image: `${at[town].slab}content/photos/free/01.jpg`, note: null }],
+    [town, 'place/p-free/the-free-inn', 'a place with a public-domain photo', { title: LISTINGS[0].name, description: 'Hotels · 1 Front Street', image: at[town].slab + contentName('content/photos/free/01.jpg', PHOTOS['photos/free/01.jpg'].sha256), note: null }],
     [town, 'place/p-bysa/credit-museum', 'a place with a CC BY-SA photo', { title: LISTINGS[1].name, description: 'Museums · 2 High Street', image: 'town', note: /CC BY-SA 3\.0/ }],
     [town, 'place/p-none/plain-place', 'a place with no photo', { title: LISTINGS[2].name, description: 'Museums · 3 Low Street', image: 'town', note: null }],
     [town, 'place/p-gone/somewhere', 'a place the listings lack', { title: 'Card Town', url: at[town].root, image: 'town', note: /"p-gone".*no such place/ }],
     [bare, 'place/p-free/the-free-inn', 'a town that publishes no listings', { title: 'Bare Town', url: at[bare].root, image: 'town', note: /publishes no listings/ }],
+    [town, 'place/%E0%A4%A/x', 'a place link that does not decode', { title: 'Card Town', url: at[town].root, image: 'town', note: /does not decode: "%E0%A4%A"/ }],
     [town, '', 'the town\'s front page', { title: 'Card Town', description: 'A town.', url: at[town].root, image: 'town', note: null }],
   ]
   for (const [t, rest, label, want] of cases) {
@@ -108,9 +112,11 @@ async function run(site, mutate) {
 }
 
 const MUTANTS = [
-  ['cardFor ignores the path', { [SHARE]: (s) => s.replace('const id = placeIdOf(path)', 'const id = null') }, ['production', 'staging']],
+  ['cardFor ignores the path', { [SHARE]: (s) => s.replace('  if (at == null) return card', '  return card') }, ['production', 'staging']],
   ['the licence gate removed', { [SHARE]: (s) => s.replace('if (photo && PREVIEW_LICENCES.includes(photo.license))', 'if (photo)') }, ['production', 'staging']],
   ['the fallback said nowhere', { [SHARE]: (s) => s.replace("${card.note ? `; ${card.note}` : ''}", '') }, ['production', 'staging']],
+  ['the malformed-link guard removed', { [SHARE]: (s) => s.replace('try { return { id: decodeURIComponent(m[1]) } } catch { return { malformed: m[1] } }', 'return { id: decodeURIComponent(m[1]) }') }, ['production', 'staging']],
+  ['the place photo on its plain path', { [SHARE]: (s) => s.replace('servedRel(manifest, manifest.photos[photo.url].path, true)', 'manifest.photos[photo.url].path') }, ['production', 'staging']],
   ['staging hands cardFor its whole path', { [WORKERS.staging]: (s) => s.replace("url.pathname.slice(`/${map}`.length) || '/'", 'url.pathname') }, ['staging']],
 ]
 let failed = 0
