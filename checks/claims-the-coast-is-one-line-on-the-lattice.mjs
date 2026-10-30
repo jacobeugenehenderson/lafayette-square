@@ -9,7 +9,7 @@
 //   (1) PLANT: a channel whose street crosses it bank to bank: every crossing the arc took is a VERTEX of the water ring ①
 //       hands back (protopolygon.waterRings), and the mint passes.
 //   (2) HURON: its v3 coast with the water opened and closed as 7ee75e5a does, and its edges ruled as bake-coast does at settle's
-//       exit, re-derived at v7 (the fixture checks/fixtures/coast-huron-v7-opened-1mm.json, md5 ee530674…; scratch/cut-once/fixture-v7.mjs, from v6's scratch/cut-once/fixture-v6.mjs), the town's own inputs (mintInputs; a tree without them is RED, by name): the mint passes.
+//       exit, re-derived at v7 (the fixture checks/fixtures/coast-huron-v7-opened-1mm.json, md5 d58e72f1…; scratch/cut-once/fixture-v7.mjs, from v6's scratch/cut-once/fixture-v6.mjs), the town's own inputs (mintInputs; a tree without them is RED, by name): the mint passes.
 //   MUTANT (always run): the water rings NOT given the crossings → (1) a crossing is no water vertex, RED · (2) Huron refuses at
 //   absorbInk, at the cell (815.256, 576.511), RED.
 //   ⛔ Not reproduced by a synthetic plant: a street ending on, or crossing, a straight coast edge, swept 6 m in 0.7 mm steps, never
@@ -50,7 +50,7 @@ const plant = (tg) => { let MP = null, why = null
 }
 
 // (2) Huron, on the plant coast
-const PLANT = join(ROOT, 'checks/fixtures/coast-huron-v7-opened-1mm.json'), MD5 = 'ee530674695812e714257c9dbb155b9a', CELL = '(815.256, 576.511)'
+const PLANT = join(ROOT, 'checks/fixtures/coast-huron-v7-opened-1mm.json'), MD5 = 'd58e72f1743ea5b92d274de76e733952', CELL = '(815.256, 576.511)'
 const huronArgs = async () => {
   if (!existsSync(PLANT)) return { err: `the fixture ${PLANT} is absent — Huron NOT checked` }
   const body = readFileSync(PLANT), md5 = createHash('md5').update(body).digest('hex'); if (md5 !== MD5) return { err: `the fixture's md5 is ${md5}, not ${MD5} — a different coast, NOT checked` }

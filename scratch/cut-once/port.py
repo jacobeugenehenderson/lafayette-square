@@ -38,7 +38,7 @@ i = s.index("// a ring's raw offset curve at d"); j = s.index("  return out\n}\n
 for f, setter in [('TAGS_BY_SEGMENT', 'setTagsBySegment'), ('REFUSE_ALL_BACKWARD', 'setRefuseAllBackward'), ('SINGLE_POINT_BRANCH', 'setSinglePointBranch'),
                   ('RAW_CURVE', 'setRawCurve'), ('BY_EDGES', 'setByEdges'), ('NO_EMIT_INVARIANT', 'setNoEmitInvariant'),
                   ('TIERS_SWAPPED', 'setTiersSwapped'), ('TAGS_OFF_AT', 'setTagsOffAt'), ('OWN_SKIPS_LIMIT', 'setOwnSkipsLimit'), ('SUB_SAME_WAY', 'setSubSameWay'),
-                  ('TRIMMED_ARC_CORNERS', 'setTrimmedArcCorners'), ('ARC_RAW', 'setArcRaw'), ('NO_SLIVER_DROP', 'setNoSliverDrop'), ('TRIM_INVERTED', 'setTrimInverted'),
+                  ('TRIMMED_ARC_CORNERS', 'setTrimmedArcCorners'), ('ARC_RAW', 'setArcRaw'), ('NO_SLIVER_DROP', 'setNoSliverDrop'), ('TRIM_INVERTED', 'setTrimInverted'), ('CLOSE_RAW', 'setCloseRaw'), ('UNIT_LINES_KEPT', 'setUnitLinesKept'), ('STAIR_NAMES_SKIPPED', 'setStairNamesSkipped'),
                   ('GAP_BEFORE_LIMIT', 'setGapBeforeLimit'), ('TAG_SET_ORDER', 'setTagSetOrder'), ('INSIDE_RUN_FORWARD', 'setInsideRunForward'), ('CORNER_AT_MITER', 'setCornerAtMiter'), ('BACK_PIECES', 'setBackPieces'), ('MERGE_LEAVES_FIRST', 'setMergeLeavesFirst'), ('CLAIMANTS_KEPT', 'setClaimantsKept'), ('OPP_STANDINS', 'setOppStandins'), ('F_SLIVER_KEPT', 'setFSliverKept'), ('CLAIMANT_ONE_SUCCESSOR', 'setClaimantOneSuccessor'), ('TOPO_SILENT', 'setTopoSilent'), ('STAIR_RETAG_OFF', 'setStairRetagOff'), ('STAIR_CELL_OFF', 'setStairCellOff'), ('PREMISE_IGNORED', 'setPremiseIgnored')]:
     s, n1 = re.subn(rf'^let {f} = [^\n]*\n', '', s, flags=re.M)
     s, n2 = re.subn(rf'^export const {setter} = [^\n]*\n', '', s, flags=re.M)
@@ -58,7 +58,12 @@ sub("if (!NO_EMIT_INVARIANT) for", "for")
 sub("TIERS_SWAPPED ? null : (INSERTED", "(INSERTED")
 sub("tags: withTags && !(TAGS_OFF_AT === who.split(' ').pop())", "tags: withTags")
 sub("!OWN_SKIPS_LIMIT && capAt", "capAt", 2)
-sub("const SUB = SUB_SAME_WAY ? (rs) => rs : revT, out_ = SUB_SAME_WAY ? (w) => w > 0 : (w) => w < 0", "const SUB = revT, out_ = (w) => w < 0")
+sub("const SUB = (rs) => (SUB_SAME_WAY ? rs : revT(rs)), out_ = (w) => (SUB_SAME_WAY ? w > 0 : w < 0)", "const SUB = revT, out_ = (w) => w < 0")
+sub("  if (CLOSE_RAW) return asRings(C)\n", "")
+sub("const unitSeg = (a, b) => !UNIT_LINES_KEPT && Math.abs", "const unitSeg = (a, b) => Math.abs")
+sub("      const jog = STAIR_NAMES_SKIPPED ? [...inner, u.i] : (() =>", "      const jog = (() =>")
+sub("      const onEither = (v) => onLineTiered(A, [v.X, v.Y], null) || (!STAIR_NAMES_SKIPPED && onLineTiered(B, [v.X, v.Y], null))", "      const onEither = (v) => onLineTiered(A, [v.X, v.Y], null) || onLineTiered(B, [v.X, v.Y], null)")
+sub("      const stair = STAIR_NAMES_SKIPPED ? jog.filter(i => [SRC[t.g][i], SRC[t.g][(i + 1) % n]].every(onEither)) : (jog.length", "      const stair = (jog.length")
 sub("if (kind === 'trimmed-arc' && !TRIMMED_ARC_CORNERS) return clipArc", "if (kind === 'trimmed-arc') return clipArc")
 sub("!ARC_RAW && prevLine", "prevLine")
 sub("if (NO_SLIVER_DROP) return false; ", "")
@@ -103,11 +108,7 @@ sub("  if (RAW_CURVE) { const raw = region.map((R, g) => rawOffset(R, d, g, (sta
     "  { let pieces = region.flatMap((R, g) => offsetPieces(R, d, g, (stat.squares ||= []), lines?.[g], stat))")
 sub("  if (BACK_PIECES) return backPieces(F, region, lines, -d, who, stat)\n", "")
 
-# ── the records per call, returned (cand3 defines fresh(), beside partsOf)
-sub("export function openAt(paths, stepM, what, stat = {}) { const Pt = unionTagged(paths, what);",
-    "export function openAt(paths, stepM, what, stat = {}) { fresh(); const Pt = unionTagged(paths, what);")
-sub("export function closeAt(paths, stepM, what, stat = {}) { const Pt = unionTagged(paths, what);",
-    "export function closeAt(paths, stepM, what, stat = {}) { fresh(); const Pt = unionTagged(paths, what);")
+# ── the records per call, returned (cand3 defines fresh(), beside partsOf; openAt and closeAt call it themselves)
 sub("export function openCloseProvenance(paths, stepM, what) {\n", "export function openCloseCutOnce(paths, stepM, what) {\n  fresh()\n")
 sub("  return { paths: toIP(k), rings: k, tags: K.tags, P: Pt, stat, topology: topo, opened: tf.map(pp => +m2(pp).toFixed(3)), closed: ff.map(pp => +m2(pp).toFixed(3)), slivers: { taken: taken.length - tf.length, filled: filled.length - ff.length } }",
     "  return { rings: k, tags: K.tags, P: Pt, stat, topology: topo, taken, filled, tf, ff, origin: new Map(ORIGIN), dropped: DROPPED.slice() }")

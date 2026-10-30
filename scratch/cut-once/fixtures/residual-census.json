@@ -1,0 +1,600 @@
+[
+ {
+  "name": "huron-water",
+  "part": 0,
+  "side": "definition only",
+  "m2": 0.00959,
+  "key": "a43e4b27128a5a76",
+  "at": [
+   663.39,
+   277.196
+  ],
+  "stage": "dilate",
+  "rules": "gap-arc"
+ },
+ {
+  "name": "huron-water",
+  "part": 0,
+  "side": "definition only",
+  "m2": 0.00443,
+  "key": "d1860d79727b226f",
+  "at": [
+   233.625,
+   4248.522
+  ],
+  "stage": "dilate",
+  "rules": "gap-arc"
+ },
+ {
+  "name": "huron-water",
+  "part": 0,
+  "side": "definition only",
+  "m2": 0.00192,
+  "key": "2b1df8af9eeff68d",
+  "at": [
+   -2076.258,
+   -2036.666
+  ],
+  "stage": "dilate",
+  "rules": "own/run only"
+ },
+ {
+  "name": "huron-water",
+  "part": 0,
+  "side": "definition only",
+  "m2": 0.00168,
+  "key": "7609c770f73ff459",
+  "at": [
+   -3224.084,
+   -2804.587
+  ],
+  "stage": "dilate",
+  "rules": "own/run only"
+ },
+ {
+  "name": "huron-water",
+  "part": 0,
+  "side": "definition only",
+  "m2": 0.00081,
+  "key": "fc4110e0c73d8b77",
+  "at": [
+   467.529,
+   2014.438
+  ],
+  "stage": "open",
+  "rules": "cut-join"
+ },
+ {
+  "name": "huron-water",
+  "part": 0,
+  "side": "definition only",
+  "m2": 0.00076,
+  "key": "8a3bf0eb373b71cb",
+  "at": [
+   1443.72,
+   2410.79
+  ],
+  "stage": "dilate",
+  "rules": "own/run only"
+ },
+ {
+  "name": "huron-water",
+  "part": 0,
+  "side": "candidate only",
+  "m2": 0.00054,
+  "key": "2f7dc0bc4f77e20d",
+  "at": [
+   -2087.96,
+   -2042.573
+  ],
+  "stage": "dilate",
+  "rules": "cut-join"
+ },
+ {
+  "name": "huron-water",
+  "part": 0,
+  "side": "candidate only",
+  "m2": 0.00052,
+  "key": "124ad3fc773f4ec1",
+  "at": [
+   589.622,
+   1831.169
+  ],
+  "stage": "closedK",
+  "rules": "cut-join"
+ },
+ {
+  "name": "huron-water",
+  "part": 0,
+  "side": "candidate only",
+  "m2": 0.00049,
+  "key": "2fc4e9e5929d4229",
+  "at": [
+   -3762.868,
+   -2741.566
+  ],
+  "stage": "closedK",
+  "rules": "cut-join"
+ },
+ {
+  "name": "huron-water",
+  "part": 0,
+  "side": "definition only",
+  "m2": 0.00042,
+  "key": "571cbb08134975c3",
+  "at": [
+   -2000.337,
+   -1981.805
+  ],
+  "stage": "open",
+  "rules": "cut-join"
+ },
+ {
+  "name": "huron-water",
+  "part": 0,
+  "side": "definition only",
+  "m2": 0.00041,
+  "key": "4cfa823153081eb1",
+  "at": [
+   568.293,
+   668.949
+  ],
+  "stage": "dilate",
+  "rules": "own/run only"
+ },
+ {
+  "name": "huron-water",
+  "part": 0,
+  "side": "candidate only",
+  "m2": 0.00039,
+  "key": "9917c66124738ed6",
+  "at": [
+   -731.858,
+   2156.99
+  ],
+  "stage": "open",
+  "rules": "own/run only"
+ },
+ {
+  "name": "huron-water",
+  "part": 0,
+  "side": "definition only",
+  "m2": 0.00022,
+  "key": "b3ad87d493ac7976",
+  "at": [
+   1084.771,
+   2291.805
+  ],
+  "stage": "dilate",
+  "rules": "own/run only"
+ },
+ {
+  "name": "huron-water",
+  "part": 0,
+  "side": "definition only",
+  "m2": 0.00021,
+  "key": "2a33783c8c7e7a32",
+  "at": [
+   988.719,
+   -1125.606
+  ],
+  "stage": "open",
+  "rules": "cut-join"
+ },
+ {
+  "name": "huron-water",
+  "part": 0,
+  "side": "definition only",
+  "m2": 0.00016,
+  "key": "5b7a1850d6476be1",
+  "at": [
+   971.049,
+   1378.669
+  ],
+  "stage": "open",
+  "rules": "cut-join"
+ },
+ {
+  "name": "huron-water",
+  "part": 0,
+  "side": "candidate only",
+  "m2": 0.00008,
+  "key": "cecddecbf6a1770d",
+  "at": [
+   1081.422,
+   -84.681
+  ],
+  "stage": "k",
+  "rules": "cut-join"
+ },
+ {
+  "name": "huron-decks",
+  "part": 15,
+  "side": "candidate only",
+  "m2": 1.83356,
+  "key": "c12e2fdd06cfb5e2",
+  "at": [
+   683.946,
+   283.324
+  ],
+  "stage": "k (selection)",
+  "rules": "cut-join"
+ },
+ {
+  "name": "huron-decks",
+  "part": 26,
+  "side": "definition only",
+  "m2": 0.4275,
+  "key": "73998da2918f7928",
+  "at": [
+   -2491.133,
+   -1973.404
+  ],
+  "stage": "open",
+  "rules": "new-line-join+square"
+ },
+ {
+  "name": "provincetown-water",
+  "part": 0,
+  "side": "definition only",
+  "m2": 0.26901,
+  "key": "5be1bf9f038b3d68",
+  "at": [
+   -3542.487,
+   -775.739
+  ],
+  "stage": "open",
+  "rules": "gap-arc+new-line-join+square"
+ },
+ {
+  "name": "provincetown-water",
+  "part": 0,
+  "side": "definition only",
+  "m2": 0.09939,
+  "key": "eab0005afc6d429e",
+  "at": [
+   -4275.517,
+   -1477.21
+  ],
+  "stage": "dilate",
+  "rules": "gap-arc+square"
+ },
+ {
+  "name": "provincetown-water",
+  "part": 0,
+  "side": "definition only",
+  "m2": 0.04891,
+  "key": "73c5948bc897ce38",
+  "at": [
+   -3546.813,
+   -1232.394
+  ],
+  "stage": "k (selection)",
+  "rules": "no emission near"
+ },
+ {
+  "name": "provincetown-water",
+  "part": 0,
+  "side": "definition only",
+  "m2": 0.02089,
+  "key": "0b738f08fda117fa",
+  "at": [
+   -4551.599,
+   -1318.398
+  ],
+  "stage": "open",
+  "rules": "cut-join+square"
+ },
+ {
+  "name": "provincetown-water",
+  "part": 0,
+  "side": "definition only",
+  "m2": 0.01242,
+  "key": "e0c3bdf484c633d6",
+  "at": [
+   -3528.134,
+   -1810.409
+  ],
+  "stage": "closedK",
+  "rules": "square"
+ },
+ {
+  "name": "provincetown-water",
+  "part": 0,
+  "side": "definition only",
+  "m2": 0.01169,
+  "key": "643161b8e27013cc",
+  "at": [
+   -3509.467,
+   -1898.402
+  ],
+  "stage": "dilate",
+  "rules": "trimmed-arc"
+ },
+ {
+  "name": "provincetown-water",
+  "part": 0,
+  "side": "definition only",
+  "m2": 0.01045,
+  "key": "1e043a4e2c95e4f1",
+  "at": [
+   1208.655,
+   -3174.224
+  ],
+  "stage": "open",
+  "rules": "gap-arc+new-line-join"
+ },
+ {
+  "name": "provincetown-water",
+  "part": 0,
+  "side": "candidate only",
+  "m2": 0.01007,
+  "key": "fb5fe4b78e94b863",
+  "at": [
+   -3527.779,
+   -1810.375
+  ],
+  "stage": "closedK",
+  "rules": "square"
+ },
+ {
+  "name": "provincetown-water",
+  "part": 0,
+  "side": "candidate only",
+  "m2": 0.00595,
+  "key": "7f074f14628a2122",
+  "at": [
+   -3485.916,
+   -1878.846
+  ],
+  "stage": "dilate",
+  "rules": "cut-join+square"
+ },
+ {
+  "name": "provincetown-water",
+  "part": 0,
+  "side": "candidate only",
+  "m2": 0.00299,
+  "key": "8421ddda1e493f59",
+  "at": [
+   -4008.801,
+   -1544.093
+  ],
+  "stage": "dilate",
+  "rules": "square"
+ },
+ {
+  "name": "provincetown-water",
+  "part": 0,
+  "side": "candidate only",
+  "m2": 0.00204,
+  "key": "246f56066315fa64",
+  "at": [
+   -3707.584,
+   -1485.347
+  ],
+  "stage": "dilate",
+  "rules": "cut-join"
+ },
+ {
+  "name": "provincetown-water",
+  "part": 0,
+  "side": "definition only",
+  "m2": 0.00166,
+  "key": "165982a05e940b0f",
+  "at": [
+   -4259.948,
+   -1635.829
+  ],
+  "stage": "dilate",
+  "rules": "own/run only"
+ },
+ {
+  "name": "provincetown-water",
+  "part": 0,
+  "side": "definition only",
+  "m2": 0.00163,
+  "key": "affa6a76228c317e",
+  "at": [
+   1050.678,
+   -739.99
+  ],
+  "stage": "dilate",
+  "rules": "own/run only"
+ },
+ {
+  "name": "provincetown-water",
+  "part": 0,
+  "side": "definition only",
+  "m2": 0.00158,
+  "key": "12e513877d62c241",
+  "at": [
+   -3573.957,
+   -1834.663
+  ],
+  "stage": "closedK",
+  "rules": "trimmed-arc"
+ },
+ {
+  "name": "provincetown-water",
+  "part": 0,
+  "side": "definition only",
+  "m2": 0.00156,
+  "key": "09012c62cc3472f5",
+  "at": [
+   -3693.996,
+   -1496.553
+  ],
+  "stage": "dilate",
+  "rules": "own/run only"
+ },
+ {
+  "name": "provincetown-water",
+  "part": 0,
+  "side": "definition only",
+  "m2": 0.00103,
+  "key": "03335d2248e4e3f0",
+  "at": [
+   -3614.928,
+   -1275.292
+  ],
+  "stage": "dilate",
+  "rules": "own/run only"
+ },
+ {
+  "name": "provincetown-water",
+  "part": 0,
+  "side": "definition only",
+  "m2": 0.00062,
+  "key": "72299d4909098e40",
+  "at": [
+   -3631.388,
+   -1783.156
+  ],
+  "stage": "dilate",
+  "rules": "square"
+ },
+ {
+  "name": "provincetown-water",
+  "part": 0,
+  "side": "candidate only",
+  "m2": 0.00059,
+  "key": "266357a687aefd81",
+  "at": [
+   -3398.347,
+   -2220.148
+  ],
+  "stage": "dilate",
+  "rules": "cut-join+gap-arc"
+ },
+ {
+  "name": "provincetown-water",
+  "part": 0,
+  "side": "definition only",
+  "m2": 0.00054,
+  "key": "26e3df706895e018",
+  "at": [
+   -3558.884,
+   -1065.779
+  ],
+  "stage": "open",
+  "rules": "cut-join"
+ },
+ {
+  "name": "provincetown-water",
+  "part": 0,
+  "side": "definition only",
+  "m2": 0.00047,
+  "key": "be1d8d82e3607cc7",
+  "at": [
+   -4356.112,
+   -1806.693
+  ],
+  "stage": "dilate",
+  "rules": "own/run only"
+ },
+ {
+  "name": "provincetown-water",
+  "part": 0,
+  "side": "definition only",
+  "m2": 0.00037,
+  "key": "8fc426b1eee39b99",
+  "at": [
+   -3516.053,
+   -2020.393
+  ],
+  "stage": "dilate",
+  "rules": "own/run only"
+ },
+ {
+  "name": "provincetown-water",
+  "part": 0,
+  "side": "definition only",
+  "m2": 0.00035,
+  "key": "c323073603a53f86",
+  "at": [
+   4700.024,
+   -285.554
+  ],
+  "stage": "dilate",
+  "rules": "new-line-join"
+ },
+ {
+  "name": "provincetown-water",
+  "part": 0,
+  "side": "candidate only",
+  "m2": 0.00031,
+  "key": "7c2d3f92ab8b9124",
+  "at": [
+   -4009.68,
+   -1543.977
+  ],
+  "stage": "dilate",
+  "rules": "square"
+ },
+ {
+  "name": "provincetown-water",
+  "part": 0,
+  "side": "candidate only",
+  "m2": 0.00028,
+  "key": "86fe31d5c1091f4e",
+  "at": [
+   -3511.867,
+   -1877.708
+  ],
+  "stage": "dilate",
+  "rules": "cut-join+square"
+ },
+ {
+  "name": "provincetown-water",
+  "part": 0,
+  "side": "definition only",
+  "m2": 0.00025,
+  "key": "6c49e526e0a9dc38",
+  "at": [
+   -4450.49,
+   -1420.884
+  ],
+  "stage": "dilate",
+  "rules": "own/run only"
+ },
+ {
+  "name": "provincetown-water",
+  "part": 0,
+  "side": "definition only",
+  "m2": 0.00023,
+  "key": "a953138a637716ad",
+  "at": [
+   -3558.915,
+   -1074.546
+  ],
+  "stage": "dilate",
+  "rules": "arc-clip+trimmed-arc"
+ },
+ {
+  "name": "provincetown-water",
+  "part": 0,
+  "side": "candidate only",
+  "m2": 0.00022,
+  "key": "70a6295641d0c657",
+  "at": [
+   -3578.851,
+   -1283.133
+  ],
+  "stage": "dilate",
+  "rules": "cut-join"
+ },
+ {
+  "name": "provincetown-water",
+  "part": 0,
+  "side": "definition only",
+  "m2": 0.0001,
+  "key": "a6a36e3773b2422a",
+  "at": [
+   -3365.744,
+   -2214.524
+  ],
+  "stage": "dilate",
+  "rules": "own/run only"
+ }
+]

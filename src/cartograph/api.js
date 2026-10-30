@@ -379,6 +379,15 @@ export async function saveShapeFreeze(artifact, scene) {
 // buildings + lamps + scene) from its design.json. Pass `force: true`
 // to bypass the server's dirty-check and rebuild every step (the
 // cache-bust escape hatch).
+// ⭐ THE OPERATOR SIGNS THE COAST'S RESIDUAL (serve.js, the accept route): `identity` is the one the card showed, so pieces a later Bake
+// rewrote are never signed (the server refuses, naming why). → { ok, scene, n, m2, committed }
+export async function acceptCoastResidual(lookId, identity) {
+  const res = await fetch(`${BASE}/looks/${encodeURIComponent(lookId)}/coast-residual/accept`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ identity }) })
+  const j = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(j.error || `the accept answered HTTP ${res.status}`)
+  return j
+}
+
 export async function bakeLook(lookId, { force = false, repour = false } = {}) {
   const q = [force && 'force=1', repour && 'repour=1'].filter(Boolean).join('&')
   const url = `${BASE}/looks/${encodeURIComponent(lookId)}/bake${q ? '?' + q : ''}`
@@ -387,6 +396,14 @@ export async function bakeLook(lookId, { force = false, repour = false } = {}) {
   // the server names the files and waits for the operator's confirm (`repour=1`). Tagged so runBake can ask.
   if (res.status === 428) {
     const body = await res.json().catch(() => ({}))
+    // ⭐ …or the coast step STOPPED on its open/close residual (serve.js#coastResidualAsk): the pieces it found, for the operator to look
+    // at and accept (BakeModal's card, acceptCoastResidual below). Tagged so runBake shows them
+    if (body.coastResidual) {
+      const err = new Error(`The coast's open/close differs from its definition in ${body.coastResidual.n} place(s).`)
+      err.code = 'COAST_RESIDUAL'
+      err.coastResidual = body.coastResidual
+      throw err
+    }
     const err = new Error('The pour code changed — this Bake would re-pour the town.')
     err.code = 'REPOUR_CONFIRM'
     err.repour = body.repour || null

@@ -10,7 +10,7 @@ import { readFileSync, writeFileSync } from 'fs'
 import { join, dirname } from 'path'
 import { importClosure, contentRecord, TOWN_REGISTRY } from './pour-code.mjs'
 import { terrainValueReads } from './terrainReads.mjs'
-import { COAST_FILE } from './coastFile.mjs'
+import { COAST_FILE, TOLERANCE_FILE } from './coastFile.mjs'
 import { instanceForMap } from '../src/instances/registry.js'
 import { homeLookOf } from './homeLook.mjs'
 
@@ -114,6 +114,9 @@ export function pourSteps(scene, paths, ribbons, { elevation }) {
         paths.boundary, paths.geography,
         paths.skeleton, paths.overlay,   // an embankment street's land: its pour measure along the skeleton (structures.mjs#embankmentFootprints)
         { value: 'terrainValueReads', read: () => terrainValueReads(scene) },   // the authored lake level / tide names
+        // ⭐ the town's SIGNED residual (Boz, Zob, 2026-10-29): the step's verdict is a product of it, so a signature changed, a key
+        // removed or the file deleted re-judges (the step's own tightening writes it DURING the run, and is recorded as it left it)
+        join(dirname(paths.clean), TOLERANCE_FILE),
         join(HERE, 'bake-coast.mjs')] },
     // overlay.json + skeleton.json are operator-edited / derived (Survey and Measure write clean/overlay.json); the rest are raw
     { label: 'pipeline', judge: 'mtime', timeout: 600000, cmd: `node pipeline.js ${flag}${homeLook}${elevation === true ? '' : ' --skip-elevation'}`, outputs: [paths.map],

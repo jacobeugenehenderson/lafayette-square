@@ -10,7 +10,8 @@
 //       copy, no crossing; where the definition changes topology the kit follows it and NAMES the change (3b)
 //   (2) PTown's decks and Breakwater strip and Huron's pier (fixtures): the same bar, and the decks' ≤ 2 mm edges at their pre-open 0
 //   (3) TOPOLOGY: a planted hole, split and pinch keep the integer form's parts and holes
-//   (4) PTown's take-out (coast v5 + its street decks): copy 0, crossings 0, its ≤ 2 mm edges on a RATCHET
+//   (4) PTown's take-out (coast v5 + its street decks): copy 0, crossings 0, its ≤ 2 mm edges on a RATCHET; the open and the close
+//       alone (openAt, closeAt) on a deck where nothing changes return its own vertices and lines
 //   Mutants, each seen RED: the integer re-offset restored (the frozen pre-port form, checks/fixtures/open-close-integer-frozen-
 //   464dfa5f.mjs) on (2) and (4) · a method that drops a hole on (3) · the ratchet's ceiling one above and one below on (4).
 //   ⚠ The PER-RULE mutants (each emission rule reversed: the gap rule before the miter limit, the trimmed arc inverted or unclipped, tags
@@ -22,9 +23,9 @@ import { readFileSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { openCloseAtStep, waterWithoutDecks } from '../cartograph/structures.mjs'
-import { partsOf, widerThanTwoH, openCloseCutOnce } from '../cartograph/openClose.mjs'
+import { partsOf, widerThanTwoH, openCloseCutOnce, openAt, closeAt, tagOwn } from '../cartograph/openClose.mjs'
 import * as FROZEN from './fixtures/open-close-integer-frozen-464dfa5f.mjs'
-import { ip, union, e2e, definitionOf, ownEdge, crossings, short, topo } from '../cartograph/openCloseJudge.mjs'
+import { ip, union, e2e, definitionOf, residualOf, verdictOf, ownEdge, crossings, short, topo } from '../cartograph/openCloseJudge.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const fx = (n) => JSON.parse(readFileSync(join(ROOT, `checks/fixtures/cut-once-${n}.json`), 'utf8'))
@@ -122,7 +123,8 @@ for (const [name, [what, rings]] of Object.entries(ROWS)) { const r = judge(open
 // ⭐ THE DEFINITION'S INVARIANT ON EVERY FEATURE (Zob's ruling, 2026-10-29): openClose.mjs refuses a taken or filled feature wider than
 // 2h. Read from the source (both lists pass through the predicate before k is cut), and the predicate seen to fail: a planted over-wide
 // take (a 3 m square) is wider; a 0.6 m strip is not
-{ const src = readFileSync(join(ROOT, 'cartograph/openClose.mjs'), 'utf8'), wired = /for \(const \[kind, fs\] of \[\['taken', tf\], \['filled', ff\]\]\) for \(const pp of fs\) if \(widerThanTwoH\(pp, h\)\)/.test(src)
+{ const src = readFileSync(join(ROOT, 'cartograph/openClose.mjs'), 'utf8'), wired = /function featuresOf\([^)]*\) \{\n[^\n]*\n  for \(const pp of kept\) if \(widerThanTwoH\(pp, h\)\)/.test(src)   // the guard's one home, and every list through it: openCloseCutOnce's taken and filled, openAt's taken, closeAt's filled
+    && /featuresOf\(Pt, openT, 'taken', h, what\)/.test(src) && /featuresOf\(closedK, openT, 'filled', h, what\)/.test(src) && /featuresOf\(Pt, open, 'taken', h, what\)\.kept/.test(src) && /featuresOf\(tagged\(C\), Pt, 'filled', h, what\)\.kept/.test(src)
   const h = STEP_M / 2 * 1000, P = (r) => [r.map(([X, Y]) => ({ X, Y }))], wide = widerThanTwoH(P(SQ(0, 0, 3000, 3000)), h), thin = widerThanTwoH(P(SQ(0, 0, 600, 3000)), h)
   row(wired && wide && !thin, `(1) every taken and filled feature is held narrower than 2h: the guard reads both lists ${wired} · mutant, a planted over-wide take (3 m square) is wider ${wide}, RED · a 0.6 m strip is not ${!thin}`) }
 
@@ -172,15 +174,49 @@ const TOPO = [SQ(0, 0, 20000, 20000), rev(SQ(7000, 7000, 6000, 6000)),
   const cr = judge(openCloseAtStep, ip(fx('ptown-crossring-crop').paths), fx('ptown-crossring-crop').fineM, 'cross-ring')
   row(bar(cr), `(3b) cross-ring: two holes' walls meeting at a segment carrying three tags of the two rings, each ring read at the tag that continues its neighbour — ${cr.why ? `REFUSED: ${cr.why.slice(0, 180)}` : `${off2(cr)} · copy ${cr.copy} · crossings ${cr.cross}`}`) }
 
+// ── (3c) THE RUNTIME NET (Zob's ruling, Boz's approval, 2026-10-29): the coast step judges each open/close against its definition
+// (openCloseJudge.mjs, which bake-coast.mjs imports) and gates every piece past 2·NODE_BOUND against the town's SIGNED tolerance
+// (cartograph/data/<town>/coast-tolerance.json: count, m² and the accepted SET of piece keys, written only by sign-coast-residual.mjs
+// --accept). ⛔ Seen to fail on a real wrong output: the collapsing hole's output with the staircase rule's cell test removed (frozen once,
+// checks/fixtures/cut-once-ptown-collapse-wrong-output.json: a 4.746 m² piece only 0.929 m wide, which a cell bound let through)
+{ const cs = ip(fx('ptown-collapse-crop').paths), st = fx('ptown-collapse-crop').fineM, empty = { n: 0, m2: 0, sites: [] }
+  const wrongK = ip(fx('ptown-collapse-wrong-output').paths), wrong = residualOf(wrongK, cs, st), live = residualOf(openCloseAtStep(cs, st, 'collapse').paths, cs, st)
+  const bc = readFileSync(join(ROOT, 'cartograph/bake-coast.mjs'), 'utf8'), sg = readFileSync(join(ROOT, 'cartograph/sign-coast-residual.mjs'), 'utf8')
+  const wired = /if \(gate\) judgeNets\(\{ water: waterNet, decks: decksNet \}\)/.test(bc) && /waterNet = netOf\(oc\.paths, traced, fine\)/.test(bc) && /decksNet = netOf\(decks\.paths, deckInputs\(osm\.ground\)\.paths, fine\)/.test(bc)
+    && /const tolPath = tolerancePathOf\(scene\)/.test(bc) && /export const tolerancePathOf = \(scene\) => join\(CARTOGRAPH_DIR, 'data', scene, TOLERANCE_FILE\)/.test(bc) && /if \(!accept\) \{/.test(sg) && !/--force|--anyway|process\.env\./.test(bc.slice(bc.indexOf('const judgeNets'), bc.indexOf('const recordOf')))
+  row(wired, `(3c) the runtime net is wired: bake-coast judges the water's and the decks' open/close against the town's tolerance before the record is written; sign-coast-residual writes only with --accept; no bake-anyway (${wired})`)
+  const v = (r, t) => verdictOf(r, t, 'planted')
+  row(v(wrong, empty).act === 'stop', `(3c) mutant: the frozen wrong output (${wrong.n} piece, ${wrong.m2} m², key ${wrong.pieces[0]?.key}) against an empty accepted set → ${v(wrong, empty).act.toUpperCase()}, RED as it must be`)
+  row(v(live, empty).act === 'pass' && v(live, null).act === 'stop', `(3c) the live output of the same crop passes an empty set (${v(live, empty).act}); with NO tolerance signed, the first pour stops (${v(live, null).act})`)
+  const signed = { n: wrong.n, m2: wrong.m2, sites: wrong.pieces.map(({ key, side, m2, at }) => ({ key, side, m2, at })) }
+  const swap = { ...wrong, pieces: wrong.pieces.map(w => ({ ...w, key: w.key.split('').reverse().join('') })) }
+  row(v(wrong, signed).act === 'pass' && v(swap, signed).act === 'stop', `(3c) the SET is gated: the signed piece passes (${v(wrong, signed).act}); mutant, one accepted piece swapped for a new one of equal count and m² → ${v(swap, signed).act.toUpperCase()}, RED`)
+  const mv = (pp) => pp.map(r => r.map(q => ({ X: q.X + 1, Y: q.Y })))
+  const shifted = residualOf(ip(mv(wrongK)), ip(mv(cs)), st)
+  row(shifted.n === wrong.n && shifted.pieces[0]?.key !== wrong.pieces[0]?.key && v(shifted, signed).act === 'stop', `(3c) a piece moved by 1 mm is a NEW key (${wrong.pieces[0]?.key} → ${shifted.pieces[0]?.key}) and stops (${v(shifted, signed).act})`)
+  const fell = v(wrong, { n: 2, m2: wrong.m2 + 1, sites: [...signed.sites, { key: 'gone0000000000000', side: 'definition only', m2: 1, at: [0, 0] }] })
+  row(fell.act === 'tighten' && fell.tightened.n === 1 && fell.tightened.sites.length === 1, `(3c) a FALL tightens the tolerance: an accepted piece gone → ${fell.act}, to ${fell.tightened?.n} piece(s), ${fell.tightened?.m2} m²`) }
+
+// ── (1u) TWO LATTICE NEIGHBOURS HAVE NO DIRECTION (Zob's ruling, 2026-10-29): openClose.mjs#emit reads a token whose line joins two lattice
+// neighbours as a vertex. The three residual pieces the runtime net first found, each its own part as the net judged it: Huron's deck
+// parts 15 (a 1.83 m² wrong fill) and 26 (0.43 m² taken), and PTown's water crop (0.269 m² taken, a 1 mm source jog), each 0 / 0
+// against the definition. (Mutant: cand3's setUnitLinesKept brings all three back, RED ▶ node scratch/cut-once/unit-lines-rows.mjs)
+for (const n of ['huron-deck-part15', 'huron-deck-part26', 'ptown-residual-largest-crop']) { const d = fx(n), P = ip(d.paths)
+  let why = null, r = null; try { r = residualOf(ip(openCloseCutOnce(P, d.fineM, n).rings), P, d.fineM) } catch (e) { why = String(e.message) }
+  row(!why && !r.n, `(1u) ${n}: ${why ? `REFUSED: ${why.slice(0, 160)}` : `${r.n} piece(s), ${r.m2} m² past 2·NB against the definition`}`) }
+
 // ── (4) PTown's take-out (structures.mjs#waterWithoutDecks over coast v5 and its street decks): the water within two cells of a
-// deck opened, the deck and its slivers closed, both through openClose.mjs. ⛔ Its three subtractions (w0, loc, thin) are still
-// clipper's integer booleans: a NAMED DEBT (BACKLOG). ⭐ The ≤ 2 mm count is a RATCHET: RED on a rise, and RED on a fall ("lower
+// deck opened, the deck and its slivers closed, every boolean on the noded arrangement (openClose.mjs#boolOf, #growBy, #openAt,
+// #closeAt). ⭐ The ≤ 2 mm count is a RATCHET: RED on a rise, and RED on a fall ("lower
 // the ceiling to N in this commit"), so it can never drift into a tolerance
-const TAKEOUT_SHORT = 11
+const TAKEOUT_SHORT = 1
 const ratchet = (n, ceiling) => (n > ceiling ? `ROSE to ${n} above the ceiling ${ceiling}` : n < ceiling ? `FELL to ${n}: lower the ceiling to ${n} in this commit` : null)
-{ const coast = fx('ptown-coast'), sd = fx('ptown-street-decks'), water = coast.water.flatMap(b => [b.outer, ...b.holes])
+{ const coast = fx('ptown-coast'), sd = fx('ptown-street-decks-port'), water = coast.water.flatMap(b => [b.outer, ...b.holes])   // TODAY's decks (the fixture's note says how; the older fixture's were the pre-port footprints')
   const P = (r) => r.map(([x, z]) => ({ X: Math.round(x * 1000), Y: Math.round(z * 1000) }))
-  const src = union(ip([...water.map(P), ...sd.rings.map(P)]))
+  // ⭐ THE YARDSTICK'S SOURCE IS THE INPUTS AS GIVEN (Plumb, 2026-10-29): clipper's union of water and decks re-rounds their crossing
+  // itself (at PTown's (192.267, 63.197), to the next lattice point), so a take-out that keeps the water's own vertex read as a copy
+  // against it. The rings as given are the source; ownEdge's split-run test judges what the take-out did to them
+  const src = ip([...water.map(P), ...sd.rings.map(P)]), unioned = union(src)
   const take = (f) => { let w; try { w = f(water, coast.arcs || [], sd.rings, coast.fineM) } catch (e) { return { why: String(e.message) } }
     let le2 = 0; for (const r of w.rings) for (let i = 0; i < r.length; i++) { const p = r[i], q = r[(i + 1) % r.length]; if (Math.hypot(q[0] - p[0], q[1] - p[1]) <= 0.002) le2++ }
     const out = ip(w.rings.map(P)); return { le2, copy: ownEdge(src, out).copy, cross: crossings(out).length, slivers: w.slivers.length } }
@@ -189,6 +225,17 @@ const ratchet = (n, ceiling) => (n > ceiling ? `ROSE to ${n} above the ceiling $
   if (!t.why) { row(!!ratchet(t.le2, TAKEOUT_SHORT - 1) && !!ratchet(t.le2, TAKEOUT_SHORT + 1), `(4) mutants: the ceiling one below → ${ratchet(t.le2, TAKEOUT_SHORT - 1)}; one above → ${ratchet(t.le2, TAKEOUT_SHORT + 1)}; both RED`) }
   const m = take(FROZEN.waterWithoutDecks)
   row(!m.why && (m.copy > 0 || !!ratchet(m.le2, TAKEOUT_SHORT)), `(4) mutant: the integer take-out restored (frozen 464dfa5f) → ${m.why ? `refused (${m.why.slice(0, 100)})` : `copy ${m.copy} · ≤ 2 mm ${m.le2} (${ratchet(m.le2, TAKEOUT_SHORT) || 'at the ceiling'})`}, RED`) }
+
+// ── (4b) THE OPEN AND THE CLOSE ALONE CUT ONCE (Zob's ruling (c), 2026-10-29): openAt and closeAt return P with its features cut, as
+// openCloseCutOnce does, never the morph's raw rings. PTown's deck 0 alone: the close re-makes the cap at its 601 u edge e162 between
+// two reflex corners 1 u off the deck's own vertex v162 (a 0.977 u strip, not a feature); returned raw, the take-out carried that copy
+// into the water (row (4)'s copy 1). Both keep v162 and e162's line. (The raw-close mutant is cand3's setCloseRaw: ▶ node
+// scratch/cut-once/closeat-mutant.mjs, RED; a source mutant here would tier this check live)
+{ const coast = fx('ptown-coast'), sd = fx('ptown-street-decks-port'), D = tagOwn(ip([sd.rings[0].map(([x, z]) => [Math.round(x * 1000), Math.round(z * 1000)])]))
+  const V = [118070, 166939], E = JSON.stringify([[118070, 166939], [118657, 167067]])
+  const keeps = (f) => { try { const k = f(D, coast.fineM, 'deck 0'); return k.some(r => r.some(q => q.X === V[0] && q.Y === V[1] && JSON.stringify(q.tag) === E)) ? 'keeps' : 'MOVES' } catch (e) { return `REFUSED: ${String(e.message).slice(0, 120)}` } }
+  const c = keeps(closeAt), o = keeps(openAt)
+  row(c === 'keeps' && o === 'keeps', `(4b) PTown's deck 0 alone: closeAt ${c} its vertex (118.07, 166.939) and e162's line · openAt ${o} them`) }
 
 console.log(fails ? `\n⛔ ${fails} claim(s) fail.` : '\n✅ the open/close cuts once')
 process.exitCode = fails ? 1 : 0

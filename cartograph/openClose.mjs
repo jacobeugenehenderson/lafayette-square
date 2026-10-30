@@ -126,6 +126,16 @@ function emit(E, T, SRC, d, who, stat, LINES = null) {
   const tok = []
   const lineOf = (g, i) => { const L = LINES?.[g]?.[i]; if (L) return L; const R = SRC[g], a = R[i], b = R[(i + 1) % R.length]; return [[a.X, a.Y], [b.X, b.Y]] }
   const Lsrc = (g, i) => ({ kind: 'L', g, i, int: lineOf(g, i) })
+  // ⭐ TWO LATTICE NEIGHBOURS HAVE NO DIRECTION (Zob's ruling, 2026-10-29; Huron's deck parts 15 and 26, PTown's 0.269 m²): a segment
+  // joining two lattice neighbours (|Δx| ≤ 1 and |Δy| ≤ 1, a unit edge or a unit diagonal) carries NO LINE of its own: any line through
+  // them is quantised to the axes and diagonals, the born-line ruling's own disease. It is read as a vertex. Read where lines become
+  // tokens (below, before t2) and where an arc's edges become lines (arcOf). Integers, no constant
+  const unitSeg = (a, b) => Math.abs((b.X ?? b[0]) - (a.X ?? a[0])) <= LATTICE_STEP && Math.abs((b.Y ?? b[1]) - (a.Y ?? a[1])) <= LATTICE_STEP
+  // a region edge's LINE is on two lattice neighbours: its birth line (LINES), else the edge itself. A unit fragment of a long line keeps
+  // that line (deck 2's close at PTown, (127.619, 154.524): a 1.4 u noded piece of a 17.9 m line)
+  const unitLine = (g, i) => { const L = lineOf(g, i); return unitSeg(L[0], L[1]) }
+  // the edges strictly between i and k on ring g all carry unit lines (each a vertex): the join between i and k skips no arc
+  const onlyUnits = (g, i, k) => { const n = SRC[g].length; for (let j = (i + 1) % n, c = 0; j !== k && c < n; j = (j + 1) % n, c++) if (!unitLine(g, j)) return false; return true }
   // ⭐ A SINGLE-TAG SEGMENT OUT OF ORDER AT A STAIRCASE (Boz's GO, 2026-10-29; PTown's source staircases): a segment carrying ONE tag of a
   // ring, whose tag breaks the forward order between its neighbours' tags on that ring, is re-read as the in-order neighbour's tag when
   // that neighbour's OFFSET line holds both of its ends within the tiered bound (latticeFaces.js#onLineTiered, the one home). It acts
@@ -157,12 +167,12 @@ function emit(E, T, SRC, d, who, stat, LINES = null) {
       // the born line ORIENTED ALONG THE BOUNDARY it now bounds (p → q, the region on its left), so its normal points outward:
       // a piece's own winding (reversed for the erode) says nothing about which side the region lies
       const BL = (bornL[1][0] - bornL[0][0]) * (q.X - p.X) + (bornL[1][1] - bornL[0][1]) * (q.Y - p.Y) < 0 ? [bornL[1], bornL[0]] : bornL, n = unit(BL[0], BL[1]), bornL2 = BL
-      tok.push({ kind: 'L', flt: [[bornL2[0][0] - n[0] * d, bornL2[0][1] - n[1] * d], [bornL2[1][0] - n[0] * d, bornL2[1][1] - n[1] * d]], born: JSON.stringify(bornL2), at: p }); stat.newLines++; continue }
+      tok.push({ kind: 'L', flt: [[bornL2[0][0] - n[0] * d, bornL2[0][1] - n[1] * d], [bornL2[1][0] - n[0] * d, bornL2[1][1] - n[1] * d]], born: JSON.stringify(bornL2), at: p, q }); stat.newLines++; continue }
     if (tags.length && !lineTags.length && !tags.some(x => x?.base)) { tags.length = 0 }                   // near only: a new line from its own points
     else if (lineTags.length !== tags.length && !tags.some(x => x?.base)) { tags.splice(0, tags.length, ...lineTags) }
     if (tags.some(x => x?.base)) throw new Error(`[${who}] ⛔ the back-offset: (${JSON.stringify(tags.find(x => x?.base))}; with ${JSON.stringify(tags.filter(x => !x?.base).map(x => x.ring != null ? `${x.ring}:${x.i}` : x.born ? 'born' : 'near'))}) an eliminated stretch's base side (${[p.X, p.Y].map(v => v / SCALE)}) → (${[q.X, q.Y].map(v => v / SCALE)}) reached the boundary (it is born interior). Refusing.`)
     if (!tags.length) { // a null edge: a NEW line, the cap's own back-offset by −d
-      const n = unit([p.X, p.Y], [q.X, q.Y]); tok.push({ kind: 'L', flt: [[p.X - n[0] * d, p.Y - n[1] * d], [q.X - n[0] * d, q.Y - n[1] * d]], at: p }); stat.newLines++; continue }
+      const n = unit([p.X, p.Y], [q.X, q.Y]); tok.push({ kind: 'L', flt: [[p.X - n[0] * d, p.Y - n[1] * d], [q.X - n[0] * d, q.Y - n[1] * d]], at: p, q }); stat.newLines++; continue }
     // ⭐ consecutive eroded segments carrying the SAME tag set are one stretch of that run (the lines lie within rounding of each
     // other, so the noding cut the stretch into pieces each claimed by all of them): the run is emitted once, not once per piece
     const tkey = tags.length > 1 ? JSON.stringify(tags.filter(x => x?.ring != null).map(x => x.ring + ':' + x.i).sort()) : null
@@ -238,6 +248,12 @@ function emit(E, T, SRC, d, who, stat, LINES = null) {
       if (inside(r.from)) { if (pos(r.to) <= pos(lastRun.to)) { stat.runCovered = (stat.runCovered || 0) + 1; continue } from = (lastRun.to + 1) % n; tok.push({ kind: 'V', p: [R[from].X, R[from].Y], own: true }); stat.runTrimmed = (stat.runTrimmed || 0) + 1 } }
     for (let j = from; ; j = (j + 1) % n) { tok.push(Lsrc(r.ring, j)); if (j === r.to) break; tok.push({ kind: 'V', p: [R[(j + 1) % n].X, R[(j + 1) % n].Y], own: true }) }
     lastRun = { ring: r.ring, from: lastRun && lastRun.ring === r.ring && from !== r.from ? lastRun.from : r.from, to: r.to } }
+  // a token on two lattice neighbours (unitSeg) is dropped, so its neighbours join directly through every rule below: for a source token
+  // its LINE (a 1 mm source jog, whose line is the edge itself), for a born or new line the face walk's own segment (a strip end or cap
+  // the boundary touches for one unit)
+  { const seg = (t) => (t.kind !== 'L' ? null : t.g != null ? t.int : t.q ? [t.at, t.q] : null)
+    const n0 = tok.length; for (let j = tok.length - 1; j >= 0; j--) { const s2 = seg(tok[j]); if (s2 && unitSeg(s2[0], s2[1])) tok.splice(j, 1) }
+    if (tok.length < n0) stat.unitLines = (stat.unitLines || 0) + n0 - tok.length }
   // one line twice in a row is one line: the same region edge, or (exactly) the same line
   const t2 = []
   // ⭐ ONE LINE, TWO EDGES (Plumb, 2026-10-29; planted wallShort and PTown's wide fills): two region edges on ONE line in a row are one
@@ -278,7 +294,7 @@ function emit(E, T, SRC, d, who, stat, LINES = null) {
   const sense = Math.sign(area(E)), opposite = (g) => Math.sign(area(SRC[g])) !== sense
   const arcOf = (t, u) => { if (opposite(t.g)) return { pts: [], lns: [], valid: false, opposite: true }
     const R = SRC[t.g], n = R.length, pts = [], lns = []; let valid = true
-    for (let j = (t.i + 1) % n; ; j = (j + 1) % n) { pts.push([R[j].X, R[j].Y]); lns.push(lineOf(t.g, j)); if (j === u.i) break; if (present.has(t.g + ':' + j)) valid = false; if (pts.length > n) break }
+    for (let j = (t.i + 1) % n; ; j = (j + 1) % n) { pts.push([R[j].X, R[j].Y]); lns.push(unitLine(t.g, j) ? null : lineOf(t.g, j)); if (j === u.i) break; if (present.has(t.g + ':' + j)) valid = false; if (pts.length > n) break }
     return { pts, lns, valid } }
   // ⭐ AN ARC'S VERTICES ARE JOINS TOO (Zob, 2026-10-29): each vertex v_j an arc emits sits between the region's edges j−1 and j, and
   // goes through the ONE corner function like any join (squared past the limit, else the vertex). An arc stands in for what the
@@ -312,7 +328,7 @@ function emit(E, T, SRC, d, who, stat, LINES = null) {
     if (exitL != null && exitL !== LB) { const X = Xc(); out.push(X); outL.push(u0.int || null); origin(X, 'arc-clip') } }
   const pushArc = (a, kind, t0, u0 = null) => { if (kind === 'trimmed-arc') return clipArc(a, kind, t0, u0)
     a.pts.forEach((q, k) => {
-      const prevLine = k === 0 ? (t0.int || t0.flt) : a.lns[k - 1], nextLine = a.lns[k]
+      const before = a.lns.slice(0, k).reverse().find(Boolean), prevLine = before || (t0.int || t0.flt), nextLine = a.lns.slice(k).find(Boolean) || (u0 ? (u0.int || u0.flt) : null)
       if (prevLine && nextLine && capAt(prevLine, nextLine, q, { int: nextLine })) { stat.arcSquared = (stat.arcSquared || 0) + 1; return }
       out.push(q); outL.push(a.lns[k]); origin(q, kind) }) }
   for (let k = 0; k < N; k++) { const t = t2[k].out ? { ...t2[k], ...t2[k].out } : t2[k], u = t2[(k + 1) % N]
@@ -347,7 +363,8 @@ function emit(E, T, SRC, d, who, stat, LINES = null) {
     // ⭐ THE GAP RULE AT ANY NON-ADJACENT JOIN (Zob, 2026-10-29; clause 3 made general): every skipped source vertex within
     // NODE_BOUND of the cut path (L_a to X, then L_b) → the two answers differ by less than the lattice's own rounding, so the
     // source vertices are emitted, never X
-    const AR = t.g != null && u.g === t.g ? arcOf(t, u) : null
+    // a skipped stretch of unit edges only is no arc (each is a vertex): the two lines join directly, at their cut
+    const AR = t.g != null && u.g === t.g && !onlyUnits(t.g, t.i, u.i) ? arcOf(t, u) : null
     // ⭐ THE MITER LIMIT FIRST (Huron's closedK, 2026-10-29): a join past the limit is SQUARED as the definition squares it, whatever
     // the gap rule would emit; the gap rule ran first and drew the unsquared apex (0.346 m² at (3183.18, 764.81))
     if (capAt(A, B, Xf, u)) continue
@@ -394,13 +411,18 @@ function emit(E, T, SRC, d, who, stat, LINES = null) {
         return { edge: i, inTokens: seen.includes(i), lenU: +Math.hypot(p1.X - p0.X, p1.Y - p0.Y).toFixed(2), deg: +(Math.atan2(p1.Y - p0.Y, p1.X - p0.X) * 180 / Math.PI).toFixed(3),
           line: L ? JSON.stringify(L) : 'born', lineDeg: L ? +(Math.atan2(L[1][1] - L[0][1], L[1][0] - L[0][0]) * 180 / Math.PI).toFixed(3) : null, pts: `(${p0.X},${p0.Y})→(${p1.X},${p1.Y})` } })
       // ⭐ THE MESSAGE EXPLAINS (Boz, 2026-10-29): a source STAIRCASE at the cut is named as one, with its site and what the
-      // operator can do: the cut's own edges (those it skips, and its target) whose both ends lie within the lattice's rounding
-      // (NODE_BOUND) of the cut's line
+      // operator can do. ⭐ IT NAMES THE CAUSE (Zob's ruling (B), 2026-10-29; PTown's MacMillan): the cut's own two edges and the JOG between
+      // them, the source edges between the two lines the shorter way round the ring (a backward cut's skipped edges run the whole ring,
+      // and named the site 4.8 m from the jog), each at its own coordinates with its length, a lattice-neighbour edge included (no line,
+      // still source geometry). A staircase: every jog vertex within the lattice's rounding of one of the two lines
       const m3 = (v) => `(${(v.X / SCALE).toFixed(3)}, ${(v.Y / SCALE).toFixed(3)})`
-      const stair = [...inner, u.i].filter(i => [SRC[t.g][i], SRC[t.g][(i + 1) % n]].every(v => onLineTiered(A, [v.X, v.Y], null)))
+      const fwdOf = (a, b) => { const o = []; for (let j = (a + 1) % n; j !== b && o.length < n; j = (j + 1) % n) o.push(j); return o }
+      const jog = (() => { const x = fwdOf(t.i, u.i), y = fwdOf(u.i, t.i); return x.length <= y.length ? x : y })()
+      const onEither = (v) => onLineTiered(A, [v.X, v.Y], null) || onLineTiered(B, [v.X, v.Y], null)
+      const stair = (jog.length && jog.every(i => [SRC[t.g][i], SRC[t.g][(i + 1) % n]].every(onEither)) ? jog : [])
       const detail = `detail: the cut joins edge ${t.i} to edge ${u.i} and edge(s) ${inner.slice(0, 4).join(', ')} it skips appear elsewhere in the ring (${JSON.stringify(where)}); tokens round it [${around.join(' ')}]`
       const todo = 'Nothing the operator can do changes it today: the rule is BACKLOG "the open/close refuses at a source staircase" (unbuilt)'
-      if (stair.length) throw new Error(`[${who}] ⛔ the open/close cannot read this ring: a STAIRCASE in its SOURCE at a cut. Ring ${t.g}'s edge(s) ${stair.map(i => `${i} ${m3(SRC[t.g][i])} → ${m3(SRC[t.g][(i + 1) % n])}, ${Math.hypot(SRC[t.g][(i + 1) % n].X - SRC[t.g][i].X, SRC[t.g][(i + 1) % n].Y - SRC[t.g][i].Y).toFixed(1)} mm`).join('; ')} lie within the lattice's rounding of edge ${t.i}'s line, so their offset lines cross and are read out of order. ${todo}. Refusing. (${detail})`)
+      if (stair.length) throw new Error(`[${who}] ⛔ the open/close cannot read this ring: a STAIRCASE in its SOURCE at a cut. Ring ${t.g}'s edges ${t.i} → ${u.i} join across the jog: edge(s) ${stair.map(i => `${i} ${m3(SRC[t.g][i])} → ${m3(SRC[t.g][(i + 1) % n])}, ${Math.hypot(SRC[t.g][(i + 1) % n].X - SRC[t.g][i].X, SRC[t.g][(i + 1) % n].Y - SRC[t.g][i].Y).toFixed(1)} mm`).join('; ')} lie within the lattice's rounding of edge ${t.i}'s or ${u.i}'s line, so their offset lines cross and are read out of order. ${todo}. Refusing. (${detail})`)
       throw new Error(`[${who}] ⛔ the open/close cannot read this ring: at ring ${t.g}${area(SRC[t.g]) < 0 ? ' (a hole)' : ''} near ${m3(SRC[t.g][(t.i + 1) % n])}, a cut from edge ${t.i} to edge ${u.i} runs BACKWARD (the offset reads the ring's lines out of order). Cause not established; no staircase within the rounding there. ${todo}. Refusing. (${detail})`) }
     out.push(X); outL.push(u.int || null); origin(X, t.flt || u.flt ? 'new-line-join' : 'cut-join'); stat.cutJoin++
   }
@@ -553,15 +575,66 @@ const fresh = () => { ORIGIN.clear(); INSERTED.clear(); DROPPED.length = 0 }   /
 export const partsOf = (paths, what) => { fresh(); return pieces(unionTagged(paths, what)).map(pp => pp.map(r => r.map(q => ({ X: q.X, Y: q.Y })))) }
 // open = morph(P, −h) ∩ P
 const openOf = (Pt, h, what, stat) => arrange([Pt, morph(Pt, -h, `${what} open`, stat)], w => w[0] > 0 && w[1] > 0, `${what} ∩P`, false, 0)
-// ⭐ THE OPEN AND THE CLOSE ALONE, at h = step/2, for a caller whose operation is one of them (structures.mjs#waterWithoutDecks: the
-// water beside a deck opened, the deck and its slivers closed): the same stages openCloseProvenance composes. → clipper Paths
-export function openAt(paths, stepM, what, stat = {}) { fresh(); const Pt = unionTagged(paths, what); return Pt.length ? toIP(openOf(Pt, (stepM / 2) * SCALE, what, stat).rings) : [] }
-export function closeAt(paths, stepM, what, stat = {}) { fresh(); const Pt = unionTagged(paths, what); if (!Pt.length) return []
-  const C = morph(Pt, (stepM / 2) * SCALE, `${what} close`, stat, Pt.map(r => r.map(q => q.tag)))
-  return toIP(arrange([Pt, C], w => w[0] > 0 || w[1] > 0, `${what} closed`, false, 0).rings) }
+// ⭐ EVERY BOOLEAN ON THE PATH IS ONE ARRANGEMENT, WITH PROVENANCE (Zob's ruling, 2026-10-29: the take-out included; MacMillan's
+// older crop, a 2.8 u staircase that clipper's integer water − deck handed the open as if it were source). TAGGED RINGS: [{ X, Y,
+// tag }], `tag` the LINE the edge i → i+1 was born on (two integer points) or null. A caller's own rings are tagged with their
+// own edges (tagOwn); every result keeps its inputs' lines; nothing is re-rounded into a copy of a source edge.
+const isLn = (x) => Array.isArray(x) && x.length === 2 && x.every(pt => Array.isArray(pt) && pt.length === 2 && pt.every(Number.isFinite))
+const lineTag = (t) => (t == null ? null : isLn(t) ? t : t.born && isLn(t.born) ? t.born : Array.isArray(t) ? (t.map(lineTag).find(Boolean) || null) : null)
+// a line has no direction of its own: each is ORIENTED ALONG THE EDGE that carries it (the morph reads a line's direction as its
+// outward normal; a subtracted ring's lines arrive reversed)
+const along = (L, q, w) => (L && (L[1][0] - L[0][0]) * (w.X - q.X) + (L[1][1] - L[0][1]) * (w.Y - q.Y) < 0 ? [L[1], L[0]] : L)
+const asRings = (F) => F.rings.map((r, k) => r.map((q, i) => ({ X: q.X, Y: q.Y, tag: along(lineTag(F.tags[k]?.[i]), q, r[(i + 1) % r.length]) })))
+const revT = (rs) => rs.map(r => { const n = r.length, q = r.slice().reverse(); return q.map((v, k) => ({ ...v, tag: r[(n - 1 - k - 1 + n) % n].tag })) })
+export const tagOwn = (paths) => paths.map(r => r.map((q, i) => ({ X: q.X, Y: q.Y, tag: [[q.X, q.Y], [r[(i + 1) % r.length].X, r[(i + 1) % r.length].Y]] })))
+// A ∪ B, A ∩ B, A − B (B wound clockwise, so its edges keep their tags, as every difference here): the first input's line wins
+// a segment both claim
+export function boolOf(op, A, B, who) { fresh()
+  const keep = op === 'union' ? (w => w[0] > 0 || w[1] > 0) : op === 'intersect' ? (w => w[0] > 0 && w[1] > 0) : op === 'minus' ? (w => w[0] > 0 && !(w[1] < 0)) : null
+  if (!keep) throw new Error(`[${who}] ⛔ boolOf: no operation '${op}'. Refusing.`)
+  return asRings(arrange([A, op === 'minus' ? revT(B) : B], keep, who, false, 0)) }
+// the region GROWN by d > 0 alone (a dilation, no back-offset): the forward pieces of the morph, each strip's far side born on its
+// own two corners (rounded once), resolved in one arrangement
+export function growBy(rings, d, who, stat = {}) { fresh(); if (!(d > 0)) throw new Error(`[${who}] ⛔ growBy needs d > 0 (got ${d}). Refusing.`)
+  const lines = rings.map(r => r.map(q => lineTag(q.tag)))
+  const pieces = rings.flatMap((R, g) => offsetPieces(R, d, g, (stat.squares ||= []), lines[g], stat))
+  for (const pp of pieces) pp.forEach((q, k) => { if (q.tag && q.tag.ring != null) { const w = pp[(k + 1) % pp.length]; q.tag = { born: [[q.X, q.Y], [w.X, w.Y]] } } })
+  return asRings(arrange([rings.map(R => R.map(q => ({ X: q.X, Y: q.Y, tag: null }))), pieces], w => w[0] > 0 || w[1] > 0, `${who} grown`, true)) }
 // a piece (rings {X, Y}: outer, holes) wider than 2h: it survives an erode by h + NODE_BOUND. An integer erode used as a PREDICATE only
 // (as isRoundingSliver): its output is discarded
 export const widerThanTwoH = (pp, h) => { const co = new ClipperOffset(), o = new Paths(); co.AddPaths(toIP(pp), JoinType.jtMiter, EndType.etClosedPolygon); co.Execute(o, -(h + NODE_BOUND)); return o.some(q => Clipper.Area(q) > 0) }
+// ⭐ THE CUT-ONCE SELECTION, ONE HOME (Zob's ruling (c), 2026-10-29): the open/close (openCloseProvenance), and the open or the close
+// alone (openAt, closeAt), each return P with its FEATURES cut, never the morph's own rings: P − the open's taken features, P ∪ the
+// close's filled ones, a feature a piece of the difference that survives an erode by NODE_BOUND (isRoundingSliver), held narrower
+// than 2h (widerThanTwoH) or refused by name. Where nothing changed, every edge is the source's own (PTown's deck 0: the close re-made
+// the cap at a 601 u edge between two reflex corners 1 u off the deck's own vertex, a 0.977 u strip, not a feature; returned raw,
+// the take-out carried that copy into the water)
+// each ring set passed on carries its face walk's tags ON ITS POINTS (arrange reads them there), so k's edges carry their lines
+const tagged = (F) => F.rings.map((r, k2) => r.map((q, i) => ({ X: q.X, Y: q.Y, tag: F.tags[k2]?.[i] ?? null })))
+// ⭐ A DIFFERENCE'S SUBTRACTED SET IS WOUND CLOCKWISE (Huron's 407 lineless edges on k, 2026-10-29): facesOf tags an edge from the
+// inputs running the SAME way, and a subtracted set's edges bound the result running the other way, so they carried no tag.
+// Reversed (each tag moved with its edge, as the erode's pieces are), they run with the boundary; its coverage is winding < 0
+const SUB = revT, out_ = (w) => w < 0
+// the features of A − B (B tagged rings): { all: every piece, kept: those past the rounding }
+// ⛔ THE DEFINITION'S INVARIANT ON EVERY FEATURE (Zob's ruling, 2026-10-29): the open takes, and the close fills, only where no disk of
+// radius h fits, so every taken and every filled feature erodes to nothing at h + NODE_BOUND (past the lattice's rounding), or the
+// call refuses by name (planted wallShort: a 120 m² hole the close filled, with no refusal)
+function featuresOf(A, B, kind, h, what) {
+  const all = pieces(tagged(arrange([A, SUB(B)], w => w[0] > 0 && !out_(w[1]), `${what} ${kind}`, false, 0))), kept = all.filter(pp => !isRoundingSliver(toIP(pp)))
+  for (const pp of kept) if (widerThanTwoH(pp, h)) { const o = pp[0]
+    throw new Error(`[${what}] ⛔ the open/close: a ${kind} feature at (${(o[0].X / SCALE).toFixed(3)}, ${(o[0].Y / SCALE).toFixed(3)}) (${(m2(pp)).toFixed(2)} m²) is wider than a cell (it survives an erode by half a cell), and the definition ${kind === 'taken' ? 'takes' : 'fills'} nothing a disk of radius h fits in. Cause not established. Refusing.`) }
+  return { all, kept } }
+// k = P − tf ∪ ff, one arrangement
+const cutWith = (Pt, tf, ff, what) => arrange([Pt, SUB(tf.flat()), ff.flat()], w => (w[0] > 0 && !out_(w[1])) || w[2] > 0, `${what} cut`, false, 0)
+// ⭐ THE OPEN AND THE CLOSE ALONE, at h = step/2, for a caller whose operation is one of them (structures.mjs#waterWithoutDecks: the
+// water beside a deck opened, the deck and its slivers closed), on TAGGED rings: the morph reads each edge's birth line
+const unionKeep = (rings, what) => asRings(arrange([rings], w => w[0] !== 0, `${what} union`, false, 0))
+export function openAt(rings, stepM, what, stat = {}) { fresh(); const Pt = unionKeep(rings, what); if (!Pt.length) return []
+  const h = (stepM / 2) * SCALE, open = tagged(arrange([Pt, morph(Pt, -h, `${what} open`, stat, Pt.map(r => r.map(q => q.tag)))], w => w[0] > 0 && w[1] > 0, `${what} ∩P`, false, 0))
+  return asRings(cutWith(Pt, featuresOf(Pt, open, 'taken', h, what).kept, [], what)) }
+export function closeAt(rings, stepM, what, stat = {}) { fresh(); const Pt = unionKeep(rings, what); if (!Pt.length) return []
+  const h = (stepM / 2) * SCALE, C = arrange([Pt, morph(Pt, h, `${what} close`, stat, Pt.map(r => r.map(q => q.tag)))], w => w[0] > 0 || w[1] > 0, `${what} closed`, false, 0)
+  return asRings(cutWith(Pt, [], featuresOf(tagged(C), Pt, 'filled', h, what).kept, what)) }
 export function openCloseCutOnce(paths, stepM, what) {
   fresh()
   const h = (stepM / 2) * SCALE, stat = { own: 0, cutJoin: 0, squared: 0, newLines: 0 }
@@ -579,24 +652,11 @@ export function openCloseCutOnce(paths, stepM, what) {
     stat.transitions = (stat.transitions || 0) + 1
     return tg.find(l => key(l) === key(prev)) || tg.find(l => key(l) === key(next)) || tg[0] }))
   const C = morph(open, h, `${what} close`, stat, openLines)
-  // each ring set passed on carries its face walk's tags ON ITS POINTS (arrange reads them there), so k's edges carry their lines
-  const tagged = (F) => F.rings.map((r, k2) => r.map((q, i) => ({ X: q.X, Y: q.Y, tag: F.tags[k2]?.[i] ?? null })))
   const openT = tagged(OPEN)
-  // ⭐ A DIFFERENCE'S SUBTRACTED SET IS WOUND CLOCKWISE (Huron's 407 lineless edges on k, 2026-10-29): facesOf tags an edge from the
-  // inputs running the SAME way, and a subtracted set's edges bound the result running the other way, so they carried no tag.
-  // Reversed (each tag moved with its edge, as the erode's pieces are), they run with the boundary; its coverage is winding < 0
-  const revT = (rs) => rs.map(r => { const n = r.length, q = r.slice().reverse(); return q.map((v, k) => ({ ...v, tag: r[(n - 1 - k - 1 + n) % n].tag })) })
-  const SUB = revT, out_ = (w) => w < 0
-  const taken = pieces(tagged(arrange([Pt, SUB(openT)], w => w[0] > 0 && !out_(w[1]), `${what} taken`, false, 0)))
+  const TF = featuresOf(Pt, openT, 'taken', h, what), taken = TF.all, tf = TF.kept
   const closedK = tagged(arrange([openT, C], w => w[0] > 0 || w[1] > 0, `${what} closedK`, false, 0))
-  const filled = pieces(tagged(arrange([closedK, SUB(openT)], w => w[0] > 0 && !out_(w[1]), `${what} filled`, false, 0)))
-  const tf = taken.filter(pp => !isRoundingSliver(toIP(pp))), ff = filled.filter(pp => !isRoundingSliver(toIP(pp)))
-  // ⛔ THE DEFINITION'S INVARIANT ON EVERY FEATURE (Zob's ruling, 2026-10-29): the open takes, and the close fills, only where no disk of
-  // radius h fits, so every taken and every filled feature erodes to nothing at h + NODE_BOUND (past the lattice's rounding), or the
-  // call refuses by name (planted wallShort: a 120 m² hole the close filled, with no refusal)
-  for (const [kind, fs] of [['taken', tf], ['filled', ff]]) for (const pp of fs) if (widerThanTwoH(pp, h)) { const o = pp[0]
-    throw new Error(`[${what}] ⛔ the open/close: a ${kind} feature at (${(o[0].X / SCALE).toFixed(3)}, ${(o[0].Y / SCALE).toFixed(3)}) (${(m2(pp)).toFixed(2)} m²) is wider than a cell (it survives an erode by half a cell), and the definition ${kind === 'taken' ? 'takes' : 'fills'} nothing a disk of radius h fits in. Cause not established. Refusing.`) }
-  const K = arrange([Pt, SUB(tf.flat()), ff.flat()], w => (w[0] > 0 && !out_(w[1])) || w[2] > 0, `${what} cut`, false, 0), k = K.rings
+  const FF = featuresOf(closedK, openT, 'filled', h, what), filled = FF.all, ff = FF.kept
+  const K = cutWith(Pt, tf, ff, what), k = K.rings
   // ⭐ THE TOPOLOGY RECORD ON k (Jacob's ruling (a), 2026-10-29): the open/close follows the DEFINITION where it changes topology, and
   // EVERY change is NAMED: a hole of P filled, a hole opened to the outside, holes merged into one, a part split, parts joined. Each is
   // made by a taken or filled feature, and every feature is held narrower than 2h (widerThanTwoH, above): a change the definition

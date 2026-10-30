@@ -4,7 +4,7 @@ import { create } from 'zustand'
 import {
   fetchMarkers, saveMarkers, fetchCenterlines, fetchSkeleton,
   fetchMeasurements, saveMeasurements, fetchOverlay, saveOverlay,
-  fetchLooks, fetchLookDesign, saveLookDesign, bakeLook, fetchBakeStatus, fetchBakePlan,
+  fetchLooks, fetchLookDesign, saveLookDesign, bakeLook, fetchBakeStatus, fetchBakePlan, acceptCoastResidual as apiAcceptCoastResidual,
   createLook as apiCreateLook, deleteLook as apiDeleteLook,
   saveShapeFreeze, fetchRibbons, fetchMap, fetchGeography, fetchBoundary,
 } from '../api.js'
@@ -2051,6 +2051,8 @@ const useCartographStore = create((set, get) => ({
     } catch (err) {
       // the server stopped before a CODE-driven re-pour: ask, and remember how to resume (BakeModal)
       if (err.code === 'REPOUR_CONFIRM') { set({ bakeRunning: false, repourConfirm: { ...(err.repour || {}), resume: { force } } }); return }
+      // the coast step stopped on its open/close residual: show its pieces, and remember how to resume (BakeModal's card)
+      if (err.code === 'COAST_RESIDUAL') { set({ bakeRunning: false, coastResidual: { ...err.coastResidual, viewing: null, accepting: false, error: null, resume: { force, repour } } }); return }
       set({ bakeRunning: false, bakeError: String(err.message || err) })
     }
   },
@@ -2098,6 +2100,19 @@ const useCartographStore = create((set, get) => ({
   bakeProgress: null,
   // { scene, files, resume } — a Bake refused because the pour's code changed; BakeModal asks before re-pouring
   repourConfirm: null,
+  // ⭐ a stopped coast step's pieces (serve.js#coastResidualAsk), while the operator looks at them: { scene, identity, n, m2, pieces,
+  // viewing (the piece framed, or null for the list), accepting, error, resume }
+  coastResidual: null,
+  // a request to frame a point in the Designer's ortho view: { x, z, span (metres of view height), n (a fresh request) } (CartographApp's rig)
+  frameRequest: null,
+  // the ONE accept: signs exactly the pieces the card showed (their identity), then bakes again from where it stopped
+  acceptCoastResidual: async () => {
+    const cr = get().coastResidual
+    if (!cr || cr.accepting) return
+    set({ coastResidual: { ...cr, accepting: true, error: null } })
+    try { await apiAcceptCoastResidual(get().activeLookId, cr.identity); set({ coastResidual: null }); await get().runBake(cr.resume || {}) }
+    catch (e) { set({ coastResidual: { ...get().coastResidual, accepting: false, error: String(e.message || e) } }) }
+  },
   mapGeography: null,   // fetched geography.json (lat/lon/tz/projection/bbox)
   sceneBoundary: undefined, // fetched neighborhood_boundary.json (raw), only once the one reader (discOf) accepts it; undefined = PENDING
   // ⛔ REFUSED is not PENDING (Zob's condition, BRIEF-the-disc-is-one-source §1b): a boundary that could not be fetched, is absent,

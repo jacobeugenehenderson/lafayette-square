@@ -52,6 +52,9 @@ import { deckFootprints, streetDecks, waterWithoutDecks } from '../cartograph/st
 import { defaultDeckWidthM } from '../cartograph/structures.mjs'
 import { CLIP_SCALE } from '../src/lib/lattice.js'
 import { mintProtopolygon } from '../src/lib/tileGround.js'
+import { mintInputsOf } from '../cartograph/mintInputs.mjs'
+import { onLineTiered } from '../src/lib/latticeFaces.js'
+import { homeLookOf } from '../cartograph/homeLook.mjs'
 import { waterRuns } from '../cartograph/shoreRuns.mjs'
 
 const { Clipper, ClipType, PolyType, PolyFillType } = clipperLib
@@ -331,9 +334,21 @@ console.log('── F2. a deck is its ways joined, opened and closed at the trac
   // carries a millimetre staircase at a cut, which the cut-once open/close cannot read. Each asserted BY NAME AND SITE on a
   // ratchet: RED if its message or site changes, and RED when it starts BUILDING (then KNOWN_REFUSALS drops by one in that commit,
   // its KNOWN text goes, and its rows below run again)
-  const KNOWN_REFUSALS = 2, KNOWN = "a STAIRCASE in its SOURCE at a cut. Ring 0's edge(s) 533 (211.139, 71.050) → (211.138, 71.050), 1.0 mm; 534 (211.138, 71.050) → (211.136, 71.048), 2.8 mm lie within the lattice's rounding of edge 532's line"
+  // ⭐ RING INDICES ARE WHERE THE WALK STARTS (they moved with f32d7c7d): the refusal is identified by CLASS, SITE and LENGTHS (Zob's
+  // ruling (ii), 2026-10-29), what an operator could find on the map, each parsed from the message: the class; the first named edge's
+  // start, exactly as printed (to the mm); the named edges' lengths as printed. Never the edge numbers
+  const CLASS = 'a STAIRCASE in its SOURCE at a cut'
+  const idOf = (msg) => { if (!msg) return null; const at = /edge\(s\) \d+ \((-?\d+\.\d+), (-?\d+\.\d+)\)/.exec(msg)
+    return { cls: msg.includes(CLASS) ? CLASS : null, site: at ? `${at[1]}, ${at[2]}` : null, lengths: [...msg.matchAll(/, (\d+\.\d) mm/g)].map(m => m[1]).join(' / ') } }
+  // ⭐ THE WHARF CROP BUILDS (the unit-line rule, Zob's ruling 2026-10-29: its 1.4 mm staircase is two lattice neighbours, no line):
+  // one of the two named fixtures left the list, KNOWN_REFUSALS 2 → 1, and its rows below run
+  const KNOWN_REFUSALS = 1, KNOWN = [{ name: "MacMillan's older crop", cls: CLASS, site: '211.139, 71.050', lengths: '1.0 / 2.8' }]
+  const same = (id, k) => !!id && id.cls === k.cls && id.site === k.site && id.lengths === k.lengths
+  // the verdict over every refusal the fixtures make: exactly KNOWN_REFUSALS, each one of KNOWN by class, site and lengths
+  const knownVerdict = (msgs) => { const ids = msgs.filter(Boolean).map(idOf); return ids.length === KNOWN_REFUSALS && KNOWN.every(k => ids.some(id => same(id, k))) && ids.every(id => KNOWN.some(k => same(id, k))) }
   let mw = null, mwWhy = null; try { mw = waterWithoutDecks(mx.water.map(r => signed(r) > 0 ? r : [...r].reverse()), [], [mx.deck], mx.stepM) } catch (e) { mwWhy = String(e.message) }
-  say(!!mwWhy && mwWhy.includes(KNOWN), mwWhy ? (mwWhy.includes(KNOWN) ? `the known refusal (1 of ${KNOWN_REFUSALS}): MacMillan's older crop refuses by name at its source staircase (edges 533, 534 at (211.139, 71.050))` : `MacMillan's older crop refuses, NOT as the known refusal: ${mwWhy.slice(0, 220)}`) : `MacMillan's older crop now BUILDS: lower KNOWN_REFUSALS by one in this commit, drop its KNOWN, and its sliver row runs`)
+  const mwId = idOf(mwWhy)
+  say(same(mwId, KNOWN[0]), mwWhy ? (same(mwId, KNOWN[0]) ? `the known refusal (1 of ${KNOWN_REFUSALS}): MacMillan's older crop refuses by name at its source staircase (${CLASS}, at (${mwId.site}), ${mwId.lengths} mm)` : `MacMillan's older crop refuses, NOT as the known refusal (${JSON.stringify(mwId)}): ${mwWhy.slice(0, 220)}`) : `MacMillan's older crop now BUILDS: lower KNOWN_REFUSALS by one in this commit, drop its KNOWN entry, and its sliver row runs`)
   if (mw) {
   const CP = (r) => r.map(([x, z]) => ({ X: Math.round(x * CLIP_SCALE), Y: Math.round(z * CLIP_SCALE) })), cu = mx.stepM * CLIP_SCALE
   const grow = (src, d) => { const co = new clipperLib.ClipperOffset(), o = new clipperLib.Paths(); co.AddPaths(src, clipperLib.JoinType.jtMiter, clipperLib.EndType.etClosedPolygon); co.Execute(o, d); return o }
@@ -346,9 +361,14 @@ console.log('── F2. a deck is its ways joined, opened and closed at the trac
   // pocket bounded by one deck on every side, narrower than a cell, was left as water (FMP's 1.2 cm², and its like)
   const wx = JSON.parse(readFileSync(join(ROOT, 'checks/fixtures/ptown-wharf-sliver-2026-10-27.json'), 'utf8'))
   let ww = null, wr = null; try { ww = waterWithoutDecks(wx.water.map(r => signed(r) > 0 ? r : [...r].reverse()), [], wx.decks, wx.stepM) } catch (e) { wr = String(e.message) }
-  // the known refusal 2 of KNOWN_REFUSALS: deck 2's close, the same class
-  const KNOWN_WHARF = "[deck 2 close] ⛔ the open/close cannot read this ring: a STAIRCASE in its SOURCE at a cut. Ring 0's edge(s) 0 (148.485, 132.351) → (148.486, 132.352), 1.4 mm lie within the lattice's rounding of edge 13's line"
-  say(!!wr && wr.includes(KNOWN_WHARF), wr ? (wr.includes(KNOWN_WHARF) ? `the known refusal (2 of ${KNOWN_REFUSALS}): the wharf crop refuses by name at deck 2's close, its source staircase (edge 0 at (148.485, 132.351))` : `the wharf crop refuses, NOT as the known refusal: ${wr.slice(0, 220)}`) : `the wharf crop now BUILDS: lower KNOWN_REFUSALS by one in this commit, drop KNOWN_WHARF, and its rows run`)
+  // the wharf crop BUILDS (it was the known refusal 2 until the unit-line rule): a refusal there again is RED
+  say(!wr, wr ? `the wharf crop REFUSES again: ${wr.slice(0, 220)}` : `the wharf crop builds (a known refusal until the unit-line rule)`)
+  // the identifier is seen to FAIL: each mutant of the live refusal, through the same verdict (each perturbs what the message says,
+  // never a literal, so it holds when the row is re-pinned)
+  if (mwWhy) { const live = knownVerdict([mwWhy]), id = idOf(mwWhy), bump = (v) => (+v + 0.001).toFixed(3), [sx, sy] = (id.site || '0, 0').split(', '), L0 = (id.lengths || '').split(' / ')[0]
+    const muts = [['the site moved by 1 mm', [mwWhy.replace(`(${sx}, ${sy}) →`, `(${bump(sx)}, ${sy}) →`)]], ['another class at the same site', [mwWhy.replace(CLASS, 'a CROSSING in its SOURCE at a cut')]],
+      ['an edge length changed', [mwWhy.replace(`, ${L0} mm`, `, ${(+L0 + 0.1).toFixed(1)} mm`)]], ['a second refusal appearing', [mwWhy, mwWhy]]].map(([n, m]) => [n, knownVerdict(m)])
+    say(live && muts.every(([, v]) => !v), `the known refusals are identified by class, site and lengths, never ring indices: live ${live ? 'matches' : 'DOES NOT match'} · mutants ${muts.map(([n, v]) => `${n} → ${v ? 'MATCHES (blind)' : 'RED'}`).join(' · ')}`) }
   if (ww) {
   const wper = (r) => r.reduce((t, p, i) => { const q = r[(i + 1) % r.length]; return t + Math.hypot(q[0] - p[0], q[1] - p[1]) }, 0)
   const pockets = ww ? ww.rings.filter(r => r.deck.every(x => x != null && x === r.deck[0]) && 2 * Math.abs(signed(r)) / wper(r) < wx.stepM) : []
@@ -375,11 +395,12 @@ console.log('── F2. a deck is its ways joined, opened and closed at the trac
   // ⛔ v7 MEANS THE TOPOLOGY RECORD IS PRESENT (Zob's ruling, 2026-10-29: the version is the one format gate). The writer writes both
   // fields on BOTH of its record paths, empty included, and a coast.json at this version without either is MALFORMED: every one in the
   // tree (the towns' clean/ and the fixtures) is read here, and a planted one without them is seen to fail
-  { const topoOk = (doc) => doc.version !== COAST_VERSION || (Array.isArray(doc.waterTopology) && Array.isArray(doc.decksTopology))
-    const writes = /waterTopology: \[\], decksTopology: \[\] \}\)/.test(bc) && /waterTopology: oc\.topology, decksTopology: decks\.topology/.test(bc)
+  { const isRes = (r) => r && typeof r === 'object' && Number.isFinite(r.n) && Number.isFinite(r.m2)
+    const topoOk = (doc) => doc.version !== COAST_VERSION || (Array.isArray(doc.waterTopology) && Array.isArray(doc.decksTopology) && isRes(doc.waterResidual) && isRes(doc.decksResidual))
+    const writes = /waterTopology: \[\], decksTopology: \[\], waterResidual: \{ n: 0, m2: 0, largest: null, judgedS: 0 \}, decksResidual: \{ n: 0, m2: 0, largest: null, judgedS: 0 \} \}\)/.test(bc) && /waterTopology: oc\.topology, decksTopology: decks\.topology/.test(bc) && /waterResidual: recordOf\(waterNet\), decksResidual: recordOf\(decksNet\)/.test(bc)
     const files = [...readdirSync(join(ROOT, 'cartograph/data')).map(t => join(ROOT, 'cartograph/data', t, 'clean', COAST_FILE)), ...readdirSync(join(ROOT, 'checks/fixtures')).filter(f => /^coast-.*\.json$/.test(f)).map(f => join(ROOT, 'checks/fixtures', f))].filter(f => existsSync(f))
     const bad = files.filter(f => { try { return !topoOk(JSON.parse(readFileSync(f, 'utf8'))) } catch { return true } }).map(f => relative(ROOT, f)), atV = files.filter(f => { try { return JSON.parse(readFileSync(f, 'utf8')).version === COAST_VERSION } catch { return false } }).length
-    say(writes && !bad.length, `coast v${COAST_VERSION} carries its topology record: bake-coast writes waterTopology and decksTopology on both record paths (${writes}); ${atV} of ${files.length} coast.json in the tree at v${COAST_VERSION}, ${bad.length ? `MALFORMED: ${bad.join(', ')}` : 'none without them'}`)
+    say(writes && !bad.length, `coast v${COAST_VERSION} carries its topology and residual records: bake-coast writes waterTopology, decksTopology, waterResidual and decksResidual on both record paths (${writes}); ${atV} of ${files.length} coast.json in the tree at v${COAST_VERSION}, ${bad.length ? `MALFORMED: ${bad.join(', ')}` : 'none without them'}`)
     say(!topoOk({ version: COAST_VERSION, coast: true, waterTopology: [] }), `mutant: a v${COAST_VERSION} coast.json without decksTopology reads MALFORMED, RED`) }
   say(/deckFootprints\(osm\.ground, fine\)/.test(bc) && !/followDecks/.test(bc), 'bake-coast closes its decks at the trace step, and the trace stays the trace (no deck is followed)')
 }
@@ -441,7 +462,12 @@ for (const scene of scenes) {
     else if ((map.dataRead || {})[`cartograph/data/${scene}/clean/${COAST_FILE}`] !== createHash('sha1').update(readFileSync(join(dir, 'clean', COAST_FILE))).digest('hex'))
       say(false, `${scene}: map.json was poured from a different coast.json than today's (recorded ${String((map.dataRead || {})[`cartograph/data/${scene}/clean/${COAST_FILE}`] ?? 'none').slice(0, 8)}, today ${createHash('sha1').update(readFileSync(join(dir, 'clean', COAST_FILE))).digest('hex').slice(0, 8)}): its streetDecks are not inputs to this code, so the take-out is NOT measured. ▶ re-pour (the Bake's pipeline step)`)
     else {
-      let W = null; try { W = waterWithoutDecks(doc.water.flatMap(b => [b.outer, ...b.holes]), doc.arcs || [], sd.map(d => d.ring), doc.fineM) } catch (e) { say(false, `${scene}: the water the mint is given REFUSES — ${String(e.message).slice(0, 240)}`) }
+      // ⭐ THE WATER THE MINT IS GIVEN IS RECOMPUTED BY THE MINT'S OWN BUILDER (Zob's ruling, 2026-10-29): mintInputs.mjs#mintInputsOf, its
+      // streetDecks and its take-out, off the scene's files. ⛔ Never map.json's recorded decks fed back in: those are the decks AS
+      // EXTENDED by the take-out (mintInputs sets each deck's ring to the take-out's), an OUTPUT, so the take-out re-run on them read
+      // PTown's fresh pour as stale (one vertex, deck 0's (118.657, 167.067), moved 1 mm by the re-entry)
+      const rerun = (decks) => waterWithoutDecks(doc.water.flatMap(b => [b.outer, ...b.holes]), doc.arcs || [], decks, doc.fineM)
+      let W = null; try { const MI = mintInputsOf(scene, JSON.parse(readFileSync(join(dir, 'clean/ribbons.json'), 'utf8')).streets, homeLookOf(scene)); W = { rings: MI.coast, arcs: MI.coastArcs } } catch (e) { say(false, `${scene}: the water the mint is given REFUSES — ${String(e.message).slice(0, 240)}`) }
       if (W) { const given = W.rings
       // ⭐ every water-ring edge the mint is given lies under a stroked arc, the fetched square's own sides excluded (Boz, 10-27)
       const Q = doc.square, side = (a, b) => [['x0', 0], ['x1', 0], ['z0', 1], ['z1', 1]].some(([k, c]) => Math.abs(a[c] - Q[k]) < 1 / CLIP_SCALE && Math.abs(b[c] - Q[k]) < 1 / CLIP_SCALE)
@@ -450,9 +476,41 @@ for (const scene of scenes) {
       const gv = [...given.flatMap(r => ringViolations(r)), ...ringsMeet(given)]
       say(!gv.length, `${scene}: the water rings the mint is given are simple and meet none other (${gv.length}${gv.length ? `, first ${gv[0].kind} @(${gv[0].at.map(Math.round).join(', ')})` : ''})`)
       say(!bare.length, `${scene}: every water-ring edge the mint is given lies under a stroked arc (${W.arcs.filter(a => a.deck != null).length} of ${W.arcs.length} arc(s) a deck's edge)${bare.length ? ` — ${bare.length} edge(s), ${bareM.toFixed(1)} m bare, first @(${bare[0][0].map(Math.round).join(', ')})` : ''}`)
-      const same = wr.length === given.length && wr.every((r, k) => r.length === given[k].length && r.every((p, i) => Math.abs(p[0] - given[k][i][0]) < 1e-5 && Math.abs(p[1] - given[k][i][1]) < 1e-5))
-      if (same) say(true, `${scene}: ①'s ${wr.length} water ring(s) are what the mint was given (coast.json less ${sd.length} street deck(s))`)
-      else console.log(`  ⚠️ ${scene}: ①'s ${wr.length} water ring(s) are not the ${given.length} the mint would be given now — the town has not been re-poured from this coast (▶ the Bake)`) }
+      // ⭐ ①'S WATER FACE IS THE MINT'S INPUT, NODED (Zob's ruling, 2026-10-29; Huron): derive.js freezes ①'s water AFTER splitOverWater
+      // writes each off-grade span's bank crossings into the water-ring edge that holds it (Huron: 14 vertices, the banks of its 7 bridges,
+      // 0.08–0.36 mm off their edges). So: the same ring count; each ring the same orientation; every input vertex kept, in order; and each
+      // added vertex SPLITS the input edge it lies on (latticeFaces.js#onLineTiered, the noding-inserted tier: the one home) and is a
+      // bank end ①'s own record names (protopolygon.offGradeSpans). → null when it is the input, else what differs
+      const keyOf = (q) => q.map(v => v.toFixed(3)).join(','), area2 = (r) => r.reduce((t, a, i) => { const b = r[(i + 1) % r.length]; return t + a[0] * b[1] - b[0] * a[1] }, 0)
+      const spanEnds = new Map((proto.offGradeSpans || []).flatMap(b => [b.points[0], b.points[b.points.length - 1]].map(e => [keyOf(e), `${b.street}|${b.segOrd}`])))
+      const noded = (W2, G, ends) => { if (W2.length !== G.length) return `${W2.length} ring(s) against ${G.length}`; let added = 0
+        for (let k = 0; k < G.length; k++) { const r = W2[k], q = G[k], eq = (a, b) => Math.abs(a[0] - b[0]) < 1e-5 && Math.abs(a[1] - b[1]) < 1e-5
+          if (Math.sign(area2(r)) !== Math.sign(area2(q))) return `ring ${k} is wound the other way`
+          const s0 = r.findIndex(p => eq(p, q[0])); if (s0 < 0) return `ring ${k}'s first input vertex is gone`
+          let j = 1; for (let t = 1; t <= r.length; t++) { const p = r[(s0 + t) % r.length], nx = q[j % q.length]
+            if (eq(p, nx)) { j++; continue }
+            const a = q[j - 1], b = nx, mm = (v) => v.map(c => c * CLIP_SCALE)
+            if (!onLineTiered([mm(a), mm(b)], mm(p), [[mm(a), mm(b)]])) return `ring ${k}: an added vertex (${p.join(', ')}) does not lie on the input edge it splits`
+            if (!ends.has(keyOf(p))) return `ring ${k}: an added vertex (${p.join(', ')}) is no bank end of a recorded off-grade span`
+            added++ }
+          if (j !== q.length + 1) return `ring ${k}: ${q.length + 1 - j} input vertex(es) gone` }
+        return { added } }
+      const nod = noded(wr, given, spanEnds), same = typeof nod === 'object'
+      if (same) say(true, `${scene}: ①'s ${wr.length} water ring(s) are what the mint was given (coast.json less ${sd.length} street deck(s))${nod.added ? `, noded with ${nod.added} bank crossing(s) of ${(proto.offGradeSpans || []).length} off-grade span(s) (①'s splitOverWater)` : ''}`)
+      else console.log(`  ⚠️ ${scene}: ①'s ${wr.length} water ring(s) are not the ${given.length} the mint would be given now (${nod}) — the town has not been re-poured from these inputs (▶ the Bake)`)
+      // MUTANTS of the predicate, each RED: an input vertex dropped · an added vertex 1 mm off its edge (planted as a span end, so only
+      // the bound can catch it) · a ring's orientation flipped
+      if (same) { const r0 = wr[0], mid = given[0][Math.floor(given[0].length / 2)], drop = [r0.filter(p => !(Math.abs(p[0] - mid[0]) < 1e-5 && Math.abs(p[1] - mid[1]) < 1e-5)), ...wr.slice(1)]
+        const a = r0[0], b = r0[1], L = Math.hypot(b[0] - a[0], b[1] - a[1]), off = [(a[0] + b[0]) / 2 - (b[1] - a[1]) / L * 0.001, (a[1] + b[1]) / 2 + (b[0] - a[0]) / L * 0.001]
+        const offW = [[a, off, ...r0.slice(1)], ...wr.slice(1)], offEnds = new Map([...spanEnds, [keyOf(off), 'planted']]), flip = [[...r0].reverse(), ...wr.slice(1)]
+        const m = [['an input vertex dropped', noded(drop, given, spanEnds)], ['an added vertex 1 mm off its edge', noded(offW, given, offEnds)], ['ring 0 flipped', noded(flip, given, spanEnds)]]
+        say(m.every(([, v]) => typeof v === 'string'), `${scene}: the noded-input predicate is seen to fail: ${m.map(([n, v]) => `${n} → ${typeof v === 'string' ? `RED (${v.slice(0, 70)})` : 'PASSES (blind)'}`).join(' · ')}`) }
+      // MUTANT: the recorded (extended) decks fed back in, as this check once did → not what ① was given. ⚠ It bites only while the
+      // take-out re-run on its own output moves a vertex (PTown's deck 0 today): when it stops, this row goes blind and says so. A town
+      // with no street deck has nothing to re-enter (its recorded decks are the mint's), so the mutant does not run there
+      if (same && sd.length) { let R = null; try { R = rerun(sd.map(d => d.ring)).rings } catch (e) { R = null }
+        const sameR = !!R && typeof noded(wr, R, spanEnds) === 'object'
+        say(!sameR, `${scene}: mutant, map.json's recorded (extended) decks fed back in → ${sameR ? 'the same rings: the re-entry no longer differs, so this mutant is BLIND (find another)' : 'not ①\'s rings, the stale warning returns: RED as it must be'}`) } }
     }
   }
 }

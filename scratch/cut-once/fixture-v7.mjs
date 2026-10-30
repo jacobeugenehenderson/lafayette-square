@@ -3,9 +3,10 @@
 // written as v7 requires, always present: empty, since a planted coast's open/close made no change. node scratch/cut-once/fixture-v7.mjs <repo root>
 import { readFileSync, writeFileSync, unlinkSync } from 'node:fs'
 const ROOT = process.argv[2], { COAST_VERSION } = await import(ROOT + '/cartograph/coastFile.mjs')
-const d = JSON.parse(readFileSync(ROOT + '/checks/fixtures/coast-huron-v6-opened-1mm.json', 'utf8'))
-if (d.version !== 6) throw new Error(`the source fixture is v${d.version}, not v6`)
+const SRC = process.argv[3] || ROOT + '/checks/fixtures/coast-huron-v6-opened-1mm.json', d = JSON.parse(readFileSync(SRC, 'utf8'))
+if (d.version !== 6 && d.version !== 7) throw new Error(`the source fixture is v${d.version}, not v6 or v7`)
 if (COAST_VERSION !== 7) throw new Error(`the kit reads v${COAST_VERSION}, not 7`)
 d.version = COAST_VERSION; d.waterTopology = []; d.decksTopology = []
-writeFileSync(ROOT + '/checks/fixtures/coast-huron-v7-opened-1mm.json', JSON.stringify(d)); unlinkSync(ROOT + '/checks/fixtures/coast-huron-v6-opened-1mm.json')
+const zero = { n: 0, m2: 0, largest: null, judgedS: 0 }; d.waterResidual = zero; d.decksResidual = zero   // a planted coast is never judged: its residual is none, written
+writeFileSync(ROOT + '/checks/fixtures/coast-huron-v7-opened-1mm.json', JSON.stringify(d)); if (SRC.endsWith('v6-opened-1mm.json')) unlinkSync(SRC)
 console.log(`v${d.version}: ${d.water.length} bodies, ${d.arcs.length} arcs`)

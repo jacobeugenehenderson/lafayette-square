@@ -10,6 +10,8 @@
 //   crossings · short · topo   crossings left, edges ≤ 2 mm, outer and hole counts
 import clipperLib from 'clipper-lib'
 import { NODE_BOUND, crossOf } from '../src/lib/latticeNode.js'
+import { partsOf } from './openClose.mjs'
+import { createHash } from 'node:crypto'
 const { IntPoint, Clipper, ClipperOffset, ClipType, PolyType, PolyFillType, PolyTree, Paths, JoinType, EndType } = clipperLib
 export const ip = (pp) => pp.map(p => p.map(q => (Array.isArray(q) ? new IntPoint(q[0], q[1]) : new IntPoint(q.X, q.Y))))
 const F = 1000, bound = NODE_BOUND * F                                                  // OUR rounding bound, on the fine lattice
@@ -35,6 +37,36 @@ export function e2e(k, P, stepM, def = definitionOf(P, stepM)) { const K = up(k)
     const o = x.pp[0]; let cx = 0, cy = 0; for (const q of o) { cx += q.X; cy += q.Y } out.list.push({ side: x.side, m2: +m2.toFixed(5), at: [+(cx / o.length / F / 1000).toFixed(3), +(cy / o.length / F / 1000).toFixed(3)] }) }
   for (const s of ['candidate only', 'definition only']) { const v = (out[s] ||= { nb: 0, nbM2: 0, twoNb: 0, twoNbM2: 0 }); v.nbM2 = +v.nbM2.toFixed(4); v.twoNbM2 = +v.twoNbM2.toFixed(4) }
   out.list.sort((a, b) => b.m2 - a.m2); return out }
+// ⭐ THE RUNTIME NET (Zob's ruling, 2026-10-29): an output k against the definition of its source P. A DISAGREEMENT is a piece past
+// the judge's own 2·NODE_BOUND (its line between the rounding and a disagreement; a wrong change can be narrower than a cell: PTown's
+// 0.929 m-wide 4.746 m² piece). ⭐ The definition is taken PER PART, as the open/close is (structures.mjs#openCloseAtStep: two parts a
+// metre apart stay two): over the whole set its close joins what the kit keeps apart (Huron's decks read 6 pieces, 7.94 m², of the
+// judge's own making; per part, 2, 2.26 m²). Each piece carries its KEY: the piece itself, never a radius (pieceKey).
+// → { n, m2, pieces: [{ key, side, m2, at }] }, largest first
+export const definitionPerPart = (P, stepM) => partsOf(P, 'the definition').flatMap(pp => definitionOf(ip(pp), stepM))
+// a piece's KEY (Zob's ruling): its rings rounded ONCE to the 1 mm lattice (the fine piece → integer mm), each ring rotated to start at
+// its least vertex, the outer counter-clockwise (holes clockwise), then hashed. An exact match or not: a piece that moves 1 mm is new
+export function pieceKey(pp) {
+  const rings = pp.map((r, i) => { let q = r.map(v => [Math.round(v.X / F), Math.round(v.Y / F)]).filter((v, k, a) => k === 0 || v[0] !== a[k - 1][0] || v[1] !== a[k - 1][1])
+    const sa = q.reduce((t, v, k) => { const w = q[(k + 1) % q.length]; return t + v[0] * w[1] - w[0] * v[1] }, 0); if ((i === 0) !== (sa > 0)) q = q.reverse()
+    let m = 0; q.forEach((v, k) => { if (v[0] < q[m][0] || (v[0] === q[m][0] && v[1] < q[m][1])) m = k }); return [...q.slice(m), ...q.slice(0, m)] })
+  return createHash('sha1').update(JSON.stringify([rings[0], ...rings.slice(1).sort((a, b) => (a[0][0] - b[0][0]) || (a[0][1] - b[0][1]))])).digest('hex').slice(0, 16) }
+export function residualOf(k, P, stepM, def = definitionPerPart(P, stepM)) { const K = up(k), pieces = []
+  const sides = [...piecesOf(op(ClipType.ctDifference, K, def)).map(pp => ({ pp, side: 'candidate only' })), ...piecesOf(op(ClipType.ctDifference, def, K)).map(pp => ({ pp, side: 'definition only' }))]
+  for (const x of sides) { if (!survivesBy(x.pp, 2 * bound)) continue; const m2 = area(x.pp) / F / F / 1e6, o = x.pp[0]; let cx = 0, cy = 0; for (const q of o) { cx += q.X; cy += q.Y }
+    pieces.push({ key: pieceKey(x.pp), side: x.side, m2: +m2.toFixed(5), at: [+(cx / o.length / F / 1000).toFixed(3), +(cy / o.length / F / 1000).toFixed(3)] }) }
+  pieces.sort((a, b) => b.m2 - a.m2); return { n: pieces.length, m2: +pieces.reduce((t, w) => t + w.m2, 0).toFixed(4), pieces } }
+// THE GATE against the town's SIGNED tolerance (cartograph/data/<town>/coast-tolerance.json, written only by sign-coast-residual.mjs
+// --accept): it compares COUNT, m² and the accepted SET. No tolerance → stop, listing every piece (the first pour). A piece whose key is not
+// accepted → stop, listing the new pieces, even at an equal count and m². Accepted pieces gone → tighten (the gone keys out, the count and
+// m² down: the only change ever made automatically). → { act: 'pass' | 'tighten' | 'stop', why, fresh, gone, tightened }
+export function verdictOf(res, tol, what) {
+  const list = (ps) => ps.slice(0, 8).map(w => `${w.key} ${w.side} ${w.m2} m² at (${w.at.join(', ')})`).join(' · ') + (ps.length > 8 ? ` … +${ps.length - 8}` : '')
+  if (!tol) return { act: 'stop', fresh: res.pieces, why: `${what}: the open/close differs from its definition by ${res.n} piece(s) past 2·NODE_BOUND, ${res.m2} m²${res.n ? `: ${list(res.pieces)}` : ''}, and this town has signed no tolerance for it (a first pour)` }
+  const acc = new Set((tol.sites || []).map(x => x.key)), fresh = res.pieces.filter(w => !acc.has(w.key)), now = new Set(res.pieces.map(w => w.key)), gone = (tol.sites || []).filter(x => !now.has(x.key))
+  if (fresh.length) return { act: 'stop', fresh, why: `${what}: ${fresh.length} piece(s) past 2·NODE_BOUND this town has not accepted: ${list(fresh)} (now ${res.n} piece(s), ${res.m2} m²; accepted ${tol.n}, ${tol.m2} m²)` }
+  if (gone.length) return { act: 'tighten', gone, tightened: { n: res.n, m2: res.m2, sites: (tol.sites || []).filter(x => now.has(x.key)) }, why: `${what}: ${gone.length} accepted piece(s) no longer differ (${gone.map(x => x.key).join(', ')}): the tolerance tightens to ${res.n} piece(s), ${res.m2} m²` }
+  return { act: 'pass', why: `${what}: ${res.n} piece(s), ${res.m2} m², every one accepted` } }
 // BRIEF §3.1's yardstick. COPY_U is 2 units: the integer re-offset's copies sit 0.6–1.41 units off (the brief, §2), past NODE_BOUND,
 // and an edge within 2 mm of a parallel source edge is a rounding, never a feature. An END is good on source edge s if it is one of
 // s's own vertices, or a CUT POINT (within NODE_BOUND of s, where the output's neighbouring edge leaves s). ⭐ A RUN of output edges

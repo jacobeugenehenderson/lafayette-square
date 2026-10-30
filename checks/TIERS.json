@@ -1,10 +1,10 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 520,
+  "total": 521,
   "counts": {
-    "safe": 365,
+    "safe": 364,
     "local-effect": 31,
-    "live": 124
+    "live": 126
   },
   "checks": [
     {
@@ -196,7 +196,7 @@
         "deletes files",
         "computed import() with no readable target — runs arbitrary modules",
         "computed import() with no readable target — runs arbitrary modules",
-        "imports cartograph/bake-coast.mjs, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/elevationSources.mjs, which can: calls fetch(), imports cartograph/fetch-lidar-flights.mjs, which can: mkdirSync"
+        "imports cartograph/bake-coast.mjs, which can: writeFileSync, mkdirSync, deletes files, imports cartograph/io.js, which can: writeFileSync, imports cartograph/elevationSources.mjs, which can: calls fetch(), imports cartograph/pour-code.mjs, which can: runs `git` — not a known-local command, runs `git` — not a known-local command, imports cartograph/fetch-lidar-flights.mjs, which can: mkdirSync"
       ]
     },
     {
@@ -208,11 +208,14 @@
     },
     {
       "file": "checks/claims-a-coast-ring-keeps-the-ink-clear.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "writeFileSync — only under its own temp dir",
-        "deletes files — only under its own temp dir",
-        "imports a mutated copy of cartograph/coastFile.mjs from its own temp dir — read as cartograph/coastFile.mjs, safe"
+        "writeFileSync",
+        "deletes files",
+        "computed import() with no readable target — runs arbitrary modules",
+        "computed import() with no readable target — runs arbitrary modules",
+        "computed import() with no readable target — runs arbitrary modules"
       ]
     },
     {
@@ -2582,7 +2585,7 @@
         "writeFileSync",
         "deletes files",
         "computed import() with no readable target — runs arbitrary modules",
-        "imports cartograph/bake-coast.mjs, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/elevationSources.mjs, which can: calls fetch(), imports cartograph/fetch-lidar-flights.mjs, which can: mkdirSync"
+        "imports cartograph/bake-coast.mjs, which can: writeFileSync, mkdirSync, deletes files, imports cartograph/io.js, which can: writeFileSync, imports cartograph/elevationSources.mjs, which can: calls fetch(), imports cartograph/pour-code.mjs, which can: runs `git` — not a known-local command, runs `git` — not a known-local command, imports cartograph/fetch-lidar-flights.mjs, which can: mkdirSync"
       ]
     },
     {
@@ -2889,8 +2892,19 @@
         "deletes files",
         "imports cartograph/pour-code.mjs, which can: runs `git` — not a known-local command, runs `git` — not a known-local command",
         "imports cartograph/elevationSources.mjs, which can: calls fetch()",
-        "imports cartograph/bake-coast.mjs, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/fetch-lidar-flights.mjs, which can: mkdirSync",
+        "imports cartograph/bake-coast.mjs, which can: writeFileSync, mkdirSync, deletes files, imports cartograph/io.js, which can: writeFileSync, imports cartograph/fetch-lidar-flights.mjs, which can: mkdirSync",
         "imports package(s) clipper-lib — not read from source"
+      ]
+    },
+    {
+      "file": "checks/claims-the-coast-residual-is-signed-in-stage.mjs",
+      "tier": "live",
+      "reasonClass": "outbound",
+      "why": [
+        "writeFileSync",
+        "deletes files",
+        "imports cartograph/bake-coast.mjs, which can: writeFileSync, mkdirSync, deletes files, imports cartograph/io.js, which can: writeFileSync, imports cartograph/elevationSources.mjs, which can: calls fetch(), imports cartograph/pour-code.mjs, which can: runs `git` — not a known-local command, runs `git` — not a known-local command, imports cartograph/fetch-lidar-flights.mjs, which can: mkdirSync",
+        "imports cartograph/pourSteps.mjs, which can: writeFileSync"
       ]
     },
     {
