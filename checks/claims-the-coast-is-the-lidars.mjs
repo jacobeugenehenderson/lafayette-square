@@ -53,6 +53,7 @@ import { defaultDeckWidthM } from '../cartograph/structures.mjs'
 import { CLIP_SCALE } from '../src/lib/lattice.js'
 import { mintProtopolygon } from '../src/lib/tileGround.js'
 import { mintInputsOf } from '../cartograph/mintInputs.mjs'
+import { onLineTiered } from '../src/lib/latticeFaces.js'
 import { homeLookOf } from '../cartograph/homeLook.mjs'
 import { waterRuns } from '../cartograph/shoreRuns.mjs'
 
@@ -473,13 +474,40 @@ for (const scene of scenes) {
       const gv = [...given.flatMap(r => ringViolations(r)), ...ringsMeet(given)]
       say(!gv.length, `${scene}: the water rings the mint is given are simple and meet none other (${gv.length}${gv.length ? `, first ${gv[0].kind} @(${gv[0].at.map(Math.round).join(', ')})` : ''})`)
       say(!bare.length, `${scene}: every water-ring edge the mint is given lies under a stroked arc (${W.arcs.filter(a => a.deck != null).length} of ${W.arcs.length} arc(s) a deck's edge)${bare.length ? ` — ${bare.length} edge(s), ${bareM.toFixed(1)} m bare, first @(${bare[0][0].map(Math.round).join(', ')})` : ''}`)
-      const same = wr.length === given.length && wr.every((r, k) => r.length === given[k].length && r.every((p, i) => Math.abs(p[0] - given[k][i][0]) < 1e-5 && Math.abs(p[1] - given[k][i][1]) < 1e-5))
-      if (same) say(true, `${scene}: ①'s ${wr.length} water ring(s) are what the mint was given (coast.json less ${sd.length} street deck(s))`)
-      else console.log(`  ⚠️ ${scene}: ①'s ${wr.length} water ring(s) are not the ${given.length} the mint would be given now — the town has not been re-poured from these inputs (▶ the Bake)`)
+      // ⭐ ①'S WATER FACE IS THE MINT'S INPUT, NODED (Zob's ruling, 2026-10-29; Huron): derive.js freezes ①'s water AFTER splitOverWater
+      // writes each off-grade span's bank crossings into the water-ring edge that holds it (Huron: 14 vertices, the banks of its 7 bridges,
+      // 0.08–0.36 mm off their edges). So: the same ring count; each ring the same orientation; every input vertex kept, in order; and each
+      // added vertex SPLITS the input edge it lies on (latticeFaces.js#onLineTiered, the noding-inserted tier: the one home) and is a
+      // bank end ①'s own record names (protopolygon.offGradeSpans). → null when it is the input, else what differs
+      const keyOf = (q) => q.map(v => v.toFixed(3)).join(','), area2 = (r) => r.reduce((t, a, i) => { const b = r[(i + 1) % r.length]; return t + a[0] * b[1] - b[0] * a[1] }, 0)
+      const spanEnds = new Map((proto.offGradeSpans || []).flatMap(b => [b.points[0], b.points[b.points.length - 1]].map(e => [keyOf(e), `${b.street}|${b.segOrd}`])))
+      const noded = (W2, G, ends) => { if (W2.length !== G.length) return `${W2.length} ring(s) against ${G.length}`; let added = 0
+        for (let k = 0; k < G.length; k++) { const r = W2[k], q = G[k], eq = (a, b) => Math.abs(a[0] - b[0]) < 1e-5 && Math.abs(a[1] - b[1]) < 1e-5
+          if (Math.sign(area2(r)) !== Math.sign(area2(q))) return `ring ${k} is wound the other way`
+          const s0 = r.findIndex(p => eq(p, q[0])); if (s0 < 0) return `ring ${k}'s first input vertex is gone`
+          let j = 1; for (let t = 1; t <= r.length; t++) { const p = r[(s0 + t) % r.length], nx = q[j % q.length]
+            if (eq(p, nx)) { j++; continue }
+            const a = q[j - 1], b = nx, mm = (v) => v.map(c => c * CLIP_SCALE)
+            if (!onLineTiered([mm(a), mm(b)], mm(p), [[mm(a), mm(b)]])) return `ring ${k}: an added vertex (${p.join(', ')}) does not lie on the input edge it splits`
+            if (!ends.has(keyOf(p))) return `ring ${k}: an added vertex (${p.join(', ')}) is no bank end of a recorded off-grade span`
+            added++ }
+          if (j !== q.length + 1) return `ring ${k}: ${q.length + 1 - j} input vertex(es) gone` }
+        return { added } }
+      const nod = noded(wr, given, spanEnds), same = typeof nod === 'object'
+      if (same) say(true, `${scene}: ①'s ${wr.length} water ring(s) are what the mint was given (coast.json less ${sd.length} street deck(s))${nod.added ? `, noded with ${nod.added} bank crossing(s) of ${(proto.offGradeSpans || []).length} off-grade span(s) (①'s splitOverWater)` : ''}`)
+      else console.log(`  ⚠️ ${scene}: ①'s ${wr.length} water ring(s) are not the ${given.length} the mint would be given now (${nod}) — the town has not been re-poured from these inputs (▶ the Bake)`)
+      // MUTANTS of the predicate, each RED: an input vertex dropped · an added vertex 1 mm off its edge (planted as a span end, so only
+      // the bound can catch it) · a ring's orientation flipped
+      if (same) { const r0 = wr[0], mid = given[0][Math.floor(given[0].length / 2)], drop = [r0.filter(p => !(Math.abs(p[0] - mid[0]) < 1e-5 && Math.abs(p[1] - mid[1]) < 1e-5)), ...wr.slice(1)]
+        const a = r0[0], b = r0[1], L = Math.hypot(b[0] - a[0], b[1] - a[1]), off = [(a[0] + b[0]) / 2 - (b[1] - a[1]) / L * 0.001, (a[1] + b[1]) / 2 + (b[0] - a[0]) / L * 0.001]
+        const offW = [[a, off, ...r0.slice(1)], ...wr.slice(1)], offEnds = new Map([...spanEnds, [keyOf(off), 'planted']]), flip = [[...r0].reverse(), ...wr.slice(1)]
+        const m = [['an input vertex dropped', noded(drop, given, spanEnds)], ['an added vertex 1 mm off its edge', noded(offW, given, offEnds)], ['ring 0 flipped', noded(flip, given, spanEnds)]]
+        say(m.every(([, v]) => typeof v === 'string'), `${scene}: the noded-input predicate is seen to fail: ${m.map(([n, v]) => `${n} → ${typeof v === 'string' ? `RED (${v.slice(0, 70)})` : 'PASSES (blind)'}`).join(' · ')}`) }
       // MUTANT: the recorded (extended) decks fed back in, as this check once did → not what ① was given. ⚠ It bites only while the
-      // take-out re-run on its own output moves a vertex (PTown's deck 0 today): when it stops, this row goes blind and says so
-      if (same) { let R = null; try { R = rerun(sd.map(d => d.ring)).rings } catch (e) { R = null }
-        const sameR = !!R && wr.length === R.length && wr.every((r, k) => r.length === R[k].length && r.every((p, i) => Math.abs(p[0] - R[k][i][0]) < 1e-5 && Math.abs(p[1] - R[k][i][1]) < 1e-5))
+      // take-out re-run on its own output moves a vertex (PTown's deck 0 today): when it stops, this row goes blind and says so. A town
+      // with no street deck has nothing to re-enter (its recorded decks are the mint's), so the mutant does not run there
+      if (same && sd.length) { let R = null; try { R = rerun(sd.map(d => d.ring)).rings } catch (e) { R = null }
+        const sameR = !!R && typeof noded(wr, R, spanEnds) === 'object'
         say(!sameR, `${scene}: mutant, map.json's recorded (extended) decks fed back in → ${sameR ? 'the same rings: the re-entry no longer differs, so this mutant is BLIND (find another)' : 'not ①\'s rings, the stale warning returns: RED as it must be'}`) } }
     }
   }
