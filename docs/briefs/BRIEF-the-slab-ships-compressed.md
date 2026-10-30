@@ -3,7 +3,7 @@
 <!-- BRIEF-STATE
 status: OPEN
 dispatched: no (written 2026-10-30, Boz, at Jacob's "yes, brief it", after Ward's wire measurement)
-evict-when: every slab binary a town's player fetches arrives compressed on the wire (staging and production, both Workers), with
+evict-when: every slab binary a town's player fetches arrives compressed on the wire (the staging R2 custom domain and production-sites), with
 the player's reads unchanged in result; a check that reads the uploaders and Workers catches a .bin uploaded or served uncompressed;
 PTown's cold load re-measured before vs after with scratch/browse-perf/load.mjs; merged on Zob's PASS; Jacob's publish + Promote.
 Then this moves to cartograph/_archive/ dated.
@@ -26,6 +26,8 @@ shore's "accepted" sizes (Huron 5.38 MB, PTown 1.40 MB gzip) were never what wen
 ## 2. What the code does today (Ward's read; confirm by symbol)
 - `scripts/upload-baked-to-r2.mjs` (Publish) and `scripts/promote-player-to-prod.mjs` (Promote) write `.bin` as
   `application/octet-stream`, no content-encoding.
+- ⚠ CORRECTED (Groyne, measured): staging's slab is NOT behind a Worker; the player reads it from the R2 public custom domain
+  (assets.theward.online/staging/). Only production's slab goes through `workers/production-sites`.
 - `workers/production-sites` and `workers/staging-sites`, `src/index.js#serve`, pass R2 `httpMetadata.contentType` through
   (`typeFor()` falls back to octet-stream), never set content-encoding, and serve `accept-ranges` / Range.
 - That the edge compresses by content type (JSON yes, octet-stream no) is INFERRED from the contrast; read Cloudflare's docs and cite.
