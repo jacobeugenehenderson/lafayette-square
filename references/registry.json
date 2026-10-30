@@ -5224,6 +5224,15 @@
       "findings": [
         "r-the-host-verifies-eye-to-eye"
       ]
+    },
+    {
+      "id": "q-who-sees-a-place-cards-qrs",
+      "ask": "Who sees the QR codes on a place card ('Place cards all get QRs')",
+      "neededBy": "Ward's QR inventory, 2026-10-30 (it read 'place cards get QRs' as a new PUBLIC place code)",
+      "status": "answered",
+      "findings": [
+        "r-a-place-cards-qrs-are-for-management"
+      ]
     }
   ],
   "findings": [
@@ -8850,6 +8859,21 @@
       "quote": "\"I think the host does the verifying. Townies self-verify, everybody else has to see the Host eye to eye\" · \"Residents scan from their building Rep; a notion we don't really have but need\" · \"the 'make rep' and 'make guardian' requires host meeting; townies make themselves, and residents/keyholders scan thru their guardians/reps\" · \"All residents must renew annually\" · \"We should add a way for residents to ask for a re-up on their residence via the map, it is a very slight move-in on the privacy issue\" · \"I was thinking more like the rep gets a QR that they allow people to scan\"",
       "canon": "SECURITY.md F-23; docs/briefs/BRIEF-fortify-accounts-and-the-backend.md",
       "notes": "UNBUILT. Closes F-23 by design: the self-serve /home/<id> path is retired."
+    },
+    {
+      "id": "r-a-place-cards-qrs-are-for-management",
+      "question": "q-who-sees-a-place-cards-qrs",
+      "kind": "ruling",
+      "value": {
+        "rule": "every place card carries its QRs, visible ONLY to that place's management (its Guardian and the Keyholders the Guardian allows), never to the public",
+        "includes": "the customer check-in code management prints or shows at the counter, and the rotating admit-a-Keyholder screen (r-the-host-verifies-eye-to-eye)",
+        "supersedes": "Ward's reading of a public place-card QR (/place/<id>/<name> as a PRINTABLE entry): not wanted"
+      },
+      "by": "Jacob",
+      "date": "2026-10-30",
+      "quote": "\"The PLACE card gets QRs which are only visible to management\"",
+      "canon": "theward README §2/§8 (QrStudio, PRINTABLE), when built",
+      "notes": "UNBUILT. Part of the QR work after the ladder."
     }
   ]
 }
