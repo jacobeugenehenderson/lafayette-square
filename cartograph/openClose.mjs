@@ -578,16 +578,41 @@ export function growBy(rings, d, who, stat = {}) { fresh(); if (!(d > 0)) throw 
   const pieces = rings.flatMap((R, g) => offsetPieces(R, d, g, (stat.squares ||= []), lines[g], stat))
   for (const pp of pieces) pp.forEach((q, k) => { if (q.tag && q.tag.ring != null) { const w = pp[(k + 1) % pp.length]; q.tag = { born: [[q.X, q.Y], [w.X, w.Y]] } } })
   return asRings(arrange([rings.map(R => R.map(q => ({ X: q.X, Y: q.Y, tag: null }))), pieces], w => w[0] > 0 || w[1] > 0, `${who} grown`, true)) }
+// a piece (rings {X, Y}: outer, holes) wider than 2h: it survives an erode by h + NODE_BOUND. An integer erode used as a PREDICATE only
+// (as isRoundingSliver): its output is discarded
+export const widerThanTwoH = (pp, h) => { const co = new ClipperOffset(), o = new Paths(); co.AddPaths(toIP(pp), JoinType.jtMiter, EndType.etClosedPolygon); co.Execute(o, -(h + NODE_BOUND)); return o.some(q => Clipper.Area(q) > 0) }
+// ⭐ THE CUT-ONCE SELECTION, ONE HOME (Zob's ruling (c), 2026-10-29): the open/close (openCloseProvenance), and the open or the close
+// alone (openAt, closeAt), each return P with its FEATURES cut, never the morph's own rings: P − the open's taken features, P ∪ the
+// close's filled ones, a feature a piece of the difference that survives an erode by NODE_BOUND (isRoundingSliver), held narrower
+// than 2h (widerThanTwoH) or refused by name. Where nothing changed, every edge is the source's own (PTown's deck 0: the close re-made
+// the cap at a 601 u edge between two reflex corners 1 u off the deck's own vertex, a 0.977 u strip, not a feature; returned raw,
+// the take-out carried that copy into the water)
+// each ring set passed on carries its face walk's tags ON ITS POINTS (arrange reads them there), so k's edges carry their lines
+const tagged = (F) => F.rings.map((r, k2) => r.map((q, i) => ({ X: q.X, Y: q.Y, tag: F.tags[k2]?.[i] ?? null })))
+// ⭐ A DIFFERENCE'S SUBTRACTED SET IS WOUND CLOCKWISE (Huron's 407 lineless edges on k, 2026-10-29): facesOf tags an edge from the
+// inputs running the SAME way, and a subtracted set's edges bound the result running the other way, so they carried no tag.
+// Reversed (each tag moved with its edge, as the erode's pieces are), they run with the boundary; its coverage is winding < 0
+const SUB = revT, out_ = (w) => w < 0
+// the features of A − B (B tagged rings): { all: every piece, kept: those past the rounding }
+// ⛔ THE DEFINITION'S INVARIANT ON EVERY FEATURE (Zob's ruling, 2026-10-29): the open takes, and the close fills, only where no disk of
+// radius h fits, so every taken and every filled feature erodes to nothing at h + NODE_BOUND (past the lattice's rounding), or the
+// call refuses by name (planted wallShort: a 120 m² hole the close filled, with no refusal)
+function featuresOf(A, B, kind, h, what) {
+  const all = pieces(tagged(arrange([A, SUB(B)], w => w[0] > 0 && !out_(w[1]), `${what} ${kind}`, false, 0))), kept = all.filter(pp => !isRoundingSliver(toIP(pp)))
+  for (const pp of kept) if (widerThanTwoH(pp, h)) { const o = pp[0]
+    throw new Error(`[${what}] ⛔ the open/close: a ${kind} feature at (${(o[0].X / SCALE).toFixed(3)}, ${(o[0].Y / SCALE).toFixed(3)}) (${(m2(pp)).toFixed(2)} m²) is wider than a cell (it survives an erode by half a cell), and the definition ${kind === 'taken' ? 'takes' : 'fills'} nothing a disk of radius h fits in. Cause not established. Refusing.`) }
+  return { all, kept } }
+// k = P − tf ∪ ff, one arrangement
+const cutWith = (Pt, tf, ff, what) => arrange([Pt, SUB(tf.flat()), ff.flat()], w => (w[0] > 0 && !out_(w[1])) || w[2] > 0, `${what} cut`, false, 0)
 // ⭐ THE OPEN AND THE CLOSE ALONE, at h = step/2, for a caller whose operation is one of them (structures.mjs#waterWithoutDecks: the
 // water beside a deck opened, the deck and its slivers closed), on TAGGED rings: the morph reads each edge's birth line
 const unionKeep = (rings, what) => asRings(arrange([rings], w => w[0] !== 0, `${what} union`, false, 0))
 export function openAt(rings, stepM, what, stat = {}) { fresh(); const Pt = unionKeep(rings, what); if (!Pt.length) return []
-  return asRings(arrange([Pt, morph(Pt, -(stepM / 2) * SCALE, `${what} open`, stat, Pt.map(r => r.map(q => q.tag)))], w => w[0] > 0 && w[1] > 0, `${what} ∩P`, false, 0)) }
+  const h = (stepM / 2) * SCALE, open = tagged(arrange([Pt, morph(Pt, -h, `${what} open`, stat, Pt.map(r => r.map(q => q.tag)))], w => w[0] > 0 && w[1] > 0, `${what} ∩P`, false, 0))
+  return asRings(cutWith(Pt, featuresOf(Pt, open, 'taken', h, what).kept, [], what)) }
 export function closeAt(rings, stepM, what, stat = {}) { fresh(); const Pt = unionKeep(rings, what); if (!Pt.length) return []
-  return asRings(arrange([Pt, morph(Pt, (stepM / 2) * SCALE, `${what} close`, stat, Pt.map(r => r.map(q => q.tag)))], w => w[0] > 0 || w[1] > 0, `${what} closed`, false, 0)) }
-// a piece (rings {X, Y}: outer, holes) wider than 2h: it survives an erode by h + NODE_BOUND. An integer erode used as a PREDICATE only
-// (as isRoundingSliver): its output is discarded
-export const widerThanTwoH = (pp, h) => { const co = new ClipperOffset(), o = new Paths(); co.AddPaths(toIP(pp), JoinType.jtMiter, EndType.etClosedPolygon); co.Execute(o, -(h + NODE_BOUND)); return o.some(q => Clipper.Area(q) > 0) }
+  const h = (stepM / 2) * SCALE, C = arrange([Pt, morph(Pt, h, `${what} close`, stat, Pt.map(r => r.map(q => q.tag)))], w => w[0] > 0 || w[1] > 0, `${what} closed`, false, 0)
+  return asRings(cutWith(Pt, [], featuresOf(tagged(C), Pt, 'filled', h, what).kept, what)) }
 export function openCloseCutOnce(paths, stepM, what) {
   fresh()
   const h = (stepM / 2) * SCALE, stat = { own: 0, cutJoin: 0, squared: 0, newLines: 0 }
@@ -605,23 +630,11 @@ export function openCloseCutOnce(paths, stepM, what) {
     stat.transitions = (stat.transitions || 0) + 1
     return tg.find(l => key(l) === key(prev)) || tg.find(l => key(l) === key(next)) || tg[0] }))
   const C = morph(open, h, `${what} close`, stat, openLines)
-  // each ring set passed on carries its face walk's tags ON ITS POINTS (arrange reads them there), so k's edges carry their lines
-  const tagged = (F) => F.rings.map((r, k2) => r.map((q, i) => ({ X: q.X, Y: q.Y, tag: F.tags[k2]?.[i] ?? null })))
   const openT = tagged(OPEN)
-  // ⭐ A DIFFERENCE'S SUBTRACTED SET IS WOUND CLOCKWISE (Huron's 407 lineless edges on k, 2026-10-29): facesOf tags an edge from the
-  // inputs running the SAME way, and a subtracted set's edges bound the result running the other way, so they carried no tag.
-  // Reversed (each tag moved with its edge, as the erode's pieces are), they run with the boundary; its coverage is winding < 0
-  const SUB = revT, out_ = (w) => w < 0
-  const taken = pieces(tagged(arrange([Pt, SUB(openT)], w => w[0] > 0 && !out_(w[1]), `${what} taken`, false, 0)))
+  const TF = featuresOf(Pt, openT, 'taken', h, what), taken = TF.all, tf = TF.kept
   const closedK = tagged(arrange([openT, C], w => w[0] > 0 || w[1] > 0, `${what} closedK`, false, 0))
-  const filled = pieces(tagged(arrange([closedK, SUB(openT)], w => w[0] > 0 && !out_(w[1]), `${what} filled`, false, 0)))
-  const tf = taken.filter(pp => !isRoundingSliver(toIP(pp))), ff = filled.filter(pp => !isRoundingSliver(toIP(pp)))
-  // ⛔ THE DEFINITION'S INVARIANT ON EVERY FEATURE (Zob's ruling, 2026-10-29): the open takes, and the close fills, only where no disk of
-  // radius h fits, so every taken and every filled feature erodes to nothing at h + NODE_BOUND (past the lattice's rounding), or the
-  // call refuses by name (planted wallShort: a 120 m² hole the close filled, with no refusal)
-  for (const [kind, fs] of [['taken', tf], ['filled', ff]]) for (const pp of fs) if (widerThanTwoH(pp, h)) { const o = pp[0]
-    throw new Error(`[${what}] ⛔ the open/close: a ${kind} feature at (${(o[0].X / SCALE).toFixed(3)}, ${(o[0].Y / SCALE).toFixed(3)}) (${(m2(pp)).toFixed(2)} m²) is wider than a cell (it survives an erode by half a cell), and the definition ${kind === 'taken' ? 'takes' : 'fills'} nothing a disk of radius h fits in. Cause not established. Refusing.`) }
-  const K = arrange([Pt, SUB(tf.flat()), ff.flat()], w => (w[0] > 0 && !out_(w[1])) || w[2] > 0, `${what} cut`, false, 0), k = K.rings
+  const FF = featuresOf(closedK, openT, 'filled', h, what), filled = FF.all, ff = FF.kept
+  const K = cutWith(Pt, tf, ff, what), k = K.rings
   // ⭐ THE TOPOLOGY RECORD ON k (Jacob's ruling (a), 2026-10-29): the open/close follows the DEFINITION where it changes topology, and
   // EVERY change is NAMED: a hole of P filled, a hole opened to the outside, holes merged into one, a part split, parts joined. Each is
   // made by a taken or filled feature, and every feature is held narrower than 2h (widerThanTwoH, above): a change the definition
