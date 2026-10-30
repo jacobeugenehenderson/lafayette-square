@@ -43,7 +43,9 @@ export default {
 
   profile: {
     population: null, buildingCount: null, founded: null, parkAcres: null,
-    landmarkName: null, historicDistrictName: null, tagline: null, about: null,
+    landmarkName: null, historicDistrictName: null,
+    tagline: "Discover Provincetown, Massachusetts, a vibrant seaside town at the tip of Cape Cod, celebrated for its art, history, LGBTQ+ culture, and distinctive coastal character.",
+    about: null,
   },
 
   modules: {
