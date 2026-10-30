@@ -6,7 +6,7 @@
  * once (safe: the content names do not change). ▶ node checks/claims-the-slab-ships-compressed.mjs
  */
 import { readFileSync, writeFileSync, mkdtempSync } from 'node:fs'
-import { join, basename } from 'node:path'
+import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { createHash } from 'node:crypto'
 import { brotliCompress, brotliCompressSync, constants } from 'node:zlib'
@@ -36,9 +36,12 @@ export function wireOf(abs, path) {
     _wire.set(k, (async () => {
       const raw = readFileSync(abs)
       if (!enc) return { abs, bytes: raw.length, md5: md5(raw), encoding: null }
-      const body = await encodeBytes(raw)
+      // ⛔ Named by the RAW content, before any await (Zob, 2026-10-30): a name taken after the encode raced — two
+      // same-basename files (every species' trees/<sp>/skeleton-1-lod0.glb) landed on one path, and one tree's
+      // brotli went up under another's key. Equal content shares one file; different content never can.
       _dir ??= mkdtempSync(join(tmpdir(), 'slab-wire-'))
-      const out = join(_dir, `${_wire.size}-${basename(abs)}.br`)
+      const out = join(_dir, `${createHash('sha256').update(raw).digest('hex')}.${enc}`)
+      const body = await encodeBytes(raw)
       writeFileSync(out, body)
       return { abs: out, bytes: body.length, md5: md5(body), encoding: enc }
     })())

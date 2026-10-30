@@ -9,6 +9,8 @@
  *   ① THE RULE (src/lib/slabWire.js): .bin and .glb are stored br; a type the edge compresses (json) or a packed
  *     format (ktx2, png, jpg) is stored raw; an unknown extension is octet-stream, stored br. wireHeaders says
  *     nothing about encoding for an object stored without one.
+ *   ②a THE STORED BYTES (slab-wire.mjs#wireOf): three same-basename files encoded at once each point at their own
+ *     brotli (a temp name taken after the encode once put one tree's bytes under another's key).
  *   ② THE UPLOADER (upload-baked-to-r2.mjs#put, #probe), with `npx` stubbed on PATH and a fake edge on localhost:
  *     put writes a .bin's BROTLI bytes (equal to slab-wire.mjs#encodeBytes) with --content-encoding br and its type,
  *     and a .json raw with no encoding; probe, against an edge that answers as the one-object trial measured (br
@@ -25,7 +27,7 @@
  *
  * Usage: node checks/claims-the-slab-ships-compressed.mjs [--mutants]
  */
-import { mkdtempSync, writeFileSync, readFileSync, rmSync, chmodSync, existsSync } from 'node:fs'
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, chmodSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, dirname, basename } from 'node:path'
 import { createServer } from 'node:http'
@@ -35,6 +37,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
 const P = {
   wire: join(ROOT, 'src/lib/slabWire.js'),
+  slabWireNode: join(ROOT, 'scripts/slab-wire.mjs'),
   upload: join(ROOT, 'scripts/upload-baked-to-r2.mjs'),
   prod: join(ROOT, 'workers/production-sites/src/index.js'),
   staging: join(ROOT, 'workers/staging-sites/src/index.js'),
@@ -56,6 +59,17 @@ async function legRule(paths, fails) {
   const h = W.wireHeaders({ key: 'x.bin', httpMetadata: {} })
   if ('content-encoding' in h) fails.push('① wireHeaders names an encoding for an object stored without one')
   if (W.wireHeaders({ key: 'x.bin', httpMetadata: { contentEncoding: 'br' } })['content-encoding'] !== 'br') fails.push('① wireHeaders drops a stored br')
+}
+
+// ── ②a the stored bytes: two same-basename files through wireOf at once each get their OWN bytes (Zob's race) ───
+async function legWireRace(paths, fails) {
+  const tmp = mkdtempSync(join(tmpdir(), 'slab-wire-race-'))
+  try {
+    const { wireOf } = await load(paths.slabWireNode)
+    const abs = ['a', 'b', 'c'].map((d) => { const p = join(tmp, d, 'skeleton-1-lod0.glb'); mkdirSync(dirname(p), { recursive: true }); writeFileSync(p, randomBytes(4096 + d.charCodeAt(0))); return p })
+    const ws = await Promise.all(abs.map((p, i) => wireOf(p, `baked/fx/trees/${'abc'[i]}/skeleton-1-lod0.glb`)))
+    ws.forEach((w, i) => { if (md5(readFileSync(w.abs)) !== w.md5) fails.push(`②a wireOf("${abs[i]}") points at another file's bytes (${w.abs})`) })
+  } finally { rmSync(tmp, { recursive: true, force: true }) }
 }
 
 // ── ② the uploader ──────────────────────────────────────────────────────────────────────────────────────────
@@ -153,13 +167,14 @@ function legSource(paths, fails) {
 
 async function run(paths) {
   const fails = []
-  await legRule(paths, fails); await legUpload(paths, fails); await legWorkers(paths, fails); legSource(paths, fails)
+  await legRule(paths, fails); await legWireRace(paths, fails); await legUpload(paths, fails); await legWorkers(paths, fails); legSource(paths, fails)
   return fails
 }
 
 // ── mutants: each a copy beside its original (so its relative imports resolve), the paths pointed at it ────────
 const MUTANTS = [
   ['.bin stored raw (the octet-stream path restored)', 'wire', "bin: ['application/octet-stream', BR]", "bin: ['application/octet-stream', PACKED]"],
+  ['the stored file named after the encode (the race)', 'slabWireNode', "const out = join(_dir, `${createHash('sha256').update(raw).digest('hex')}.${enc}`)\n      const body = await encodeBytes(raw)", "const body = await encodeBytes(raw)\n      const out = join(_dir, `${_wire.size}-x.${enc}`)"],
   ['put drops --content-encoding', 'upload', "...(wire.encoding ? ['--content-encoding', wire.encoding] : []),", ''],
   ['put writes the raw file', 'upload', "'--file', wire.abs,", "'--file', abs,"],
   ['probe reads back with identity', 'upload', "headers: { 'accept-encoding': readBackEncoding(f.key) }", "headers: { 'accept-encoding': 'identity' }"],
