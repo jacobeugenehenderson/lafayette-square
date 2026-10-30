@@ -5,7 +5,8 @@
 // changed copy of the source (a data: module), so a test that cannot see its mutant is RED.
 //   (1) the witnesses: one identity on one building · on one address · on one parcel (a researched add on the parcel's other
 //       footprint) is one place, a join conflict; one identity at two addresses on two parcels is two places, no conflict.
-//       MUTANTS: each witness dropped in turn → its planted pair passes, RED
+//       An address is a witness only with a house number: one name at "Commercial Street", parcels both "REAR", is no conflict.
+//       MUTANTS: each witness dropped in turn → its planted pair passes, RED · the house guard dropped → RED
 //   (2) the operator decides: places.merge absorbs (gone from the listings, recorded absorbed → kept); places.apart answers a pair;
 //       an entry reaching no listing, or one listing by source key and another by id, REFUSES.
 //       MUTANTS: merge ignored · apart ignored → RED
@@ -59,6 +60,14 @@ const WANT = ['osm-1 · osm-n2', 'osm-n3 · town-lst-0421', 'osm-n4 · osm-n5']
     ['parcel', "out.push('parcel')", 'void 0', 'osm-n3 · town-lst-0421']]) {
     const M = await placesWith(from, to), g = M ? pairsOf(M.onePlacePerIdentity(L(), { parcelOf })) : null
     row(g !== null && !g.includes(lost), `(1) mutant: the ${w} witness dropped → ${g === null ? 'NOT MUTATED (the line moved)' : g.includes(lost) ? `${lost} still a conflict — the row cannot see it` : `${lost} passes, RED as it must be`}`) } }
+
+// (1) a street with no house is no witness: one name at "Commercial Street" on two buildings, two parcels both recorded "REAR"
+const streetOnly = () => [{ _key: 'osm-s1', name: 'Chain', building_id: 'b10', address: 'Commercial Street' }, { _key: 'osm-s2', name: 'Chain', building_id: 'b11', address: 'Commercial Street' }]
+const rearOf = new Map([['b10', { address: 'REAR' }], ['b11', { address: 'REAR' }]])
+{ const n = P.onePlacePerIdentity(streetOnly(), { parcelOf: rearOf }).conflicts.length
+  row(n === 0, `(1) one name at a street with no house ("Commercial Street"), on two parcels recorded "REAR": ${n} conflict(s) (0)`)
+  const M = await placesWith('const housed = (addr) => (addressParts(addr).house ? addressKey(addr) : null)', 'const housed = (addr) => addressKey(addr)'), m = M && M.onePlacePerIdentity(streetOnly(), { parcelOf: rearOf }).conflicts.length
+  row(!!m, `(1) mutant: the house guard dropped → ${!M ? 'NOT MUTATED (the line moved)' : m ? `${m} conflict(s) from a street alone, RED as it must be` : 'no conflict — the row cannot see it'}`) }
 
 // (2) the operator decides
 const decided = { merge: { 'town-lst-0421': ['osm-n3'], 'osm-1': ['osm-n2'] }, apart: [['osm-n4', 'osm-n5']] }

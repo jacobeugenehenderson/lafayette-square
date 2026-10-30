@@ -28,15 +28,17 @@ export const normName = s => (s || '').toLowerCase().replace(/['’.]/g, '').rep
 
 const label = (l) => `"${l.name}" ${l.id || l._key}${l.address ? ` at ${l.address}` : ''} on ${l.building_id}`
 
+// an address is a witness only with a HOUSE: "Commercial Street", "REAR" or "Lot 7" names a street or a note, never one place
+const housed = (addr) => (addressParts(addr).house ? addressKey(addr) : null)
 // The witnesses two same-identity listings share, by name. `parcelOf` maps a building id to its parcel (any object with an
 // identity; compared by its address key, else by itself); a town with no parcels passes an empty Map
 export function witnessesOf(a, b, parcelOf) {
   const out = []
   if (a.building_id && a.building_id === b.building_id) out.push('building')
-  const ka = addressKey(a.address), kb = addressKey(b.address)
+  const ka = housed(a.address), kb = housed(b.address)
   if (ka && ka === kb) out.push('address')
-  const pa = parcelOf.get(a.building_id), pb = parcelOf.get(b.building_id)
-  if (pa && pb && (pa === pb || (pa.address && addressKey(pa.address) === addressKey(pb.address)))) out.push('parcel')
+  const pa = parcelOf.get(a.building_id), pb = parcelOf.get(b.building_id), qa = pa && housed(pa.address)
+  if (pa && pb && (pa === pb || (qa && qa === housed(pb.address)))) out.push('parcel')
   return out
 }
 
