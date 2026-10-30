@@ -617,11 +617,12 @@ Script Property, with the same value as Operations' Wrangler secret), checked be
 one-minute window and a single-use nonce. The code is 32 hex, lasts five minutes, works once, and is claimed by the
 Ward's existing `/link/<code>`. The same page lists the handle's devices by opaque id and revokes one through
 `walkKeyAuthority`, which voids its Guardian, Residents and Handles rows and its thread access in every town, keeps
-what it wrote, and refuses whole if a tab has a key column it does not know. Every act is logged (`Recoveries`: who,
+what it wrote, and refuses whole if a tab has a key column it does not know. ⛔ It never revokes a handle's only
+device (the handle would be free for anyone to take, with the name on everything its owner wrote): mint, claim, then revoke. Every act is logged (`Recoveries`: who,
 when, the handle, the code's digest, the device's id). Every link claim now runs under the script lock.
 ⚠️ What the code grants: like any link, it joins the device to the handle, so the device inherits every role the
 handle holds through `getLinkedHashes`. The control is who may mint (staff, signed), not what a claim gives.
-In the patch after the hotfix, same deploy: theward `wip/backend-hotfix` (b7af90b),
+In the patch after the hotfix, same deploy: theward `wip/backend-hotfix` (f14b265),
 `backend/apps-script-recovery-2026-10-30.DRAFT.patch`.
 ▶ theward `OPS=<theward-operations> node backend/recovery-harness.mjs <Code.js> [--mutants]` · theward-operations
 `npm test` and `node scripts/test-recovery-mutants.mjs`.
