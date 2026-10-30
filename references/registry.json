@@ -5215,6 +5215,15 @@
       "findings": [
         "r-floating-docks-are-water-now-and-ride-the-tide-later"
       ]
+    },
+    {
+      "id": "q-who-verifies-a-resident",
+      "ask": "Who verifies a resident (F-23: any device can make itself a verified resident; the Ward prints /home/<id> with no per-building secret)",
+      "neededBy": "BRIEF-fortify-accounts-and-the-backend, 2026-10-30",
+      "status": "answered",
+      "findings": [
+        "r-the-host-verifies-eye-to-eye"
+      ]
     }
   ],
   "findings": [
@@ -8822,6 +8831,21 @@
       "quote": "\"water now proper dock object later; floating dock rides the tide, yes\"",
       "canon": "cartograph/BACKLOG.md",
       "notes": "(A1) built: plumb/a-dock-rides-no-street 327c78b8, approved by Jacob's eye on scratch/docks-frames/. The dock object and the tide ride are UNBUILT."
+    },
+    {
+      "id": "r-the-host-verifies-eye-to-eye",
+      "question": "q-who-verifies-a-resident",
+      "kind": "ruling",
+      "value": {
+        "rule": "Townies self-verify; every other standing (a resident, and anything above a Townie) is verified by the Host, in person, eye to eye",
+        "host": "read as the town's Host (the person who runs that town's Ward, Operations' Host role); confirm with Jacob if the build needs a narrower reading",
+        "consequence": "no code or link can make a device a verified resident by itself; the Host's in-person act is the only path, and the backend refuses any other"
+      },
+      "by": "Jacob",
+      "date": "2026-10-30",
+      "quote": "\"I think the host does the verifying. Townies self-verify, everybody else has to see the Host eye to eye\"",
+      "canon": "SECURITY.md F-23; docs/briefs/BRIEF-fortify-accounts-and-the-backend.md",
+      "notes": "UNBUILT. Closes F-23 by design: the self-serve /home/<id> path is retired."
     }
   ]
 }
