@@ -7,6 +7,8 @@ import fs from 'fs'
 import { join } from 'path'
 import { coastSignBreaks } from '../src/lib/coastSign.js'   // pure, no import of its own: the sign rule as ONE predicate
 import { isEmbankment } from '../src/cartograph/streetClass.js'   // the embankment tag's one home
+import { onLineTiered } from '../src/lib/latticeFaces.js'          // the tiered bound's one home (a fold, below)
+import { CLIP_SCALE } from '../src/lib/lattice.js'
 export { coastSignBreaks }
 
 export const COAST_FILE = 'coast.json'
@@ -177,7 +179,11 @@ export function ringViolations(ring, acuteAt = null, clear = 0) {
     const d1 = cr(q1, q2, p1), d2 = cr(q1, q2, p2), d3 = cr(p1, p2, q1), d4 = cr(p1, p2, q2)
     if (adjacent) {                                          // shared vertex: only a fold (collinear, turning back) is a meeting
       const [v, u, w] = b === a + 1 ? [p2, p1, q2] : [p1, p2, q1]
-      if (cr(v, u, w) === 0 && (u[0] - v[0]) * (w[0] - v[0]) + (u[1] - v[1]) * (w[1] - v[1]) > 0) out.push({ kind: 'fold', a, b, at: v })
+      // ⭐ A FOLD AT THE LATTICE'S RESOLUTION (Zob's ruling, 2026-10-29; PTown's take-out left a 294 mm out-and-back the exact test let
+      // through, its return 1 mm off the line): the two edges REVERSE (they leave v the same way) and the far end w lies within the
+      // rounding of u→v's line (latticeFaces.js#onLineTiered, in lattice units). A zero-width spike, coming all the way back or part way
+      const mm = (pt) => pt.map(c => c * CLIP_SCALE)
+      if ((u[0] - v[0]) * (w[0] - v[0]) + (u[1] - v[1]) * (w[1] - v[1]) > 0 && onLineTiered([mm(u), mm(v)], mm(w))) out.push({ kind: 'fold', a, b, at: v, what: 'a fold (a zero-width spike)' })
       continue
     }
     if (((d1 > 0 && d2 < 0) || (d1 < 0 && d2 > 0)) && ((d3 > 0 && d4 < 0) || (d3 < 0 && d4 > 0))) {
