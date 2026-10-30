@@ -1,0 +1,224 @@
+{
+ "signedAt": "2026-10-30T03:52:47.486Z",
+ "coastSha": null,
+ "reads": {
+  "cartograph/authoredKeys.mjs": "x1:7eca595b5e75c2fa59b708884fa43557e8bbdc1f",
+  "cartograph/bake-coast.mjs": "x1:1c159d7451ad211d911c9c829bd52abae49276b6",
+  "cartograph/boundaryRecords.mjs": "x1:b09bff58299b5657048fbede70f2226753f2902e",
+  "cartograph/building-address.mjs": "x1:efb58c5086730e3bcf7b217ec56b08289b7777ae",
+  "cartograph/chainJoins.mjs": "x1:1cc75c0e2ed9044d5f82bf27c59a15ebb34676b1",
+  "cartograph/classify.js": "x1:7006556219803ee781824bf3e67fda10d0975efe",
+  "cartograph/coastFile.mjs": "x1:e820c67d27833ad4ca7f91609dddef6f4a3c6bdf",
+  "cartograph/coastline.mjs": "x1:f34e8bd51ae3249cc977ca5333306b0430ef69fb",
+  "cartograph/config.js": "x1:52b5934f680dab4c1408356eb34fedd4d7454298",
+  "cartograph/curb-cut-evidence.mjs": "x1:9a062157ce8c3929b335a4d395a62dac99d7f5d7",
+  "cartograph/curb-cut-norm.mjs": "x1:c87400aa4dbea284d235d7c30195eea478f26b87",
+  "cartograph/data/huron/clean/overlay.json": "fce2b9d9297c55073a360c34c5af92f53e145bfe",
+  "cartograph/data/huron/clean/skeleton.json": "c5bc40338bed5a7797e138f0f7f6d1252edb3e64",
+  "cartograph/data/huron/raw/water-datums.json": "029c151a6dbd286b7464b5282c5f8353d6eaf440",
+  "cartograph/derive.js": "x1:d7dd4b1a5a99a9380535950cf1c2107ebeacafae",
+  "cartograph/elevationSources.mjs": "x1:c36e5300f48567a4a629cb67a47f9ea8ae9a2c7b",
+  "cartograph/fetch-lidar-flights.mjs": "x1:2a72593040785309b5f2e7349bcaaf15c58210f4",
+  "cartograph/footprint-well.mjs": "x1:ace685f48187820a07686e5c73a981f6a161a1f7",
+  "cartograph/geography.mjs": "x1:841e7cdf9b99a5a6e6a51b8c9ff53c2ea0f12792",
+  "cartograph/io.js": "x1:dd982ffdb2efe2a7d5e13e3c346df5211052251f",
+  "cartograph/lookDesign.mjs": "x1:6a5bbfb4d1ca5d5000d1ac9a50fb87adec6dcf45",
+  "cartograph/marchingSquares.mjs": "x1:5b6c98af9f8270617f59618ebafeb1da8bf51e53",
+  "cartograph/mintInputs.mjs": "x1:9a0c382d124b361d0a447246a9a07226c4bc5279",
+  "cartograph/node.js": "x1:46f8fba5a027addbd4acf4278a74b2a9aee6e751",
+  "cartograph/openClose.mjs": "x1:a1dbc6bb3d1bdc44e7e03c462059c4e8d629a327",
+  "cartograph/openCloseJudge.mjs": "x1:6a90fdc7e64cb8b288c20d7fb2ff605c6a303c2f",
+  "cartograph/osm-vocabulary.mjs": "x1:961aec079f5e212460179add45790e87b8e98d84",
+  "cartograph/parcel-landuse.mjs": "x1:bf5b06ac83370bbef51e197cb7be4a8007784869",
+  "cartograph/parcelParts.js": "x1:263b3f8a7702d5ea3b0bc8fd62fba1c600f75fd0",
+  "cartograph/permanent-id.mjs": "x1:26d2c7eb3ab16980dad0adf446505edbb6fe6695",
+  "cartograph/polygonize.js": "x1:e1b4d05150ce23fc068ce89c90928a648b57ce92",
+  "cartograph/pour-code.mjs": "x1:f1d2034f4853991d1ce2b755b5534262e2ea3d0f",
+  "cartograph/scene.js": "x1:a1114d326ca6bbff02ff15f3279a16dfa17739a4",
+  "cartograph/snap.js": "x1:37632c0916bd2e4f7e544d6931543058f67c78b7",
+  "cartograph/sources.js": "x1:2d39eea05e3986b2137fdceb1b6c66e8e185f416",
+  "cartograph/speedContext.mjs": "x1:f3809e0f39ee8520f0f5f2f98327b4017f019271",
+  "cartograph/standards.js": "x1:48513aa06ed53ccc14df12656486e173c3a6c91f",
+  "cartograph/states/index.mjs": "x1:706d6503f4cc85c1a9efdbeb1d9d6465ed52482a",
+  "cartograph/states/ma.mjs": "x1:c70bfdbd955bf0be3726c33637ccb13ac6f9ae2b",
+  "cartograph/states/mo.mjs": "x1:6ca0fdea667ed30de7330ef181851b6d06e1d1b2",
+  "cartograph/states/ny.mjs": "x1:bc6b0066bc1cfc2724fbbda6c75b04f977df933f",
+  "cartograph/states/oh.mjs": "x1:79131a3957117ff7253381f98d976f9fe720b632",
+  "cartograph/structures.mjs": "x1:edcbe12319dbc275331a00684dedb466a236d86c",
+  "cartograph/terrainReads.mjs": "x1:763aa7fdb8c780024881c3c87003f7afa1ff5d4b",
+  "cartograph/tide.mjs": "x1:70b3ab1e0c37dc3439c90de25edd536416dc2891",
+  "cartograph/waterDatums.mjs": "x1:b1059b347bbc7c8f7d52afd07969ef3bb898b14f",
+  "cartograph/waterLevel.mjs": "x1:3940548b0ff13360457dce7e03d64b880b20aa94",
+  "src/cartograph/streetClass.js": "x1:16d85cb98abd41bbd98c5dbaf11235ae31393855",
+  "src/cartograph/streetMarkings.js": "x1:06586f7c820054baecdc59560a121109e6ff45cd",
+  "src/cartograph/streetProfiles.js": "x1:b00ebb762309da8625811e2c2b2250d6c97e0ef6",
+  "src/lib/absorbInk.js": "x1:a47ceec4ce62647bf75451daa51a0ea8e0c349ff",
+  "src/lib/buildBlockGeometryV2.js": "x1:3c76c8015ecab98990620e11a98a821e0a30cd8c",
+  "src/lib/chainSegmentation.js": "x1:9343eee9b47de089f8c0348df811ada635cbd9e2",
+  "src/lib/coastSign.js": "x1:0a13d97abd2d0e51c228d9149cd801ff95a01fd2",
+  "src/lib/feCustomKey.js": "x1:8133b01fe34f819d7deec20e919456add817a354",
+  "src/lib/lattice.js": "x1:6494a0296b9ffdb36102e2f415e258287c033c91",
+  "src/lib/latticeFaces.js": "x1:7f8a828fd9d2d21a6807e8c790087e280e1f8782",
+  "src/lib/latticeNode.js": "x1:b4e74b7ba34fdaa043dbe004e31eea93f46d73dd",
+  "src/lib/smoothCenterline.js": "x1:579dc0c34b6515cb004fe70818af1fd8ab83149b",
+  "src/lib/tileGround.js": "x1:07c10a131c7f852952b899c0d2719d71f15fbf2b",
+  "src/lib/townPlace.js": "x1:a865c5c060341b68f6032697134e7bad0ba397cf",
+  "value:terrainValueReads": "c557a4f0ae35da799d3416bfa84e271d9d21dfe5"
+ },
+ "water": {
+  "n": 16,
+  "m2": 0.0226,
+  "sites": [
+   {
+    "key": "a43e4b27128a5a76",
+    "side": "definition only",
+    "m2": 0.00959,
+    "at": [
+     663.39,
+     277.196
+    ]
+   },
+   {
+    "key": "d1860d79727b226f",
+    "side": "definition only",
+    "m2": 0.00443,
+    "at": [
+     233.625,
+     4248.522
+    ]
+   },
+   {
+    "key": "2b1df8af9eeff68d",
+    "side": "definition only",
+    "m2": 0.00192,
+    "at": [
+     -2076.258,
+     -2036.666
+    ]
+   },
+   {
+    "key": "7609c770f73ff459",
+    "side": "definition only",
+    "m2": 0.00168,
+    "at": [
+     -3224.084,
+     -2804.587
+    ]
+   },
+   {
+    "key": "fc4110e0c73d8b77",
+    "side": "definition only",
+    "m2": 0.00081,
+    "at": [
+     467.529,
+     2014.438
+    ]
+   },
+   {
+    "key": "8a3bf0eb373b71cb",
+    "side": "definition only",
+    "m2": 0.00076,
+    "at": [
+     1443.72,
+     2410.79
+    ]
+   },
+   {
+    "key": "2f7dc0bc4f77e20d",
+    "side": "candidate only",
+    "m2": 0.00054,
+    "at": [
+     -2087.96,
+     -2042.573
+    ]
+   },
+   {
+    "key": "124ad3fc773f4ec1",
+    "side": "candidate only",
+    "m2": 0.00052,
+    "at": [
+     589.622,
+     1831.169
+    ]
+   },
+   {
+    "key": "2fc4e9e5929d4229",
+    "side": "candidate only",
+    "m2": 0.00049,
+    "at": [
+     -3762.868,
+     -2741.566
+    ]
+   },
+   {
+    "key": "571cbb08134975c3",
+    "side": "definition only",
+    "m2": 0.00042,
+    "at": [
+     -2000.337,
+     -1981.805
+    ]
+   },
+   {
+    "key": "4cfa823153081eb1",
+    "side": "definition only",
+    "m2": 0.00041,
+    "at": [
+     568.293,
+     668.949
+    ]
+   },
+   {
+    "key": "9917c66124738ed6",
+    "side": "candidate only",
+    "m2": 0.00039,
+    "at": [
+     -731.858,
+     2156.99
+    ]
+   },
+   {
+    "key": "b3ad87d493ac7976",
+    "side": "definition only",
+    "m2": 0.00022,
+    "at": [
+     1084.771,
+     2291.805
+    ]
+   },
+   {
+    "key": "2a33783c8c7e7a32",
+    "side": "definition only",
+    "m2": 0.00021,
+    "at": [
+     988.719,
+     -1125.606
+    ]
+   },
+   {
+    "key": "5b7a1850d6476be1",
+    "side": "definition only",
+    "m2": 0.00016,
+    "at": [
+     971.049,
+     1378.669
+    ]
+   },
+   {
+    "key": "cecddecbf6a1770d",
+    "side": "candidate only",
+    "m2": 0.00008,
+    "at": [
+     1081.422,
+     -84.681
+    ]
+   }
+  ]
+ },
+ "decks": {
+  "n": 0,
+  "m2": 0,
+  "sites": []
+ },
+ "signedIn": "Stage"
+}
