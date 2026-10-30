@@ -211,7 +211,7 @@ export function plan({ look, prefix, root = BAKED_ROOT, names } = {}) {
  * back from the bucket and appended to; ⛔ an unreadable index (not a 404) stops the upload,
  * because rewriting it from nothing would forget manifests a visitor may still hold.
  */
-async function writeIndex(f) {
+export async function writeIndex(f) {
   const r = await fetch(PUBLIC_BASE + f.key, { cache: 'no-store' })
   let prior = { town: f.index.town, manifests: [] }
   if (r.ok) prior = await r.json()
