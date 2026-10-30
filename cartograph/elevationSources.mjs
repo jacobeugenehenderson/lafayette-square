@@ -10,7 +10,7 @@
  */
 import fs from 'fs'
 import { join } from 'path'
-import { fromFile, fromUrl } from 'geotiff'
+import { fromFile, fromCustomClient, BaseClient, BaseResponse } from 'geotiff'
 
 // USGS 3DEP no-data sentinel. The 1/3 arc-second product uses a large
 // negative float; treat anything below -1000 m as missing.
@@ -175,17 +175,54 @@ function projectorFor(image, label) {
 }
 
 /** A range request that the host drops mid-read (S3 answers "other side closed" now and then) is asked AGAIN — the
- *  same window, never a substitute. Only network errors retry; anything else throws at once, and the last network
- *  error throws after the final attempt. ⛔ The attempt count is an operational limit, not a geometric value. */
+ *  same window, never a substitute. Only network errors retry; anything else throws at once. ⛔ A read that fails in
+ *  transport REFUSES naming the URL, every attempt and each underlying error (Jacob: "a message explains or goes away").
+ *  ⛔ WHY the client keeps them (Huron's bake, 2026-10-30): with a block cache on, geotiff's BlockedSource awaits each
+ *  block's request under Promise.allSettled, drops the rejection and throws AggregateError('Request failed') whose
+ *  `errors` are the missing BLOCKS, undefined by construction, so the socket error reached nobody and this retry, reading
+ *  no code, threw on the first attempt. ⛔ The attempt count is an operational limit, not a geometric value.
+ *  ▶ node checks/claims-a-failed-read-names-its-cause.mjs */
 const NET_ATTEMPTS = 4
 const NET_CODES = new Set(['UND_ERR_SOCKET', 'ECONNRESET', 'ETIMEDOUT', 'EPIPE', 'UND_ERR_CONNECT_TIMEOUT'])
-async function withNetRetry(label, read) {
+const codeOf = (e) => e?.cause?.code || e?.code
+const isNet = (e) => NET_CODES.has(codeOf(e)) || /fetch failed/i.test(e?.message || '')
+const said = (e) => [e?.name, e?.message, codeOf(e), e?.cause?.message].filter((x, i, a) => x && a.indexOf(x) === i).join(': ')
+/** geotiff's FetchClient (the same request, the same bytes), keeping every transport failure it saw */
+class FetchResponse extends BaseResponse {
+  constructor(r) { super(); this.r = r }
+  get status() { return this.r.status }
+  getHeader(name) { return this.r.headers.get(name) || undefined }
+  async getData() { return this.r.arrayBuffer() }
+}
+class NamedFetchClient extends BaseClient {
+  constructor(url) { super(url); this.failures = [] }
+  async request({ headers, signal } = {}) {
+    let r
+    try { r = await fetch(this.url, { headers, signal }) } catch (e) { this.failures.push({ range: headers?.Range ?? null, error: e }); throw e }
+    if (!r.ok) this.failures.push({ range: headers?.Range ?? null, error: new Error(`HTTP ${r.status}`) })
+    return new FetchResponse(r)
+  }
+}
+async function withNetRetry(label, read, { url = null, client = null } = {}) {
+  const attempts = []
   for (let n = 1; ; n++) {
+    const from = client ? client.failures.length : 0
     try { return await read() } catch (e) {
-      const code = e?.cause?.code || e?.code
-      if (!(NET_CODES.has(code) || /fetch failed/i.test(e?.message || '')) || n >= NET_ATTEMPTS) throw e
-      console.warn(`  ⚠️ ${label}: ${code || e.message} — reading the same window again (attempt ${n + 1} of ${NET_ATTEMPTS})`)
-      await new Promise(r => setTimeout(r, 500 * n))
+      const transport = client ? client.failures.slice(from) : []
+      attempts.push({ e, transport })
+      const net = isNet(e) || transport.some(f => isNet(f.error))
+      if (!net && !transport.length && e?.name !== 'AggregateError') throw e
+      if (net && n < NET_ATTEMPTS) {
+        console.warn(`  ⚠️ ${label}: ${transport.length ? said(transport[transport.length - 1].error) : said(e)} — reading the same window again (attempt ${n + 1} of ${NET_ATTEMPTS})`)
+        await new Promise(r => setTimeout(r, 500 * n)); continue
+      }
+      const lines = attempts.map(({ e, transport }, i) => {
+        const seen = new Map(); for (const f of transport) { const k = `${said(f.error)} (${f.range ?? 'no range'})`; seen.set(k, (seen.get(k) || 0) + 1) }
+        const under = seen.size ? [...seen].map(([k, c]) => `       ${k}${c > 1 ? ` ×${c}` : ''}`).join('\n')
+          : `       no request failed in transport${e?.name === 'AggregateError' ? ` (geotiff reported ${e.errors?.length ?? '?'} block(s) missing): cause not established` : ''}`
+        return `     attempt ${i + 1}: ${said(e)}\n${under}`
+      })
+      throw new Error(`⛔ ${label}: a window read failed ${net ? `on every one of ${n} attempt(s)` : `(not a network error, so not retried)`}${url ? ` at ${url}` : ''}\n${lines.join('\n')}`, { cause: e })
     }
   }
 }
@@ -211,14 +248,15 @@ export async function openRasters(specs, { cacheMB = 0, refetch = null } = {}) {
   for (const spec of specs) {
     const label = spec.ref.split('/').pop()
     const BLOCK = 65536
-    const tiff = spec.kind === 'url'
-      ? await fromUrl(spec.ref, cacheMB > 0 ? { blockSize: BLOCK, cacheSize: Math.ceil(cacheMB * 1048576 / BLOCK) } : {}).catch(e => deadTile(spec.ref, label, e, refetch))
+    const client = spec.kind === 'url' ? new NamedFetchClient(spec.ref) : null
+    const tiff = client
+      ? await fromCustomClient(client, cacheMB > 0 ? { blockSize: BLOCK, cacheSize: Math.ceil(cacheMB * 1048576 / BLOCK) } : {}).catch(e => deadTile(spec.ref, label, e, refetch))
       : await fromFile(spec.ref)
     // ⭐ And the DECODED tiles: a tile shared by overlapping windows is decompressed once (LZW was 90% of the shore
     // median's time). Per image instance, so it covers level 0 — the one image object kept here as `base`.
     if (cacheMB > 0) tiff.cache = true
     const base = await tiff.getImage(0)
-    out.push({ label, ref: spec.ref, tiff, base, proj: projectorFor(base, label), geoKeys: base.getGeoKeys?.() || {} })
+    out.push({ label, ref: spec.ref, tiff, base, client, proj: projectorFor(base, label), geoKeys: base.getGeoKeys?.() || {} })
   }
   return out
 }
@@ -235,7 +273,7 @@ export async function openRasters(specs, { cacheMB = 0, refetch = null } = {}) {
 export async function readWindow(opened, { cornersLL, elevationBandOnly = false, quiet = false }) {
   const PAD = 2
   const sources = []
-  for (const { label, ref, base, proj } of opened) {
+  for (const { label, ref, base, proj, client } of opened) {
     const [ox, oy] = base.getOrigin()
     const [rx, ry] = base.getResolution()
     const image = base, w = base.getWidth(), h = base.getHeight()
@@ -260,7 +298,7 @@ export async function readWindow(opened, { cornersLL, elevationBandOnly = false,
     const py1 = Math.min(h, Math.ceil((sy0 - oy) / ry) + PAD)
     if (px1 <= px0 || py1 <= py0) { if (!quiet) console.log(`    (empty window — skipped)`); continue }
     const winW = px1 - px0, winH = py1 - py0
-    const rasters = await withNetRetry(label, () => image.readRasters(elevationBandOnly ? { window: [px0, py0, px1, py1], samples: [0] } : { window: [px0, py0, px1, py1] }))
+    const rasters = await withNetRetry(label, () => image.readRasters(elevationBandOnly ? { window: [px0, py0, px1, py1], samples: [0] } : { window: [px0, py0, px1, py1] }), { url: ref, client })
     const band = Array.isArray(rasters) ? rasters[0] : rasters
     if (band.length !== winW * winH) throw new Error(`${label}: window read ${band.length}, expected ${winW * winH}`)
     if (!quiet) console.log(`    window px=[${px0},${px1}) py=[${py0},${py1}) = ${winW}×${winH}`)
