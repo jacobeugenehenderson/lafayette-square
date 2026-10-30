@@ -93,6 +93,12 @@ after the port merges. The full refusal census on the merged port, then one clas
 empty; 42 near-only chunks named KNOWN in claims-the-armoured-shore-is-never-empty) and Jacob's seam ruling ("call them from the same
 place") in one rewrite of `drapeGlobals`: one nested lattice sized from what it builds, `farRow` the one producer of the near/far edge.
 Groyne, a follow-up off groyne/far-shore.
+**⛔ URGENT, DISPATCHED to Gimbal: `docs/briefs/BRIEF-the-overhead-camera-resolves-its-ground.md`** (Jacob, 2026-10-30, live PTown on
+his phone: the seabed shows through the harbour in Browse and Society; desktop clean). Phone linear depth with near 1 m at ~6.5 km.
+**⛔ A PROMOTE CANNOT BE ROLLED BACK** (Ward, measured 2026-10-30): production's slab index `baked/<look>/manifest.json` is ONE unversioned
+key, and each Promote overwrites it. The old pour's hashed files survive, but nothing names them, and no backup is taken by default
+(scratch/promote-rollback/ holds HPDM only). Owed: a Promote keeps the previous manifest (versioned or saved) and a scripted rollback,
+with a check. Same family as the promote guard.
 **▶ BRIEFED: `docs/briefs/BRIEF-the-slab-ships-compressed.md`** (Jacob, 2026-10-30): every slab .bin is served UNCOMPRESSED (Ward, measured:
 PTown's six bins 85.86 MB raw vs 30.03 MB brotli; 120.9 MB first load). The largest load lever left.
 - Small: Preview's DeploymentPanel shows "could not read the deployment: Unexpected end of JSON input" when :3333 is restarting; say the
