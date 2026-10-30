@@ -44,8 +44,10 @@ if (!/function\s+siteUrlsForLook\s*\(/.test(src)) {
 } else {
   ok('`siteUrlsForLook()` exists')
   // It must ask Operations for the town's OWN domain, not decide one, and hold none in code.
-  const body = src.slice(src.search(/function\s+siteUrlsForLook\s*\(/)).split(/\n}\n/)[0]
-  if (!/productionDomainFor\s*\(/.test(body)) {
+  const rest = src.slice(src.search(/function\s+siteUrlsForLook\s*\(/)), body = rest.split(/\n}\n/)[0]
+  if (body.length === rest.length) {
+    bad('`siteUrlsForLook()` does not end at a top-level brace, so its body cannot be told from the rest of serve.js — re-aim this check')
+  } else if (!/productionDomainFor\s*\(/.test(body)) {
     bad('`siteUrlsForLook()` does not ask Operations (`productionDomainFor`) — the production address must be the '
       + "town's own, from Operations, not a value this file picks.")
   } else if (/instanceForMap\s*\(|town\??\.domain\b/.test(body)) {
