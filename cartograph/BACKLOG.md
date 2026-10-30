@@ -26,7 +26,8 @@ per-place share cards (1d7a0743) · PTown's tagline (64aa9fb3) · one place per 
 6. **⭐ JACOB'S PHONE on staging.theward.online/provincetown/:** Browse and Society water reads as water (no sand), the movie, a place link.
 7. **The open production question, on a scratch key** (Groyne's C1–C4: does a .online zone decode br for a non-br client?): the commands are in
    Groyne's message to Boz, 2026-10-30. Run them, read the [gzip]/[identity] rows, and delete the key.
-8. **Promote provincetown and hipointedemun:** back up first, `! node scratch/promote-rollback/backup-prod-slab.mjs --look=<id> --out=scratch/promote-rollback/<id>-prod-$(date +%Y%m%d)`;
+8. **Promote provincetown and hipointedemun:** back up first, `! node scratch/promote-rollback/backup-prod-slab.mjs --look=<id> --out=scratch/promote-rollback/<id>-prod-$(date +%Y%m%d) --list-from=public/baked`
+   (it keeps production's manifest.json too: the only way back, since a Promote overwrites it; the script refuses on any mismatch);
    then `! curl -s -X POST localhost:3333/looks/<id>/promote`; then purge prefix `assets.theward.online/baked/`;
    then `! node scratch/slab-compressed-gate.mjs https://provincetown.online/ provincetown` (and hipointedemun). Exit 0.
 9. **Re-time PTown:** `scratch/browse-perf/load.mjs` cold ×3 + a throttled run (before: 7.2–8.5 s desktop, 120.9 MB).
