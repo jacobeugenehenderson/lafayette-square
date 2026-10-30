@@ -8837,14 +8837,14 @@
       "question": "q-who-verifies-a-resident",
       "kind": "ruling",
       "value": {
-        "rule": "Townies self-verify; RESIDENTS are verified in person by scanning from their BUILDING REP (a per-building role the kit doesn't have yet); every other standing is verified by the Host, eye to eye",
+        "rule": "THE LADDER: Townies make themselves. Making a REP (per building) or a GUARDIAN (per place) requires meeting the HOST in person. RESIDENTS scan through their building's Rep; KEYHOLDERS scan through their place's Guardian. No code, card or link raises a device by itself.",
         "host": "read as the town's Host (the person who runs that town's Ward, Operations' Host role); confirm with Jacob if the build needs a narrower reading",
-        "consequence": "no code or link can make a device a verified resident by itself; the Host's in-person act is the only path, and the backend refuses any other",
+        "consequence": "the /claim card no longer makes a Guardian by itself (the Host does, in person); a Guardian admits Keyholders by an in-person scan; a Rep admits residents the same way",
         "buildingRep": "NEW ROLE, unbuilt: a building's representative, who verifies that building's residents in person. Open: how a Rep is made (presumably verified by the Host, eye to eye), how many per building, and what happens when the Rep leaves"
       },
       "by": "Jacob",
       "date": "2026-10-30",
-      "quote": "\"I think the host does the verifying. Townies self-verify, everybody else has to see the Host eye to eye\" · \"Residents scan from their building Rep; a notion we don't really have but need\"",
+      "quote": "\"I think the host does the verifying. Townies self-verify, everybody else has to see the Host eye to eye\" · \"Residents scan from their building Rep; a notion we don't really have but need\" · \"the 'make rep' and 'make guardian' requires host meeting; townies make themselves, and residents/keyholders scan thru their guardians/reps\"",
       "canon": "SECURITY.md F-23; docs/briefs/BRIEF-fortify-accounts-and-the-backend.md",
       "notes": "UNBUILT. Closes F-23 by design: the self-serve /home/<id> path is retired."
     }
