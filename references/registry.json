@@ -4006,7 +4006,7 @@
         "approvedBy": "Jacob, 2026-10-30"
       },
       "status": "PERMITTED",
-      "localCopy": null
+      "localCopy": "theward backend/unicode/confusables-16.0.0.txt, with backend/unicode/LICENSE.txt (the Unicode License V3 notice); pinned by sha256 in backend/gen-confusables.mjs (theward plumb/fortify a230343, not yet merged)"
     }
   ],
   "questions": [
