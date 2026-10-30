@@ -95,6 +95,12 @@ place") in one rewrite of `drapeGlobals`: one nested lattice sized from what it 
 Groyne, a follow-up off groyne/far-shore.
 **⛔ URGENT, DISPATCHED to Gimbal: `docs/briefs/BRIEF-the-overhead-camera-resolves-its-ground.md`** (Jacob, 2026-10-30, live PTown on
 his phone: the seabed shows through the harbour in Browse and Society; desktop clean). Phone linear depth with near 1 m at ~6.5 km.
+**▶ JACOB, 2026-10-30 (not tonight): THE PUBLISH PANEL'S BUTTONS ARE CONFUSING:** "the slab/player publish/push buttons … are unnecessarily
+confusing; I think it's because they shouldn't all be the same buttons." A design question for Ward's seat: different actions shouldn't look
+alike (Publish to staging vs Promote to production; slab vs player). Not ruled.
+**▶ PTOWN, THE BOATSLIP'S WATER AT LOW TIDE** (Jacob, 2026-10-30): "we need to analyze the boatslip area and confirm there's enough water;
+boats parked there would be sitting on sand at low tide; which might be correct; we need to confirm". Compare our terrain and tide datum
+there against a cited chart (NOAA, MLLW soundings off 161 Commercial St). A fact check, not a fix.
 **⛔ A PROMOTE CANNOT BE ROLLED BACK** (Ward, measured 2026-10-30): production's slab index `baked/<look>/manifest.json` is ONE unversioned
 key, and each Promote overwrites it. The old pour's hashed files survive, but nothing names them, and no backup is taken by default
 (scratch/promote-rollback/ holds HPDM only). Owed: a Promote keeps the previous manifest (versioned or saved) and a scripted rollback,
