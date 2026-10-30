@@ -1,10 +1,10 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 527,
+  "total": 528,
   "counts": {
     "safe": 364,
     "local-effect": 31,
-    "live": 132
+    "live": 133
   },
   "checks": [
     {
@@ -2329,6 +2329,18 @@
       "tier": "safe",
       "why": [
         "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-our-reads-bypass-the-edge.mjs",
+      "tier": "live",
+      "reasonClass": "outbound",
+      "why": [
+        "calls fetch()",
+        "imports a network module",
+        "writeFileSync",
+        "deletes files",
+        "computed import() with no readable target — runs arbitrary modules"
       ]
     },
     {
