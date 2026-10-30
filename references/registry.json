@@ -5206,6 +5206,15 @@
       "findings": [
         "r-the-tower-light-shows-the-map-as-a-map"
       ]
+    },
+    {
+      "id": "q-how-a-towns-floating-docks-draw",
+      "ask": "What PTown's floating marina docks draw as, now and later, and whether a floating dock rides the tide",
+      "neededBy": "PTown, 2026-10-30: the docks drew as green treelawn on the seabed (Zob, Gimbal); Plumb's fix (A1) returns MacMillan's moored floating docks to water",
+      "status": "answered",
+      "findings": [
+        "r-floating-docks-are-water-now-and-ride-the-tide-later"
+      ]
     }
   ],
   "findings": [
@@ -8799,6 +8808,20 @@
       "quote": "\"Show the map as a map. We'd want to keep the neon, or color bands, anyway\"",
       "canon": "theward README §3 (the Tower Light), to be rewritten when built",
       "notes": "UNBUILT. Ward sizes it (kit + Ward) and mocks Society before a brief."
+    },
+    {
+      "id": "r-floating-docks-are-water-now-and-ride-the-tide-later",
+      "question": "q-how-a-towns-floating-docks-draw",
+      "kind": "ruling",
+      "value": {
+        "now": "a floating dock that no street deck of its own kind carries is WATER (no green stripes), per (A1): a way rides with a ridden way of its own kind (fixed with fixed, floating with floating)",
+        "later": "a proper off-ground dock object, and a floating dock RIDES THE TIDE (its height follows the town's water level)"
+      },
+      "by": "Jacob",
+      "date": "2026-10-30",
+      "quote": "\"water now proper dock object later; floating dock rides the tide, yes\"",
+      "canon": "cartograph/BACKLOG.md",
+      "notes": "(A1) built: plumb/a-dock-rides-no-street 327c78b8, approved by Jacob's eye on scratch/docks-frames/. The dock object and the tide ride are UNBUILT."
     }
   ]
 }
