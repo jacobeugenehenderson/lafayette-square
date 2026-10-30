@@ -25,9 +25,12 @@
  * Library" and "Bowling Green State University, Firelands College" are genuinely related,
  * which is exactly why it slipped through. So every mismatch is reported for a human, and
  * a record that has been deliberately re-keyed says so in `_rekeyed`.
+ *
+ * ⛔ A run with no research directory, or none of its files, FAILS by name (the research blanked is shown RED every run).
  */
-import { readFileSync, readdirSync, existsSync } from 'node:fs'
+import { readFileSync, readdirSync, existsSync, mkdtempSync } from 'node:fs'
 import path from 'node:path'
+import os from 'node:os'
 
 const ROOT = path.resolve(import.meta.dirname, '..')
 const DIR = path.join(ROOT, 'scratch/huron-research')
@@ -38,7 +41,13 @@ const ok = (m) => console.log(`  ✅ ${m}`)
 
 console.log('\nResearch is keyed to the place it describes')
 
-if (!existsSync(DIR)) { console.log('  · no research directory — nothing to check\n'); process.exit(0) }
+// ⛔ A run that reads NO research record is RED by name, never a pass → why it judged nothing, or null
+const judgedNothing = (dir) => !existsSync(dir) ? `no research directory at ${path.relative(ROOT, dir) || dir}: judged nothing`
+  : !readdirSync(dir).some(x => x.endsWith('.json')) ? `no research file (*.json) in ${path.relative(ROOT, dir) || dir}: judged nothing` : null
+{ const blank = mkdtempSync(path.join(os.tmpdir(), 'research-'))
+  if (judgedNothing(blank) && judgedNothing(path.join(blank, 'absent'))) ok('mutant: the research blanked (an empty directory, and none) → RED, as it must be')
+  else bad('mutant: the research blanked reads green — judging nothing passes')
+  const why = judgedNothing(DIR); if (why) { bad(why); console.log(`\n⛔ ${failed} failed\n`); process.exit(1) } }
 
 // The listings the research is keyed against, per scene. Research dirs are named
 // `<scene>-research`, so the scene is read from the path rather than hardcoded.

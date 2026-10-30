@@ -9,16 +9,12 @@
 //   (1) every window request's socket dropped, block cache on → REFUSES naming the URL, all 4 attempts and "other side closed"
 //   (2) the socket dropped twice, then served → the read SUCCEEDS (the retry fires under the block cache)
 //   (3) HTTP 503 on the window → REFUSES at once (not a network error, not retried), naming HTTP 503
-//   MUTANTS: the bare geotiff read of (1) does not name its cause → RED · the client's record removed (a changed copy of
-//   elevationSources.mjs) → (1) and (2) RED
+//   MUTANTS: the bare geotiff read of (1) does not name its cause → RED · the client's record removed (_importSource's
+//   mutated copy of elevationSources.mjs) → (1) and (2) RED
 //   node checks/claims-a-failed-read-names-its-cause.mjs      Read-only.
 import http from 'node:http'
-import { readFileSync, writeFileSync, mkdtempSync, rmSync } from 'node:fs'
-import { join } from 'node:path'
-import { tmpdir } from 'node:os'
-import { pathToFileURL } from 'node:url'
 import { writeArrayBuffer, fromUrl } from 'geotiff'
-import { ROOT } from './_scenes.mjs'
+import { importSource } from './_importSource.mjs'
 import * as E0 from '../cartograph/elevationSources.mjs'
 
 let red = 0
@@ -53,16 +49,12 @@ row(v.ok3, `(3) HTTP 503 on the window → ${v.r3.err ? v.r3.err.split('\n').sli
 { mode = 'serve'; const t = await fromUrl(url, { blockSize: 65536, cacheSize: 64 }), img = await t.getImage(0); mode = 'drop'; broken = Infinity
   let bare = ''; try { await img.readRasters({ window: [20, 32, 480, 492] }) } catch (e) { bare = `${e.name}: ${e.message} errors=[${(e.errors || []).slice(0, 3).map(String).join(', ')}…]` } finally { mode = 'serve' }
   row(!named(bare), `mutant: the bare geotiff read → ${named(bare) ? 'names its cause — the check is blind' : `RED, as it must be ("${bare.slice(0, 90)}")`}`) }
-// MUTANT: the client's record removed, on a changed copy of elevationSources.mjs (imports made absolute)
-{ const src = readFileSync(join(ROOT, 'cartograph/elevationSources.mjs'), 'utf8'), from = 'catch (e) { this.failures.push({ range: headers?.Range ?? null, error: e }); throw e }'
-  if (src.split(from).length !== 2) row(false, 'mutant: the client\'s record removed → NOT MUTATED (the line moved)')
-  else { const dir = mkdtempSync(join(tmpdir(), 'netretry-'))
-    try { writeFileSync(join(dir, 'elevationSources.mjs'), src.replace(from, 'catch (e) { throw e }')
-        .replace(/from '(\.{1,2}\/[^']+)'/g, (_, r) => `from "${pathToFileURL(join(ROOT, 'cartograph', r)).href}"`)
-        .replace(/from '([^.'][^']*)'/g, (_, r) => `from "${import.meta.resolve(r)}"`))
-      const m = await rows(await import(pathToFileURL(join(dir, 'elevationSources.mjs')).href))
-      row(!m.ok1 && !m.ok2, `mutant: the client's record removed → (1) ${m.ok1 ? 'still named' : 'unnamed'}, (2) ${m.ok2 ? 'still retried' : 'not retried'}${!m.ok1 && !m.ok2 ? ', RED as it must be' : ' — the check cannot see it'}`)
-    } finally { rmSync(dir, { recursive: true, force: true }) } } }
+// MUTANT: the client's record removed, through the one mutated-copy loader (bare specifiers resolved from here)
+{ const from = 'catch (e) { this.failures.push({ range: headers?.Range ?? null, error: e }); throw e }'
+  let M = null; try { M = await importSource('cartograph/elevationSources.mjs', { transform: (t) => { if (t.split(from).length !== 2) throw new Error('the line moved')
+    return t.replace(from, 'catch (e) { throw e }').replace(/from '([^.'/][^']*)'/g, (_, r) => `from '${import.meta.resolve(r)}'`) } }) } catch (e) { row(false, `mutant: the client's record removed → NOT MUTATED (${e.message})`) }
+  if (M) { const m = await rows(M)
+    row(!m.ok1 && !m.ok2, `mutant: the client's record removed → (1) ${m.ok1 ? 'still named' : 'unnamed'}, (2) ${m.ok2 ? 'still retried' : 'not retried'}${!m.ok1 && !m.ok2 ? ', RED as it must be' : ' — the check cannot see it'}`) } }
 
 server.close()
 console.log(red ? `\n⛔ ${red} row(s) RED` : '\n✅ a failed window read is retried, and refuses naming its URL, its attempts and each cause')

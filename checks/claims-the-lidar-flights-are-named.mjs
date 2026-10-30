@@ -9,12 +9,14 @@
 //      its ONE stated geoid; it REFUSES a project WESM does not know, and one stating two geoids or none;
 //   3. geoidToCurrent puts toCurrentM = N(own) − N(current) on each project, from NGS, and REFUSES a geoid NGS has no id for;
 //   4. lidarToRecordM REFUSES no record, and two projects with different corrections;
-//   5. every town with a raw/elevation-flights.json carries one finite correction.
+//   5. every town with a raw/elevation-flights.json carries one finite correction, and a run that judges NO town is RED by
+//      name (the data blanked, an empty directory, is shown RED every run).
 // MUTANTS (each RED): projectsOf skips an unnamed line · the window takes the first work unit only · the correction's sign
 // flipped (N(current) − N(own)) · lidarToRecordM takes the first project's correction.
 //
 //   node checks/claims-the-lidar-flights-are-named.mjs
-import { readFileSync, existsSync, readdirSync } from 'node:fs'
+import { readFileSync, existsSync, readdirSync, mkdtempSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { ROOT } from './_scenes.mjs'
 import { projectsOf, flightWindows, geoidToCurrent, lidarToRecordM, FLIGHTS_FILE } from '../cartograph/fetch-lidar-flights.mjs'
@@ -54,14 +56,24 @@ say(await throws(() => lidarToRecordM({ projects: { a: { geoidAt: { toCurrentM: 
 say(lidarToRecordM({ projects: { a: { geoidAt: { toCurrentM: -0.034 } }, b: { geoidAt: { toCurrentM: -0.034 } } } }, 'fixture') === -0.034, 'two projects sharing one correction give it')
 
 console.log('── 5. every town carrying the record')
-let n = 0
-for (const t of readdirSync(join(ROOT, 'cartograph/data'))) {
-  const fp = join(ROOT, 'cartograph/data', t, 'raw', FLIGHTS_FILE)
-  if (!existsSync(fp)) continue
-  n++
-  let d = null; try { d = lidarToRecordM(JSON.parse(readFileSync(fp, 'utf8')), t) } catch (e) { d = e.message.split('\n')[0] }
-  say(Number.isFinite(d), `${t}: the lidar onto the record's basis ${typeof d === 'number' ? `${d} m` : `— ${d}`}`)
+// over one data directory → the towns judged. ⛔ Judging NO town is RED by name, never a pass
+function judgeTowns(data) {
+  let n = 0
+  for (const t of existsSync(data) ? readdirSync(data) : []) {
+    const fp = join(data, t, 'raw', FLIGHTS_FILE)
+    if (!existsSync(fp)) continue
+    n++
+    let d = null; try { d = lidarToRecordM(JSON.parse(readFileSync(fp, 'utf8')), t) } catch (e) { d = e.message.split('\n')[0] }
+    say(Number.isFinite(d), `${t}: the lidar onto the record's basis ${typeof d === 'number' ? `${d} m` : `— ${d}`}`)
+  }
+  say(n > 0, n ? `§5 judged ${n} town(s) carrying raw/${FLIGHTS_FILE}` : `no town carries raw/${FLIGHTS_FILE} in ${data}: §5 judged nothing (▶ node cartograph/fetch-lidar-flights.mjs --scene=<town>)`)
+  return n
 }
-if (!n) console.log(`  (no town carries raw/${FLIGHTS_FILE} on this machine)`)
+judgeTowns(join(ROOT, 'cartograph/data'))
+// the data blanked: §5 over an empty directory must turn RED by name
+{ const before = bad.length, out = console.log; console.log = () => {}
+  try { judgeTowns(mkdtempSync(join(tmpdir(), 'flights-'))) } finally { console.log = out }
+  const caught = bad.slice(before).some(x => /§5 judged nothing/.test(x)); bad.length = before
+  say(caught, `mutant: the data blanked → ${caught ? 'RED, as it must be' : 'GREEN — judging nothing passes'}`) }
 if (bad.length) { console.log(`\n⛔ ${bad.length} claim(s) fail.`); process.exit(1) }
 console.log('\n✅ When the lidar flew, and the geoid it was delivered on, are read and named.')

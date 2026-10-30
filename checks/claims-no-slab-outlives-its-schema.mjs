@@ -20,6 +20,7 @@
  *   B. a legacy slab is READ by legacy rules (v1 artifact, v1 rules)
  *   C. a current slab is READ by current rules
  *   D. the two models genuinely disagree — so C is not vacuous
+ *   0. a run that reads NO slab FAILS by name (the slab blanked is shown RED every run)
  *   E. THE PINNED COAST (drawnGround.js, Ward-seat review 2026-10-27): every terrain slab's ground declares whether it
  *      carries the pins (`drawnRaw`); one that predates them is STALE (drawn on the field's own contour, said by the
  *      player as an error), and the one bad mix (a bed-only terrain stamp, `shapes: 'bed'`, under a ground with no pins) FAILS: the player
@@ -30,8 +31,9 @@
  *
  * ▶ node checks/claims-no-slab-outlives-its-schema.mjs
  */
-import { existsSync, readFileSync, readdirSync } from 'fs'
+import { existsSync, readFileSync, readdirSync, mkdtempSync } from 'fs'
 import { join } from 'path'
+import { tmpdir } from 'os'
 import { deriveFade } from '../cartograph/boundaryRecords.mjs'
 import { predatesThePin, pinsMissingUnder, stampShapesBedOnly } from '../src/lib/drawnGround.js'
 
@@ -45,7 +47,12 @@ const isLegacy = (stencil) => !!stencil?.streetFade
 
 h('A. every baked slab declares its fade model')
 const roots = ['public/baked', 'dist/baked'].filter(existsSync)
-if (!roots.length) { console.log('  ·  no baked/ directory — nothing to check'); process.exit(0) }
+// ⛔ A run that reads NO slab is RED by name, never a pass → why it judged nothing, or null
+const judgedNothing = (roots) => roots.some(r => readdirSync(r).some(l => existsSync(join(r, l, 'ground.json')))) ? null
+  : `no baked slab to read: ${roots.length ? `${roots.join(', ')} hold no ground.json` : 'no public/baked or dist/baked'}, so nothing was judged (▶ bake a look)`
+{ const blank = judgedNothing([mkdtempSync(join(tmpdir(), 'slab-'))])
+  ok(!!blank && !!judgedNothing([]), `mutant: the slab blanked (an empty directory, and none) → ${blank ? 'RED, as it must be' : 'GREEN — judging nothing passes'}`)
+  const why = judgedNothing(roots); if (why) { ok(false, why); console.log(`\n❌ ${fails} claim(s) FAILED`); process.exit(1) } }
 
 const seen = []
 for (const root of roots) {

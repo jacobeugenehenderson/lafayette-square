@@ -2,7 +2,8 @@
 //
 // ⭐ THE INVARIANT: if a town's pour derived a water body, that body must reach
 // the slab AND resolve to the kit water material at runtime. Both halves, because
-// each fails differently and BOTH fail quietly:
+// each fails differently and BOTH fail quietly (and a run that holds NO body against a baked look FAILS by name, shown
+// RED every run on a blank directory):
 //   · derived but not baked → the lake is a HOLE IN THE LAND. ① carves
 //     `bb − (WATER ∪ INK)`, so the ground genuinely ends at the shore and nothing
 //     fills what it left. This was the live state until 2026-09-20: huron's Lake
@@ -16,7 +17,7 @@
 // ⛔ THIS IS A KIT CHECK, NOT AN LS CHECK. It walks every scene on disk and asks
 // each the same question. A town with no water passes by having none — ⭐ and it
 // says so out loud, because "0 water bodies" and "this check did not run" must
-// never look the same.
+// never look the same; a RUN in which no town was judged fails.
 //
 // ⭐ It RESOLVES with the runtime's own `isWaterGroupId`, imported, not restated.
 //
@@ -24,18 +25,19 @@
 //   re-bake huron — this goes RED naming the body that vanished.
 //
 //   node checks/claims-every-water-body-reaches-the-kit-material.mjs
-// Read-only. Exits 1 on water that was derived and cannot be seen.
+// Read-only. Exits 1 on water that was derived and cannot be seen, or on a run that judged nothing.
 import fs from 'fs'
 import path from 'path'
+import os from 'os'
 import { isWaterGroupId } from '../src/components/waterMaterial.js'
 import { waterFace } from '../cartograph/coastFile.mjs'
 
-const DATA = 'cartograph/data'
-const BAKED = 'public/baked'
+// one data directory against one slab directory → { fail, scenesWithWater, bodiesSeen, looksJudged }
+function judgeWater(DATA, BAKED) {
 const fail = []
-let scenesWithWater = 0, bodiesSeen = 0
+let scenesWithWater = 0, bodiesSeen = 0, looksJudged = 0
 
-const scenes = fs.readdirSync(DATA, { withFileTypes: true })
+const scenes = (fs.existsSync(DATA) ? fs.readdirSync(DATA, { withFileTypes: true }) : [])
   .filter(d => d.isDirectory())
   .map(d => d.name)
   .sort()
@@ -68,6 +70,7 @@ for (const scene of scenes) {
   for (const look of looks) {
     const gp = path.join(BAKED, look, 'ground.json')
     if (!fs.existsSync(gp)) continue
+    looksJudged++
     const groups = JSON.parse(fs.readFileSync(gp, 'utf8')).groups || []
     const waterGroups = groups.filter(g => g.kind !== 'face' && isWaterGroupId(g.id))
     if (!waterGroups.length) {
@@ -87,14 +90,24 @@ for (const scene of scenes) {
   }
 }
 
-console.log(`\n${scenesWithWater} scene(s) carry water · ${bodiesSeen} derived body/bodies examined.`)
-// ⛔ "Nothing to check" is a RESULT, not a pass. If no town on disk has water, this
-// check proves nothing and must say so rather than printing a green tick.
-if (!bodiesSeen) console.log(`⚠️  NO TOWN ON DISK HAS DERIVED WATER — this check exercised nothing. It is not evidence.`)
+// ⛔ "Nothing to check" is a RESULT, and it is RED: a run that held no derived water body against a baked look proves
+// nothing, so it fails by name rather than printing a green tick
+if (!looksJudged) fail.push(`⛔ no derived water body was held against a baked look: judged nothing (${bodiesSeen ? `${bodiesSeen} body/bodies in ${scenesWithWater} scene(s), no slab ground.json for them in ${BAKED}` : `no town in ${DATA} derives water`}). It is not evidence. ▶ pour and bake a town with water`)
+return { fail, scenesWithWater, bodiesSeen, looksJudged }
+}
+
+const { fail, scenesWithWater, bodiesSeen, looksJudged } = judgeWater('cartograph/data', 'public/baked')
+console.log(`\n${scenesWithWater} scene(s) carry water · ${bodiesSeen} derived body/bodies examined against ${looksJudged} baked look(s).`)
+// the data and slab blanked: an empty directory must turn RED by name
+{ const blank = fs.mkdtempSync(path.join(os.tmpdir(), 'water-')), out = console.log; console.log = () => {}
+  let m; try { m = judgeWater(blank, blank) } finally { console.log = out }
+  const caught = m.fail.some(x => /judged nothing/.test(x))
+  console.log(`  ${caught ? '✅' : '⛔'} mutant: the data and slab blanked → ${caught ? 'RED, as it must be' : 'GREEN — judging nothing passes'}`)
+  if (!caught) fail.push('⛔ mutant: a blank data and slab directory reads green') }
 
 if (fail.length) {
   console.error('\n' + fail.join('\n'))
-  console.error(`\n⛔ ${fail.length} failure(s) — water that was derived and cannot be seen.`)
+  console.error(`\n⛔ ${fail.length} failure(s) — water that was derived and cannot be seen, or a run that judged nothing.`)
   process.exit(1)
 }
 console.log(`✅ every derived water body reaches the slab and resolves to the kit material.`)
