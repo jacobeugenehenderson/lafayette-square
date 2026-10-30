@@ -11,9 +11,11 @@
 //       MUTANT: the identity guard removed → the route would sign what the operator never saw, RED
 //   (d) the signature is a coast-step INPUT (pourSteps.mjs): deleting it makes the step's recorded reads differ (the Bake re-judges)
 //   (e) the card leads with the scale, says which side has what in plain words, marks the signed pieces, says a row can be clicked; its
-//       pixels at the closest camera are derived; its one accept calls the store's accept
+//       pixels at the closest camera are derived; its one accept calls the store's accept.
+//       MUTANTS: a row shows the raw side · the distance typed → each RED
 //   (f) no bake-anyway: the tolerance is written only by sign-coast-residual --accept, the accept route, and the step's own tightening
-//   (g) a piece's size (openCloseJudge.mjs#spanOf, #wideOf) rides in the record, never in coast.json
+//   (g) a piece's size (openCloseJudge.mjs#spanOf, #wideOf) rides in the record, never in coast.json.
+//       MUTANT: wideOf's survival test bypassed → RED
 //   node checks/claims-the-coast-residual-is-signed-in-stage.mjs
 import { readFileSync, writeFileSync, mkdtempSync, rmSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
@@ -23,6 +25,8 @@ import { residualRecord, recordIdentity } from '../cartograph/bake-coast.mjs'
 import { pourSteps } from '../cartograph/pourSteps.mjs'
 import { contentRecord } from '../cartograph/pour-code.mjs'
 import { TOLERANCE_FILE } from '../cartograph/coastFile.mjs'
+import { spanOf, wideOf, ip } from '../cartograph/openCloseJudge.mjs'
+import { NODE_BOUND } from '../src/lib/latticeNode.js'
 
 let red = 0
 const row = (ok, msg) => { if (!ok) red++; console.log(`${ok ? '✅' : '⛔'} ${msg}`) }
@@ -77,24 +81,38 @@ const askOf = (code, file, now, tolFile = file + '.no-tolerance') => new Functio
     row(listed && differs, `(d) the town's ${TOLERANCE_FILE} is a coast-step input (${listed}); deleting it changes the step's recorded reads, so the Bake re-judges (${differs})`)
   } finally { rmSync(dir, { recursive: true, force: true }) } }
 
-// (e) the card explains or goes away (Jacob, on Huron's first card: "I looked but have no idea what I'm looking at")
+// (e) the card explains or goes away (Jacob, on Huron's first card: "I looked but have no idea what I'm looking at"). Each test is a
+// function of BakeModal's text, so its mutants run the same test on a changed copy
+const qp = src('src/lib/qualityProfile.js')
+const plainOf = (b) => { const card = b.slice(b.indexOf('function CoastResidualCard'), b.indexOf('// Modal overlay shown while'))
+  return /the exact calculation has \$\{what\} here that the coast doesn't/.test(b) && /the coast has \$\{what\} here that the exact calculation doesn't/.test(b) && !/\{w\.side\}/.test(card) }
+const derivedOf = (b) => /Math\.max\(TOWN_CAMERA_NEAR_M, REGIMES\.playback\.minDistance\)/.test(b) && /\(keys \|\| \[\]\)\.map\(k => k\.fov\)/.test(b) && /camera: \{ near: TOWN_CAMERA_NEAR_M \}/.test(qp)
 { const card = bm.slice(bm.indexOf('function CoastResidualCard'), bm.indexOf('// Modal overlay shown while'))
   const scale = /The largest is \{sizeOf\(big\)\}; all \{n\} together come to/.test(card) && card.indexOf('The largest is') < card.indexOf('The coast step smooths')
-  const plain = /the exact calculation has \$\{what\} here that the coast doesn't/.test(bm) && /the coast has \$\{what\} here that the exact calculation doesn't/.test(bm) && !/\{w\.side\}/.test(card)
+  const plain = plainOf(bm)
   const signedSaid = /w\.signed \? ' · signed'/.test(card) && /has signed none of them before/.test(card), click = /Click a row to see it on the map/.test(card)
   const todo = /If none of them is a real change to the shore, accept them: that signs them for/.test(card), one = (card.match(/acceptCoastResidual\(\)/g) || []).length === 1, frames = /frameRequest: \{ x: w\.at\[0\], z: w\.at\[1\]/.test(bm)
   const store = /acceptCoastResidual: async \(\) => \{/.test(st) && /apiAcceptCoastResidual\(get\(\)\.activeLookId, cr\.identity\)/.test(st)
   row(scale && plain && signedSaid && click && todo && one && frames && store, `(e) the card leads with the scale (${scale}), says which side has what in plain words, never the raw side (${plain}), marks what the town signed (${signedSaid}), says a row can be clicked (${click}), the one thing to do (${todo}), frames each piece (${frames}), and has ONE accept, the store's, sending the card's identity (${one && store})`)
+  const raw = bm.replace('{lens(w.span)} long, at most {lens(w.wide)} wide · {sideOf(w)}', '{lens(w.span)} long, at most {lens(w.wide)} wide · {w.side}')
+  row(raw !== bm && !plainOf(raw), `(e) mutant: a row shows the raw side again ({w.side}) → the plain-words test ${plainOf(raw) ? 'still passes — it cannot see it' : 'fails, RED as it must be'}`)
   // the pixels are DERIVED: the near plane and the orbit's closest dolly read from their homes, the lens from the town's keyframes
-  const derived = /Math\.max\(TOWN_CAMERA_NEAR_M, REGIMES\.playback\.minDistance\)/.test(bm) && /\(keys \|\| \[\]\)\.map\(k => k\.fov\)/.test(bm) && /camera: \{ near: TOWN_CAMERA_NEAR_M \}/.test(src('src/lib/qualityProfile.js'))
-  row(derived, `(e) "how many pixels at the closest camera" is derived: the town canvas's near plane (qualityProfile.js#TOWN_CAMERA_NEAR_M, the one the canvas uses), the movie orbit's closest dolly (REGIMES.playback) and the narrowest keyframe lens (${derived})`) }
+  const derived = derivedOf(bm)
+  row(derived, `(e) "how many pixels at the closest camera" is derived: the town canvas's near plane (qualityProfile.js#TOWN_CAMERA_NEAR_M, the one the canvas uses), the movie orbit's closest dolly (REGIMES.playback) and the narrowest keyframe lens (${derived})`)
+  const typed = bm.replace('Math.max(TOWN_CAMERA_NEAR_M, REGIMES.playback.minDistance)', 'Math.max(1, 0.5)')
+  row(typed !== bm && !derivedOf(typed), `(e) mutant: the distance typed (Math.max(1, 0.5)) → the derived test ${derivedOf(typed) ? 'still passes — it cannot see it' : 'fails, RED as it must be'}`) }
 
 // (g) a piece's size is the piece's: its length (its outer ring's farthest two vertices) and its widest point (the deepest erode it
 // survives), carried by the record, never into coast.json
-{ const { spanOf, wideOf, ip } = await import('../cartograph/openCloseJudge.mjs')
-  const sq = spanOf([{ X: 0, Y: 0 }, { X: 3000, Y: 0 }, { X: 3000, Y: 4000 }, { X: 0, Y: 4000 }]), wd = wideOf(ip([[[0, 0], [3e6, 0], [3e6, 6000], [0, 6000]]]), 3e6), carried = rec.water.sites[0].span === undefined && residualRecord({ nets: { ...nets, water: { ...nets.water, pieces: [{ ...nets.water.pieces[0], span: 0.12, wide: 0.006 }] } }, reads }).water.sites[0].wide === 0.006
+const stripOf = (wide) => wide(ip([[[0, 0], [3e6, 0], [3e6, 6000], [0, 6000]]]), 3e6), stripOk = (wd) => Math.abs(wd - 6000) <= 20
+{ const sq = spanOf([{ X: 0, Y: 0 }, { X: 3000, Y: 0 }, { X: 3000, Y: 4000 }, { X: 0, Y: 4000 }]), wd = stripOf(wideOf), carried = rec.water.sites[0].span === undefined && residualRecord({ nets: { ...nets, water: { ...nets.water, pieces: [{ ...nets.water.pieces[0], span: 0.12, wide: 0.006 }] } }, reads }).water.sites[0].wide === 0.006
   const kept = /largest: w \? \{ key: w\.key, side: w\.side, m2: w\.m2, at: w\.at \} : null/.test(bc)
-  row(sq === 5000 && Math.abs(wd - 6000) <= 20 && carried && kept, `(g) spanOf a 3 × 4 rectangle → ${sq} (5000); wideOf a 3 m × 6 mm strip → ${(wd / 1000).toFixed(2)} mm (6, to the bisection's step); the record carries a piece's span and width (${carried}); coast.json's largest leaves it out, so its bytes and everything downstream stay put (${kept})`) }
+  row(sq === 5000 && stripOk(wd) && carried && kept, `(g) spanOf a 3 × 4 rectangle → ${sq} (5000); wideOf a 3 m × 6 mm strip → ${(wd / 1000).toFixed(2)} mm (6, to the bisection's step); the record carries a piece's span and width (${carried}); coast.json's largest leaves it out, so its bytes and everything downstream stay put (${kept})`)
+  // MUTANT: wideOf from openCloseJudge.mjs's own text with its survival test bypassed (every bisection step taken as a vanish)
+  const j = src('cartograph/openCloseJudge.mjs'), line = j.slice(j.indexOf('export const wideOf = '), j.indexOf('\n', j.indexOf('export const wideOf = ')))
+  const bypassed = line.replace('if (survivesBy(pp, m)) lo = m; else hi = m', 'hi = m').replace('export const wideOf = ', 'return ')
+  const M = bypassed !== line.replace('export const wideOf = ', 'return ') ? stripOf(new Function('bound', 'survivesBy', bypassed)(NODE_BOUND * 1000, () => { throw new Error('the bypass still calls survivesBy') })) : null
+  row(M !== null && !stripOk(M), `(g) mutant: wideOf's survival test bypassed → the strip reads ${M === null ? 'NOT MUTATED (the line moved)' : `${(M / 1000).toFixed(2)} mm, ${stripOk(M) ? 'still 6 — the row cannot see it' : 'RED as it must be'}`}`) }
 
 // (f) no bake-anyway
 { const writers = []
