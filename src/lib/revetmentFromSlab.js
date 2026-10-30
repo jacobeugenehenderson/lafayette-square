@@ -233,10 +233,11 @@ export async function loadRevetment(look, { manifest, fetchFile, say }) {
  * Never-seen chunks are in revetment-far-unseen.bin, fetched after the reveal (`loadRevetmentFarUnseen`).
  */
 /** revetment-far.json's format, written by cartograph/bake-revetment-far.js and refused by the player in any other.
- *  2 (2026-10-29): the chunks are cut on far stations of one nested lattice (BRIEF-the-drape-sizes-one-nested-lattice), so a
- *  v1 table's chunk keys name DIFFERENT chunks: read by this player it would hide the wrong far chunk and mis-bound the near,
- *  silently (Zob). ⛔ Refused by name. ▶ node checks/claims-the-armoured-shore-is-never-empty.mjs --mutants */
-export const FAR_FORMAT = 2
+ *  3 (2026-10-29, Jacob: "compress, fine normals"): the bins are quantized (src/lib/farQuant.js), so a format-2 bin's
+ *  float bytes read as this player's would draw garbage, and its table has no grid for the near to meet.
+ *  (2: chunks cut on far stations of one nested lattice, so a v1 table's chunk keys name different chunks, Zob.)
+ *  ⛔ Refused by name. ▶ node checks/claims-the-armoured-shore-is-never-empty.mjs --mutants */
+export const FAR_FORMAT = 3
 export async function loadRevetmentFar(look, { manifest, fetchFile, say }) {
   if (!manifest?.files?.['revetment.json']) return null
   const want = ['revetment-far.json', 'revetment-far.bin', 'revetment-far-unseen.bin'].filter(f => !manifest.files[f])
@@ -245,7 +246,7 @@ export async function loadRevetmentFar(look, { manifest, fetchFile, say }) {
     const [j, b] = await Promise.all([fetchFile('revetment-far.json'), fetchFile('revetment-far.bin')])
     if (!j.ok || !b.ok) throw new Error(`HTTP ${j.status} / ${b.status}`)
     const far = await j.json()
-    if (far?.version !== FAR_FORMAT) { say(`[revetment] ⛔ ${look}: revetment-far.json is format ${far?.version ?? 'none'}, and this player reads ${FAR_FORMAT} — its chunks are cut on another lattice, and no shore is drawn. ▶ re-run revetment-far for ${look} (node cartograph/bake-revetment-far.js --look=${look} --scene=<its scene>) and publish the slab`); return null }
+    if (far?.version !== FAR_FORMAT) { say(`[revetment] ⛔ ${look}: revetment-far.json is format ${far?.version ?? 'none'}, and this player reads only format ${FAR_FORMAT} — its bytes are not this player's, and no shore is drawn. ▶ re-run revetment-far for ${look} (node cartograph/bake-revetment-far.js --look=${look} --scene=<its scene>) and publish the slab`); return null }
     return { far, bins: { 'revetment-far.bin': await b.arrayBuffer() } }
   } catch (e) { say(`[revetment] ⛔ ${look}: its far shore FAILED to load — ${e?.message || e}. No shore is drawn.`); return null }
 }

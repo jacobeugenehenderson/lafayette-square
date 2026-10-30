@@ -73,7 +73,7 @@ edges (conformed), and the far layer on every face the new sizing changes. All t
   `farRow`.
 - A mutant sizing from 201 samples again → PTown 1:left empty, RED.
 - **PTown 1:left non-empty**, near and far; **Huron 97:right and 111:left not emptied**; `claims-the-armoured-shore-is-never-empty` GREEN.
-- The deviation probe (`scratch/boulder-lod-deviation.mjs`) re-run; the far bake equals the runtime's far build (`far-bake-vs-runtime.mjs`);
+- The deviation probe (`scratch/boulder-lod-deviation.mjs`) re-run; the far bake equals the whole-face far build up to the quantization (`claims-the-drape-meets-itself-on-one-line` 4a, format 3);
   `claims-a-bare-station-costs-nothing` and `claims-the-far-shore-is-not-built-at-load` green.
 - **Jacob's eye**, at a grazing angle at a near/far boundary, PTown and Huron, after the re-bake. If it finds the row, (ii) above.
 

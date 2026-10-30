@@ -67,6 +67,7 @@
  */
 
 import * as THREE from 'three'
+import { snap, octEncode, octDecode } from './farQuant.js'
 import { RIPRAP_REPOSE_DEG, MIN_ARMOUR_D50_M, d50For } from '../../cartograph/shore-armour.mjs'
 
 const TAN_REPOSE = Math.tan((RIPRAP_REPOSE_DEG * Math.PI) / 180)
@@ -599,7 +600,7 @@ export function revetmentDrape({ poly, crestAt, toeAt = null, berm = null, groun
   // at a grazing angle — invisible from above, which is where it would be signed off.
   const buildIdx = idx
   let geo0 = new THREE.BufferGeometry()
-  const seams0 = []           // per far row met: { station, verts (index in geo0 per column, −1), r, far (its positions) }
+  const seams0 = []           // per far row met: { station, verts (index in geo0 per column, −1), r, far, farNormal (its positions, normals) }
   {
     const remapAll = new Int32Array(nRows * nAcross).fill(-1)
     const packedAll = []
@@ -623,7 +624,7 @@ export function revetmentDrape({ poly, crestAt, toeAt = null, berm = null, groun
         const J = Math.floor(j / sm.r), w = (j % sm.r) / sm.r
         for (let c = 0; c < 3; c++) N[p * 3 + c] = w ? Fn[J * 3 + c] + (Fn[(J + 1) * 3 + c] - Fn[J * 3 + c]) * w : Fn[J * 3 + c]
       }
-      seams0.push({ station: sm.i, verts, r: sm.r, far: sm.row.pos })
+      seams0.push({ station: sm.i, verts, r: sm.r, far: sm.row.pos, farNormal: Fn })
     }
   }
 
@@ -754,4 +755,31 @@ export function drapeRaws(built, rawAt) {
       raw[v] = w ? farRaw(J) + (farRaw(J + 1) - farRaw(J)) * w : farRaw(J) })
   }
   return raw
+}
+
+/**
+ * ⭐ THE DRAPE, GROUND-RELATIVE, as the player mounts it and the far bake writes it: each vertex less the drawn raw under it
+ * (`drapeRaws`), the raw returned to ride as the vertex's pin (aDrawnRaw). Where a NEAR chunk meets the far on a far row
+ * (`userData.seams`), the row is the far AS DECODED (farQuant.js, revetment-far format 3): a shared vertex on the town's grid
+ * and its normal through the octahedral round trip, an in-between one their lerp. So the near meets the far's bytes, the
+ * same quantization on both sides of the edge, never the far before it was quantized.
+ * `step` is revetment-far.json's quant.step. ⛔ Required where the build meets the far: without it the seam would open by
+ * up to half a step. → { rel: Float32Array (x, y − raw, z), normal: Float32Array, raws: Float64Array }
+ */
+export function drapeRelative(built, rawAt, step = null) {
+  const g = built.geometry, P = g.attributes.position.array, n = P.length / 3
+  const raws = drapeRaws(built, rawAt), rel = new Float32Array(P), normal = new Float32Array(g.attributes.normal.array)
+  for (let v = 0; v < n; v++) rel[v * 3 + 1] = P[v * 3 + 1] - raws[v]
+  const seams = g.userData.seams || []
+  if (seams.length && !step) throw new Error('drapeRelative: this build meets the far and no grid was given (revetment-far.json quant.step) — it would meet the far before quantization')
+  for (const sm of seams) {
+    const F = sm.far, Fn = sm.farNormal, at = new Map()
+    const far = (J) => { if (!at.has(J)) { const p = [F[J * 3], Math.fround(F[J * 3 + 1] - rawAt(F[J * 3], F[J * 3 + 2])), F[J * 3 + 2]], nn = new Float32Array(3)
+      octDecode(...octEncode(Fn[J * 3], Fn[J * 3 + 1], Fn[J * 3 + 2]), nn, 0)
+      at.set(J, { p: p.map((x, a) => Math.fround(snap(x, step[a]))), n: nn }) } return at.get(J) }
+    sm.verts.forEach((v, j) => { if (v < 0) return
+      const J = Math.floor(j / sm.r), w = (j % sm.r) / sm.r, A = far(J), B = w ? far(J + 1) : A
+      for (let c = 0; c < 3; c++) { rel[v * 3 + c] = A.p[c] + (B.p[c] - A.p[c]) * w; normal[v * 3 + c] = A.n[c] + (B.n[c] - A.n[c]) * w } })
+  }
+  return { rel, normal, raws }
 }

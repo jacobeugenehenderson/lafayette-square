@@ -278,8 +278,8 @@ async function run(D, src, log) {
         else { const g = JSON.parse(readFileSync(gp, 'utf8')), bed = g.groups.some(q => q.kind === 'mat' && q.id === 'bed'), pinned = g.groups.some(q => q.drawnRawByteOffset != null)
           if (bed || pinned) bad('⑤', `${f} is 'inland' for ${town}, and its slab has ${bed ? 'a bed (①\'s water)' : ''}${bed && pinned ? ' and ' : ''}${pinned ? 'pinned groups' : ''}: its drawn raw is not the field`) } } }
     const R = src[REV]
-    // the drape's pins are revetmentDrape.js#drapeRaws over the drawn raw (the bake's own: the far's row lerped where a near chunk meets it)
-    if (!/drapeRaws\(built, \(x, z\) => drawnGroundParts\(x, z\)\.raw\)/.test(R) || !/setAttribute\('aDrawnRaw'/.test(R)) bad('⑤', 'the revetment drape is not made ground-relative to the drawn ground, carried as its pin (aDrawnRaw)')
+    // the drape's pins are revetmentDrape.js#drapeRelative over the drawn raw (the bake's own: the far's row lerped where a near chunk meets it)
+    if (!/drapeRelative\(built, \(x, z\) => drawnGroundParts\(x, z\)\.raw, step\)/.test(R) || !/setAttribute\('aDrawnRaw'/.test(R)) bad('⑤', 'the revetment drape is not made ground-relative to the drawn ground, carried as its pin (aDrawnRaw)')
     const drapes = [...R.matchAll(/patchTerrain\((?:drape\.material|d), \{([^}]*)\}\)/g)].map(m => m[1])
     if (drapes.length !== 2 || drapes.some(a => !/drawn: true/.test(a))) bad('⑤', `the drape's ${drapes.length} lift(s) do not all pass drawn: true (${drapes.join(' | ')})`)
     const by = {}; for (const f of rt) by[(src.runtime[f] ?? '?').split(':')[0]] = (by[(src.runtime[f] ?? '?').split(':')[0]] || 0) + 1
