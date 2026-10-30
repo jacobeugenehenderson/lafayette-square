@@ -183,7 +183,7 @@ const TOPO = [SQ(0, 0, 20000, 20000), rev(SQ(7000, 7000, 6000, 6000)),
   const wrongK = ip(fx('ptown-collapse-wrong-output').paths), wrong = residualOf(wrongK, cs, st), live = residualOf(openCloseAtStep(cs, st, 'collapse').paths, cs, st)
   const bc = readFileSync(join(ROOT, 'cartograph/bake-coast.mjs'), 'utf8'), sg = readFileSync(join(ROOT, 'cartograph/sign-coast-residual.mjs'), 'utf8')
   const wired = /if \(gate\) judgeNets\(\{ water: waterNet, decks: decksNet \}\)/.test(bc) && /waterNet = netOf\(oc\.paths, traced, fine\)/.test(bc) && /decksNet = netOf\(decks\.paths, deckInputs\(osm\.ground\)\.paths, fine\)/.test(bc)
-    && /const tolPath = join\(mapDir, 'coast-tolerance\.json'\)/.test(bc) && /if \(!accept\) \{/.test(sg) && !/--force|--anyway|process\.env\./.test(bc.slice(bc.indexOf('const judgeNets'), bc.indexOf('const recordOf')))
+    && /const tolPath = tolerancePathOf\(scene\)/.test(bc) && /export const tolerancePathOf = \(scene\) => join\(CARTOGRAPH_DIR, 'data', scene, TOLERANCE_FILE\)/.test(bc) && /if \(!accept\) \{/.test(sg) && !/--force|--anyway|process\.env\./.test(bc.slice(bc.indexOf('const judgeNets'), bc.indexOf('const recordOf')))
   row(wired, `(3c) the runtime net is wired: bake-coast judges the water's and the decks' open/close against the town's tolerance before the record is written; sign-coast-residual writes only with --accept; no bake-anyway (${wired})`)
   const v = (r, t) => verdictOf(r, t, 'planted')
   row(v(wrong, empty).act === 'stop', `(3c) mutant: the frozen wrong output (${wrong.n} piece, ${wrong.m2} m², key ${wrong.pieces[0]?.key}) against an empty accepted set → ${v(wrong, empty).act.toUpperCase()}, RED as it must be`)

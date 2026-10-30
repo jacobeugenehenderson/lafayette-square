@@ -65,10 +65,11 @@ import { residualOf, verdictOf } from './openCloseJudge.mjs'      // the open/cl
 import { importClosure, contentRecord } from './pour-code.mjs'
 import { terrainValueReads } from './terrainReads.mjs'
 import { fileURLToPath } from 'url'
+import { createHash } from 'crypto'
 import { tessellateAdaptive } from './derive.js'                       // the mint's own centreline (mintInputs tessellates the same way)
 import { highwayStandard, townState } from '../src/cartograph/streetProfiles.js'
 import { CLIP_SCALE as SCALE } from '../src/lib/lattice.js'          // clipper units per metre: 1 mm
-import { COAST_FILE, COAST_VERSION, heldCells, ringViolations, ringsMeet, toResolution } from './coastFile.mjs'
+import { COAST_FILE, COAST_VERSION, TOLERANCE_FILE, PENDING_FILE, heldCells, ringViolations, ringsMeet, toResolution } from './coastFile.mjs'
 import { outlineCorner, INK_EPS } from '../src/lib/tileGround.js'
 import { lidarToRecordM, FLIGHTS_FILE } from './fetch-lidar-flights.mjs'
 import { discOf } from './boundaryRecords.mjs'
@@ -292,6 +293,22 @@ export function bodiesAtEdge(paths, R, minM2) {
   return { bodies, hollows }
 }
 
+// ⭐ THE RESIDUAL'S RECORD, ONE HOME (Zob's ruling, Boz's GO, 2026-10-29): what a town signs (sign-coast-residual.mjs, Stage's accept)
+// and what a stopped coast step leaves for the operator to look at are ONE record: per path (water, decks) the count, m² and the
+// pieces past 2·NODE_BOUND (key, side, m², where), and the coast step's reads (code and authored inputs) it was judged with.
+// Its IDENTITY is those reads and the sorted path:key list: the card the operator looks at carries it, and an accept signs only the
+// record with that identity, still read with today's inputs (serve.js, the accept route)
+export const tolerancePathOf = (scene) => join(CARTOGRAPH_DIR, 'data', scene, TOLERANCE_FILE)
+export const pendingPathOf = (scene) => join(CARTOGRAPH_DIR, 'data', scene, 'clean', PENDING_FILE)   // a run's state: under clean/, gitignored
+export function residualRecord({ nets, reads, coastSha = null, signedAt = null }) {
+  const rec = { signedAt, coastSha, reads }
+  for (const k of ['water', 'decks']) { const r = nets[k]; rec[k] = { n: r.n, m2: r.m2, sites: r.pieces.map(({ key, side, m2, at }) => ({ key, side, m2, at })) } }
+  return rec }
+export const recordIdentity = (rec) => createHash('sha1').update(JSON.stringify({ reads: rec.reads, keys: ['water', 'decks'].flatMap(k => (rec[k]?.sites || []).map(w => `${k}:${w.key}`)).sort() })).digest('hex')
+// the coast step's reads: its code (its import closure) and the authored inputs it reads, as a content record
+export const coastReadsOf = (scene) => { const mapDir = join(CARTOGRAPH_DIR, 'data', scene)
+  return contentRecord([...importClosure([fileURLToPath(import.meta.url)]), ...['clean/overlay.json', 'clean/skeleton.json', 'raw/water-datums.json'].map(f => join(mapDir, f)).filter(f => fs.existsSync(f)), { value: 'terrainValueReads', read: () => terrainValueReads(scene) }]) }
+
 export async function bakeCoast({ scene, outDir = null, write = true, gate = true }) {
   const mapDir = join(CARTOGRAPH_DIR, 'data', scene)
   const outPath = join(outDir || join(mapDir, 'clean'), COAST_FILE)
@@ -312,13 +329,18 @@ export async function bakeCoast({ scene, outDir = null, write = true, gate = tru
   // the pour STOPS, naming the pieces and what changed since the signature. Accepted pieces gone → the file TIGHTENS (the only automatic
   // change). There is no bake-anyway flag
   const netOf = (k, P, stepM) => { const t0 = Date.now(), r = residualOf(k, P, stepM); return { ...r, judgedS: +((Date.now() - t0) / 1000).toFixed(1) } }
-  const tolPath = join(mapDir, 'coast-tolerance.json')
-  const coastReads = () => contentRecord([...importClosure([fileURLToPath(import.meta.url)]), ...['clean/overlay.json', 'clean/skeleton.json', 'raw/water-datums.json'].map(f => join(mapDir, f)).filter(f => fs.existsSync(f)), { value: 'terrainValueReads', read: () => terrainValueReads(scene) }])
+  const tolPath = tolerancePathOf(scene), pendingPath = pendingPathOf(scene)
+  const coastReads = () => coastReadsOf(scene)
   const judgeNets = (nets) => {
     const tol = fs.existsSync(tolPath) ? JSON.parse(fs.readFileSync(tolPath, 'utf8')) : null, now = coastReads(), tightened = {}
     const changed = () => !tol?.reads ? '' : ` What changed since the signature (${tol.signedAt}): ${Object.keys({ ...tol.reads, ...now }).filter(f => tol.reads[f] !== now[f]).join(', ') || 'none of the coast step\'s code or authored inputs'}.`
-    for (const [k, r] of Object.entries(nets)) { const v = verdictOf(r, tol ? tol[k] : null, `${scene}'s ${k}`)
-      if (v.act === 'stop') throw new Error(`⛔ bake-coast: ${v.why}.${changed()} Look at each piece; if it is the rounding, accept it: in Stage's Bake, or node cartograph/sign-coast-residual.mjs --scene=${scene} --accept. Stopping.`)
+    const verdicts = Object.entries(nets).map(([k, r]) => ({ k, r, v: verdictOf(r, tol ? tol[k] : null, `${scene}'s ${k}`) })), stops = verdicts.filter(x => x.v.act === 'stop')
+    // ⛔ A STOP LEAVES ITS PIECES FOR THE OPERATOR (Boz's GO, 2026-10-29): the record of both paths, as a run's state under clean/, which
+    // Stage's Bake shows as a card (serve.js answers 428) and its accept signs. A run that passes leaves none: a stale one never stands
+    if (stops.length) { if (write) { fs.mkdirSync(join(pendingPath, '..'), { recursive: true }); fs.writeFileSync(pendingPath, JSON.stringify(residualRecord({ nets, reads: now }), null, 1) + '\n') }
+      throw new Error(`⛔ bake-coast: ${stops.map(x => x.v.why).join('; ')}.${changed()} Look at each piece; if it is the rounding, accept them: in Stage's Bake (its card lists each piece and frames it), or node cartograph/sign-coast-residual.mjs --scene=${scene} --accept. Stopping.`) }
+    if (write && fs.existsSync(pendingPath)) fs.rmSync(pendingPath)
+    for (const { k, r, v } of verdicts) {
       if (v.act === 'tighten') { tightened[k] = v.tightened; console.log(`[bake-coast] ${scene}: ${v.why}`) }
       else console.log(`[bake-coast] ${v.why} (judged in ${r.judgedS} s)`) }
     if (Object.keys(tightened).length && write) writeIfChanged(tolPath, JSON.stringify({ ...tol, ...tightened }, null, 1)) }

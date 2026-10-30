@@ -12,6 +12,9 @@ import { CLIP_SCALE } from '../src/lib/lattice.js'
 export { coastSignBreaks }
 
 export const COAST_FILE = 'coast.json'
+// the town's SIGNED open/close residual (tracked authoring, beside its other authoring) and a stopped coast step's pieces (a run's
+// state under clean/, gitignored): bake-coast.mjs#residualRecord is their one record
+export const TOLERANCE_FILE = 'coast-tolerance.json', PENDING_FILE = 'coast-residual-pending.json'
 
 /**
  * The town's coast as ① takes it: { coast: false } for an inland town, else { coast: true, rings, holes, arcs, doc }.

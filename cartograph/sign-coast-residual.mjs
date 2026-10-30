@@ -13,22 +13,19 @@
  *   node cartograph/sign-coast-residual.mjs --scene=<town> --accept   # prints them and signs
  */
 import fs from 'fs'
-import { join } from 'path'
 import { createHash } from 'crypto'
-import { CARTOGRAPH_DIR } from './config.js'
 import { requireExplicitMap } from './scene.js'
-import { bakeCoast } from './bake-coast.mjs'
+import { bakeCoast, residualRecord, tolerancePathOf, pendingPathOf } from './bake-coast.mjs'
 
 export async function signCoastResidual({ scene, accept = false }) {
-  const out = await bakeCoast({ scene, write: false, gate: false }), mapDir = join(CARTOGRAPH_DIR, 'data', scene), tolPath = join(mapDir, 'coast-tolerance.json')
+  const out = await bakeCoast({ scene, write: false, gate: false }), tolPath = tolerancePathOf(scene)
   if (!out.coast) { console.log(`[sign-coast-residual] ${scene}: inland, no open/close to sign for`); return null }
-  const { nets, ...record } = out, rec = { signedAt: new Date().toISOString(), coastSha: createHash('sha1').update(JSON.stringify(record)).digest('hex'), reads: nets.reads }
+  const { nets, ...record } = out, rec = residualRecord({ nets, reads: nets.reads, coastSha: createHash('sha1').update(JSON.stringify(record)).digest('hex'), signedAt: new Date().toISOString() })
   for (const k of ['water', 'decks']) { const r = nets[k]
     console.log(`[sign-coast-residual] ${scene}'s ${k}: ${r.n} piece(s) past 2·NODE_BOUND, ${r.m2} m²${r.n ? ':' : ''}`)
-    for (const w of r.pieces) console.log(`   ${w.key}  ${w.side}  ${w.m2} m²  at (${w.at.join(', ')})`)
-    rec[k] = { n: r.n, m2: r.m2, sites: r.pieces.map(({ key, side, m2, at }) => ({ key, side, m2, at })) } }
+    for (const w of r.pieces) console.log(`   ${w.key}  ${w.side}  ${w.m2} m²  at (${w.at.join(', ')})`) }
   if (!accept) { console.log(`[sign-coast-residual] ${scene}: NOTHING WRITTEN. Look at each piece; to accept them: --accept`); return rec }
-  fs.writeFileSync(tolPath, JSON.stringify(rec, null, 1) + '\n')
+  fs.writeFileSync(tolPath, JSON.stringify(rec, null, 1) + '\n'); fs.rmSync(pendingPathOf(scene), { force: true })   // signed: a stopped run's pieces are answered
   console.log(`[sign-coast-residual] ${scene}: SIGNED ${tolPath} (commit it with the town's authoring)`)
   return rec
 }

@@ -285,6 +285,13 @@
   padding: 24px 16px;
   z-index: 9999;
 }
+/* ⭐ docked: a piece is being looked at (BakeModal's coast-residual card), so the map shows and stays usable: no scrim, the card at the top */
+.carto-bake-modal.is-docked { background: none; align-items: flex-start; pointer-events: none; }
+.carto-bake-modal.is-docked .carto-bake-modal-card { pointer-events: auto; }
+.carto-bake-residual-list { list-style: none; padding-left: 0 !important; }
+.carto-bake-residual-row { font: inherit; color: inherit; background: none; border: 0; padding: 2px 0; cursor: pointer; text-align: left; }
+.carto-bake-residual-row:hover, .carto-bake-residual-row:focus-visible { color: var(--info); text-decoration: underline; }
+.carto-bake-modal-msg.is-error { color: var(--error, #e5484d); margin-top: 8px; }
 .carto-bake-modal-card {
   box-sizing: border-box;
   width: min(520px, 100%);

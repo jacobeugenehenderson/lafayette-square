@@ -198,6 +198,9 @@ function writeBrowseView(mapKey, center, altitude) {
   try { sessionStorage.setItem(BROWSE_VIEW_KEY(mapKey), JSON.stringify({ center, altitude })) } catch { /* private window: the view is not kept */ }
 }
 
+// the Designer's ortho zoom limits (pixels per metre): the controls' own, and the frame request's clamp
+const DESIGNER_ZOOM = { min: 0.03, max: 40 }
+
 function CameraRig({ orthoRef, perspRef, controlsRef }) {
   const { camera, scene, size } = useThree()
   const shot = useCartographStore(s => s.shot)
@@ -243,6 +246,26 @@ function CameraRig({ orthoRef, perspRef, controlsRef }) {
     const ctl = controlsRef.current
     if (ctl) { ctl.target.set(x, 0, z); ctl.update() }
   }, [camera, controlsRef])
+
+  // ⭐ A FRAME REQUEST (BakeModal's coast-residual card, 2026-10-29): centre the Designer's ortho view on { x, z } with `span` metres of
+  // view height, no closer than the Designer's own zoom limit. Applied once the Designer is the shot (the card sets it)
+  const frameRequest = useCartographStore(s => s.frameRequest)
+  useEffect(() => {
+    if (!frameRequest || shot !== 'designer') return
+    // after the shot's own re-assert (it waits a frame for the controls to mount), so a switch into the Designer keeps the frame
+    let r1 = 0, r2 = 0
+    const apply = () => { const cam = orthoRef.current, ctl = controlsRef.current
+      if (!cam) return
+      const { x, z, span } = frameRequest
+      cam.position.set(x, 500, z)
+      cam.zoom = Math.min(DESIGNER_ZOOM.max, Math.max(DESIGNER_ZOOM.min, size.height / Math.max(span, 1e-6)))
+      cam.up.set(0, 0, -1)
+      cam.lookAt(x, 0, z)
+      cam.updateProjectionMatrix()
+      if (ctl) { ctl.target.set(x, 0, z); ctl.update() } }
+    r1 = requestAnimationFrame(() => { r2 = requestAnimationFrame(apply) })
+    return () => { cancelAnimationFrame(r1); cancelAnimationFrame(r2) }
+  }, [frameRequest, shot, size.height, orthoRef, controlsRef])
 
   // Respond to shot changes.
   // The controls are keyed on Designer/shot so they rebuild when the default
@@ -536,7 +559,7 @@ function Controls({ controlsRef, heroPlaying = false }) {
   if (inDesigner) {
     return (
       <RegimeControls key="ortho" regime="plan" controlsRef={controlsRef} makeDefault={false}
-        enablePan={panEnabled} limits={{ minZoom: 0.03, maxZoom: 40 }} />
+        enablePan={panEnabled} limits={{ minZoom: DESIGNER_ZOOM.min, maxZoom: DESIGNER_ZOOM.max }} />
     )
   }
   if (shot === 'browse') return <RegimeControls key="browse" regime="overhead" controlsRef={controlsRef} />

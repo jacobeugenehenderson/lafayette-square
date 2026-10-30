@@ -23,6 +23,7 @@ import { pourCodeClosure, pourCodeChanged, geographyReadChanged, contentChanged,
 import { treeBakeInputsForMap, treeLibraryFiles } from './tree-bake-inputs.mjs'
 import { terrainValueReads } from './terrainReads.mjs'
 import { COAST_FILE } from './coastFile.mjs'
+import { pendingPathOf, tolerancePathOf, recordIdentity, coastReadsOf } from './bake-coast.mjs'   // the coast's residual record: one home
 import { pourSteps, skeletonStep, runSkeleton, stepReads, recordStep, readBakeReads, runPour, groundForReaders } from './pourSteps.mjs'
 import { readBakeDesign, SEED_STRIPPED_FIELDS } from './lookDesign.mjs'
 import { productionDomainFor, askOperations } from './operations-domain.mjs'
@@ -89,6 +90,19 @@ function runShell(cmd, opts = {}) {
       else reject(new Error(`${refusal ? `${refusal} — ` : ''}Command failed (code=${code}, signal=${signal}): ${cmd}`))
     })
   })
+}
+
+// ⭐ A STOPPED COAST STEP'S PIECES, as Stage's card shows them (Boz's GO, Zob's ruling, 2026-10-29): the pending record the step left
+// (bake-coast.mjs#residualRecord), only while its reads are the coast step's reads NOW. A stale or absent one → null: the stop is then
+// an ordinary failure, never a question about pieces nobody can see any more. → { scene, identity, n, m2, pieces: [{ path, key, side,
+// m2, at }] }
+const sameReads = (a, b) => !!a && !!b && Object.keys({ ...a, ...b }).every(f => a[f] === b[f])
+function coastResidualAsk(scene) {
+  const f = pendingPathOf(scene); if (!existsSync(f)) return null
+  let rec; try { rec = JSON.parse(readFileSync(f, 'utf-8')) } catch { return null }
+  if (!sameReads(rec.reads, coastReadsOf(scene))) return null
+  const pieces = ['water', 'decks'].flatMap(path => (rec[path]?.sites || []).map(w => ({ path, ...w })))
+  return { scene, identity: recordIdentity(rec), n: pieces.length, m2: +pieces.reduce((t, w) => t + w.m2, 0).toFixed(4), pieces }
 }
 
 // ⭐⭐ BAKE PROGRESS — the operator sees the bake, step by step, and can stop it.
@@ -2728,7 +2742,16 @@ createServer(async (req, res) => {
         // lidar meets high water and writes clean/coast.json, which the mint reads as data (pour-code.mjs#pourDataReads),
         // so a coast that moved re-pours through the confirm below and one that did not re-pours nothing. Its own step,
         // judged by content: the lidar is read over the network, and an authoring re-pour must not read it again.
-        await runIfDirty('coast', POUR.coast.inputs, POUR.coast.outputs, POUR.coast.cmd, { cwd: here, timeout: POUR.coast.timeout })
+        // ⭐ A STOP ON THE COAST'S OPEN/CLOSE RESIDUAL IS A QUESTION (Boz's GO, 2026-10-29): the step left its pieces (coastResidualAsk), so
+        // the Bake answers 428 with them, as the re-pour asks; Stage's card lists each, frames it, and accepts them in one press (the
+        // accept route below). Any other failure of the step is a failure
+        try { await runIfDirty('coast', POUR.coast.inputs, POUR.coast.outputs, POUR.coast.cmd, { cwd: here, timeout: POUR.coast.timeout }) } catch (e) {
+          const ask = P.cancel ? null : coastResidualAsk(bakeScene)
+          if (!ask) throw e
+          res.writeHead(428, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify({ lookId: id, coastResidual: ask }))
+          return
+        }
         // ⛔⛔ A CODE CHANGE RE-POURS THE TOWN — SAY SO BEFORE DOING IT (Boz's ruling (d), 2026-09-24). The pour's code
         // inputs are its import closure, so a change to the ① mint, the coastline or the section builder makes every
         // poured town's next Bake a RE-POUR. That is correct, and it is also how a town gets poured by accident (LS,
@@ -3193,6 +3216,40 @@ createServer(async (req, res) => {
   }
 
   // GET /looks/<id>/bake/status — the running bake's steps (BakeModal polls this)
+  // ⭐ THE OPERATOR SIGNS THE COAST'S RESIDUAL IN STAGE (Boz's GO, Zob's ruling, 2026-10-29). POST { identity }: the identity the card
+  // showed (coastResidualAsk). It writes coast-tolerance.json FROM the pending record, unchanged (the judge has one home: the coast step),
+  // only when that record still has this identity and is read with today's inputs; else it refuses ("the coast changed since you
+  // looked"), so a second Bake rewriting the pieces between the card and the press is never signed. The signature is authoring: it is
+  // committed here, path-limited, naming the town, the count and m², and that the operator signed it in Stage. The pending record goes.
+  // ⛔ No bake-anyway: nothing else writes the tolerance but sign-coast-residual.mjs --accept
+  if (req.method === 'POST' && (m = path.match(/^\/looks\/([^/]+)\/coast-residual\/accept$/))) {
+    const id = m[1]
+    let body = ''
+    req.on('data', c => body += c)
+    req.on('end', async () => {
+      const send = (code, j) => { res.writeHead(code, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(j)) }
+      try {
+        const scene = readLooksIndex().looks.find(l => l.id === id)?.scene
+        if (!scene) return send(404, { error: `unknown look '${id}', or it has no town` })
+        if (_bakesInFlight.has(id)) return send(409, { error: 'a bake is running for this look: accept when it has stopped' })
+        const { identity } = JSON.parse(body || '{}'), ask = coastResidualAsk(scene)
+        if (!ask || ask.identity !== identity) return send(409, { error: `the coast changed since you looked at these pieces, so they were not signed. Bake again to see the coast as it is now.` })
+        const REPO_ROOT = join(import.meta.dirname, '..'), tol = tolerancePathOf(scene), rel = relative(REPO_ROOT, tol)
+        const rec = JSON.parse(readFileSync(pendingPathOf(scene), 'utf-8'))
+        writeFileSync(tol, JSON.stringify({ ...rec, signedAt: new Date().toISOString(), signedIn: 'Stage' }, null, 1) + '\n')
+        rmSync(pendingPathOf(scene), { force: true })
+        const say = ['water', 'decks'].map(k => `${k} ${rec[k].n} piece(s), ${rec[k].m2} m²`).join(' · ')
+        const add = await runCapture(`git add -- ${rel}`, { cwd: REPO_ROOT })
+        if (add.code !== 0) throw new Error(`the signature was written (${rel}) but git add failed: ${add.stderr || add.stdout}`)
+        const msg = `${rel}: ${scene} signs its coast's open/close residual (${say}), signed in Stage by the operator. Reaches no register.`
+        const commit = await runCapture(`git commit -m ${JSON.stringify(msg)} -- ${rel}`, { cwd: REPO_ROOT })
+        if (commit.code !== 0) throw new Error(`the signature was written (${rel}) but git commit failed: ${commit.stderr || commit.stdout}`)
+        const sha = (await runCapture(`git rev-parse --short HEAD`, { cwd: REPO_ROOT })).stdout.trim()
+        send(200, { ok: true, scene, n: ask.n, m2: ask.m2, committed: sha })
+      } catch (err) { send(500, { error: err.message }) }
+    })
+    return
+  }
   if (req.method === 'GET' && (m = path.match(/^\/looks\/([^/]+)\/bake\/status$/))) {
     const P = _bakeProgress.get(m[1])
     res.writeHead(200, { 'Content-Type': 'application/json' })

@@ -750,6 +750,12 @@ function PublishPanel({ lookId }) {
         // 428 = this bake would re-pour the town because the pour's code changed; nothing ran. Ask, as BakeModal does.
         if (bake.status === 428) {
           const body = await bake.json().catch(() => ({}))
+          // …or the coast step stopped on its open/close residual: its pieces are signed in Stage, where they can be seen and framed
+          if (body.coastResidual) { const c = body.coastResidual
+            setMsg({ kind: 'err', text: `Not published: ${c.scene}'s coast differs from its definition in ${c.n} place${c.n === 1 ? '' : 's'}. Bake in Stage to look at them and accept them, then publish.` })
+            setBusy(null)
+            return
+          }
           setRepour({ files: body.repour?.files || [] })
           setBusy(null)
           return

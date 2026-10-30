@@ -351,3 +351,5 @@ references/files/
 
 # The Bake's stage (cartograph/slabStage.mjs): a slab step writes here and is published only when it succeeds.
 cartograph/.bake-stage/
+# a stopped coast step's pieces (bake-coast.mjs#residualRecord): a run's state, never authoring (the signature is coast-tolerance.json)
+cartograph/data/*/clean/coast-residual-pending.json
