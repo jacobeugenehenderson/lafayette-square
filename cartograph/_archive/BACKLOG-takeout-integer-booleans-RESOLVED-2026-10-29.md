@@ -12,3 +12,9 @@ The row as it stood:
   the cut-once brief's "every boolean"; its open and close cut once (`openClose.mjs`). On PTown's v5 take-out: copy 0, crossings 0, ≤ 2 mm 11
   (a ratchet) ▶ `checks/claims-the-open-close-cuts-once.mjs` (4). On the arrangement instead (local `plumb/takeout-on-arrangement` 3dc1a151):
   v5 recurs at 84–86, cause not established.
+
+## Also evicted 2026-10-29: a spent row (struck through and kept, the anti-pattern)
+
+Moved from `cartograph/BACKLOG.md` §NEXT to make room for a HARDENING line:
+
+- ~~**🧹 Prune the stale worktrees (`.claude/worktrees/`)**~~ ✅ **SPENT — verified 2026-08-04.** `git worktree list` returns **2**: the main tree and `.claude/worktrees/pipeline-repro` (`repro-a01`). None of the four branches this item named has a worktree. ⭐ The load-bearing part was the *warning* — "any worktree dispatch is unreliable until this is cleaned." **That no longer applies; `isolation: worktree` is safe to use.** *(Delete this line at the next sweep.)*
