@@ -38,23 +38,17 @@ function serveHelperApps() {
   return {
     name: 'serve-helper-apps',
     configureServer(server) {
+      // ⭐ Through transformIndexHtml, like index.html: plugin-react injects its own dev preamble and declareKitBase
+      // its kit base. ⛔ These pages once inlined the preamble by hand because they were served raw, and `vite build`
+      // then bundled the dev-only /@react-refresh runtime into the published player (2026-10-30).
+      // ▶ node checks/claims-a-built-page-imports-no-dev-module.mjs
+      const send = (req, res, next, file) => server.transformIndexHtml(req.url, fs.readFileSync(path.resolve(file), 'utf-8'))
+        .then((html) => { res.setHeader('Content-Type', 'text/html; charset=utf-8'); res.end(html) }, next)
       server.middlewares.use((req, res, next) => {
         const url = (req.url || '').split('?')[0]
-        if (/^\/stage\/[^/.]+(\/[^/.]+)?\/?$/.test(url)) {
-          res.setHeader('Content-Type', 'text/html; charset=utf-8')
-          res.end(withKitBase(fs.readFileSync(path.resolve('cartograph.html'), 'utf-8'), server.config.base))
-          return
-        }
+        if (/^\/stage\/[^/.]+(\/[^/.]+)?\/?$/.test(url)) return send(req, res, next, 'cartograph.html')
         for (const r of routes) {
-          if (url === r.url || url === r.url + '/') {
-            const filePath = path.resolve(r.file)
-            if (fs.existsSync(filePath)) {
-              res.setHeader('Content-Type', 'text/html; charset=utf-8')
-              // Served raw, past transformIndexHtml — so the kit base is declared here too.
-              res.end(withKitBase(fs.readFileSync(filePath, 'utf-8'), server.config.base))
-              return
-            }
-          }
+          if ((url === r.url || url === r.url + '/') && fs.existsSync(path.resolve(r.file))) return send(req, res, next, r.file)
         }
         next()
       })
@@ -290,6 +284,8 @@ export default defineConfig(({ command }) => ({
   assetsInclude: ['**/*.bin'],
   build: {
     target: 'es2022',
+    // The publish tells the player's files from the operator apps' by this (scripts/player-graph.mjs).
+    manifest: true,
     rollupOptions: {
       input: {
         main: 'index.html',
