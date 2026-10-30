@@ -10,7 +10,8 @@
  * STAGING — the towns are what staging-sites reads, listed from the bucket: every map with a player record
  * (`staging/sites/<map>/`) or a slab (`staging/baked/<map>/`), so a slab with no record is seen too. ⛔ Not the
  * instance registry (Boz, 2026-10-30): a town on staging and missing from it was invisible. Each map goes through
- * `index.js`'s sequence: a former name in `staging/renamed.json` is a 301 (skipped); a slab with neither `manifest.json` nor `scene.json` is not published (skipped); otherwise
+ * `index.js`'s sequence: a rename table the Worker would throw on refuses; a former name in `staging/renamed.json` is
+ * a 301 (skipped) when its new name's slab is there, else its old links 404 (dark); a slab with neither `manifest.json` nor `scene.json` is not published (skipped); otherwise
  * the `manifest.json`, the town's player record (BRIEF-ward-on-staging, 2026-09-28 — no record is a 404, ▶ node
  * scripts/set-staging-player.mjs --map=<t> --player=ward), and the player it names, which every town on it shares
  * (`wardBuild`: `current.json` → its kit bundle's manifest → its index.html; or the kit's legacy player). The
@@ -45,7 +46,7 @@ import { execFileSync, spawnSync } from 'node:child_process'
 import { readFileSync, writeFileSync, rmSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { join, dirname, basename } from 'node:path'
-import { route } from '../workers/production-sites/src/route.js'
+import { route, MAP_ID } from '../workers/production-sites/src/route.js'
 
 const REPO_ROOT = fileURLToPath(new URL('..', import.meta.url))
 const ENVS = ['staging', 'prod']
@@ -185,7 +186,10 @@ async function stagingRun(store, accepted, say = console) {
     const [sites, slabs, table] = await Promise.all([store.dirs(vars.SITE), store.dirs(SLAB), store.get(RENAMED)])
     maps = [...new Set([...sites, ...slabs])].sort()
     renamed = table == null ? {} : JSON.parse(table)
-    if (!renamed || typeof renamed !== 'object' || Array.isArray(renamed)) throw new Error(`${RENAMED} is not a { "<old map>": "<new map>" } table`)
+    // index.js#renamedTable's own test: one bad value 500s every town on staging, so it refuses here.
+    if (!renamed || typeof renamed !== 'object' || Array.isArray(renamed) || Object.values(renamed).some((v) => typeof v !== 'string' || !MAP_ID.test(v))) {
+      throw new Error(`${RENAMED} is not a { "<old map>": "<new map>" } table — the Worker would 500 every town`)
+    }
   } catch (err) {
     say.error(`  ⛔ staging the towns (${vars?.SITE ?? 'staging/sites/'}, ${SLAB}) could not be listed: ${err.message} — refusing to say it is safe`)
     return { '*': 'uncertain' }
@@ -194,14 +198,19 @@ async function stagingRun(store, accepted, say = console) {
   for (const map of maps) {
     const tag = `${'staging'.padEnd(8)}${map.padEnd(26)}`
     // A former name is a 301 before any slab is asked for; the name it points at is judged as itself.
-    if (renamed[map]) { out[map] = 'renamed'; say.log(`  ·  ${tag} renamed to "${renamed[map]}" (${RENAMED}): a redirect, not a town`); continue }
     try {
+      if (renamed[map]) {   // the Worker 301s it only if the new name's slab is there, else 404s the old name
+        if (await store.has(`${SLAB}${renamed[map]}/manifest.json`)) { out[map] = 'renamed'; say.log(`  ·  ${tag} renamed to "${renamed[map]}" (${RENAMED}): a redirect, not a town`); continue }
+        throw Object.assign(new Error(), { dark: `renamed to "${renamed[map]}", which has no ${SLAB}${renamed[map]}/manifest.json — its old links 404` })
+      }
       const v = await stagingVerdict(map, store, vars, shared)
       if (v.ok) { out[map] = 'ok'; say.log(`  ✅ ${tag} ${v.ok}`) }
       else if (v.unpublished) { out[map] = 'unpublished'; say.log(`  ·  ${tag} not published here (${v.unpublished})`) }
       else if (accepted.has(map)) { out[map] = 'accepted'; say.warn(`  ⚠️ ${tag} goes DARK on staging BY YOUR DECISION (ACCEPT_DARK) — ${v.dark}`) }
       else { out[map] = 'dark'; say.error(`  ⛔ ${tag} this Worker would 404 it — ${v.dark}`) }
     } catch (err) {
+      if (err.dark && accepted.has(map)) { out[map] = 'accepted'; say.warn(`  ⚠️ ${tag} goes DARK on staging BY YOUR DECISION (ACCEPT_DARK) — ${err.dark}`); continue }
+      if (err.dark) { out[map] = 'dark'; say.error(`  ⛔ ${tag} this Worker would 404 it — ${err.dark}`); continue }
       out[map] = 'uncertain'
       say.error(`  ⛔ ${tag} could not be read (${err.message}) — refusing to say it is safe`)
     }
@@ -295,6 +304,9 @@ const STAGING_CASES = [
   ['ACCEPT_DARK names a town going dark', huronNoRecord, ['huron'], { provincetown: 'ok', huron: 'accepted' }],
   ['ACCEPT_DARK names a town that is fine', { ...stWard, ...stTown('provincetown') }, ['provincetown'], { provincetown: 'ok', 'ACCEPT_DARK provincetown': 'stale' }],
   ['a former name with a leftover slab is a redirect', { ...stWard, ...stTown('hipointedemun'), 'staging/baked/hipointe-demun/scene.json': '{}', 'staging/renamed.json': '{"hipointe-demun":"hipointedemun"}' }, [], { hipointedemun: 'ok', 'hipointe-demun': 'renamed' }],
+  ['a former name whose new name has no slab: its old links 404', { ...stWard, 'staging/baked/hipointe-demun/scene.json': '{}', 'staging/renamed.json': '{"hipointe-demun":"hipointedemun"}' }, [], { 'hipointe-demun': 'dark' }],
+  ['a rename table with a number for a name', { ...stWard, ...stTown('provincetown'), 'staging/renamed.json': '{"old":7}' }, [], { '*': 'uncertain' }],
+  ['a rename table with a name that is not a map id', { ...stWard, ...stTown('provincetown'), 'staging/renamed.json': '{"old":"Bad Name"}' }, [], { '*': 'uncertain' }],
   ['the towns cannot be listed', null, [], { '*': 'uncertain' }],
 ]
 async function selfTest() {
@@ -325,6 +337,8 @@ const MUTANTS = [
   ['staging: the shared player not asked for', 'const why = await shared(player)', 'const why = null'],
   ['staging: a record with no slab called dark', "if (!manifest && !scene) return { unpublished:", "if (false) return { unpublished:"],
   ['staging: the rename table not read', 'if (renamed[map]) {', 'if (false) {'],
+  ['staging: the rename table\'s values not tested', " || Object.values(renamed).some((v) => typeof v !== 'string' || !MAP_ID.test(v))", ''],
+  ['staging: a rename to an unpublished name read as a redirect', "if (await store.has(`${SLAB}${renamed[map]}/manifest.json`)) {", 'if (true) {'],
   ['staging: ACCEPT_DARK ignored', 'else if (accepted.has(map))', 'else if (false)'],
   ['staging: a stale ACCEPT_DARK passes', "if (out[t] !== 'accepted') {", 'if (false) {'],
 ]
