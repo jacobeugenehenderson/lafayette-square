@@ -36,6 +36,7 @@ import { join, relative, extname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { execFile, execFileSync } from 'node:child_process'
 import { promisify } from 'node:util'
+import { freshUrl } from '../src/lib/freshUrl.js'
 
 const execFileAsync = promisify(execFile)
 const REPO_ROOT = fileURLToPath(new URL('..', import.meta.url))
@@ -142,7 +143,7 @@ async function alreadyThere(files) {
   await Promise.all(Array.from({ length: 16 }, async () => {
     for (let f = queue.pop(); f; f = queue.pop()) {
       try {
-        const r = await fetch(PUBLIC_BASE + PLAYER_PREFIX + f.rel, { method: 'HEAD' })
+        const r = await fetch(freshUrl(PUBLIC_BASE + PLAYER_PREFIX + f.rel), { method: 'HEAD' })
         if (r.ok && Number(r.headers.get('content-length')) === f.bytes) fresh.add(f.rel)
       } catch { /* unreachable ⇒ upload */ }
     }
@@ -166,7 +167,7 @@ async function alreadyThere(files) {
     // ⛔ This used to compile `…/staging/` in and refuse anything else; that guard now lives in
     // the staging Worker's `SLAB_BASE`, which is the only thing that says "staging" to the page.
     const assetBase = 'runtime'
-    const probe = await fetch('https://staging.theward.online/_slab-base', { cache: 'no-store' }).catch((e) => ({ ok: false, status: e.message }))
+    const probe = await fetch(freshUrl('https://staging.theward.online/_slab-base')).catch((e) => ({ ok: false, status: e.message }))
     const said = probe.ok ? (await probe.text()).trim() : null
     if (!said || !/\/staging\/$/.test(said)) {
       throw new Error(`the staging Worker does not tell pages where the slab is (/_slab-base → ${said ?? probe.status}). `

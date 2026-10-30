@@ -36,6 +36,7 @@ import { writeFileSync, mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { HASHED, CACHE, contentName } from '../src/lib/slabNames.js'
+import { freshUrl } from '../src/lib/freshUrl.js'
 
 const execFileAsync = promisify(execFile)
 const REPO_ROOT = fileURLToPath(new URL('..', import.meta.url))
@@ -88,7 +89,7 @@ export function retirePlan({ base, index, manifests, keep = 2, retirePlain = fal
 }
 
 async function getJSON(url) {
-  const r = await fetch(url, { cache: 'no-store' })
+  const r = await fetch(freshUrl(url))
   if (r.status === 404) return null
   if (!r.ok) throw new Error(`${url} → ${r.status}`)
   return r.json()
@@ -96,11 +97,11 @@ async function getJSON(url) {
 
 /** A host's player carries the resolver iff one of its page's modules (entry or modulepreload) names the scheme. */
 async function hostResolves(origin) {
-  const html = await fetch(origin, { cache: 'no-store' }).then((r) => r.text())
+  const html = await fetch(freshUrl(origin)).then((r) => r.text())
   const scripts = [...html.matchAll(/<script[^>]+src="([^"]+)"|<link[^>]+rel="modulepreload"[^>]+href="([^"]+)"/g)]
     .map((m) => new URL(m[1] || m[2], origin).href)
   if (!scripts.length) throw new Error(`${origin} serves no <script src> — cannot tell what its player reads`)
-  for (const s of scripts) if ((await fetch(s).then((r) => r.text())).includes(HASHED)) return true
+  for (const s of scripts) if ((await fetch(freshUrl(s)).then((r) => r.text())).includes(HASHED)) return true
   return false
 }
 
