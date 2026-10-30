@@ -197,6 +197,14 @@ const TOPO = [SQ(0, 0, 20000, 20000), rev(SQ(7000, 7000, 6000, 6000)),
   const fell = v(wrong, { n: 2, m2: wrong.m2 + 1, sites: [...signed.sites, { key: 'gone0000000000000', side: 'definition only', m2: 1, at: [0, 0] }] })
   row(fell.act === 'tighten' && fell.tightened.n === 1 && fell.tightened.sites.length === 1, `(3c) a FALL tightens the tolerance: an accepted piece gone → ${fell.act}, to ${fell.tightened?.n} piece(s), ${fell.tightened?.m2} m²`) }
 
+// ── (1u) TWO LATTICE NEIGHBOURS HAVE NO DIRECTION (Zob's ruling, 2026-10-29): openClose.mjs#emit reads a token whose line joins two lattice
+// neighbours as a vertex. The three residual pieces the runtime net first found, each its own part as the net judged it: Huron's deck
+// parts 15 (a 1.83 m² wrong fill) and 26 (0.43 m² taken), and PTown's water crop (0.269 m² taken, a 1 mm source jog), each 0 / 0
+// against the definition. (Mutant: cand3's setUnitLinesKept brings all three back, RED ▶ node scratch/cut-once/unit-lines-rows.mjs)
+for (const n of ['huron-deck-part15', 'huron-deck-part26', 'ptown-residual-largest-crop']) { const d = fx(n), P = ip(d.paths)
+  let why = null, r = null; try { r = residualOf(ip(openCloseCutOnce(P, d.fineM, n).rings), P, d.fineM) } catch (e) { why = String(e.message) }
+  row(!why && !r.n, `(1u) ${n}: ${why ? `REFUSED: ${why.slice(0, 160)}` : `${r.n} piece(s), ${r.m2} m² past 2·NB against the definition`}`) }
+
 // ── (4) PTown's take-out (structures.mjs#waterWithoutDecks over coast v5 and its street decks): the water within two cells of a
 // deck opened, the deck and its slivers closed, every boolean on the noded arrangement (openClose.mjs#boolOf, #growBy, #openAt,
 // #closeAt). ⭐ The ≤ 2 mm count is a RATCHET: RED on a rise, and RED on a fall ("lower

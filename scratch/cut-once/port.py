@@ -38,7 +38,7 @@ i = s.index("// a ring's raw offset curve at d"); j = s.index("  return out\n}\n
 for f, setter in [('TAGS_BY_SEGMENT', 'setTagsBySegment'), ('REFUSE_ALL_BACKWARD', 'setRefuseAllBackward'), ('SINGLE_POINT_BRANCH', 'setSinglePointBranch'),
                   ('RAW_CURVE', 'setRawCurve'), ('BY_EDGES', 'setByEdges'), ('NO_EMIT_INVARIANT', 'setNoEmitInvariant'),
                   ('TIERS_SWAPPED', 'setTiersSwapped'), ('TAGS_OFF_AT', 'setTagsOffAt'), ('OWN_SKIPS_LIMIT', 'setOwnSkipsLimit'), ('SUB_SAME_WAY', 'setSubSameWay'),
-                  ('TRIMMED_ARC_CORNERS', 'setTrimmedArcCorners'), ('ARC_RAW', 'setArcRaw'), ('NO_SLIVER_DROP', 'setNoSliverDrop'), ('TRIM_INVERTED', 'setTrimInverted'), ('CLOSE_RAW', 'setCloseRaw'),
+                  ('TRIMMED_ARC_CORNERS', 'setTrimmedArcCorners'), ('ARC_RAW', 'setArcRaw'), ('NO_SLIVER_DROP', 'setNoSliverDrop'), ('TRIM_INVERTED', 'setTrimInverted'), ('CLOSE_RAW', 'setCloseRaw'), ('UNIT_LINES_KEPT', 'setUnitLinesKept'),
                   ('GAP_BEFORE_LIMIT', 'setGapBeforeLimit'), ('TAG_SET_ORDER', 'setTagSetOrder'), ('INSIDE_RUN_FORWARD', 'setInsideRunForward'), ('CORNER_AT_MITER', 'setCornerAtMiter'), ('BACK_PIECES', 'setBackPieces'), ('MERGE_LEAVES_FIRST', 'setMergeLeavesFirst'), ('CLAIMANTS_KEPT', 'setClaimantsKept'), ('OPP_STANDINS', 'setOppStandins'), ('F_SLIVER_KEPT', 'setFSliverKept'), ('CLAIMANT_ONE_SUCCESSOR', 'setClaimantOneSuccessor'), ('TOPO_SILENT', 'setTopoSilent'), ('STAIR_RETAG_OFF', 'setStairRetagOff'), ('STAIR_CELL_OFF', 'setStairCellOff'), ('PREMISE_IGNORED', 'setPremiseIgnored')]:
     s, n1 = re.subn(rf'^let {f} = [^\n]*\n', '', s, flags=re.M)
     s, n2 = re.subn(rf'^export const {setter} = [^\n]*\n', '', s, flags=re.M)
@@ -60,6 +60,7 @@ sub("tags: withTags && !(TAGS_OFF_AT === who.split(' ').pop())", "tags: withTags
 sub("!OWN_SKIPS_LIMIT && capAt", "capAt", 2)
 sub("const SUB = (rs) => (SUB_SAME_WAY ? rs : revT(rs)), out_ = (w) => (SUB_SAME_WAY ? w > 0 : w < 0)", "const SUB = revT, out_ = (w) => w < 0")
 sub("  if (CLOSE_RAW) return asRings(C)\n", "")
+sub("const unitSeg = (a, b) => !UNIT_LINES_KEPT && Math.abs", "const unitSeg = (a, b) => Math.abs")
 sub("if (kind === 'trimmed-arc' && !TRIMMED_ARC_CORNERS) return clipArc", "if (kind === 'trimmed-arc') return clipArc")
 sub("!ARC_RAW && prevLine", "prevLine")
 sub("if (NO_SLIVER_DROP) return false; ", "")

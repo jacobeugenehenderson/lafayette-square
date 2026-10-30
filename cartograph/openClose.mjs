@@ -126,6 +126,16 @@ function emit(E, T, SRC, d, who, stat, LINES = null) {
   const tok = []
   const lineOf = (g, i) => { const L = LINES?.[g]?.[i]; if (L) return L; const R = SRC[g], a = R[i], b = R[(i + 1) % R.length]; return [[a.X, a.Y], [b.X, b.Y]] }
   const Lsrc = (g, i) => ({ kind: 'L', g, i, int: lineOf(g, i) })
+  // ⭐ TWO LATTICE NEIGHBOURS HAVE NO DIRECTION (Zob's ruling, 2026-10-29; Huron's deck parts 15 and 26, PTown's 0.269 m²): a segment
+  // joining two lattice neighbours (|Δx| ≤ 1 and |Δy| ≤ 1, a unit edge or a unit diagonal) carries NO LINE of its own: any line through
+  // them is quantised to the axes and diagonals, the born-line ruling's own disease. It is read as a vertex. Read where lines become
+  // tokens (below, before t2) and where an arc's edges become lines (arcOf). Integers, no constant
+  const unitSeg = (a, b) => Math.abs((b.X ?? b[0]) - (a.X ?? a[0])) <= LATTICE_STEP && Math.abs((b.Y ?? b[1]) - (a.Y ?? a[1])) <= LATTICE_STEP
+  // a region edge's LINE is on two lattice neighbours: its birth line (LINES), else the edge itself. A unit fragment of a long line keeps
+  // that line (deck 2's close at PTown, (127.619, 154.524): a 1.4 u noded piece of a 17.9 m line)
+  const unitLine = (g, i) => { const L = lineOf(g, i); return unitSeg(L[0], L[1]) }
+  // the edges strictly between i and k on ring g all carry unit lines (each a vertex): the join between i and k skips no arc
+  const onlyUnits = (g, i, k) => { const n = SRC[g].length; for (let j = (i + 1) % n, c = 0; j !== k && c < n; j = (j + 1) % n, c++) if (!unitLine(g, j)) return false; return true }
   // ⭐ A SINGLE-TAG SEGMENT OUT OF ORDER AT A STAIRCASE (Boz's GO, 2026-10-29; PTown's source staircases): a segment carrying ONE tag of a
   // ring, whose tag breaks the forward order between its neighbours' tags on that ring, is re-read as the in-order neighbour's tag when
   // that neighbour's OFFSET line holds both of its ends within the tiered bound (latticeFaces.js#onLineTiered, the one home). It acts
@@ -157,12 +167,12 @@ function emit(E, T, SRC, d, who, stat, LINES = null) {
       // the born line ORIENTED ALONG THE BOUNDARY it now bounds (p → q, the region on its left), so its normal points outward:
       // a piece's own winding (reversed for the erode) says nothing about which side the region lies
       const BL = (bornL[1][0] - bornL[0][0]) * (q.X - p.X) + (bornL[1][1] - bornL[0][1]) * (q.Y - p.Y) < 0 ? [bornL[1], bornL[0]] : bornL, n = unit(BL[0], BL[1]), bornL2 = BL
-      tok.push({ kind: 'L', flt: [[bornL2[0][0] - n[0] * d, bornL2[0][1] - n[1] * d], [bornL2[1][0] - n[0] * d, bornL2[1][1] - n[1] * d]], born: JSON.stringify(bornL2), at: p }); stat.newLines++; continue }
+      tok.push({ kind: 'L', flt: [[bornL2[0][0] - n[0] * d, bornL2[0][1] - n[1] * d], [bornL2[1][0] - n[0] * d, bornL2[1][1] - n[1] * d]], born: JSON.stringify(bornL2), at: p, q }); stat.newLines++; continue }
     if (tags.length && !lineTags.length && !tags.some(x => x?.base)) { tags.length = 0 }                   // near only: a new line from its own points
     else if (lineTags.length !== tags.length && !tags.some(x => x?.base)) { tags.splice(0, tags.length, ...lineTags) }
     if (tags.some(x => x?.base)) throw new Error(`[${who}] ⛔ the back-offset: (${JSON.stringify(tags.find(x => x?.base))}; with ${JSON.stringify(tags.filter(x => !x?.base).map(x => x.ring != null ? `${x.ring}:${x.i}` : x.born ? 'born' : 'near'))}) an eliminated stretch's base side (${[p.X, p.Y].map(v => v / SCALE)}) → (${[q.X, q.Y].map(v => v / SCALE)}) reached the boundary (it is born interior). Refusing.`)
     if (!tags.length) { // a null edge: a NEW line, the cap's own back-offset by −d
-      const n = unit([p.X, p.Y], [q.X, q.Y]); tok.push({ kind: 'L', flt: [[p.X - n[0] * d, p.Y - n[1] * d], [q.X - n[0] * d, q.Y - n[1] * d]], at: p }); stat.newLines++; continue }
+      const n = unit([p.X, p.Y], [q.X, q.Y]); tok.push({ kind: 'L', flt: [[p.X - n[0] * d, p.Y - n[1] * d], [q.X - n[0] * d, q.Y - n[1] * d]], at: p, q }); stat.newLines++; continue }
     // ⭐ consecutive eroded segments carrying the SAME tag set are one stretch of that run (the lines lie within rounding of each
     // other, so the noding cut the stretch into pieces each claimed by all of them): the run is emitted once, not once per piece
     const tkey = tags.length > 1 ? JSON.stringify(tags.filter(x => x?.ring != null).map(x => x.ring + ':' + x.i).sort()) : null
@@ -238,6 +248,12 @@ function emit(E, T, SRC, d, who, stat, LINES = null) {
       if (inside(r.from)) { if (pos(r.to) <= pos(lastRun.to)) { stat.runCovered = (stat.runCovered || 0) + 1; continue } from = (lastRun.to + 1) % n; tok.push({ kind: 'V', p: [R[from].X, R[from].Y], own: true }); stat.runTrimmed = (stat.runTrimmed || 0) + 1 } }
     for (let j = from; ; j = (j + 1) % n) { tok.push(Lsrc(r.ring, j)); if (j === r.to) break; tok.push({ kind: 'V', p: [R[(j + 1) % n].X, R[(j + 1) % n].Y], own: true }) }
     lastRun = { ring: r.ring, from: lastRun && lastRun.ring === r.ring && from !== r.from ? lastRun.from : r.from, to: r.to } }
+  // a token on two lattice neighbours (unitSeg) is dropped, so its neighbours join directly through every rule below: for a source token
+  // its LINE (a 1 mm source jog, whose line is the edge itself), for a born or new line the face walk's own segment (a strip end or cap
+  // the boundary touches for one unit)
+  { const seg = (t) => (t.kind !== 'L' ? null : t.g != null ? t.int : t.q ? [t.at, t.q] : null)
+    const n0 = tok.length; for (let j = tok.length - 1; j >= 0; j--) { const s2 = seg(tok[j]); if (s2 && unitSeg(s2[0], s2[1])) tok.splice(j, 1) }
+    if (tok.length < n0) stat.unitLines = (stat.unitLines || 0) + n0 - tok.length }
   // one line twice in a row is one line: the same region edge, or (exactly) the same line
   const t2 = []
   // ⭐ ONE LINE, TWO EDGES (Plumb, 2026-10-29; planted wallShort and PTown's wide fills): two region edges on ONE line in a row are one
@@ -278,7 +294,7 @@ function emit(E, T, SRC, d, who, stat, LINES = null) {
   const sense = Math.sign(area(E)), opposite = (g) => Math.sign(area(SRC[g])) !== sense
   const arcOf = (t, u) => { if (opposite(t.g)) return { pts: [], lns: [], valid: false, opposite: true }
     const R = SRC[t.g], n = R.length, pts = [], lns = []; let valid = true
-    for (let j = (t.i + 1) % n; ; j = (j + 1) % n) { pts.push([R[j].X, R[j].Y]); lns.push(lineOf(t.g, j)); if (j === u.i) break; if (present.has(t.g + ':' + j)) valid = false; if (pts.length > n) break }
+    for (let j = (t.i + 1) % n; ; j = (j + 1) % n) { pts.push([R[j].X, R[j].Y]); lns.push(unitLine(t.g, j) ? null : lineOf(t.g, j)); if (j === u.i) break; if (present.has(t.g + ':' + j)) valid = false; if (pts.length > n) break }
     return { pts, lns, valid } }
   // ⭐ AN ARC'S VERTICES ARE JOINS TOO (Zob, 2026-10-29): each vertex v_j an arc emits sits between the region's edges j−1 and j, and
   // goes through the ONE corner function like any join (squared past the limit, else the vertex). An arc stands in for what the
@@ -312,7 +328,7 @@ function emit(E, T, SRC, d, who, stat, LINES = null) {
     if (exitL != null && exitL !== LB) { const X = Xc(); out.push(X); outL.push(u0.int || null); origin(X, 'arc-clip') } }
   const pushArc = (a, kind, t0, u0 = null) => { if (kind === 'trimmed-arc') return clipArc(a, kind, t0, u0)
     a.pts.forEach((q, k) => {
-      const prevLine = k === 0 ? (t0.int || t0.flt) : a.lns[k - 1], nextLine = a.lns[k]
+      const before = a.lns.slice(0, k).reverse().find(Boolean), prevLine = before || (t0.int || t0.flt), nextLine = a.lns.slice(k).find(Boolean) || (u0 ? (u0.int || u0.flt) : null)
       if (prevLine && nextLine && capAt(prevLine, nextLine, q, { int: nextLine })) { stat.arcSquared = (stat.arcSquared || 0) + 1; return }
       out.push(q); outL.push(a.lns[k]); origin(q, kind) }) }
   for (let k = 0; k < N; k++) { const t = t2[k].out ? { ...t2[k], ...t2[k].out } : t2[k], u = t2[(k + 1) % N]
@@ -347,7 +363,8 @@ function emit(E, T, SRC, d, who, stat, LINES = null) {
     // ⭐ THE GAP RULE AT ANY NON-ADJACENT JOIN (Zob, 2026-10-29; clause 3 made general): every skipped source vertex within
     // NODE_BOUND of the cut path (L_a to X, then L_b) → the two answers differ by less than the lattice's own rounding, so the
     // source vertices are emitted, never X
-    const AR = t.g != null && u.g === t.g ? arcOf(t, u) : null
+    // a skipped stretch of unit edges only is no arc (each is a vertex): the two lines join directly, at their cut
+    const AR = t.g != null && u.g === t.g && !onlyUnits(t.g, t.i, u.i) ? arcOf(t, u) : null
     // ⭐ THE MITER LIMIT FIRST (Huron's closedK, 2026-10-29): a join past the limit is SQUARED as the definition squares it, whatever
     // the gap rule would emit; the gap rule ran first and drew the unsquared apex (0.346 m² at (3183.18, 764.81))
     if (capAt(A, B, Xf, u)) continue

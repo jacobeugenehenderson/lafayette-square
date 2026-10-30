@@ -340,7 +340,9 @@ console.log('── F2. a deck is its ways joined, opened and closed at the trac
   const CLASS = 'a STAIRCASE in its SOURCE at a cut'
   const idOf = (msg) => { if (!msg) return null; const at = /edge\(s\) \d+ \((-?\d+\.\d+), (-?\d+\.\d+)\)/.exec(msg)
     return { cls: msg.includes(CLASS) ? CLASS : null, site: at ? `${at[1]}, ${at[2]}` : null, lengths: [...msg.matchAll(/, (\d+\.\d) mm/g)].map(m => m[1]).join(' / ') } }
-  const KNOWN_REFUSALS = 2, KNOWN = [{ name: "MacMillan's older crop", cls: CLASS, site: '211.139, 71.050', lengths: '1.0 / 2.8' }, { name: 'the wharf crop', cls: CLASS, site: '148.485, 132.351', lengths: '1.4' }]
+  // ⭐ THE WHARF CROP BUILDS (the unit-line rule, Zob's ruling 2026-10-29: its 1.4 mm staircase is two lattice neighbours, no line):
+  // one of the two named fixtures left the list, KNOWN_REFUSALS 2 → 1, and its rows below run
+  const KNOWN_REFUSALS = 1, KNOWN = [{ name: "MacMillan's older crop", cls: CLASS, site: '211.139, 71.050', lengths: '1.0 / 2.8' }]
   const same = (id, k) => !!id && id.cls === k.cls && id.site === k.site && id.lengths === k.lengths
   // the verdict over every refusal the fixtures make: exactly KNOWN_REFUSALS, each one of KNOWN by class, site and lengths
   const knownVerdict = (msgs) => { const ids = msgs.filter(Boolean).map(idOf); return ids.length === KNOWN_REFUSALS && KNOWN.every(k => ids.some(id => same(id, k))) && ids.every(id => KNOWN.some(k => same(id, k))) }
@@ -359,13 +361,13 @@ console.log('── F2. a deck is its ways joined, opened and closed at the trac
   // pocket bounded by one deck on every side, narrower than a cell, was left as water (FMP's 1.2 cm², and its like)
   const wx = JSON.parse(readFileSync(join(ROOT, 'checks/fixtures/ptown-wharf-sliver-2026-10-27.json'), 'utf8'))
   let ww = null, wr = null; try { ww = waterWithoutDecks(wx.water.map(r => signed(r) > 0 ? r : [...r].reverse()), [], wx.decks, wx.stepM) } catch (e) { wr = String(e.message) }
-  // the known refusal 2 of KNOWN_REFUSALS: deck 2's close, the same class
-  const wrId = idOf(wr)
-  say(same(wrId, KNOWN[1]), wr ? (same(wrId, KNOWN[1]) ? `the known refusal (2 of ${KNOWN_REFUSALS}): the wharf crop refuses by name at its source staircase (${CLASS}, at (${wrId.site}), ${wrId.lengths} mm)` : `the wharf crop refuses, NOT as the known refusal (${JSON.stringify(wrId)}): ${wr.slice(0, 220)}`) : `the wharf crop now BUILDS: lower KNOWN_REFUSALS by one in this commit, drop its KNOWN entry, and its rows run`)
-  // the identifier is seen to FAIL: each mutant of the live refusals, through the same verdict
-  if (mwWhy && wr) { const live = knownVerdict([mwWhy, wr])
-    const muts = [['the site moved by 1 mm', [mwWhy.replace('(211.139, 71.050) →', '(211.140, 71.050) →'), wr]], ['another class at the same site', [mwWhy.replace(CLASS, 'a CROSSING in its SOURCE at a cut'), wr]],
-      ['an edge length changed', [mwWhy.replace(', 2.8 mm', ', 2.9 mm'), wr]], ['a third refusal appearing', [mwWhy, wr, wr]]].map(([n, m]) => [n, knownVerdict(m)])
+  // the wharf crop BUILDS (it was the known refusal 2 until the unit-line rule): a refusal there again is RED
+  say(!wr, wr ? `the wharf crop REFUSES again: ${wr.slice(0, 220)}` : `the wharf crop builds (a known refusal until the unit-line rule)`)
+  // the identifier is seen to FAIL: each mutant of the live refusal, through the same verdict (each perturbs what the message says,
+  // never a literal, so it holds when the row is re-pinned)
+  if (mwWhy) { const live = knownVerdict([mwWhy]), id = idOf(mwWhy), bump = (v) => (+v + 0.001).toFixed(3), [sx, sy] = (id.site || '0, 0').split(', '), L0 = (id.lengths || '').split(' / ')[0]
+    const muts = [['the site moved by 1 mm', [mwWhy.replace(`(${sx}, ${sy}) →`, `(${bump(sx)}, ${sy}) →`)]], ['another class at the same site', [mwWhy.replace(CLASS, 'a CROSSING in its SOURCE at a cut')]],
+      ['an edge length changed', [mwWhy.replace(`, ${L0} mm`, `, ${(+L0 + 0.1).toFixed(1)} mm`)]], ['a second refusal appearing', [mwWhy, mwWhy]]].map(([n, m]) => [n, knownVerdict(m)])
     say(live && muts.every(([, v]) => !v), `the known refusals are identified by class, site and lengths, never ring indices: live ${live ? 'matches' : 'DOES NOT match'} · mutants ${muts.map(([n, v]) => `${n} → ${v ? 'MATCHES (blind)' : 'RED'}`).join(' · ')}`) }
   if (ww) {
   const wper = (r) => r.reduce((t, p, i) => { const q = r[(i + 1) % r.length]; return t + Math.hypot(q[0] - p[0], q[1] - p[1]) }, 0)
