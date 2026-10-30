@@ -82,8 +82,9 @@ PROPERTY, not organised around districts; membership is Extent authoring** (Jaco
 4. **One producer: `bake-content.js`.** A well lands a raw artifact (`raw/<well>.json`); bake-content joins it. The scratch
    builders retire: research output becomes overrides through `applyListingOverrides`, never a script that drops first.
 5. **Join by geometry and address, never a hand table:** point → containment in the baked footprint (`rings` +
-   `joinRings`, as now); address → parcel → building as a second witness. ⛔ Where the two disagree, report it by name
-   (a `join_conflicts` list in the bake report); never pick silently. A place with no footprint (a pier, a beach, a
+   `joinRings`, as now); address → parcel → building as a second witness. ⛔ Where the two disagree, the bake REFUSES by
+   name until the operator decides (merge or keep apart, in the town's overrides); never pick silently, and never ship the duplicate
+   (Boz, 2026-10-30, with Zob: a shipped duplicate is the plausible-looking success Layer 0 forbids; it was "report"). A place with no footprint (a pier, a beach, a
    lighthouse off the slab) is a **class**: cause for Breakwater/Flyer's not established; the pier needs a non-building
    anchor, which today's orphan invariant (every `building_id` in the slab) forbids. Boz to rule whether a listing may
    anchor to a land-use or water feature.
