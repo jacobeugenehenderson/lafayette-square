@@ -19,6 +19,7 @@ import { dirname, join, relative } from 'node:path'
 import { get } from 'node:https'
 import { brotliDecompressSync } from 'node:zlib'
 import { readBackEncoding } from '../../src/lib/slabWire.js'
+import { freshUrl } from '../../src/lib/freshUrl.js'
 
 // ⛔ node:https, not fetch: fetch DECODES a br body whatever was asked, so its md5 would be the raw file's and never the
 // stored bytes' the etag names. Asked with the read-back encoding, the edge answers with the stored bytes and a strong etag.
@@ -42,10 +43,10 @@ await Promise.all(Array.from({ length: 12 }, async () => {
   while (i < keys.length) {
     const rel = keys[i++]
     try {
-      // ⛔ Cache-busted: a plain GET warms the edge with the OLD bytes, which it then serves for max-age after the upload
+      // ⛔ freshUrl: a plain GET warms the edge with the OLD bytes, which it then serves for max-age after the upload
       // replaces them (2026-10-22 HPDM press: 6 of 18 plain URLs stale for ~3 min after a backup taken just before).
       const want = readBackEncoding(rel)
-      const r = await getStored(base + rel.split('/').map(encodeURIComponent).join('/') + `?backup=${Date.now()}`, want)
+      const r = await getStored(freshUrl(base + rel.split('/').map(encodeURIComponent).join('/')), want)
       if (r.status === 404) { absent.push(rel); continue }
       if (r.status !== 200) throw new Error(`HTTP ${r.status}`)
       const enc = r.headers['content-encoding'] || 'identity'

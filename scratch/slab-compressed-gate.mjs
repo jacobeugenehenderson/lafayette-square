@@ -13,6 +13,7 @@ import { createHash } from 'node:crypto'
 import { brotliDecompressSync, gunzipSync, inflateSync } from 'node:zlib'
 import { storedEncodingFor } from '../src/lib/slabWire.js'
 import { contentName } from '../src/lib/slabNames.js'
+import { freshUrl } from '../src/lib/freshUrl.js'
 
 const [base, look] = process.argv.slice(2)
 if (!base || !look) throw new Error('usage: node scratch/slab-compressed-gate.mjs <asset base ending in /> <look>')
@@ -25,7 +26,7 @@ const fetchRaw = (url, ae) => new Promise((ok, no) => get(url, { headers: { 'acc
 const DECODE = { br: brotliDecompressSync, gzip: gunzipSync, deflate: inflateSync, identity: (b) => b }
 const sha = (b) => createHash('sha256').update(b).digest('hex')
 
-const m = await fetchRaw(`${at}manifest.json?gate=${Date.now()}`, 'identity')
+const m = await fetchRaw(freshUrl(`${at}manifest.json`), 'identity')
 if (m.status !== 200) throw new Error(`${at}manifest.json → HTTP ${m.status}`)
 const manifest = JSON.parse(DECODE[m.enc](m.body))
 const files = Object.entries(manifest.files || {}).filter(([rel]) => storedEncodingFor(rel))
@@ -35,7 +36,7 @@ let fail = 0, raw = 0, wire = 0
 for (const [rel, f] of files) {
   const url = at + (manifest.names ? contentName(rel, f.sha256) : rel)
   for (const ae of ['br', 'gzip', 'identity']) {
-    const r = await fetchRaw(url, ae)
+    const r = await fetchRaw(freshUrl(url), ae)
     let got = null
     try { got = r.status === 200 && DECODE[r.enc] ? sha(DECODE[r.enc](r.body)) : null } catch { got = null }
     const ok = got === f.sha256 && (ae !== 'br' || r.enc === 'br')

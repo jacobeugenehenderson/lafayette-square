@@ -15,7 +15,7 @@ gated without anyone remembering to gate it, which is what makes this work on to
 
 A non-zero exit is a **finding for the board**, not a runner fault. The suite reports; it does not fix.
 
-## ⛔ live — 132. Never in a default run.
+## ⛔ live — 133. Never in a default run.
 
 Two reason classes, and they are not the same thing. **outbound** — a demonstrated call out.
 **unreadable** — runs code the parser cannot read, so it *may* contact nothing but cannot be shown
@@ -91,6 +91,7 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `checks/claims-no-view-reaches-the-sky-at-the-shore.mjs` | outbound | imports scripts/lib/headless.mjs, which can: calls fetch(), opens a WebSocket, deletes files — only under its own temp dir, child_process with a non-literal command — cannot be read |
 | `checks/claims-one-way-into-stage.mjs` | outbound | calls fetch() · computed import() of a path an argument or the environment can supply — arbitrary |
 | `checks/claims-one-weather-per-instant.mjs` | unreadable | imports vite — its server resolves localhost over DNS (caught by the no-network guard) · imports package(s) vite — not read from source |
+| `checks/claims-our-reads-bypass-the-edge.mjs` | outbound | calls fetch() · imports a network module · writeFileSync · deletes files · computed import() with no readable target — runs arbitrary modules |
 | `checks/claims-overture-licence-table-is-current.mjs` | outbound | calls fetch() |
 | `checks/claims-pilgrim-monument-site.mjs` | unreadable | computed import() with no readable target — runs arbitrary modules · imports cartograph/terrainLoad.js, which can: imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync |
 | `checks/claims-preview-frame-cost-splits.mjs` | outbound | calls fetch() · opens a WebSocket · deletes files — only under its own temp dir · runs `/Applications/Google Chrome.app/Contents` — not a known-local command · runs `pkill -9 -f 'user-data-dir=${profile}'` — not a known-local command |

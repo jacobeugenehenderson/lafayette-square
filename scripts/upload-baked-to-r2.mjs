@@ -70,6 +70,7 @@ import { EXCLUDE, notPublished } from './slab-publish-rule.mjs'
 import { slabNameMismatches } from './slab-name-rule.mjs'
 import { typeFor, readBackEncoding } from '../src/lib/slabWire.js'
 import { wireOf } from './slab-wire.mjs'
+import { freshUrl } from '../src/lib/freshUrl.js'
 
 const execFileAsync = promisify(execFile)
 const REPO_ROOT = fileURLToPath(new URL('..', import.meta.url))
@@ -212,7 +213,7 @@ export function plan({ look, prefix, root = BAKED_ROOT, names } = {}) {
  * because rewriting it from nothing would forget manifests a visitor may still hold.
  */
 export async function writeIndex(f) {
-  const r = await fetch(PUBLIC_BASE + f.key, { cache: 'no-store' })
+  const r = await fetch(freshUrl(PUBLIC_BASE + f.key))
   let prior = { town: f.index.town, manifests: [] }
   if (r.ok) prior = await r.json()
   else if (r.status !== 404) throw new Error(`cannot read ${f.key} (${r.status}) — refusing to rewrite the manifest history blind`)
@@ -274,8 +275,8 @@ export async function put({ abs, key, cache }) {
  * ⭐ It compares the STORED bytes (`wireOf`): a stored-br object's ETag and length are its brotli bytes', read back
  * with `accept-encoding: br` — asked any other way the edge decodes it, with a weak ETag and no length, and every
  * such object would read as uncertain and re-upload on every pour. ⛔ So a missing length is COUNTED and said aloud.
- * ⚠️ It reads through the CDN, whose Cache-Control is 300s. A stale edge answer can only
- * disagree with fresh local bytes, which uploads — the safe direction. `--force` skips
+ * ⛔ It never reads the edge's copy (`src/lib/freshUrl.js`): a cached answer for an object changed since is a
+ * plausible "fresh" for unchanged local bytes, and the change is never put back. `--force` skips
  * the check entirely; `verify-baked-in-r2.mjs` remains the independent completeness gate.
  */
 export async function probe(files, conc) {
@@ -286,7 +287,7 @@ export async function probe(files, conc) {
   await Promise.all(Array.from({ length: Math.max(1, conc) }, async () => {
     for (let f = queue.pop(); f; f = queue.pop()) {
       try {
-        const r = await withRetry(f.key, () => fetch(PUBLIC_BASE + f.key, {
+        const r = await withRetry(f.key, () => fetch(freshUrl(PUBLIC_BASE + f.key), {
           method: 'HEAD', headers: { 'accept-encoding': readBackEncoding(f.key) },
         }))
         const wire = await wireOf(f.abs, f.key)

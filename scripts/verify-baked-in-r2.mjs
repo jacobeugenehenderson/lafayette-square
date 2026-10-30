@@ -33,6 +33,7 @@ import { treeGeometryOfTown, impostorFilesOfTown } from './slab-tree-geometry.mj
 // read from the one table, so this stays independent of the uploader where independence matters.
 import { readBackEncoding } from '../src/lib/slabWire.js'
 import { wireOf } from './slab-wire.mjs'
+import { freshUrl } from '../src/lib/freshUrl.js'
 
 const REPO_ROOT = fileURLToPath(new URL('..', import.meta.url))
 const BAKED_ROOT = join(REPO_ROOT, 'public/baked')
@@ -93,7 +94,7 @@ await Promise.all(Array.from({ length: conc }, async () => {
       let r = null, lastErr = null
       for (let attempt = 0; attempt < 4 && !r; attempt++) {
         try {
-          r = await fetch(BASE + f.key, { method: 'HEAD', headers: { 'accept-encoding': readBackEncoding(f.key) } })
+          r = await fetch(freshUrl(BASE + f.key), { method: 'HEAD', headers: { 'accept-encoding': readBackEncoding(f.key) } })
         } catch (e) {
           lastErr = e
           await new Promise((res) => setTimeout(res, 150 * 2 ** attempt))
