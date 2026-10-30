@@ -47,14 +47,16 @@ row(J.ok3, `(3) two rings 3 mm apart: ${J.m3.length} 'near'(s) · 30 mm apart: $
     } finally { rmSync(dir, { recursive: true, force: true }) } } }
 // ⭐ A FOLD AT THE LATTICE'S RESOLUTION (Zob's ruling, 2026-10-29): PTown's deck take-out left the water the mint is given a 294 mm
 // out-and-back whose return lies 1 mm off its line, which the exact fold test passed as simple and ①'s absorb refused downstream. A
-// fold is two edges that reverse with the far end within the rounding of the first's line (latticeFaces.js#onLineTiered)
-const { waterWithoutDecks } = await import('../cartograph/structures.mjs'), AC = JSON.parse(readFileSync(join(ROOT, 'checks/fixtures/cut-once-ptown-antenna-crop.json'), 'utf8'))
+// fold is two edges that reverse with the far end within the rounding of the first's line (latticeFaces.js#onLineTiered). The take-out
+// on the noded arrangement leaves the crop none; the integer take-out (frozen 464dfa5f) still folds it, and is the fold test's plant
+const { waterWithoutDecks } = await import('../cartograph/structures.mjs'), FROZEN = await import('./fixtures/open-close-integer-frozen-464dfa5f.mjs'), AC = JSON.parse(readFileSync(join(ROOT, 'checks/fixtures/cut-once-ptown-antenna-crop.json'), 'utf8'))
 const PARTWAY = [[0, 0], [10, 0], [10, 10], [5, 10], [5, 13], [5.0004, 11.5], [6, 10], [10, 10.5], [0, 10.5]].slice(0, 7).concat([[0, 10]])   // out 3 m, back part way, 0.4 mm off its line
 const INLET = [[0, 0], [10, 0], [10, 10], [5.1, 10], [5.1, 7], [4.9, 7], [4.9, 10], [0, 10]]                                               // a real 0.2 m inlet, wider than the rounding
-const folds = (CF) => { const w = waterWithoutDecks(AC.water, [], [AC.deck], AC.fineM), f = (rs) => rs.flatMap(r => CF.ringViolations(r)).filter(v => v.kind === 'fold')
-  return { crop: f(w.rings), partway: f([PARTWAY]), inlet: CF.ringViolations(INLET) } }
+const folds = (CF) => { const f = (rs) => rs.flatMap(r => CF.ringViolations(r)).filter(v => v.kind === 'fold'), take = (W) => W(AC.water, [], [AC.deck], AC.fineM).rings
+  return { crop: f(take(waterWithoutDecks)), integer: f(take(FROZEN.waterWithoutDecks)), partway: f([PARTWAY]), inlet: CF.ringViolations(INLET) } }
 const FO = folds(CF)
-row(FO.crop.length >= 1 && FO.crop.some(v => Math.hypot(v.at[0] - 192.008, v.at[1] - 63.050) < 0.002), `(4) PTown's antenna crop, today's take-out: ${FO.crop.length} fold(s)${FO.crop.length ? ` — ${FO.crop[0].what} at (${FO.crop[0].at.join(', ')})` : ''}, RED as the take-out leaves it`)
+row(!FO.crop.length, `(4) PTown's antenna crop, today's take-out (the noded arrangement): ${FO.crop.length} fold(s)${FO.crop.length ? ` — ${FO.crop[0].what} at (${FO.crop[0].at.join(', ')})` : ''}`)
+row(FO.integer.length >= 1, `(4) mutant: the integer take-out restored (frozen 464dfa5f) on the same crop → ${FO.integer.length} fold(s)${FO.integer.length ? ` at (${FO.integer[0].at.join(', ')}), RED as it must be` : ' — the row cannot see it'}`)
 row(FO.partway.length >= 1, `(4) a spike that comes back only part way, 0.4 mm off its line: ${FO.partway.length} fold(s)`)
 row(!FO.inlet.length, `(4) a real 0.2 m inlet (wider than the rounding) is not a fold: ${FO.inlet.length} violation(s)`)
 { const src = readFileSync(join(ROOT, 'cartograph/coastFile.mjs'), 'utf8'), ANCHOR = "> 0 && onLineTiered([mm(u), mm(v)], mm(w))) out.push({ kind: 'fold'"
@@ -62,7 +64,7 @@ row(!FO.inlet.length, `(4) a real 0.2 m inlet (wider than the rounding) is not a
   else { const dir = mkdtempSync(join(tmpdir(), 'fold-')), base = join(ROOT, 'cartograph')
     try { writeFileSync(join(dir, 'coastFile.mjs'), src.replace(ANCHOR, "> 0 && false) out.push({ kind: 'fold'").replace(/from '(\.{1,2}\/[^']+)'/g, (_, r) => `from "${pathToFileURL(join(base, r)).href}"`))
       const M = folds(await import(pathToFileURL(join(dir, 'coastFile.mjs')).href))
-      row(!M.crop.length, `mutant: the fold test removed → the antenna crop reads ${M.crop.length} fold(s)${M.crop.length ? ' — the row cannot see it' : ', simple again: RED as it must be'}`)
+      row(!M.integer.length, `mutant: the fold test removed → the integer take-out's folded crop reads ${M.integer.length} fold(s)${M.integer.length ? ' — the row cannot see it' : ', simple again: RED as it must be'}`)
     } finally { rmSync(dir, { recursive: true, force: true }) } } }
 console.log(red ? `\n⛔ ${red} row(s) RED` : '\n✅ a coast ring keeps the ink clear')
 process.exit(red ? 1 : 0)
