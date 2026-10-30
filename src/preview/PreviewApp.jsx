@@ -838,16 +838,14 @@ function PublishPanel({ lookId }) {
   // ⭐ PROD SHIPS THE SAME TWO THINGS NOW (2026-09-26): the slab, and the player this town has
   // PINNED — current when it is the build staging serves. No git: Promote no longer pushes a
   // branch, so a commit count would never return to zero and the button would never rest.
-  // ⛔ A town still on legacy hosting (LS until its cutover) or with no address is not "done" —
-  // the button stays live and Promote refuses with the reason.
+  // ⛔ A town with no address is not "done" — the button stays live and Promote refuses with the reason.
   const prodSlab    = !clean || !slabCurrent('prod') || status.prodDeployment?.shipped !== true
   const prodPlayer  = status.prodPlayer?.current !== true
   const prodDone    = !prodSlab && !prodPlayer
   // ⛔⛔ A BLOCKED PROMOTE SAYS WHY, ON THE PANEL (2026-10-04: a greyed button with its reason on hover read as "it doesn't
   // know it's got player updates"). Promote ships THIS disk's slab, so staging must carry it first: what reaches
   // production has been seen.
-  const prodWhy = status.sites?.prod?.legacy ? status.sites.prod.why
-    : !status.sites?.prod?.url ? `No production address: ${status.sites?.prod?.why || 'this town names none'}.`
+  const prodWhy = !status.sites?.prod?.url ? `No production address: ${status.sites?.prod?.why || 'this town names none'}.`
     : status.prodPlayer?.blocked ? `${status.prodPlayer.why}.`
     : !stagingDone ? 'Staging is not current yet — Publish first, check it, then promote.'
     : null

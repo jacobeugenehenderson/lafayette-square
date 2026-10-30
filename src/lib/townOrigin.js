@@ -10,16 +10,13 @@
  *
  * ⛔ NEVER `https://null`, NEVER A GUESS, NEVER `location.origin`. No domain ⇒ `null` and a
  * console.error, and the caller draws no QR and puts no URL in the share.
- * ⚠️ ONE LEGACY SOURCE, READ FROM DATA: a town whose instance module still declares `domain`
- * (Lafayette Square, until its own cutover step deletes the line) keeps it, ahead of the tag,
- * because that is the address its printed cards already carry and the one that serves today.
+ * ⛔ No instance module declares a domain: the tag is the one source, for every town.
  *
  * ▶ node checks/claims-public-urls-come-from-the-town-domain.mjs
  */
 import { INSTANCE, TOWN_PATH_PREFIX } from '../instance.js'
 
 function readDomain() {
-  if (INSTANCE.domain) return String(INSTANCE.domain).replace(/^https?:\/\//, '').replace(/\/+$/, '')
   const tag = typeof document !== 'undefined'
     ? document.querySelector('meta[name="ward-domain"]')?.getAttribute('content')
     : null

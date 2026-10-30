@@ -9,13 +9,12 @@
  * Instance, and it stood until 2026-09-21: `cartograph/serve.js` held `STAGING_SITE_URL`
  * and `PROD_SITE_URL` as module constants and printed both whatever look you shipped.
  * Press Publish on huron and the panel reported `…/lafayette-square-staging/` and
- * `lafayette-square.com`. Huron's `src/instances/huron.js` says `domain: null` — "no
- * deploy target yet" — so the second one was not merely misnamed, it was an address that
- * does not exist for that town.
+ * `lafayette-square.com`. Huron had no production domain at all, so the second one was not
+ * merely misnamed, it was an address that does not exist for that town.
  *
  * ⭐ THE RULE THIS PINS: a publish response's address is DERIVED FROM THE LOOK. The prod
- * side reads the town's own authored `domain` and returns `null` + a reason when there is
- * none; the staging side names the look on the shared site. ⛔ A bare site-URL literal
+ * side asks Operations for the town's domain (`productionDomainFor`, 2026-09-26) and returns
+ * `null` + a reason when there is none; the staging side names the look on the shared site. ⛔ A bare site-URL literal
  * next to a publish response is the shape that regressed, so a literal is the finding.
  *
  * ⭐ It reads the source rather than a list of endpoints: any http(s) literal that looks
@@ -44,11 +43,16 @@ if (!/function\s+siteUrlsForLook\s*\(/.test(src)) {
     + 'publish response is back to reporting a fixed address. Restore it (H-18 ③).')
 } else {
   ok('`siteUrlsForLook()` exists')
-  // It must read the town's OWN domain, not decide one.
-  if (!/instanceForMap\s*\(/.test(src)) {
-    bad('`siteUrlsForLook()` does not consult `instanceForMap` — the production address must be the '
-      + "town's authored `domain`, not a value this file picks.")
-  } else ok("the production address comes from the town's authored `domain`")
+  // It must ask Operations for the town's OWN domain, not decide one, and hold none in code.
+  const rest = src.slice(src.search(/function\s+siteUrlsForLook\s*\(/)), body = rest.split(/\n}\n/)[0]
+  if (body.length === rest.length) {
+    bad('`siteUrlsForLook()` does not end at a top-level brace, so its body cannot be told from the rest of serve.js — re-aim this check')
+  } else if (!/productionDomainFor\s*\(/.test(body)) {
+    bad('`siteUrlsForLook()` does not ask Operations (`productionDomainFor`) — the production address must be the '
+      + "town's own, from Operations, not a value this file picks.")
+  } else if (/instanceForMap\s*\(|town\??\.domain\b/.test(body)) {
+    bad('`siteUrlsForLook()` reads a domain from the instance module — a second home for what Operations owns.')
+  } else ok("the production address is asked of Operations, never read from the instance")
   // And it must be able to answer "there isn't one".
   if (!/url:\s*null/.test(src)) {
     bad('nothing in serve.js can return a null address with a reason — a town that declares no domain '

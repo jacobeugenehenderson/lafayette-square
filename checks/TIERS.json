@@ -2532,7 +2532,7 @@
       "file": "checks/claims-public-urls-come-from-the-town-domain.mjs",
       "tier": "safe",
       "why": [
-        "reads repo files only"
+        "importSource of src/instances/provincetown.js — read, safe"
       ]
     },
     {

@@ -19,7 +19,6 @@ export default {
   },
 
   name: "Altadena",
-  domain: null,
 
   contentRoot: 'content/altadena/',
 
