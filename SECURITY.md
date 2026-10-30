@@ -604,7 +604,7 @@ id, `TOWN_ZONES`; one registered set, and a request outside it is refused like a
 on a read: a missing tab reads as its header, and the first write creates it. A new town is served only once its id
 is in `TOWN_ZONES`. ⚙️ **In the hotfix draft, second review closed 2026-10-30 (Zob); ⛔ not deployed** (Jacob's deploy steps are in its header): theward `wip/backend-hotfix` (7b5da7b), `backend/apps-script-hotfix-2026-10-07.DRAFT.patch`. ▶ theward `node backend/hotfix-harness.mjs <Code.js>` (+ `hotfix-mutations.mjs`).
 
-### F-31 · HIGH (by design, a door) · Operator account recovery  *(new, 2026-10-30; Jacob: "yes, build it")*  — ⚙️ BUILT IN DRAFT 2026-10-30, unreviewed, not deployed
+### F-31 · HIGH (by design, a door) · Operator account recovery  *(new, 2026-10-30; Jacob: "yes, build it")*  — ⚙️ BUILT IN DRAFT 2026-10-30, reviewed 2026-10-30 (Zob, PASS at theward 647b651), not deployed
 A handle lives only in a device's storage, per origin; there is no password. A person whose every device lost it
 (Jacob's `joyce_dewitt`) had no way back. ⛔ **Ruled (Boz):** never a hard-wired handle (a handle is text, so an
 identity that is never verified is a door for anyone), never a password. Operator power stays with the Operations
