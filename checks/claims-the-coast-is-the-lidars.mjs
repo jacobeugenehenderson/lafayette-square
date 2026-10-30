@@ -331,9 +331,19 @@ console.log('── F2. a deck is its ways joined, opened and closed at the trac
   // carries a millimetre staircase at a cut, which the cut-once open/close cannot read. Each asserted BY NAME AND SITE on a
   // ratchet: RED if its message or site changes, and RED when it starts BUILDING (then KNOWN_REFUSALS drops by one in that commit,
   // its KNOWN text goes, and its rows below run again)
-  const KNOWN_REFUSALS = 2, KNOWN = "a STAIRCASE in its SOURCE at a cut. Ring 0's edge(s) 533 (211.139, 71.050) → (211.138, 71.050), 1.0 mm; 534 (211.138, 71.050) → (211.136, 71.048), 2.8 mm lie within the lattice's rounding of edge 532's line"
+  // ⭐ RING INDICES ARE WHERE THE WALK STARTS (they moved with f32d7c7d): the refusal is identified by CLASS, SITE and LENGTHS (Zob's
+  // ruling (ii), 2026-10-29), what an operator could find on the map, each parsed from the message: the class; the first named edge's
+  // start, exactly as printed (to the mm); the named edges' lengths as printed. Never the edge numbers
+  const CLASS = 'a STAIRCASE in its SOURCE at a cut'
+  const idOf = (msg) => { if (!msg) return null; const at = /edge\(s\) \d+ \((-?\d+\.\d+), (-?\d+\.\d+)\)/.exec(msg)
+    return { cls: msg.includes(CLASS) ? CLASS : null, site: at ? `${at[1]}, ${at[2]}` : null, lengths: [...msg.matchAll(/, (\d+\.\d) mm/g)].map(m => m[1]).join(' / ') } }
+  const KNOWN_REFUSALS = 2, KNOWN = [{ name: "MacMillan's older crop", cls: CLASS, site: '211.139, 71.050', lengths: '1.0 / 2.8' }, { name: 'the wharf crop', cls: CLASS, site: '148.485, 132.351', lengths: '1.4' }]
+  const same = (id, k) => !!id && id.cls === k.cls && id.site === k.site && id.lengths === k.lengths
+  // the verdict over every refusal the fixtures make: exactly KNOWN_REFUSALS, each one of KNOWN by class, site and lengths
+  const knownVerdict = (msgs) => { const ids = msgs.filter(Boolean).map(idOf); return ids.length === KNOWN_REFUSALS && KNOWN.every(k => ids.some(id => same(id, k))) && ids.every(id => KNOWN.some(k => same(id, k))) }
   let mw = null, mwWhy = null; try { mw = waterWithoutDecks(mx.water.map(r => signed(r) > 0 ? r : [...r].reverse()), [], [mx.deck], mx.stepM) } catch (e) { mwWhy = String(e.message) }
-  say(!!mwWhy && mwWhy.includes(KNOWN), mwWhy ? (mwWhy.includes(KNOWN) ? `the known refusal (1 of ${KNOWN_REFUSALS}): MacMillan's older crop refuses by name at its source staircase (edges 533, 534 at (211.139, 71.050))` : `MacMillan's older crop refuses, NOT as the known refusal: ${mwWhy.slice(0, 220)}`) : `MacMillan's older crop now BUILDS: lower KNOWN_REFUSALS by one in this commit, drop its KNOWN, and its sliver row runs`)
+  const mwId = idOf(mwWhy)
+  say(same(mwId, KNOWN[0]), mwWhy ? (same(mwId, KNOWN[0]) ? `the known refusal (1 of ${KNOWN_REFUSALS}): MacMillan's older crop refuses by name at its source staircase (${CLASS}, at (${mwId.site}), ${mwId.lengths} mm)` : `MacMillan's older crop refuses, NOT as the known refusal (${JSON.stringify(mwId)}): ${mwWhy.slice(0, 220)}`) : `MacMillan's older crop now BUILDS: lower KNOWN_REFUSALS by one in this commit, drop its KNOWN entry, and its sliver row runs`)
   if (mw) {
   const CP = (r) => r.map(([x, z]) => ({ X: Math.round(x * CLIP_SCALE), Y: Math.round(z * CLIP_SCALE) })), cu = mx.stepM * CLIP_SCALE
   const grow = (src, d) => { const co = new clipperLib.ClipperOffset(), o = new clipperLib.Paths(); co.AddPaths(src, clipperLib.JoinType.jtMiter, clipperLib.EndType.etClosedPolygon); co.Execute(o, d); return o }
@@ -347,8 +357,13 @@ console.log('── F2. a deck is its ways joined, opened and closed at the trac
   const wx = JSON.parse(readFileSync(join(ROOT, 'checks/fixtures/ptown-wharf-sliver-2026-10-27.json'), 'utf8'))
   let ww = null, wr = null; try { ww = waterWithoutDecks(wx.water.map(r => signed(r) > 0 ? r : [...r].reverse()), [], wx.decks, wx.stepM) } catch (e) { wr = String(e.message) }
   // the known refusal 2 of KNOWN_REFUSALS: deck 2's close, the same class
-  const KNOWN_WHARF = "[deck 2 close] ⛔ the open/close cannot read this ring: a STAIRCASE in its SOURCE at a cut. Ring 0's edge(s) 0 (148.485, 132.351) → (148.486, 132.352), 1.4 mm lie within the lattice's rounding of edge 13's line"
-  say(!!wr && wr.includes(KNOWN_WHARF), wr ? (wr.includes(KNOWN_WHARF) ? `the known refusal (2 of ${KNOWN_REFUSALS}): the wharf crop refuses by name at deck 2's close, its source staircase (edge 0 at (148.485, 132.351))` : `the wharf crop refuses, NOT as the known refusal: ${wr.slice(0, 220)}`) : `the wharf crop now BUILDS: lower KNOWN_REFUSALS by one in this commit, drop KNOWN_WHARF, and its rows run`)
+  const wrId = idOf(wr)
+  say(same(wrId, KNOWN[1]), wr ? (same(wrId, KNOWN[1]) ? `the known refusal (2 of ${KNOWN_REFUSALS}): the wharf crop refuses by name at its source staircase (${CLASS}, at (${wrId.site}), ${wrId.lengths} mm)` : `the wharf crop refuses, NOT as the known refusal (${JSON.stringify(wrId)}): ${wr.slice(0, 220)}`) : `the wharf crop now BUILDS: lower KNOWN_REFUSALS by one in this commit, drop its KNOWN entry, and its rows run`)
+  // the identifier is seen to FAIL: each mutant of the live refusals, through the same verdict
+  if (mwWhy && wr) { const live = knownVerdict([mwWhy, wr])
+    const muts = [['the site moved by 1 mm', [mwWhy.replace('(211.139, 71.050) →', '(211.140, 71.050) →'), wr]], ['another class at the same site', [mwWhy.replace(CLASS, 'a CROSSING in its SOURCE at a cut'), wr]],
+      ['an edge length changed', [mwWhy.replace(', 2.8 mm', ', 2.9 mm'), wr]], ['a third refusal appearing', [mwWhy, wr, wr]]].map(([n, m]) => [n, knownVerdict(m)])
+    say(live && muts.every(([, v]) => !v), `the known refusals are identified by class, site and lengths, never ring indices: live ${live ? 'matches' : 'DOES NOT match'} · mutants ${muts.map(([n, v]) => `${n} → ${v ? 'MATCHES (blind)' : 'RED'}`).join(' · ')}`) }
   if (ww) {
   const wper = (r) => r.reduce((t, p, i) => { const q = r[(i + 1) % r.length]; return t + Math.hypot(q[0] - p[0], q[1] - p[1]) }, 0)
   const pockets = ww ? ww.rings.filter(r => r.deck.every(x => x != null && x === r.deck[0]) && 2 * Math.abs(signed(r)) / wper(r) < wx.stepM) : []
