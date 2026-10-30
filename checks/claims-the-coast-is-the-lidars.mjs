@@ -52,6 +52,8 @@ import { deckFootprints, streetDecks, waterWithoutDecks } from '../cartograph/st
 import { defaultDeckWidthM } from '../cartograph/structures.mjs'
 import { CLIP_SCALE } from '../src/lib/lattice.js'
 import { mintProtopolygon } from '../src/lib/tileGround.js'
+import { mintInputsOf } from '../cartograph/mintInputs.mjs'
+import { homeLookOf } from '../cartograph/homeLook.mjs'
 import { waterRuns } from '../cartograph/shoreRuns.mjs'
 
 const { Clipper, ClipType, PolyType, PolyFillType } = clipperLib
@@ -457,7 +459,12 @@ for (const scene of scenes) {
     else if ((map.dataRead || {})[`cartograph/data/${scene}/clean/${COAST_FILE}`] !== createHash('sha1').update(readFileSync(join(dir, 'clean', COAST_FILE))).digest('hex'))
       say(false, `${scene}: map.json was poured from a different coast.json than today's (recorded ${String((map.dataRead || {})[`cartograph/data/${scene}/clean/${COAST_FILE}`] ?? 'none').slice(0, 8)}, today ${createHash('sha1').update(readFileSync(join(dir, 'clean', COAST_FILE))).digest('hex').slice(0, 8)}): its streetDecks are not inputs to this code, so the take-out is NOT measured. ▶ re-pour (the Bake's pipeline step)`)
     else {
-      let W = null; try { W = waterWithoutDecks(doc.water.flatMap(b => [b.outer, ...b.holes]), doc.arcs || [], sd.map(d => d.ring), doc.fineM) } catch (e) { say(false, `${scene}: the water the mint is given REFUSES — ${String(e.message).slice(0, 240)}`) }
+      // ⭐ THE WATER THE MINT IS GIVEN IS RECOMPUTED BY THE MINT'S OWN BUILDER (Zob's ruling, 2026-10-29): mintInputs.mjs#mintInputsOf, its
+      // streetDecks and its take-out, off the scene's files. ⛔ Never map.json's recorded decks fed back in: those are the decks AS
+      // EXTENDED by the take-out (mintInputs sets each deck's ring to the take-out's), an OUTPUT, so the take-out re-run on them read
+      // PTown's fresh pour as stale (one vertex, deck 0's (118.657, 167.067), moved 1 mm by the re-entry)
+      const rerun = (decks) => waterWithoutDecks(doc.water.flatMap(b => [b.outer, ...b.holes]), doc.arcs || [], decks, doc.fineM)
+      let W = null; try { const MI = mintInputsOf(scene, JSON.parse(readFileSync(join(dir, 'clean/ribbons.json'), 'utf8')).streets, homeLookOf(scene)); W = { rings: MI.coast, arcs: MI.coastArcs } } catch (e) { say(false, `${scene}: the water the mint is given REFUSES — ${String(e.message).slice(0, 240)}`) }
       if (W) { const given = W.rings
       // ⭐ every water-ring edge the mint is given lies under a stroked arc, the fetched square's own sides excluded (Boz, 10-27)
       const Q = doc.square, side = (a, b) => [['x0', 0], ['x1', 0], ['z0', 1], ['z1', 1]].some(([k, c]) => Math.abs(a[c] - Q[k]) < 1 / CLIP_SCALE && Math.abs(b[c] - Q[k]) < 1 / CLIP_SCALE)
@@ -468,7 +475,12 @@ for (const scene of scenes) {
       say(!bare.length, `${scene}: every water-ring edge the mint is given lies under a stroked arc (${W.arcs.filter(a => a.deck != null).length} of ${W.arcs.length} arc(s) a deck's edge)${bare.length ? ` — ${bare.length} edge(s), ${bareM.toFixed(1)} m bare, first @(${bare[0][0].map(Math.round).join(', ')})` : ''}`)
       const same = wr.length === given.length && wr.every((r, k) => r.length === given[k].length && r.every((p, i) => Math.abs(p[0] - given[k][i][0]) < 1e-5 && Math.abs(p[1] - given[k][i][1]) < 1e-5))
       if (same) say(true, `${scene}: ①'s ${wr.length} water ring(s) are what the mint was given (coast.json less ${sd.length} street deck(s))`)
-      else console.log(`  ⚠️ ${scene}: ①'s ${wr.length} water ring(s) are not the ${given.length} the mint would be given now — the town has not been re-poured from this coast (▶ the Bake)`) }
+      else console.log(`  ⚠️ ${scene}: ①'s ${wr.length} water ring(s) are not the ${given.length} the mint would be given now — the town has not been re-poured from these inputs (▶ the Bake)`)
+      // MUTANT: the recorded (extended) decks fed back in, as this check once did → not what ① was given. ⚠ It bites only while the
+      // take-out re-run on its own output moves a vertex (PTown's deck 0 today): when it stops, this row goes blind and says so
+      if (same) { let R = null; try { R = rerun(sd.map(d => d.ring)).rings } catch (e) { R = null }
+        const sameR = !!R && wr.length === R.length && wr.every((r, k) => r.length === R[k].length && r.every((p, i) => Math.abs(p[0] - R[k][i][0]) < 1e-5 && Math.abs(p[1] - R[k][i][1]) < 1e-5))
+        say(!sameR, `${scene}: mutant, map.json's recorded (extended) decks fed back in → ${sameR ? 'the same rings: the re-entry no longer differs, so this mutant is BLIND (find another)' : 'not ①\'s rings, the stale warning returns: RED as it must be'}`) } }
     }
   }
 }
