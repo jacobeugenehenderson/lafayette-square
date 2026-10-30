@@ -28,17 +28,7 @@
  */
 import { route, hostKey, wwwRedirect } from './route.js'
 import { cardFor, withShareCard } from '../../../src/lib/shareCard.js'
-
-const TYPES = {
-  html: 'text/html; charset=utf-8', js: 'text/javascript; charset=utf-8',
-  mjs: 'text/javascript; charset=utf-8', css: 'text/css; charset=utf-8',
-  json: 'application/json; charset=utf-8', svg: 'image/svg+xml',
-  png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp',
-  ico: 'image/x-icon', woff2: 'font/woff2', woff: 'font/woff', ttf: 'font/ttf',
-  glb: 'model/gltf-binary', ktx2: 'image/ktx2', bin: 'application/octet-stream',
-  wasm: 'application/wasm', txt: 'text/plain; charset=utf-8', map: 'application/json',
-}
-const typeFor = (p) => TYPES[(p.split('.').pop() || '').toLowerCase()] || 'application/octet-stream'
+import { wireHeaders } from '../../../src/lib/slabWire.js'
 const text = (body, status) => new Response(body + '\n', { status,
   headers: { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store' } })
 
@@ -73,6 +63,14 @@ export default {
     if (r.kind === 'refuse') return text(r.why, r.status)
 
     if (r.kind === 'slab') {
+      // ⛔ A byte range of an object stored ENCODED is a slice of its brotli stream, not of the file, so it is
+      // refused before R2 is asked for it. Only a Range request pays the HEAD; nothing in the player sends one.
+      if (request.headers.has('range')) {
+        const h = await env.ASSETS.head(r.key)
+        if (h?.httpMetadata?.contentEncoding) {
+          return text(`"${r.key}" is stored ${h.httpMetadata.contentEncoding}-encoded: a byte range of it is not a range of the file. Fetch it whole.`, 416)
+        }
+      }
       const obj = await env.ASSETS.get(r.key, { range: request.headers, onlyIf: request.headers })
       if (!obj) return text(`"${rec.look}" has no "${r.key}" in production.`, 404)
       return serve(request, obj, { slab: true })
@@ -158,15 +156,21 @@ function cacheFor(key, contentType, stored, slab, useStored) {
   return 'public, max-age=3600'
 }
 
+/**
+ * ⭐ An object stored ENCODED (slabWire.js: brotli, for a type nothing else compresses) is sent as stored, its
+ * content-encoding from its R2 metadata and its length the stored bytes', with `encodeBody: 'manual'` so the
+ * runtime does not encode it a second time. It takes no byte ranges (refused above, before the get).
+ */
 function serve(request, obj, { slab = false, stored = false } = {}) {
   const key = obj.key
-  const contentType = obj.httpMetadata?.contentType || typeFor(key)
+  const wire = wireHeaders(obj)
   const headers = new Headers({
-    'content-type': contentType,
-    'cache-control': cacheFor(key, contentType, obj.httpMetadata?.cacheControl, slab, stored),
+    ...wire,
+    'cache-control': cacheFor(key, wire['content-type'], obj.httpMetadata?.cacheControl, slab, stored),
     etag: obj.httpEtag,
-    'accept-ranges': 'bytes',
   })
+  const encoded = 'content-encoding' in wire
+  if (!encoded) headers.set('accept-ranges', 'bytes')
   // `onlyIf` matched a conditional GET: R2 returns the object without a body.
   if (!('body' in obj) || !obj.body) return new Response(null, { status: 304, headers })
   if (request.headers.has('range') && obj.range && 'offset' in obj.range) {
@@ -177,5 +181,5 @@ function serve(request, obj, { slab = false, stored = false } = {}) {
     return new Response(request.method === 'HEAD' ? null : obj.body, { status: 206, headers })
   }
   headers.set('content-length', String(obj.size))
-  return new Response(request.method === 'HEAD' ? null : obj.body, { headers })
+  return new Response(request.method === 'HEAD' ? null : obj.body, encoded ? { headers, encodeBody: 'manual' } : { headers })
 }

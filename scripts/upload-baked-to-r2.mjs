@@ -58,8 +58,8 @@
  * uploaded slab that reports success is the worst outcome available here: the map
  * renders and the canopy does not, and nobody is told (`CLAUDE.md` Layer 0, q2).
  */
-import { readdirSync, statSync, createReadStream, readFileSync, writeFileSync, mkdtempSync, existsSync } from 'node:fs'
-import { join, relative, extname } from 'node:path'
+import { readdirSync, statSync, readFileSync, writeFileSync, mkdtempSync, existsSync } from 'node:fs'
+import { join, relative } from 'node:path'
 import { tmpdir } from 'node:os'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { execFile } from 'node:child_process'
@@ -68,6 +68,8 @@ import { createHash } from 'node:crypto'
 import { HASHED, CACHE, contentName, shaOf } from '../src/lib/slabNames.js'
 import { EXCLUDE, notPublished } from './slab-publish-rule.mjs'
 import { slabNameMismatches } from './slab-name-rule.mjs'
+import { typeFor, readBackEncoding } from '../src/lib/slabWire.js'
+import { wireOf } from './slab-wire.mjs'
 
 const execFileAsync = promisify(execFile)
 const REPO_ROOT = fileURLToPath(new URL('..', import.meta.url))
@@ -108,12 +110,7 @@ function resolveEnv(argv) {
 
 // What is not published: scripts/slab-publish-rule.mjs (one rule, shared with bake-manifest's `files`).
 
-const MIME = {
-  '.json': 'application/json', '.bin': 'application/octet-stream',
-  '.glb': 'model/gltf-binary', '.png': 'image/png', '.jpg': 'image/jpeg',
-  '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.ktx2': 'image/ktx2',
-  '.svg': 'image/svg+xml', '.txt': 'text/plain',
-}
+// What each file is stored as (its type, and brotli for a type nothing else compresses): src/lib/slabWire.js.
 
 /**
  * Cache-Control, from `src/lib/slabNames.js#CACHE`: a PLAIN key stays short (300 s, revalidated
@@ -253,19 +250,16 @@ async function withRetry(label, fn) {
   throw lastErr
 }
 
-async function put({ abs, key, cache }) {
+/** Puts the STORED bytes (`slab-wire.mjs#wireOf`: brotli, with its content-encoding, for a type stored br). */
+export async function put({ abs, key, cache }) {
+  const wire = await wireOf(abs, key)
   const args = ['wrangler', 'r2', 'object', 'put', `${BUCKET}/${key}`,
-    '--file', abs, '--remote',
-    '--content-type', MIME[extname(key).toLowerCase()] || 'application/octet-stream',
+    '--file', wire.abs, '--remote',
+    '--content-type', typeFor(key),
+    ...(wire.encoding ? ['--content-encoding', wire.encoding] : []),
     '--cache-control', cache]
   await withRetry(key, () => execFileAsync('npx', args, { cwd: REPO_ROOT, maxBuffer: 1 << 24 }))
 }
-
-const md5 = (abs) => new Promise((res, rej) => {
-  const h = createHash('md5')
-  createReadStream(abs).on('data', (d) => h.update(d)).on('error', rej)
-    .on('end', () => res(h.digest('hex')))
-})
 
 /**
  * ⭐ THE DIRTY-CHECK — ask the REMOTE what is already there, never a local memory of it.
@@ -277,23 +271,30 @@ const md5 = (abs) => new Promise((res, rej) => {
  * cannot compare (`<md5>-<n>`), or a network error that outlived its retries — all fall
  * through to a re-put. The check may only ever REMOVE work it has positively proven
  * redundant, so its failure mode is a slow pour, never a silent hole in the slab.
+ * ⭐ It compares the STORED bytes (`wireOf`): a stored-br object's ETag and length are its brotli bytes', read back
+ * with `accept-encoding: br` — asked any other way the edge decodes it, with a weak ETag and no length, and every
+ * such object would read as uncertain and re-upload on every pour. ⛔ So a missing length is COUNTED and said aloud.
  * ⚠️ It reads through the CDN, whose Cache-Control is 300s. A stale edge answer can only
  * disagree with fresh local bytes, which uploads — the safe direction. `--force` skips
  * the check entirely; `verify-baked-in-r2.mjs` remains the independent completeness gate.
  */
-async function probe(files, conc) {
+export async function probe(files, conc) {
   const fresh = new Set()
+  let noLength = 0
   let done = 0
   const queue = [...files]
   await Promise.all(Array.from({ length: Math.max(1, conc) }, async () => {
     for (let f = queue.pop(); f; f = queue.pop()) {
       try {
         const r = await withRetry(f.key, () => fetch(PUBLIC_BASE + f.key, {
-          method: 'HEAD', headers: { 'accept-encoding': 'identity' },
+          method: 'HEAD', headers: { 'accept-encoding': readBackEncoding(f.key) },
         }))
-        const etag = (r.headers.get('etag') || '').replace(/^W\//, '').replace(/"/g, '')
-        if (r.ok && Number(r.headers.get('content-length')) === f.bytes
-            && etag && !etag.includes('-') && etag === await md5(f.abs)) {
+        const wire = await wireOf(f.abs, f.key)
+        // A weak ETag is a body the edge transformed — not the stored bytes, so not proof of them.
+        const etag = (r.headers.get('etag') || '').startsWith('W/') ? '' : (r.headers.get('etag') || '').replace(/"/g, '')
+        if (r.ok && !r.headers.has('content-length')) noLength++
+        if (r.ok && Number(r.headers.get('content-length')) === wire.bytes
+            && etag && !etag.includes('-') && etag === wire.md5) {
           fresh.add(f.key)
         }
       } catch { /* uncertain ⇒ upload */ }
@@ -301,6 +302,7 @@ async function probe(files, conc) {
     }
   }))
   process.stdout.write('\n')
+  if (noLength) console.log(`⚠️  ${noLength} objects answered with no content-length — each is re-uploaded (uncertain). If it recurs on an unchanged slab, the read-back encoding is wrong: src/lib/slabWire.js#readBackEncoding`)
   return fresh
 }
 

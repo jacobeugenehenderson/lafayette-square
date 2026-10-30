@@ -42,6 +42,7 @@
 import { spawn } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { fileURLToPath } from 'node:url'
+import { typeFor } from '../src/lib/slabWire.js'
 
 const REPO_ROOT = fileURLToPath(new URL('..', import.meta.url))
 const BUCKET = process.env.R2_BUCKET || 'theward-assets'
@@ -56,14 +57,7 @@ const SHA = /^[0-9a-f]{40}$/
 const md5 = (buf) => createHash('md5').update(buf).digest('hex')
 const sha256 = (buf) => createHash('sha256').update(buf).digest('hex')
 
-const MIME = {
-  html: 'text/html; charset=utf-8', js: 'text/javascript; charset=utf-8', css: 'text/css; charset=utf-8',
-  json: 'application/json; charset=utf-8', svg: 'image/svg+xml', png: 'image/png', jpg: 'image/jpeg',
-  jpeg: 'image/jpeg', webp: 'image/webp', ico: 'image/x-icon', woff2: 'font/woff2', woff: 'font/woff',
-  ttf: 'font/ttf', glb: 'model/gltf-binary', ktx2: 'image/ktx2', bin: 'application/octet-stream',
-  wasm: 'application/wasm', txt: 'text/plain; charset=utf-8', map: 'application/json',
-}
-const typeOf = (rel) => MIME[(rel.split('.').pop() || '').toLowerCase()] || 'application/octet-stream'
+// The content type: src/lib/slabWire.js. ⛔ A player file is copied as its bytes, never encoded — it is not slab.
 // Same rule as the staging publish: hashed assets are immutable, HTML never cached.
 const cacheOf = (rel) => /^assets\/[^/]+-[A-Za-z0-9_-]{8,}\./.test(rel) ? 'public, max-age=31536000, immutable'
   : rel.endsWith('.html') ? 'no-cache' : 'public, max-age=3600'
@@ -94,7 +88,7 @@ async function getBytes(key, { missingOk = false } = {}) {
 function putBytes(key, buf, rel, cache = cacheOf(rel)) {
   return new Promise((resolve, reject) => {
     const p = spawn('npx', ['wrangler', 'r2', 'object', 'put', `${BUCKET}/${key}`, '--pipe', '--remote',
-      '--content-type', typeOf(rel), '--cache-control', cache], { cwd: REPO_ROOT })
+      '--content-type', typeFor(rel), '--cache-control', cache], { cwd: REPO_ROOT })
     let err = ''
     p.stderr.on('data', (d) => { err += d })
     p.on('error', reject)

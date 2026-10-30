@@ -59,16 +59,7 @@ function cacheFor(key, contentType) {
   return 'public, max-age=3600'
 }
 
-const TYPES = {
-  html: 'text/html; charset=utf-8', js: 'text/javascript; charset=utf-8',
-  mjs: 'text/javascript; charset=utf-8', css: 'text/css; charset=utf-8',
-  json: 'application/json; charset=utf-8', svg: 'image/svg+xml',
-  png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp',
-  ico: 'image/x-icon', woff2: 'font/woff2', woff: 'font/woff', ttf: 'font/ttf',
-  glb: 'model/gltf-binary', ktx2: 'image/ktx2', bin: 'application/octet-stream',
-  wasm: 'application/wasm', txt: 'text/plain; charset=utf-8', map: 'application/json',
-}
-const typeFor = (p) => TYPES[(p.split('.').pop() || '').toLowerCase()] || 'application/octet-stream'
+// A file's content type, and whether it is stored encoded: src/lib/slabWire.js (one table, both Workers and the uploaders).
 
 export default {
   async fetch(request, env) {
@@ -228,6 +219,7 @@ async function wardBuild(env) {
  */
 import { decideProductionDomain } from '../../../src/lib/productionDomain.js'
 import { cardFor, withShareCard } from '../../../src/lib/shareCard.js'
+import { wireHeaders } from '../../../src/lib/slabWire.js'
 
 /**
  * ⭐⭐ THE TOWN'S PRODUCTION DOMAIN, ON ITS STAGING PAGE (Jacob, 2026-09-26). Every public URL the
@@ -299,12 +291,13 @@ async function shareCard(response, map, url, env, kitBase) {
     } }), response, card, { site: 'staging-sites', map })
 }
 
+// An object stored encoded is sent as stored, never encoded twice (production-sites#serve, the same rule).
 function serve(request, obj, cacheControl) {
   const key = obj.key
-  const contentType = obj.httpMetadata?.contentType || typeFor(key)
+  const wire = wireHeaders(obj)
   const headers = new Headers({
-    'content-type': contentType,
-    'cache-control': cacheControl || cacheFor(key, contentType),
+    ...wire,
+    'cache-control': cacheControl || cacheFor(key, wire['content-type']),
     etag: obj.httpEtag,
     // Unlisted, but durable (ruled 2026-09-21): a partner holds this address and returns
     // to it. ⛔ Unlisted is not private — it is simply not advertised — so the only thing
@@ -312,5 +305,5 @@ function serve(request, obj, cacheControl) {
     'x-robots-tag': 'noindex, nofollow',
   })
   if (request.method === 'HEAD') return new Response(null, { headers })
-  return new Response(obj.body, { headers })
+  return new Response(obj.body, 'content-encoding' in wire ? { headers, encodeBody: 'manual' } : { headers })
 }

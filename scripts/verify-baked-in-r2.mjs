@@ -19,15 +19,20 @@
  * A verifier that shares its subject's definition of "everything" cannot catch a
  * wrong definition (`feedback_an_instrument_that_lies_toward_nothing_is_there`).
  *
- * Compares Content-Length against local byte size via HEAD — cheap, and enough to
- * catch absence, truncation and drift. It does NOT hash: a byte-identical-length
- * corruption would pass, which is a trade for being able to run it in seconds.
+ * Compares Content-Length against the STORED size via HEAD (the file's own size, or its brotli
+ * size for a br-stored type — src/lib/slabWire.js) — cheap, and enough to catch absence,
+ * truncation and drift. It does NOT hash: a byte-identical-length corruption would pass, which
+ * is a trade for being able to run it in seconds (a br-stored town adds its encode, ~2 s for PTown).
  */
 import { readdirSync, statSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { ATLAS_ONLY_FILE, IMPOSTOR_CAPTURE_FILE } from '../src/lib/treeGeometry.js'
 import { treeGeometryOfTown, impostorFilesOfTown } from './slab-tree-geometry.mjs'
+// How a file is STORED (raw, or brotli for a type nothing else compresses) is the type's, not the inclusion set's:
+// read from the one table, so this stays independent of the uploader where independence matters.
+import { readBackEncoding } from '../src/lib/slabWire.js'
+import { wireOf } from './slab-wire.mjs'
 
 const REPO_ROOT = fileURLToPath(new URL('..', import.meta.url))
 const BAKED_ROOT = join(REPO_ROOT, 'public/baked')
@@ -64,7 +69,7 @@ for (const l of looks) {
     if (!geom.needed && ATLAS_ONLY_FILE('/' + key)) continue
     // impostor captures: only those an atlas record names (the runtime's own rule, read here, not the uploader's)
     if (IMPOSTOR_CAPTURE_FILE('/' + key) && !named.has('/' + key.replace(/^baked\/[^/]+\//, ''))) continue
-    files.push({ key, bytes: statSync(abs).size })
+    files.push({ key, abs, bytes: statSync(abs).size })
   }
 }
 
@@ -76,11 +81,11 @@ const queue = [...files]
 await Promise.all(Array.from({ length: conc }, async () => {
   for (let f = queue.pop(); f; f = queue.pop()) {
     try {
-      // ⛔ accept-encoding: identity is LOAD-BEARING. Node's fetch requests gzip by
-      // default, Cloudflare compresses, undici transparently decompresses and DROPS
-      // content-length — so every object reads back as 0 bytes and the verifier
-      // reports a total, false failure. (It did, first run.) curl does not ask for
-      // compression, which is why a curl spot-check disagreed with the script.
+      // ⛔ THE READ-BACK ENCODING IS LOAD-BEARING (slabWire.js#readBackEncoding). Node's fetch requests gzip
+      // by default, Cloudflare compresses, undici transparently decompresses and DROPS content-length — so
+      // every object read back as 0 bytes and the verifier reported a total, false failure (it did, first
+      // run). A raw-stored object is asked for with identity; a br-stored one with br, so the answer is its
+      // stored length — asked with identity the edge decodes it and sends no length at all.
       // ⛔ RETRY. A transient socket error is not a missing object. Without this the
       // verifier reported 418 false MISSINGs under concurrency — and a verifier that
       // cries wolf about a slab you are about to delete the only other copy of is
@@ -88,7 +93,7 @@ await Promise.all(Array.from({ length: conc }, async () => {
       let r = null, lastErr = null
       for (let attempt = 0; attempt < 4 && !r; attempt++) {
         try {
-          r = await fetch(BASE + f.key, { method: 'HEAD', headers: { 'accept-encoding': 'identity' } })
+          r = await fetch(BASE + f.key, { method: 'HEAD', headers: { 'accept-encoding': readBackEncoding(f.key) } })
         } catch (e) {
           lastErr = e
           await new Promise((res) => setTimeout(res, 150 * 2 ** attempt))
@@ -97,8 +102,9 @@ await Promise.all(Array.from({ length: conc }, async () => {
       if (!r) missing.push({ ...f, status: `network: ${lastErr?.message}` })
       else if (!r.ok) missing.push({ ...f, status: r.status })
       else {
-        const remote = Number(r.headers.get('content-length'))
-        if (remote !== f.bytes) mismatched.push({ ...f, remote })
+        const remote = r.headers.has('content-length') ? Number(r.headers.get('content-length')) : 'no length'
+        const want = (await wireOf(f.abs, f.key)).bytes   // the STORED length (brotli for a br-stored type)
+        if (remote !== want) mismatched.push({ ...f, bytes: want, remote })
       }
     } catch (e) { missing.push({ ...f, status: e.message }) }
     if (++done % 100 === 0 || done === files.length) process.stdout.write(`\r  ${done}/${files.length}`)
@@ -115,4 +121,4 @@ if (missing.length || mismatched.length) {
   process.exit(1)
 }
 const mb = (files.reduce((s, f) => s + f.bytes, 0) / 1048576).toFixed(1)
-console.log(`\n✅ all ${files.length} objects present and byte-length-identical (${mb} MB) across: ${looks.join(', ')}`)
+console.log(`\n✅ all ${files.length} objects present at their stored length (${mb} MB raw) across: ${looks.join(', ')}`)
