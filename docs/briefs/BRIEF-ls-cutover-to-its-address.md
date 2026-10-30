@@ -35,7 +35,7 @@ A default that merely changes spelling is the same bleed with a new name.
    `lafayette-square` → `lafayettesquare`. Listing ids unchanged.
 2. **Operations**: the Ward's Domain `lafayette-square.com` → `lafayettesquare.online`, one edited value.
    That is also what renames the town in Operations (its name is read from the Domain).
-3. **The switch in code**: delete `src/instances/lafayette-square.js#domain`. It is the one legacy line
+3. **The switch in code** (built 2026-10-30, with `PUBLISH §1` moved to the Diary): delete `src/instances/lafayettesquare.js#domain`. It is the one legacy line
    that makes Promote refuse Lafayette Square and makes its QR codes read `.com`
    (`src/lib/townOrigin.js`, `cartograph/serve.js#siteUrlsForLook`). ⚠️ From that commit, new QR codes
    read `lafayettesquare.online`.
@@ -44,8 +44,7 @@ A default that merely changes spelling is the same bleed with a new name.
    path>`, e.g. a Cloudflare redirect rule on the `.com` zone. ▶ Check each card-route path:
    `/checkin/<id>`, `/claim/<id>/<secret>`, `/place/<id>`, `/link/<token>` — each must 301 to the same path
    on `.online` and open the right page there.
-6. **Retire what served `.com`**: `.github/workflows/deploy.yml`, `public/CNAME`, `PUBLISH.md §1` (to the
-   Diary), the bucket CORS entries for `lafayette-square.com`, and the `main` branch's role as production.
+6. **Retire what served `.com`**: `.github/workflows/deploy.yml`, `public/CNAME`, the bucket CORS entries for `lafayette-square.com`, and the `main` branch's role as production.
    ⛔ Nothing is pushed to `main` as part of this. **And the Apps Script's `LEGACY_LOOK_TENANT`** (the one
    look it still translates, for `main`'s player) with `resolveTenant`'s `look` argument: drafted, Jacob
    deploys. ▶ `node checks/claims-the-legacy-look-table-dies-at-ls-cutover.mjs` fails until it is gone.

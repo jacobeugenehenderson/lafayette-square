@@ -58,7 +58,6 @@ export default {
   },
 
   name: ${q(name)},
-  domain: null,
 
   contentRoot: 'content/${scene}/',
 

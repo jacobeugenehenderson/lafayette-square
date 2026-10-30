@@ -13,7 +13,6 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, rmSync
 import { join, dirname, relative } from 'path'
 import { spawn } from 'child_process'
 import { mapRawDir, mapCleanDir, ribbonsPathOf, declaredRibbonsOf } from './config.js'
-import { instanceForMap } from '../src/instances/registry.js'
 import { readDeployment } from '../src/lib/deployment.js'
 import { slugifyName, isNumericId } from '../src/lib/sceneSlug.js'
 import { registryReadChanged } from '../src/cartograph/streetProfiles.js'
@@ -282,14 +281,10 @@ async function proveProduction(domain, look, bakedAt, pinned = {}) {
  * ⭐ THE PRODUCTION ADDRESS BELONGS TO THE TOWN, AND ITS ONE HOME IS OPERATIONS (2026-09-26):
  * asked, never held here (`cartograph/operations-domain.mjs`). ⛔ Anything short of "owned, and
  * its zone active" is `{ url: null, why }`, and the panel prints the reason.
- * ⚠️ ONE LEGACY CASE, READ FROM DATA: a town whose instance module still declares `domain` is on
- * its OLD production (Lafayette Square: `lafayette-square.com`, GitHub Pages from `main`) until its
- * own cutover step deletes that line. `legacy: true` says so, and Promote refuses it.
  */
 async function siteUrlsForLook(lookId) {
   const entry = readLooksIndex().looks.find(l => l.id === lookId)
   const mapId = entry?.scene || null
-  const town = mapId ? instanceForMap(mapId) : null
   const noTown = `look '${lookId}' declares no scene, so there is no town to address`
 
   // ⭐ THE MAP IS THE PATH, AND THAT IS THE ADDRESS A PARTNER IS GIVEN — no query string,
@@ -301,11 +296,7 @@ async function siteUrlsForLook(lookId) {
 
   let prod
   if (!mapId) prod = { url: null, why: noTown }
-  else if (town?.domain) {
-    prod = { url: `https://${String(town.domain).replace(/^https?:\/\//, '').replace(/\/?$/, '/')}`, legacy: true,
-      why: `'${mapId}' is still on its legacy production (src/instances/${mapId}.js#domain) — its cutover `
-        + 'to its own .online site is a separate step' }
-  } else {
+  else {
     const d = await productionDomainFor(mapId)
     prod = d.domain ? { url: `https://${d.domain}/`, domain: d.domain } : { url: null, why: d.why }
   }
@@ -3606,7 +3597,6 @@ createServer(async (req, res) => {
     const say = (status, body) => { res.writeHead(status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(body)) }
     try {
       const site = await siteUrlsForLook(id)
-      if (site.prod.legacy) throw new Error(site.prod.why)
       if (!site.prod.url) throw new Error(`no production address: ${site.prod.why}`)
       const { domain } = site.prod, map = site.mapId
 
