@@ -96,6 +96,13 @@ after the port merges. The full refusal census on the merged port, then one clas
 empty; 42 near-only chunks named KNOWN in claims-the-armoured-shore-is-never-empty) and Jacob's seam ruling ("call them from the same
 place") in one rewrite of `drapeGlobals`: one nested lattice sized from what it builds, `farRow` the one producer of the near/far edge.
 Groyne, a follow-up off groyne/far-shore.
+**⛔ PTOWN'S MARINA DOCKS DRAW AS GREEN 'TREELAWN' ON THE SEABED** (Zob, measured 2026-10-30; Jacob's "markings on the sandbed are grass"):
+OSM floating piers (`highway=footway, man_made=pier, floating=yes, mooring=yes`; ways 1486114948, 1486114957–978, 289074419/420)
+reach the ground as `treelawn:<LU>` (renderOrder 32, #6E8A5E) at ground level, so at low tide they lie as green stripes on the exposed bed.
+⛔ This CONTRADICTS a standing ruling: `r-a-way-tag-decides-before-byCoast` says man_made=pier is a deck. So it's a defect, not a design
+question: which code turns a pier footway (a PATH, not a street) into treelawn is not traced. Kit-wide: any town with mapped docks.
+Open for Jacob after: what `floating=yes` means for the deck's height (the tide). Also check the ~0.9 km² salt marsh drawn as
+`treelawn:*` west of the Breakwater (plausibly the same mislabel at area scale, unverified). Next for Plumb.
 **⛔ URGENT, DISPATCHED to Gimbal: `docs/briefs/BRIEF-the-overhead-camera-resolves-its-ground.md`** (Jacob, 2026-10-30, live PTown on
 his phone: the seabed shows through the harbour in Browse and Society; desktop clean). Phone linear depth with near 1 m at ~6.5 km.
 **▶ JACOB, 2026-10-30 (not tonight): THE PUBLISH PANEL'S BUTTONS ARE CONFUSING:** "the slab/player publish/push buttons … are unnecessarily
