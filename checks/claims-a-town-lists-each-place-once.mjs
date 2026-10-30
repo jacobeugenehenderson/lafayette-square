@@ -83,7 +83,7 @@ const decided = { merge: { 'town-lst-0421': ['osm-n3'], 'osm-1': ['osm-n2'] }, a
 
 // (3) the name-matched patch, run from bake-content.js's own applyListingOverrides (its patch half; no add reaches the anchor code)
 const overridesOf = (code) => { const a = code.indexOf('export function applyListingOverrides('), b = code.indexOf('\n}\n', a) + 2, s = code.indexOf('function stripMeta('), e = code.indexOf('\n}\n', s) + 2
-  return new Function('normName', 'addressKey', 'joinPointToBuilding', `${code.slice(s, e)}; ${code.slice(a, b).replace('export ', '')}; return applyListingOverrides`)(P.normName, () => null, () => null) }
+  return new Function('normName', 'survivorOf', 'absorbedResearch', 'addressKey', 'joinPointToBuilding', `${code.slice(s, e)}; ${code.slice(a, b).replace('export ', '')}; return applyListingOverrides`)(P.normName, P.survivorOf, P.absorbedResearch, () => null, () => null) }
 const patched = (fn) => { const base = [...L(), { _key: 'osm-n8', name: "Liz's Cafe", building_id: 'b7' }], r = fn(base, { patches: { 'osm-gone': { _match_name: "Seamen's Bank", phone: '1' }, 'osm-gone-2': { _match_name: 'Gifford House', phone: '2' }, 'osm-gone-3': { _match_name: "Liz's Cafe", phone: '3' } } }, { buildingGrid: null, bakedIds: new Set(), parcels: [], parcelByAddr: new Map() })
   return { r, phones: base.filter(l => l.phone).map(l => `${l._key}:${l.phone}`) } }
 { const { r, phones } = patched(overridesOf(bc))
