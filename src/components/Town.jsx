@@ -107,7 +107,7 @@ import { TownPlace, useTownLoaded } from './TownPlace.jsx'
 import TowerLight from './TowerLight.jsx'
 import { TownScope, SHOT_KEY } from './townContext.js'
 import { TimeTicker, SkyStateTicker } from './SkyTickers.jsx'
-import { QualityProvider, canvasAAMismatch } from '../lib/qualityProfile.js'
+import { QualityProvider, canvasAAMismatch, TOWN_CAMERA_NEAR_M } from '../lib/qualityProfile.js'
 import useTownPlace from '../hooks/useTownPlace.js'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import { useStreetLabels } from '../lib/streetLabels.js'
@@ -116,7 +116,7 @@ import MovieCamera from '../camera/MovieCamera.jsx'
 import ShotFlight from '../camera/ShotFlight.jsx'
 import Movers from './Movers.jsx'
 import RegimeControls from './RegimeControls.jsx'
-import { resolveHeroKeyframes, useSceneStencil } from '../lib/cameraRegimes.js'
+import { resolveHeroKeyframes, useSceneStencil, overheadNear } from '../lib/cameraRegimes.js'
 import { SHOTS_FLAT_DEFAULTS, REVEAL_FIELD_KEYS, REVEAL_FLAT_DEFAULTS } from '../cartograph/skyLightChannels.js'
 import { resolveGroupAtMinute } from '../cartograph/animatedParam.js'
 import { createRoot } from 'react-dom/client'
@@ -129,7 +129,7 @@ import { skyModeOf } from '../lib/skyMode'
 import { ShaderLinkGuard } from '../lib/shaderLinkGuard.jsx'
 import WindSheet from './WindSheet.jsx'
 import { sceneExag } from '../utils/terrainShader'
-import { terrainExag } from '../utils/terrainShader'
+import { terrainExag, terrainCeilingRaw } from '../utils/terrainShader'
 import { getElevationRaw } from '../utils/elevation'
 import useSkyState from '../hooks/useSkyState'
 import { acquireWeatherPoll } from '../hooks/useWeather'
@@ -515,29 +515,94 @@ function GroundPoint({ x, z, lat, lon, lift = 0, children, ...props }) {
 }
 
 /**
- * ⭐ THE TOWN REACHES ITS OWN SKY (2026-09-28). The farthest thing <Town> draws is the sky dome (SKY_RADIUS); the camera
- * it is drawn through must reach past it, or the dome is clipped and the sky reads BLACK in daylight — measured in the
- * Ward, whose Canvas kept R3F's default far = 1000. The kit's apps had hidden it by each pinning `far: 60000`. Town owns
- * the far plane now. Two things a component cannot change once the Canvas exists — the depth buffer (log or linear) and
- * whether it has a shadow map — are the app's Canvas props; when they disagree with the quality profile, Town says so.
+ * ⭐ THE TOWN OWNS ITS CLIP PLANES — far and near, the one writer of each, held every frame on whatever camera is default.
+ * FAR (2026-09-28): the farthest thing <Town> draws is the sky dome (SKY_RADIUS); the camera must reach past it, or the
+ * dome is clipped and the sky reads BLACK in daylight — measured in the Ward, whose Canvas kept R3F's default far = 1000.
  * ▶ node checks/claims-the-town-sees-its-sky.mjs
+ * NEAR (2026-10-30, BRIEF-the-overhead-camera-resolves-its-ground): the movie's is the profile's `movieNear` (a property
+ * of the device's depth buffer — Warden, 2026-09-28; MovieCamera wrote it until then); the overhead plan's is DERIVED
+ * from where the camera is (cameraRegimes.js#overheadNear, over the town's drawn top); every other shot's is the
+ * canvas's, TOWN_CAMERA_NEAR_M. ▶ node checks/claims-the-overhead-camera-resolves-its-ground.mjs
+ * Two things a component cannot change once the Canvas exists — the depth buffer (log or linear) and whether it has a
+ * shadow map — are the app's Canvas props; when they disagree with the quality profile, Town says so.
  */
-function TownOptics({ quality }) {
+// ⭐ THE TOWN'S DRAWN TOP, the plane nothing drawn rises above: every visible drawable's world box (the sky and the
+// clouds excluded by their groups — they lie past any overhead near), plus the lifts its SHADER adds that no box sees:
+// each geometry's own unexaggerated part (`aCentroid.y` buildings and neon, `aGround.y` trees, lamps and boulders —
+// buildingLift.js) and the terrain's highest raw ground × the LIVE exag (the ground, the revetment, the water level, the
+// buildings' anchors). ⛔ Not seen by it: the rain and snow column, placed about the CAMERA in its shader (RainParticles):
+// in the plan it lay within the near and is not drawn there (Boz's ruling (i), 2026-10-30).
+const SKYWARD = new Set(['town:sky', 'town:clouds'])
+const LIFT_ATTRS = ['aCentroid', 'aGround']
+const _ownLift = new WeakMap()
+function ownLift(g) {
+  for (const name of LIFT_ATTRS) {
+    const a = g.attributes?.[name]
+    if (!a || a.itemSize < 2) continue
+    const c = _ownLift.get(a)
+    if (c && c.v === a.version) return c.y
+    let y = 0
+    for (let i = 0; i < a.count; i++) y = Math.max(y, a.getY(i))
+    _ownLift.set(a, { v: a.version, y })
+    return y
+  }
+  return 0
+}
+const _box = new THREE.Box3()
+function contentTop(root) {
+  let n = 0, top = -Infinity
+  const walk = (o) => {
+    if (!o.visible || SKYWARD.has(o.name)) return
+    if ((o.isMesh || o.isPoints || o.isLine || o.isSprite) && o.geometry) {
+      n++
+      if (o.isInstancedMesh) { if (!o.boundingBox) o.computeBoundingBox(); _box.copy(o.boundingBox) }
+      else { if (!o.geometry.boundingBox) o.geometry.computeBoundingBox(); _box.copy(o.geometry.boundingBox) }
+      if (!_box.isEmpty()) top = Math.max(top, _box.applyMatrix4(o.matrixWorld).max.y + ownLift(o.geometry))
+    }
+    for (const c of o.children) walk(c)
+  }
+  walk(root)
+  return { n, top }
+}
+function countDrawn(root) {
+  let n = 0
+  const walk = (o) => { if (!o.visible || SKYWARD.has(o.name)) return; if ((o.isMesh || o.isPoints || o.isLine || o.isSprite) && o.geometry) n++; for (const c of o.children) walk(c) }
+  walk(root)
+  return n
+}
+let _topUnknownSaid = false
+
+function TownOptics({ quality, shot, movieActive }) {
   const camera = useThree((s) => s.camera)
   const gl = useThree((s) => s.gl)
+  const scene = useThree((s) => s.scene)
   // ⭐ HELD EVERY FRAME, on whatever camera is default. An app may make its own camera default at any time (the Ward's
   // plan camera, a drei <PerspectiveCamera makeDefault>); set once per camera identity, such a camera drew ONLY SKY at
   // R3F's far (Quire, measured 2026-09-28). A camera someone else gave a different far is corrected and SAID, once.
   const FAR = SKY_RADIUS * 1.1     // past the dome (and the orbs inside it), with room for the camera's own lift
   const told = useRef(new WeakSet())
+  // The drawn top, re-walked when what is drawn changes (a count of visible drawables, read each plan frame) or the shot does.
+  const drawn = useRef({ n: -1, shot: null, top: -Infinity })
   const hold = (cam) => {
-    if (!cam || cam.far === FAR) return
-    if (!told.current.has(cam) && cam.far !== 1000 && cam.far !== 2000) {
-      told.current.add(cam)
-      console.warn(`[Town] the default camera's far plane was ${cam.far} — Town owns it (${FAR}, past the sky dome); set nothing on the app's camera`)
+    if (!cam) return
+    if (cam.far !== FAR) {
+      if (!told.current.has(cam) && cam.far !== 1000 && cam.far !== 2000) {
+        told.current.add(cam)
+        console.warn(`[Town] the default camera's far plane was ${cam.far} — Town owns it (${FAR}, past the sky dome); set nothing on the app's camera`)
+      }
+      cam.far = FAR
+      cam.updateProjectionMatrix()
     }
-    cam.far = FAR
-    cam.updateProjectionMatrix()
+    let near = TOWN_CAMERA_NEAR_M
+    if (movieActive) near = quality.movieNear
+    else if (shot === 'plan') {
+      const d = drawn.current, n = countDrawn(scene)
+      if (n !== d.n || d.shot !== shot) Object.assign(d, contentTop(scene), { shot })
+      if (d.n > 0 && Number.isFinite(d.top)) near = overheadNear(cam, d.top + terrainCeilingRaw.value * Math.max(0, terrainExag.value), TOWN_CAMERA_NEAR_M)
+      else if (!_topUnknownSaid) { _topUnknownSaid = true; console.info(`[Town] the overhead near is the canvas's (${TOWN_CAMERA_NEAR_M} m) until the town has drawn something to stand above`) }
+    }
+    if (shot !== 'plan') drawn.current.shot = null
+    if (cam.near !== near) { cam.near = near; cam.updateProjectionMatrix() }
   }
   useLayoutEffect(() => { hold(camera) }, [camera])
   useFrame((st) => hold(st.camera))
@@ -619,7 +684,7 @@ export default function Town({
   const revealTiming = resolveGroupAtMinute(scene?.reveal, 0, null, REVEAL_FIELD_KEYS, REVEAL_FLAT_DEFAULTS)
   const splash = <CanvasOverlay><TownSplash title={_titleOf(town)} fadeSeconds={revealTiming.fade} skyAt={skyAt} identity={scene ? (scene.identity ?? null) : undefined} viewInset={viewInset} /></CanvasOverlay>
   const revealed = useSyncExternalStore(subscribeStartup, isRevealed)
-  if (!loaded) return <><TownOptics quality={quality} /><TownPlace town={town} lookId={lookId} time={time} />{splash}</>
+  if (!loaded) return <><TownOptics quality={quality} shot={shot} movieActive={false} /><TownPlace town={town} lookId={lookId} time={time} />{splash}</>
   const shotExag = shot === 'plan' ? 0 : shot === 'street' ? 1 : sceneExag()
   // ⭐ THE SWELL (Jacob, 2026-10-06): the town is prepared FLAT and the terrain swells to the shot's height as the
   // reveal's gesture, through the one terrain driver (BakedGround#TerrainExagDriver). A gesture, not a perf lever.
@@ -630,12 +695,12 @@ export default function Town({
   return (
     <QualityProvider quality={quality}>
     <TownScope value={scope}>
-      <TownOptics quality={quality} />
+      <TownOptics quality={quality} shot={shot} movieActive={shot === 'movie' && (movie?.playing ?? true)} />
       <TownPlace town={town} lookId={lookId} time={time} />
       {/* ⭐ THE MOVIE IS TOWN'S (Warden, 2026-09-28): the ONE mount of the driver, playing this town's own baked path
           (Stage's live keys arrive as overrides). Mounted in every shot so an app's tween can sample the path before
           it switches; it plays only in the movie shot. ▶ node checks/claims-one-movie-driver.mjs */}
-      <MovieCamera keyframes={heroKeyframes} motion={heroMotion} quality={quality}
+      <MovieCamera keyframes={heroKeyframes} motion={heroMotion}
         active={shot === 'movie' && (movie?.playing ?? true)}
         start={movie?.start ?? 'random'} onTime={movie?.onTime} hold={movieHold} handle={movieHandle} framing={shot === 'movie'} />
       {/* ⭐ A SHOT CHANGE FLIES (BRIEF-town-shot-flight): the town knows where each shot puts the camera and flies

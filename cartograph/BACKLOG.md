@@ -61,6 +61,7 @@ The combined bake also measures THE WATER TINT (below).
   review; then the merge, then Huron re-bakes. ▶ `checks/claims-the-open-close-cuts-once{,-huron}.mjs`; its refusals and debts are the rows
   below that cite them; PTown's sweep: `docs/briefs/BRIEF-provincetown-pours-on-the-port.md`.
 - **Altadena:** re-fetch, the Extent fix, re-pour.
+- **Rain/snow over the overhead map** (Boz's ruling (i), 2026-10-30: not drawn there): streaks positioned in the town's space, if Jacob wants falling weather in the plan. Layer 0: RainParticles' RADIUS / TOP_Y / BOTTOM_Y are metres typed for a street-height camera (Zob).
 - **The buildings.json v2 path** (`SlabBuildings.jsx`, the v2 read and its live-palette refusal) stays only while a town is v2, by ruling (Warden 2026-09-28); it goes when the check lists none. ▶ `node checks/claims-live-palette-equals-the-bake.mjs`.
 
 **▶ NEXT TRANCHE LEADS:** fractional block keys (`r-block-keys-are-minted-once-and-inserted-between`) · the listing point backfill · the Ward-tranche list (`docs/agents/WARD.md`).

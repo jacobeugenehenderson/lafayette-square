@@ -253,6 +253,33 @@ export function overheadResolves(camera, viewportHeightPx, frustum, center, radi
 }
 
 /** The per-mount keys a caller may set: content scale, never gestures. */
+// ── The overhead near plane ──────────────────────────────────────────────────
+const _nd = new THREE.Vector3(), _nw = new THREE.Vector3()
+/**
+ * ⭐ THE OVERHEAD CAMERA'S NEAR PLANE COMES FROM WHERE IT IS (BRIEF-the-overhead-camera-resolves-its-ground, 2026-10-30).
+ * A linear depth buffer's step at view depth z is z² / (near · 2²⁴): with near 1 m a phone's plan (6.5 km up, Society
+ * 19.7 km) stepped 2.5 m and 23 m, so the bed drawn 0.102 m under the water won the depth test and the harbour read as
+ * sand. Nothing drawn is nearer than the plane y = `topY` (the town's drawn top, Town.jsx#TownOptics), so the near is the
+ * smallest view depth at which that plane meets the frustum: the min over the frustum's four corner rays that point
+ * down (depth to a plane is linear-fractional in the ray, so its minimum over the frustum is at a corner), which holds
+ * at any lean and through a flight's tilt. ⛔ `floorM` (the canvas's own near) when the camera is not above `topY`, no
+ * corner ray points down, or `topY` is unknown — never a guess. ▶ node checks/claims-the-overhead-camera-resolves-its-ground.mjs
+ */
+export function overheadNear(camera, topY, floorM) {
+  if (!(floorM > 0)) throw new Error(`[camera] overheadNear needs the canvas's near as its floor (got ${floorM})`)
+  if (!camera?.isPerspectiveCamera || !Number.isFinite(topY)) return floorM
+  camera.updateMatrixWorld()
+  const h = camera.matrixWorld.elements[13] - topY
+  if (!(h > floorM)) return floorM
+  let z = Infinity
+  for (const [x, y] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) {
+    _nd.set(x, y, -1).applyMatrix4(camera.projectionMatrixInverse).normalize()   // a corner ray, in view space
+    _nw.copy(_nd).transformDirection(camera.matrixWorld)                          // the same ray, in the world
+    if (_nw.y < -1e-9) z = Math.min(z, h * _nd.z / _nw.y)                        // view depth where it meets y = topY
+  }
+  return Number.isFinite(z) ? Math.max(floorM, z) : floorM
+}
+
 export const REGIME_LIMIT_KEYS = ['minDistance', 'maxDistance', 'minPolarAngle', 'maxPolarAngle', 'minZoom', 'maxZoom']
 
 /**

@@ -34,7 +34,7 @@ export const QUALITY = {
     // sky embed, the transparent diorama, Cartograph's, which is also the Designer's) keeps this, or nothing smooths its edges.
     antialias: true,
     logDepth: true,
-    // The movie shot's near plane (MovieCamera): log depth keeps precision at near 1 to the horizon.
+    // The movie shot's near plane (held by Town.jsx#TownOptics): log depth keeps precision at near 1 to the horizon.
     movieNear: 1,
     dpr: [1, 1.5],
     shadows: 'soft',
@@ -87,7 +87,7 @@ export const QUALITY = {
  * Designer's too, and with `true` the Designer had no AA at all, every edge stair-stepped (Jacob's screenshot,
  * 2026-10-28; off since 095dec54, 2026-10-07).
  */
-// the town camera's near plane, m: nothing nearer is drawn, so it bounds how close any shot shows the ground (Stage's coast card reads it)
+// the town camera's near plane, m — the canvas's, and the floor under every shot's (Town.jsx#TownOptics; the plan's is derived above it): nothing nearer is drawn, so it bounds how close any shot shows the ground (Stage's coast card reads it)
 export const TOWN_CAMERA_NEAR_M = 1
 export function townCanvasProps(quality, { composer } = {}) {
   if (!quality?.id) throw new Error('[quality] ⛔ townCanvasProps needs a profile from src/lib/qualityProfile.js')
