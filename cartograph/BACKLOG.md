@@ -115,7 +115,7 @@ precipitation/wind/visibility defaults (Layer 0 fallbacks) · claims-the-wind-ha
 
 **Two Society reds on the Ward's board (Ward, 2026-10-29; cause not established):** RED identically on kit pins a109ec98 and 527213c7,
 same :5180 dev server, so they came before the far-shore pin. ① theward `checks/society-flight-has-no-long-frame.mjs`: the phone flight
-has frames over budget, varying by run (headless; e.g. LS 183 ms once, Huron 67–83 ms ×9). ② `checks/society-frames-what-it-lights.mjs`:
+has frames over budget, varying by run (headless; e.g. LS 183 ms once, Huron 67–83 ms ×9; 2026-10-30 night, pin 96e9b15 on kit 2a44e317, budget 67 ms: LS 183; Huron 600, 117, 67; PTown 283, 83, 83 ms; cause not established). ② `checks/society-frames-what-it-lights.mjs`:
 the live arrival frames with the movie's inset {top 104, bottom 224}, not the map's settled rect {top 362}.
 
 **▶ BRIEFED: `docs/briefs/BRIEF-provincetown-pours-on-the-port.md`** (Jacob, 2026-10-29: "piledrive Provincetown"): Plumb, continuing
