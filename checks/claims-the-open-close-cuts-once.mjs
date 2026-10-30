@@ -199,9 +199,9 @@ const TOPO = [SQ(0, 0, 20000, 20000), rev(SQ(7000, 7000, 6000, 6000)),
 // deck opened, the deck and its slivers closed, both through openClose.mjs. ⛔ Its three subtractions (w0, loc, thin) are still
 // clipper's integer booleans: a NAMED DEBT (BACKLOG). ⭐ The ≤ 2 mm count is a RATCHET: RED on a rise, and RED on a fall ("lower
 // the ceiling to N in this commit"), so it can never drift into a tolerance
-const TAKEOUT_SHORT = 11
+const TAKEOUT_SHORT = 3
 const ratchet = (n, ceiling) => (n > ceiling ? `ROSE to ${n} above the ceiling ${ceiling}` : n < ceiling ? `FELL to ${n}: lower the ceiling to ${n} in this commit` : null)
-{ const coast = fx('ptown-coast'), sd = fx('ptown-street-decks'), water = coast.water.flatMap(b => [b.outer, ...b.holes])
+{ const coast = fx('ptown-coast'), sd = fx('ptown-street-decks-port'), water = coast.water.flatMap(b => [b.outer, ...b.holes])   // TODAY's decks (the fixture's note says how; the older fixture's were the pre-port footprints')
   const P = (r) => r.map(([x, z]) => ({ X: Math.round(x * 1000), Y: Math.round(z * 1000) }))
   const src = union(ip([...water.map(P), ...sd.rings.map(P)]))
   const take = (f) => { let w; try { w = f(water, coast.arcs || [], sd.rings, coast.fineM) } catch (e) { return { why: String(e.message) } }
