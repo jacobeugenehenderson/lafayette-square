@@ -1,0 +1,18 @@
+{
+ "meta": {
+  "scene": "altadena",
+  "schema": "NEIGHBORHOOD-INPUTS §5.1.1 — override layer",
+  "generated": "2026-10-30",
+  "note": "Created for the town's first authored decision; no adds or patches yet."
+ },
+ "adds": [],
+ "patches": {},
+ "places": {
+  "_comment": "One place per (identity, building) (cartograph/listing-places.js). Jacob, 2026-10-30, via Boz: \"accept the duplicates as proposed\"; the merges below are his, and those marked in _translated were the old building-keyed supersede, written unchanged.",
+  "merge": {
+   "osm-471780839": [
+    "osm-471781336"
+   ]
+  }
+ }
+}

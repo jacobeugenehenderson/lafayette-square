@@ -7337,7 +7337,12 @@
   }
  },
  "places": {
-  "_comment": "One place per (identity, building) (cartograph/listing-places.js). These three were the old building-keyed supersede (a researched add over its OSM twin), written as merges unchanged on 2026-10-30; every other pair the bake names is the operator's to decide.",
+  "_comment": "One place per (identity, building) (cartograph/listing-places.js). Jacob, 2026-10-30, via Boz: \"accept the duplicates as proposed\"; the merges below are his, and those marked in _translated were the old building-keyed supersede, written unchanged.",
+  "_translated": [
+   "prov-lst-0424",
+   "prov-lst-0426",
+   "prov-lst-0439"
+  ],
   "merge": {
    "prov-lst-0424": [
     "osm-170530742"
@@ -7347,6 +7352,43 @@
    ],
    "prov-lst-0439": [
     "osm-215751416"
+   ],
+   "osm-164024920": [
+    "osm-n4904027834"
+   ],
+   "osm-215751481": [
+    "osm-n4904974485"
+   ],
+   "osm-215751548": [
+    "osm-n11057070509"
+   ],
+   "osm-215753807": [
+    "osm-215753896"
+   ],
+   "osm-164025003": [
+    "osm-508044028"
+   ],
+   "prov-lst-0429": [
+    "osm-n1963938662"
+   ],
+   "osm-n4905048996": [
+    "prov-lst-0422"
+   ],
+   "prov-lst-0421": [
+    "osm-n4905062000"
+   ],
+   "prov-lst-0423": [
+    "osm-n5652635486",
+    "osm-n11463061383"
+   ],
+   "osm-n6680366067": [
+    "osm-n5676382392"
+   ],
+   "osm-164024928": [
+    "prov-lst-0435"
+   ],
+   "osm-215751980": [
+    "osm-n851633152"
    ]
   }
  }

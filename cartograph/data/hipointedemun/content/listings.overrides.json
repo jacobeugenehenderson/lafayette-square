@@ -2645,7 +2645,35 @@
   }
  },
  "places": {
-  "_comment": "One place per (identity, building) (cartograph/listing-places.js). These are the old building-keyed supersede (a researched add over its OSM twin), written as merges unchanged on 2026-10-30; every other pair the bake names is the operator's to decide.",
+  "_comment": "One place per (identity, building) (cartograph/listing-places.js). Jacob, 2026-10-30, via Boz: \"accept the duplicates as proposed\"; the merges below are his, and those marked in _translated were the old building-keyed supersede, written unchanged.",
+  "_translated": [
+   "hpdm-lst-0004",
+   "hpdm-lst-0005",
+   "hpdm-lst-0010",
+   "hpdm-lst-0024",
+   "hpdm-lst-0025",
+   "hpdm-lst-0030",
+   "hpdm-lst-0031",
+   "hpdm-lst-0049",
+   "hpdm-lst-0050",
+   "hpdm-lst-0056",
+   "hpdm-lst-0075",
+   "hpdm-lst-0093",
+   "hpdm-lst-0103",
+   "hpdm-lst-0105",
+   "hpdm-lst-0107",
+   "hpdm-lst-0110",
+   "hpdm-lst-0128",
+   "hpdm-lst-0144",
+   "hpdm-lst-0155",
+   "hpdm-lst-0177",
+   "hpdm-lst-0180",
+   "hpdm-lst-0183",
+   "hpdm-lst-0186",
+   "hpdm-lst-0191",
+   "hpdm-lst-0193",
+   "hpdm-lst-0212"
+  ],
   "merge": {
    "hpdm-lst-0004": [
     "osm-620135606"
@@ -2654,7 +2682,8 @@
     "osm-620135607"
    ],
    "hpdm-lst-0010": [
-    "osm-619323289"
+    "osm-619323289",
+    "osm-619323288"
    ],
    "hpdm-lst-0024": [
     "osm-238687001"
@@ -2678,7 +2707,8 @@
     "osm-619919737"
    ],
    "hpdm-lst-0075": [
-    "osm-664546509"
+    "osm-664546509",
+    "osm-664546508"
    ],
    "hpdm-lst-0093": [
     "osm-619601817"
