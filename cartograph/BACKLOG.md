@@ -348,6 +348,7 @@ region count — ① blocks inside the mark vs drawn — and the endpoint-gap sc
 - **Lot-anchored footprint geometry (parallax)** — anchor/center the MSBF building footprints to the assessor **lot boundary** to cut footprint-vs-ground misalignment on camera move. Render-side (`bake-buildings` refinement) — *distinct from the classifier* though it uses the same parcel data; keep the arcs separate. **When:** if footprint drift reads as a visible defect on the pan. *(Jacob, 2026-07-07 — mentally tinkering.)*
 
 ## ⏸ AWAITING JACOB (QC / eye)
+- **20 address + phone pairs, a standing NAMED red** (Boz, 2026-10-30: they block no bake; Jacob decides them in a later sitting). ▶ `node checks/claims-two-listings-are-not-one-place.mjs` lists each one. Huron 14 (successive tenants, a propane exchange beside its station, a person beside their practice) and PTown 6 aparts (an inn and its bar, tavern or spa; the museum and the monument; two businesses on one phone). Answer each in the town's `listings.overrides.json`: `places.merge` absorbs the listing that should not exist, `places.apart` names two places. PTown's two plain doubles (Gaslamp, Conwell Home Center) are decided with the bake's 15.
 - **The red "NOT the frozen shape" bar** (`ROADMAP A02`, built `b27ce690`) — **⚠️ built, never seen fire.** Outside Survey the app renders from the frozen `shape.json`; if that file is missing or fails to load it used to silently redraw the map from chains instead, looking normal. It now shows a red StatusBar bar. **Cannot be verified on LS or any current scene — all have the file.** ⭐ **Zero LS impact — this is insurance for pouring a NEW town**, so it is correctly *not* on the LS path. **Verify opportunistically:** the next time a pour's shape freeze fails or a fresh scene has no freeze yet, confirm the bar appears in Design/Measure (**not** Survey — Survey live-strokes by design and correctly shows nothing).
 - **Grade-sep** faces-filtered + stroked-as-asphalt — live re-bake eye. · **Hero-tree LOD** → now the real-DoF cover. · **Render-conformance Ph4–7** — cold-review gate.
 - **Section drag-fluidity** (section-perf) · **divided-"d" curb + perimeter faces** (eye-pending the Section/Stage re-bake).
@@ -387,7 +388,6 @@ region count — ① blocks inside the mark vs drawn — and the endpoint-gap sc
 | Brief | Arc | Status |
 |---|---|---|
 | **park-path-unify** | unify park-path ribbon construction/render | dispatch-ready 2026-06-27 (was orphaned — indexed 2026-06-30); detail `scratch/PARK-PATH-FORENSIC.md` |
-| ~~animator-unify~~ | drop the animate toggle, always show ToD chips | ✅ **LANDED + RETIRED** → `_archive/HANDOFF-animator-unify-LANDED-2026-06-28.md`. The shipped behaviour is canon in `OPERATIONS.md §"How to operate any TOD channel"` (chips always on, no arming step). *(The 2026-06-30 "no landing evidence, verify-then-act" note was stale — the archive says landed 2026-06-28.)* |
 | **preview-measurement** | publish-confidence instrument | device-profile SSoT landed; **real per-tier numbers = the gate** |
 | **render-conformance** | Stage↔Preview↔Production parity | Ph1–3 landed; Ph4–7 open (cold-review) |
 | **mobile-profile** | what ships to mobile (3 homes) | sensing done; B/C/E open (Preview-authored inclusion) |
@@ -399,7 +399,6 @@ region count — ① blocks inside the mark vs drawn — and the endpoint-gap sc
 | **junction-construction** | intersection-everywhere | metadata spans every node; geometry divided-only |
 | **band-fold-fix** | G12 thorn clamp | ⚠️ **NOT landed** (`8e1e414` stranded) |
 | **freeze-the-curb-in-the-first-bake** | freeze the curb polygon | "d" instance landed; the freeze program PARKED (rebuild-gated) |
-| ~~boundary-trio~~ | circle-SSOT · crop-last · cull | ⛔ **SUPERSEDED 2026-07-21** → `_archive/HANDOFF-boundary-trio-SUPERSEDED-2026-07-21.md`. ⚠️ **Do not mine it for doctrine** — its "one idea" was *"the circle is the real boundary, derive the bbox from it,"* the baldest statement of the RETRACTED model in the repo, and it also called to "retire the manual toggles" (contradicting the durable per-building override). Live home: `EXTENT-DESIGN.md`. |
 | **tile-T3-authoring** | authoring → Survey (off figure-ground) | open; gates T4 (delete figure-ground) + the rename |
 | **tile-feature-ledger** | re-pour definition-of-done ledger | tracking; construction side ✅, T3/T4/slab-content open |
 | **cloud-specialist** | cloud morphology renderer | TABLED (flagship IP; the agentic Tuner loop is the design — `meteorologist/TUNER.md`) |
