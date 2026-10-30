@@ -41,7 +41,7 @@ export async function askOperations(mapId) {
   let res
   try {
     res = await fetch(`${OPERATIONS_URL}/api/production-domain/${encodeURIComponent(mapId)}`, {
-      headers: { 'CF-Access-Client-Id': id, 'CF-Access-Client-Secret': secret }, cache: 'no-store' })
+      headers: { 'CF-Access-Client-Id': id, 'CF-Access-Client-Secret': secret } })
   } catch (e) {
     return { asked: false, why: `could not reach Operations: ${e.message}` }
   }

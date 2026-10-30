@@ -39,6 +39,7 @@ import { splitBoundary, composeBoundary, makeDiscRecord, assertDiscInBox } from 
 import tzLookup from 'tz-lookup'
 import { commitExtentRecords, flattenBoundaryPath, sameJson } from './commitExtent.mjs'
 import { SHARE_IMAGE_RELS, shareImageRel } from '../src/lib/shareCard.js'
+import { freshUrl } from '../src/lib/freshUrl.js'
 import { HASHED, manifestPath, servedRel } from '../src/lib/slabNames.js'
 import { TOD_SLOT_IDS } from '../src/lib/todSlots.js'
 import { parcelParts } from './parcelParts.js'
@@ -228,14 +229,14 @@ const STAGING_SITE_BASE = 'https://staging.theward.online/'
  * → { bakedAt, named }, or { bakedAt: null, why } when there is no manifest (not published). Anything else answering is thrown.
  */
 async function servedPour(base, look) {
-  const m = await fetch(`${base}${manifestPath(look)}?cb=${Date.now()}`, { cache: 'no-store' })
+  const m = await fetch(freshUrl(`${base}${manifestPath(look)}`))
   if (m.status === 404) return { bakedAt: null, named: false, why: 'no manifest.json' }
   if (!m.ok) throw new Error(`${base}${manifestPath(look)} answered ${m.status}`)
   const manifest = await m.json()
   if (manifest.names != null && manifest.names !== HASHED) throw new Error(`${base}${manifestPath(look)} names its files "${manifest.names}" — the one scheme is "${HASHED}"`)
   const named = manifest.names === HASHED
   const rel = servedRel(manifest, 'scene.json', named)
-  const sc = await fetch(`${base}baked/${look}/${rel}${named ? '' : `?cb=${Date.now()}`}`, { cache: 'no-store' })
+  const sc = await fetch(freshUrl(`${base}baked/${look}/${rel}`))
   if (!sc.ok) throw new Error(`${base}baked/${look}/${rel} answered ${sc.status} — its manifest names a scene the bucket does not serve`)
   return { bakedAt: (await sc.json()).bakedAt ?? null, named }
 }
@@ -247,7 +248,7 @@ async function servedPour(base, look) {
  */
 async function proveProduction(domain, look, bakedAt, pinned = {}) {
   try {
-    const page = await fetch(`https://${domain}/?cb=${Date.now()}`, { cache: 'no-store' })
+    const page = await fetch(freshUrl(`https://${domain}/`))
     const html = await page.text()
     if (!page.ok) return { ok: false, why: `https://${domain}/ answered ${page.status}: ${html.slice(0, 160).trim()}` }
     const named = (html.match(/<meta name="ward-look" content="([^"]+)"/) || [])[1] || null
@@ -258,7 +259,7 @@ async function proveProduction(domain, look, bakedAt, pinned = {}) {
       if (build !== pinned.ward) return { ok: false, why: `https://${domain}/ serves Ward build ${build}, not ${pinned.ward}` }
       const kitBase = (html.match(/<meta name="ward-kit-base" content="([^"]+)"/) || [])[1] || null
       if (kitBase !== `https://${domain}/kit/${pinned.kit}/`) return { ok: false, why: `https://${domain}/ names kit base ${kitBase}, not its pinned kit ${pinned.kit}` }
-      const kit = await fetch(`${kitBase}manifest.json?cb=${Date.now()}`, { cache: 'no-store' })
+      const kit = await fetch(freshUrl(`${kitBase}manifest.json`))
       if (!kit.ok) return { ok: false, why: `its kit bundle answered ${kit.status}` }
     }
     const pour = await servedPour(`https://${domain}/`, look)
@@ -433,7 +434,7 @@ const playerSrcPaths = (root) => PLAYER_SRC.map((p) => join(root, p))
  */
 async function stagingPlayerState(root) {
   try {
-    const r = await fetch(`${ASSET_BASE_URL}staging/player/build.json`, { cache: 'no-store' })
+    const r = await fetch(freshUrl(`${ASSET_BASE_URL}staging/player/build.json`))
     if (!r.ok) return { published: false, stale: true, why: `no build marker at staging/player/build.json (HTTP ${r.status})` }
     const m = await r.json()
     const localSrc = Math.max(...playerSrcPaths(root).map(newestMtime))
@@ -454,7 +455,7 @@ async function deploymentShipped(map, look, env) {
   const fileP = join(import.meta.dirname, 'data', map, 'deployment.json')
   const local = existsSync(fileP) ? readDeployment(JSON.parse(readFileSync(fileP, 'utf8')), `cartograph/data/${map}/deployment.json`) : { authored: false }
   try {
-    const r = await fetch(`${ASSET_BASE_URL}${ASSET_ENV_PREFIX[env]}baked/${look}/manifest.json`, { cache: 'no-store' })
+    const r = await fetch(freshUrl(`${ASSET_BASE_URL}${ASSET_ENV_PREFIX[env]}baked/${look}/manifest.json`))
     if (!r.ok) return { shipped: false }
     const served = (await r.json()).deployment ?? null
     return { shipped: JSON.stringify(served) === JSON.stringify(local) }
@@ -3346,7 +3347,7 @@ createServer(async (req, res) => {
       let prodPlayer = { current: false, why: 'no production player pinned for this town yet' }
       if (sites.mapId) {
         try {
-          const get = (k) => fetch(`${ASSET_BASE_URL}${k}`, { cache: 'no-store' }).then(r => r.ok ? r.json() : null)
+          const get = (k) => fetch(freshUrl(`${ASSET_BASE_URL}${k}`)).then(r => r.ok ? r.json() : null)
           const rec = await get(`staging/sites/${sites.mapId}/player.json`)
           // ⛔ BLOCKED, not merely behind: Promote's dry run refuses a town with no record, so the panel says so up front.
           if (!rec) prodPlayer = { current: false, blocked: true, why: 'this town names no player on staging — set it before promoting' }

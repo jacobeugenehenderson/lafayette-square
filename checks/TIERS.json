@@ -2339,8 +2339,10 @@
         "calls fetch()",
         "imports a network module",
         "writeFileSync",
+        "mkdirSync",
         "deletes files",
-        "computed import() with no readable target — runs arbitrary modules"
+        "computed import() with no readable target — runs arbitrary modules",
+        "child_process with a non-literal command — cannot be read"
       ]
     },
     {

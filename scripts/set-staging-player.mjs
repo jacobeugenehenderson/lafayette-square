@@ -23,6 +23,7 @@ import { execFileSync } from 'node:child_process'
 import { writeFileSync, mkdtempSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
+import { freshUrl } from '../src/lib/freshUrl.js'
 
 const BUCKET = process.env.R2_BUCKET || 'theward-assets'
 const PUBLIC_BASE = (process.env.ASSET_BASE || 'https://assets.theward.online/').replace(/\/?$/, '/')
@@ -40,7 +41,7 @@ async function read(key) {
   let last
   for (let i = 0; i < 3; i++) {
     try {
-      const r = await fetch(PUBLIC_BASE + key, { cache: 'no-store' })
+      const r = await fetch(freshUrl(PUBLIC_BASE + key))
       if (r.status === 404) return null
       if (r.ok) return await r.text()
       last = `HTTP ${r.status}`

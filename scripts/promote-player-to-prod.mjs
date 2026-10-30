@@ -43,6 +43,7 @@ import { spawn } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { fileURLToPath } from 'node:url'
 import { typeFor } from '../src/lib/slabWire.js'
+import { freshUrl } from '../src/lib/freshUrl.js'
 
 const REPO_ROOT = fileURLToPath(new URL('..', import.meta.url))
 const BUCKET = process.env.R2_BUCKET || 'theward-assets'
@@ -72,7 +73,7 @@ async function getBytes(key, { missingOk = false } = {}) {
   for (let i = 1; ; i++) {
     let r
     try {
-      r = await fetch(PUBLIC_BASE + key, { cache: 'no-store' })
+      r = await fetch(freshUrl(PUBLIC_BASE + key))
       if (missingOk && r.status === 404) return null
       if (!r.ok) throw new Error(`${key} → HTTP ${r.status}`)
       return Buffer.from(await r.arrayBuffer())
@@ -215,7 +216,7 @@ async function promoteWard() {
   await Promise.all(Array.from({ length: 16 }, async () => {
     for (let f = queue.pop(); f; f = queue.pop()) {
       try {
-        const r = await fetch(PUBLIC_BASE + dest + f.rel, { method: 'HEAD', cache: 'no-store' })
+        const r = await fetch(freshUrl(PUBLIC_BASE + dest + f.rel), { method: 'HEAD' })
         if (r.ok && (r.headers.get('etag') || '').replace(/"/g, '') === f.md5) continue
       } catch { /* copy it */ }
       pending.push(f)

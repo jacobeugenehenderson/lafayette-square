@@ -30,6 +30,7 @@ import { createHash } from 'node:crypto'
 import { writeFileSync, mkdirSync, rmSync } from 'node:fs'
 import { join, dirname, extname } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { freshUrl } from '../src/lib/freshUrl.js'
 
 const run = promisify(execFile)
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
@@ -97,7 +98,7 @@ async function verifyOnHost() {
   const problems = []
   await Promise.all(Object.keys(want).map(async (rel) => {
     try {
-      const r = await fetch(`${PUBLIC_BASE}${PREFIX}${rel}`, { cache: 'no-store' })
+      const r = await fetch(freshUrl(`${PUBLIC_BASE}${PREFIX}${rel}`))
       if (r.status !== 200) return problems.push(`${rel}: HTTP ${r.status}`)
       const got = createHash('sha256').update(Buffer.from(await r.arrayBuffer())).digest('hex')
       const f = files.get(rel)
@@ -108,7 +109,7 @@ async function verifyOnHost() {
   return problems
 }
 
-const published = await fetch(`${PUBLIC_BASE}${PREFIX}manifest.json`, { method: 'HEAD', cache: 'no-store' }).then((r) => r.status).catch((e) => `unreachable (${e.message})`)
+const published = await fetch(freshUrl(`${PUBLIC_BASE}${PREFIX}manifest.json`), { method: 'HEAD' }).then((r) => r.status).catch((e) => `unreachable (${e.message})`)
 if (published === 200) {
   const problems = await verifyOnHost()
   if (problems.length) fail(`${PREFIX} is published but does not match ${sha.slice(0, 12)} — a kit bundle is immutable, so this is a defect to look at, not to overwrite:\n  ${problems.join('\n  ')}`)
