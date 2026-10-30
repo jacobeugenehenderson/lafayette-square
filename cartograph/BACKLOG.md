@@ -266,6 +266,7 @@ region count — ① blocks inside the mark vs drawn — and the endpoint-gap sc
 ---
 
 ## 🛡 HARDENING — correct on the eye, not yet correct-by-construction
+- **BakedGround calls `setDrawnGround` inside a `useMemo`** (a setState during render; React warns naming SlabRevetment and Ground). Pre-existing (Zob, 2026-10-29). Publish the drawn ground from an effect.
 - **🧭 "no terrain identity" and "flat" are one string** (Zob, 2026-10-29). bake-tree-anchors and bake-lamps stamp
   `terrain.identity ?? 'none'`, and `terrainCommon.js#terrainIdentity` of the flat terrain is also `'none'`. So an anchor file whose
   identity failed to compute reads as a flat town's, and the anchor verdict (`src/lib/anchorGate.js`) matches it to a flat slab.
