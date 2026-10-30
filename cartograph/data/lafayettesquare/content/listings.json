@@ -1053,13 +1053,13 @@
   {
    "id": "lmk-025",
    "name": "Malt House Lofts",
-   "address": "Chouteau Avenue",
+   "address": "2017 Chouteau Ave",
    "phone": "",
    "website": "https://malthousecellar.com",
-   "category": "historic",
-   "subcategory": "landmarks",
-   "building_id": "bldg-0086",
-   "description": "Historic 1876 brewery malt house, now mixed-use with loft apartments and event venues.",
+   "category": "residential",
+   "subcategory": "lofts",
+   "building_id": "bldg-0085",
+   "description": "Historic 1876 Centennial Malt House, 46,000 sq ft, built for Joseph Schnaider's Chouteau Avenue Brewery and now being converted into 17 loft apartments above a ground-floor restaurant, a cellar speakeasy and event venues.",
    "photos": [
     "/photos/malt-house-lofts/01.jpg",
     "/photos/malt-house-lofts/02.jpg",
@@ -1067,10 +1067,12 @@
    ],
    "amenities": [
     "17 loft apartments",
+    "46,000 sq ft historic building",
+    "Extra Wavy restaurant",
     "7 event venues",
     "Rooftop with Arch views",
-    "Extra Wavy restaurant",
-    "Solar carport"
+    "Solar carport",
+    "Chouteau Avenue frontage"
    ],
    "history": [
     {
@@ -1110,7 +1112,11 @@
     "historic-building",
     "events-venue",
     "parking",
-    "landmarks"
+    "landmarks",
+    "lofts",
+    "historic",
+    "adaptive-reuse",
+    "residential"
    ],
    "home_based": false
   },
@@ -4734,47 +4740,6 @@
     "adaptive-reuse",
     "pet-friendly",
     "parking",
-    "residential"
-   ]
-  },
-  {
-   "id": "lmk-104",
-   "name": "Malt House Lofts",
-   "building_id": "bldg-0085",
-   "address": "2017 Chouteau Ave",
-   "category": "residential",
-   "subcategory": "lofts",
-   "description": "A 46,000 sq ft 1870s-era Centennial Malt House undergoing a $2M renovation into 17 loft apartments with ground-floor restaurant and event spaces. Previously home to Vin de Set and PW Pizza. Purchased in 2024 by BOTI Architecture for adaptive reuse.",
-   "amenities": [
-    "17 loft apartments (planned)",
-    "46,000 sq ft historic building",
-    "Ground-floor restaurant (Extra Wavy)",
-    "Seven event venues",
-    "1870s industrial architecture",
-    "Chouteau Avenue frontage"
-   ],
-   "history": [
-    {
-     "year": 1870,
-     "event": "Centennial Malt House constructed during the height of St. Louis's brewing industry, processing malt for the city's numerous breweries."
-    },
-    {
-     "year": 2003,
-     "event": "Building reimagined as a dining and events destination, home to Vin de Set, PW Pizza, 21st Street Brewer's Bar, and Moulin event space."
-    },
-    {
-     "year": 2022,
-     "event": "Fire forces closure of the restaurant and event operations."
-    },
-    {
-     "year": 2024,
-     "event": "Purchased by Malt House Lofts LLC (BOTI Architecture) for $2.2M. $2M renovation underway to add 17 loft apartments while preserving the historic structure."
-    }
-   ],
-   "tags": [
-    "lofts",
-    "historic",
-    "adaptive-reuse",
     "residential"
    ]
   },
