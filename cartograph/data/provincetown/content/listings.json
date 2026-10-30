@@ -5,8 +5,8 @@
   "layer": "Layer 2 — listings (business POIs, building_id → slab id, 0..N per building)",
   "generated": "2026-07-07",
   "generator": "bake-content.js",
-  "count": 447,
-  "enriched": 186,
+  "count": 434,
+  "enriched": 181,
   "note": "BASE = OSM-POI spatial join onto the baked set; hand-authoring lives in listings.overrides.json (adds + patches) and wins. Every building_id ∈ baked set by construction."
  },
  "listings": [
@@ -2801,12 +2801,12 @@
   {
    "id": "prov-lst-0065",
    "building_id": "msbf-1267",
-   "name": "9 Ryder Street",
+   "name": "Ceraldi Provincetown",
    "category": "dining",
    "subcategory": "restaurants",
    "address": "9 Ryder Street Extension",
    "phone": null,
-   "website": null,
+   "website": "https://www.ceraldicapecod.com/",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
@@ -2814,12 +2814,18 @@
    "amenities": [],
    "tags": [],
    "description": null,
-   "history": null,
+   "history": [
+    {
+     "year": 2025,
+     "event": "CERALDi returns to Provincetown, at 9 Ryder Street."
+    }
+   ],
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "restaurant",
+   "enriched": true,
    "source_key": "osm-215751938",
    "prominence_rank": 267
   },
@@ -3025,31 +3031,6 @@
    "prominence_rank": 95
   },
   {
-   "id": "prov-lst-0098",
-   "building_id": "msbf-1130",
-   "name": "Cumberland Farms",
-   "category": "services",
-   "subcategory": "automotive",
-   "address": null,
-   "phone": null,
-   "website": null,
-   "logo": null,
-   "hours": null,
-   "opening_hours_raw": null,
-   "photos": [],
-   "amenities": [],
-   "tags": [],
-   "description": null,
-   "history": null,
-   "menu_url": null,
-   "reservation_url": null,
-   "status": "unverified",
-   "source": "osm",
-   "osm_type": "fuel",
-   "source_key": "osm-215753896",
-   "prominence_rank": 623
-  },
-  {
    "id": "prov-lst-0105",
    "building_id": "msbf-1439",
    "name": "School Street Parking Lot",
@@ -3073,31 +3054,6 @@
    "osm_type": "parking",
    "source_key": "osm-416800027",
    "prominence_rank": 1114
-  },
-  {
-   "id": "prov-lst-0106",
-   "building_id": "osm-508044028",
-   "name": "Gulf",
-   "category": "services",
-   "subcategory": "automotive",
-   "address": null,
-   "phone": null,
-   "website": null,
-   "logo": null,
-   "hours": null,
-   "opening_hours_raw": null,
-   "photos": [],
-   "amenities": [],
-   "tags": [],
-   "description": null,
-   "history": null,
-   "menu_url": null,
-   "reservation_url": null,
-   "status": "unverified",
-   "source": "osm",
-   "osm_type": "fuel",
-   "source_key": "osm-508044028",
-   "prominence_rank": 269
   },
   {
    "id": "prov-lst-0109",
@@ -4030,32 +3986,6 @@
    "prominence_rank": 240
   },
   {
-   "id": "prov-lst-0342",
-   "building_id": "msbf-1042",
-   "name": "Ace Conwell Home Center",
-   "category": "shopping",
-   "subcategory": "retail",
-   "address": "21 Conwell Street",
-   "phone": "+1 508-487-0150",
-   "website": "http://www.conwellace.com/",
-   "logo": null,
-   "hours": null,
-   "opening_hours_raw": "Mo-Fr 07:30-17:00; Sa 08:00-17:00; Su 09:00-16:00",
-   "photos": [],
-   "amenities": [],
-   "tags": [],
-   "description": "The town's Ace Hardware, lumber yard and Benjamin Moore paint store, with garden, grill and tool departments.",
-   "history": null,
-   "menu_url": null,
-   "reservation_url": null,
-   "status": "unverified",
-   "source": "osm",
-   "osm_type": "doityourself",
-   "enriched": true,
-   "source_key": "osm-n851633152",
-   "prominence_rank": 20
-  },
-  {
    "id": "prov-lst-0343",
    "building_id": "msbf-734",
    "name": "Yolqueria",
@@ -4160,35 +4090,6 @@
    "osm_type": "guest_house",
    "source_key": "osm-n1777319460",
    "prominence_rank": 62
-  },
-  {
-   "id": "prov-lst-0397",
-   "building_id": "osm-170602361",
-   "name": "Tin Pan Alley",
-   "category": "dining",
-   "subcategory": "restaurants",
-   "address": "269 Commercial Street",
-   "phone": "508-487-1648",
-   "website": "https://tinpanalleyptown.com",
-   "logo": null,
-   "hours": null,
-   "opening_hours_raw": null,
-   "photos": [],
-   "amenities": [
-    "Live piano bar",
-    "Happy hour 4:45–6 daily ($10 appetizers)"
-   ],
-   "tags": [],
-   "description": "A restaurant and live piano bar serving seasonal New American food with global touches, with breads, sauces and desserts made in-house.",
-   "history": null,
-   "menu_url": null,
-   "reservation_url": null,
-   "status": "unverified",
-   "source": "osm",
-   "osm_type": "restaurant",
-   "enriched": true,
-   "source_key": "osm-n1963938662",
-   "prominence_rank": 275
   },
   {
    "id": "prov-lst-0398",
@@ -5064,31 +4965,6 @@
    "osm_type": "doctors",
    "source_key": "osm-n4902812042",
    "prominence_rank": 249
-  },
-  {
-   "id": "prov-lst-0167",
-   "building_id": "msbf-1994",
-   "name": "Gifford House",
-   "category": "hospitality",
-   "subcategory": "bed-and-breakfast",
-   "address": null,
-   "phone": null,
-   "website": null,
-   "logo": null,
-   "hours": null,
-   "opening_hours_raw": null,
-   "photos": [],
-   "amenities": [],
-   "tags": [],
-   "description": null,
-   "history": null,
-   "menu_url": null,
-   "reservation_url": null,
-   "status": "unverified",
-   "source": "osm",
-   "osm_type": "guest_house",
-   "source_key": "osm-n4904027834",
-   "prominence_rank": 116
   },
   {
    "id": "prov-lst-0168",
@@ -6002,31 +5878,6 @@
    "prominence_rank": 87
   },
   {
-   "id": "prov-lst-0195",
-   "building_id": "osm-215751489",
-   "name": "William Scott Gallery",
-   "category": "arts",
-   "subcategory": "galleries",
-   "address": null,
-   "phone": null,
-   "website": null,
-   "logo": null,
-   "hours": null,
-   "opening_hours_raw": null,
-   "photos": [],
-   "amenities": [],
-   "tags": [],
-   "description": null,
-   "history": null,
-   "menu_url": null,
-   "reservation_url": null,
-   "status": "unverified",
-   "source": "osm",
-   "osm_type": "gallery",
-   "source_key": "osm-n4904974485",
-   "prominence_rank": 60
-  },
-  {
    "id": "prov-lst-0196",
    "building_id": "osm-215751489",
    "name": "Simie Maryles Gallery",
@@ -6898,65 +6749,6 @@
    "enriched": true,
    "source_key": "osm-n4905061999",
    "prominence_rank": 27
-  },
-  {
-   "id": "prov-lst-0408",
-   "building_id": "osm-215752232",
-   "name": "Aqua Bar",
-   "category": "dining",
-   "subcategory": "bars",
-   "address": "207 Commercial Street",
-   "phone": "774-593-5106",
-   "website": "https://aquabarptown.com",
-   "logo": null,
-   "hours": {
-    "sunday": {
-     "open": "11:00",
-     "close": "21:00"
-    },
-    "monday": {
-     "open": "11:00",
-     "close": "21:00"
-    },
-    "tuesday": {
-     "open": "11:00",
-     "close": "21:00"
-    },
-    "wednesday": {
-     "open": "11:00",
-     "close": "21:00"
-    },
-    "thursday": {
-     "open": "11:00",
-     "close": "21:00"
-    },
-    "friday": {
-     "open": "11:00",
-     "close": "22:00"
-    },
-    "saturday": {
-     "open": "11:00",
-     "close": "22:00"
-    }
-   },
-   "opening_hours_raw": null,
-   "photos": [],
-   "amenities": [
-    "Harbor deck",
-    "Food-hall vendors",
-    "No reservations"
-   ],
-   "tags": [],
-   "description": "A harborfront bar inside the Aquarium Marketplace, with a harbor-view deck and seven food vendors under the same roof. No reservations; a place to watch the sunset.",
-   "history": null,
-   "menu_url": null,
-   "reservation_url": null,
-   "status": "unverified",
-   "source": "osm",
-   "osm_type": "bar",
-   "enriched": true,
-   "source_key": "osm-n4905062000",
-   "prominence_rank": 308
   },
   {
    "id": "prov-lst-0226",
@@ -8630,62 +8422,6 @@
    "prominence_rank": 44
   },
   {
-   "id": "prov-lst-0285",
-   "building_id": "msbf-2182",
-   "name": "Crown & Anchor",
-   "category": "shopping",
-   "subcategory": "retail",
-   "address": "247 Commercial Street",
-   "phone": "508-487-1430",
-   "website": "https://onlyatthecrown.com",
-   "logo": "photos/crown-anchor/pbg-logo.png",
-   "hours": null,
-   "opening_hours_raw": null,
-   "photos": [],
-   "amenities": [
-    "The Paramount — oceanside dance club (DJs, drag, theme parties)",
-    "The Crown Cabaret — cabaret/drag/comedy stage",
-    "The Wave Bar — harbor-view video bar; Showtunes on Sundays and Wednesdays",
-    "The Vault — underground leather bar",
-    "The Courtyard",
-    "Tryst Beach Club — poolside day club (formerly listed as The Beach Club)",
-    "Hotel rooms",
-    "Box office"
-   ],
-   "tags": [],
-   "description": "A harborfront hotel and LGBTQ+ nightlife complex, now run by Tryst Hospitality, housing several bars, a dance club, a cabaret stage and a poolside day club under one roof. Tickets for shows are sold through the complex's box office and Tryst Events.",
-   "history": [
-    {
-     "year": 1860,
-     "event": "1860s: the Central House built as a public hall, saloon and entertainment space"
-    },
-    {
-     "year": 1881,
-     "event": "Expanded out over the harbor on pilings; one of the town's largest hotels"
-    },
-    {
-     "year": 1962,
-     "event": "Reopened as the Crown & Anchor Motor Inn, becoming a hub of nightlife and queer culture"
-    },
-    {
-     "year": 1998,
-     "event": "Destroyed by fire"
-    },
-    {
-     "year": 1999,
-     "event": "Rebuilt"
-    }
-   ],
-   "menu_url": null,
-   "reservation_url": null,
-   "status": "unverified",
-   "source": "osm",
-   "osm_type": "ticket",
-   "enriched": true,
-   "source_key": "osm-n5652635486",
-   "prominence_rank": 181
-  },
-  {
    "id": "prov-lst-0286",
    "building_id": "osm-215752228",
    "name": "Tim's Used Books",
@@ -9377,31 +9113,6 @@
    "prominence_rank": 152
   },
   {
-   "id": "prov-lst-0309",
-   "building_id": "msbf-1722",
-   "name": "Stewart Clifford Gallery",
-   "category": "shopping",
-   "subcategory": "retail",
-   "address": "338 Commercial Street",
-   "phone": null,
-   "website": "https://www.stewartcliffordgallery.com/",
-   "logo": null,
-   "hours": null,
-   "opening_hours_raw": null,
-   "photos": [],
-   "amenities": [],
-   "tags": [],
-   "description": null,
-   "history": null,
-   "menu_url": null,
-   "reservation_url": null,
-   "status": "unverified",
-   "source": "osm",
-   "osm_type": "art",
-   "source_key": "osm-n5676382392",
-   "prominence_rank": 37
-  },
-  {
    "id": "prov-lst-0310",
    "building_id": "msbf-1057",
    "name": "Terraza Kitchen & Bar",
@@ -10063,31 +9774,6 @@
    "prominence_rank": 22
   },
   {
-   "id": "prov-lst-0393",
-   "building_id": "osm-215751961",
-   "name": "Provincetown Dental Associates",
-   "category": "services",
-   "subcategory": "health",
-   "address": "86 Harry Kemp Way",
-   "phone": "+1 508-487-9936",
-   "website": null,
-   "logo": null,
-   "hours": null,
-   "opening_hours_raw": null,
-   "photos": [],
-   "amenities": [],
-   "tags": [],
-   "description": null,
-   "history": null,
-   "menu_url": null,
-   "reservation_url": null,
-   "status": "unverified",
-   "source": "osm",
-   "osm_type": "dentist",
-   "source_key": "osm-n11057070509",
-   "prominence_rank": 128
-  },
-  {
    "id": "prov-lst-0116",
    "building_id": "msbf-1297",
    "name": "Haven Center",
@@ -10271,31 +9957,6 @@
    "enriched": true,
    "source_key": "osm-n11463013061",
    "prominence_rank": 225
-  },
-  {
-   "id": "prov-lst-0394",
-   "building_id": "osm-170602334",
-   "name": "The Crown and Anchor",
-   "category": "hospitality",
-   "subcategory": "bed-and-breakfast",
-   "address": "247 Commercial Street",
-   "phone": null,
-   "website": "https://onlyatthecrown.com/",
-   "logo": null,
-   "hours": null,
-   "opening_hours_raw": null,
-   "photos": [],
-   "amenities": [],
-   "tags": [],
-   "description": null,
-   "history": null,
-   "menu_url": null,
-   "reservation_url": null,
-   "status": "unverified",
-   "source": "osm",
-   "osm_type": "guest_house",
-   "source_key": "osm-n11463061383",
-   "prominence_rank": 17
   },
   {
    "id": "prov-lst-0120",
@@ -11761,31 +11422,6 @@
    "prominence_rank": 27
   },
   {
-   "id": "prov-lst-0422",
-   "building_id": "osm-170530761",
-   "name": "Harbor Lounge",
-   "category": "dining",
-   "subcategory": "bars",
-   "address": "359 Commercial Street",
-   "phone": "508-413-9527",
-   "website": null,
-   "logo": null,
-   "hours": null,
-   "opening_hours_raw": null,
-   "photos": [],
-   "amenities": [],
-   "tags": [],
-   "description": null,
-   "history": null,
-   "menu_url": null,
-   "reservation_url": null,
-   "status": "active",
-   "source": "research",
-   "enriched": true,
-   "source_key": null,
-   "prominence_rank": 217
-  },
-  {
    "id": "prov-lst-0423",
    "building_id": "osm-170602334",
    "name": "Crown & Anchor",
@@ -12718,31 +12354,6 @@
    "enriched": true,
    "source_key": null,
    "prominence_rank": 150
-  },
-  {
-   "id": "prov-lst-0435",
-   "building_id": "osm-164024904",
-   "name": "The Gaslamp Bed & Breakfast",
-   "category": "hospitality",
-   "subcategory": "bed-and-breakfast",
-   "address": "97 Bradford Street",
-   "phone": "508-487-6636",
-   "website": "https://thegaslampptown.com",
-   "logo": null,
-   "hours": null,
-   "opening_hours_raw": null,
-   "photos": [],
-   "amenities": [],
-   "tags": [],
-   "description": "A boutique bed & breakfast on Bradford Street.",
-   "history": null,
-   "menu_url": null,
-   "reservation_url": null,
-   "status": "active",
-   "source": "research",
-   "enriched": true,
-   "source_key": null,
-   "prominence_rank": 359
   },
   {
    "id": "prov-lst-0436",

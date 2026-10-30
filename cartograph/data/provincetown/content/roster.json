@@ -249,7 +249,7 @@
    ],
    "untyped_records": []
   },
-  "buildings_with_listings": 312,
+  "buildings_with_listings": 305,
   "withheld": {
    "fields": [
     "owner",
@@ -47157,16 +47157,14 @@
   },
   {
    "id": "msbf-1042",
-   "name": "Ace Conwell Home Center",
+   "name": "Conwell Home Center",
    "address": "25 CONWELL ST",
    "municipality": null,
    "jurisdiction": "town",
    "all_names": [
-    "Ace Conwell Home Center",
     "Conwell Home Center"
    ],
    "listing_ids": [
-    "prov-lst-0342",
     "prov-lst-0070"
    ],
    "historic_district": null,
@@ -51267,16 +51265,12 @@
   },
   {
    "id": "msbf-1130",
-   "name": "Cumberland Farms",
+   "name": null,
    "address": "100 SHANK PAINTER RD",
    "municipality": null,
    "jurisdiction": "town",
-   "all_names": [
-    "Cumberland Farms"
-   ],
-   "listing_ids": [
-    "prov-lst-0098"
-   ],
+   "all_names": [],
+   "listing_ids": [],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -51293,8 +51287,8 @@
    "stories": null,
    "wall_material": "wood_siding",
    "roof_material": "flat",
-   "category": "services",
-   "subcategory": "automotive",
+   "category": "commercial",
+   "subcategory": "storefronts",
    "mixed_use": false,
    "use": "commercial",
    "use_subtype": null,
@@ -57027,12 +57021,12 @@
   },
   {
    "id": "msbf-1267",
-   "name": "9 Ryder Street",
+   "name": "Ceraldi Provincetown",
    "address": "9 RYDER ST EXT",
    "municipality": null,
    "jurisdiction": "town",
    "all_names": [
-    "9 Ryder Street",
+    "Ceraldi Provincetown",
     "Provincetown Marina"
    ],
    "listing_ids": [
@@ -76286,7 +76280,6 @@
     "Baedega"
    ],
    "listing_ids": [
-    "prov-lst-0309",
     "prov-lst-0331",
     "prov-lst-0350",
     "prov-lst-0361"
@@ -88932,7 +88925,6 @@
    ],
    "listing_ids": [
     "prov-lst-0008",
-    "prov-lst-0167",
     "prov-lst-0170"
    ],
    "historic_district": null,
@@ -97499,12 +97491,10 @@
    "municipality": null,
    "jurisdiction": "town",
    "all_names": [
-    "Shalom's Gift Shop",
-    "Crown & Anchor"
+    "Shalom's Gift Shop"
    ],
    "listing_ids": [
-    "prov-lst-0282",
-    "prov-lst-0285"
+    "prov-lst-0282"
    ],
    "historic_district": null,
    "contributing": null,
@@ -118654,16 +118644,12 @@
   },
   {
    "id": "osm-164024904",
-   "name": "The Gaslamp Bed & Breakfast",
+   "name": null,
    "address": "97 BRADFORD ST",
    "municipality": null,
    "jurisdiction": "town",
-   "all_names": [
-    "The Gaslamp Bed & Breakfast"
-   ],
-   "listing_ids": [
-    "prov-lst-0435"
-   ],
+   "all_names": [],
+   "listing_ids": [],
    "historic_district": null,
    "contributing": null,
    "style": "Victorian Eclectic",
@@ -118680,11 +118666,11 @@
    "stories": null,
    "wall_material": "wood_siding",
    "roof_material": "flat",
-   "category": "hospitality",
-   "subcategory": "bed-and-breakfast",
+   "category": "commercial",
+   "subcategory": "storefronts",
    "mixed_use": false,
    "use": "commercial",
-   "use_subtype": null,
+   "use_subtype": "mixed",
    "use_confidence": "high",
    "use_source": "land_use_code",
    "in_historic_district": null,
@@ -121693,16 +121679,12 @@
   },
   {
    "id": "osm-170530761",
-   "name": "Harbor Lounge",
+   "name": null,
    "address": "359-UG COMMERCIAL ST",
    "municipality": null,
    "jurisdiction": "town",
-   "all_names": [
-    "Harbor Lounge"
-   ],
-   "listing_ids": [
-    "prov-lst-0422"
-   ],
+   "all_names": [],
+   "listing_ids": [],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -121719,8 +121701,8 @@
    "stories": null,
    "wall_material": "wood_siding",
    "roof_material": "flat",
-   "category": "dining",
-   "subcategory": "bars",
+   "category": "commercial",
+   "subcategory": "storefronts",
    "mixed_use": false,
    "use": "commercial",
    "use_subtype": null,
@@ -122751,7 +122733,6 @@
     "Wave Bar",
     "Central House Restaurant",
     "Dive Bar",
-    "The Crown and Anchor",
     "Crown & Anchor",
     "Helltown Fitness"
    ],
@@ -122759,7 +122740,6 @@
     "prov-lst-0404",
     "prov-lst-0405",
     "prov-lst-0411",
-    "prov-lst-0394",
     "prov-lst-0423",
     "prov-lst-0447"
    ],
@@ -123449,16 +123429,12 @@
   },
   {
    "id": "osm-170602361",
-   "name": "Tin Pan Alley",
+   "name": null,
    "address": "269-271 COMMERCIAL ST",
    "municipality": null,
    "jurisdiction": "town",
-   "all_names": [
-    "Tin Pan Alley"
-   ],
-   "listing_ids": [
-    "prov-lst-0397"
-   ],
+   "all_names": [],
+   "listing_ids": [],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -123475,11 +123451,11 @@
    "stories": null,
    "wall_material": "wood_siding",
    "roof_material": "flat",
-   "category": "dining",
-   "subcategory": "restaurants",
+   "category": "commercial",
+   "subcategory": "storefronts",
    "mixed_use": false,
    "use": "commercial",
-   "use_subtype": null,
+   "use_subtype": "mixed",
    "use_confidence": "high",
    "use_source": "land_use_code",
    "in_historic_district": null,
@@ -132267,16 +132243,14 @@
   },
   {
    "id": "osm-215751489",
-   "name": "William Scott Gallery",
+   "name": "Simie Maryles Gallery",
    "address": "437-439 COMMERCIAL ST",
    "municipality": null,
    "jurisdiction": "town",
    "all_names": [
-    "William Scott Gallery",
     "Simie Maryles Gallery"
    ],
    "listing_ids": [
-    "prov-lst-0195",
     "prov-lst-0196"
    ],
    "historic_district": null,
@@ -140066,16 +140040,12 @@
   },
   {
    "id": "osm-215751961",
-   "name": "Provincetown Dental Associates",
+   "name": null,
    "address": "2-U2 HARRY KEMP WY",
    "municipality": null,
    "jurisdiction": "town",
-   "all_names": [
-    "Provincetown Dental Associates"
-   ],
-   "listing_ids": [
-    "prov-lst-0393"
-   ],
+   "all_names": [],
+   "listing_ids": [],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -140092,11 +140062,11 @@
    "stories": null,
    "wall_material": "wood_siding",
    "roof_material": "flat",
-   "category": "services",
-   "subcategory": "health",
+   "category": "commercial",
+   "subcategory": "storefronts",
    "mixed_use": false,
-   "use": "institutional",
-   "use_subtype": "medical",
+   "use": "commercial",
+   "use_subtype": null,
    "use_confidence": "high",
    "use_source": "land_use_code",
    "in_historic_district": null,
@@ -143617,16 +143587,12 @@
   },
   {
    "id": "osm-215752232",
-   "name": "Aqua Bar",
+   "name": null,
    "address": "205-209 COMMERCIAL ST",
    "municipality": null,
    "jurisdiction": "town",
-   "all_names": [
-    "Aqua Bar"
-   ],
-   "listing_ids": [
-    "prov-lst-0408"
-   ],
+   "all_names": [],
+   "listing_ids": [],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -143643,8 +143609,8 @@
    "stories": null,
    "wall_material": "wood_siding",
    "roof_material": "flat",
-   "category": "dining",
-   "subcategory": "bars",
+   "category": "commercial",
+   "subcategory": "storefronts",
    "mixed_use": false,
    "use": "commercial",
    "use_subtype": null,
@@ -174895,16 +174861,12 @@
   },
   {
    "id": "osm-508044028",
-   "name": "Gulf",
+   "name": null,
    "address": "130 BRADFORD ST",
    "municipality": null,
    "jurisdiction": "town",
-   "all_names": [
-    "Gulf"
-   ],
-   "listing_ids": [
-    "prov-lst-0106"
-   ],
+   "all_names": [],
+   "listing_ids": [],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -174921,11 +174883,11 @@
    "stories": null,
    "wall_material": "wood_siding",
    "roof_material": "flat",
-   "category": "services",
-   "subcategory": "automotive",
+   "category": "commercial",
+   "subcategory": "storefronts",
    "mixed_use": false,
    "use": "commercial",
-   "use_subtype": null,
+   "use_subtype": "mixed",
    "use_confidence": "high",
    "use_source": "land_use_code",
    "in_historic_district": null,
