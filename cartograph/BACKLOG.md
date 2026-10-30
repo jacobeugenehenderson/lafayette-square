@@ -324,6 +324,7 @@ region count — ① blocks inside the mark vs drawn — and the endpoint-gap sc
 ---
 
 ## 🛡 HARDENING — correct on the eye, not yet correct-by-construction
+- **Two checks build their mutants as `.mutant-*` copies beside the source** (claims-a-worker-deploy-darkens-no-town, claims-the-slab-ships-compressed), predating the one-loader ruling (`_importSource`); the deploy gate spawns itself with --self-test, which `_importSource` doesn't model. Needs a ruling, not a port (Zob, 2026-10-30).
 - **The overhead near's leftovers** (Zob, 2026-10-30, on ff4f430d): (a) a geometry swap that keeps the same mesh count can leave a stale town top; (b) plan → street drops the near to 1 at the flight's start while the camera is still high (~1.5 s of the old phone precision); (c) noted: desktop costs nothing.
 - **BakedGround calls `setDrawnGround` inside a `useMemo`** (a setState during render; React warns naming SlabRevetment and Ground). Pre-existing (Zob, 2026-10-29). Publish the drawn ground from an effect.
 - **🧭 "no terrain identity" and "flat" are one string** (Zob, 2026-10-29). bake-tree-anchors and bake-lamps stamp

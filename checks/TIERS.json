@@ -1074,7 +1074,11 @@
       "tier": "live",
       "reasonClass": "outbound",
       "why": [
-        "calls fetch()"
+        "calls fetch()",
+        "writeFileSync",
+        "deletes files",
+        "runs `npx` — reaches out",
+        "child_process with a non-literal command — cannot be read"
       ]
     },
     {
