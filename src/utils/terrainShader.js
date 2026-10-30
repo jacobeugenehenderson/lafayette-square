@@ -182,6 +182,10 @@ if (typeof window !== 'undefined') window.__terrainExag = terrainExag
 // water-datum town's land can dip below it (provincetown −1.14 m, huron −0.11 m).
 function lowestGround(d) { let m = 0; for (let i = 0; i < d.length; i++) if (d[i] < m) m = d[i]; return m }
 export const terrainFloorRaw = { value: lowestGround(_terrain.data) }
+// ── The town's ceiling: the highest ground it can draw, RAW — max(0, the highest sample), the floor's twin. The overhead
+// camera's near plane stands above it × the live exag (cameraRegimes.js#overheadNear, Town.jsx#TownOptics).
+function highestGround(d) { let m = 0; for (let i = 0; i < d.length; i++) if (d[i] > m) m = d[i]; return m }
+export const terrainCeilingRaw = { value: highestGround(_terrain.data) }
 // The floor a foundation's below-grade ring is seated on: src/lib/buildingLift.js (the one definition of the lift).
 
 // ── Shared uniform objects ───────────────────────────────────────
@@ -253,6 +257,7 @@ export async function reloadTerrain(lookId, { force = false } = {}) {
   UNIFORMS.uTexW.value = width
   UNIFORMS.uTexH.value = height
   terrainFloorRaw.value = lowestGround(data)
+  terrainCeilingRaw.value = highestGround(data)
   for (const cb of _reloadCbs) { try { cb() } catch (e) { console.warn('[terrain] reload cb failed', e) } }
 }
 

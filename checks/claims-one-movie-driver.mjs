@@ -12,8 +12,9 @@
  * THE RULES, read from source:
  *   · no file under src/ calls heroKeyframeAnim( except MovieCamera.jsx (and heroAnim.js, which defines it);
  *   · no second start phase: randomizeHeroStart / _startOffsetSec exist nowhere;
- *   · the movie's near plane is the quality profile's `movieNear`, a finite number in EVERY profile, and no app
- *     writes camera.near itself (the harness excepted);
+ *   · the movie's near plane is the quality profile's `movieNear`, a finite number in EVERY profile, held by <Town>'s
+ *     TownOptics (the one writer of the clip planes since 2026-10-30), and no other file writes camera.near (the harness
+ *     excepted);
  *   · EXACTLY ONE module mounts <MovieCamera>, and it is <Town> (Warden, 2026-09-28: the Ward may import only Town, and a
  *     Town with shot='movie' played nothing — the per-app mounts in Scene/Preview/Stage are gone). Apps reach the
  *     driver only through <Town movie={{ start, onTime, playing, hold, handle }}>.
@@ -27,6 +28,7 @@ const ROOT = new URL('..', import.meta.url).pathname
 const DRIVER = 'src/camera/MovieCamera.jsx'
 const ANIM = 'src/preview/heroAnim.js'
 const PROFILE = 'src/lib/qualityProfile.js'
+const NEAR_OWNER = 'src/components/Town.jsx'   // TownOptics
 const code = (s) => s.replace(/\/\*[\s\S]*?\*\/|\{\s*\/\*[\s\S]*?\*\/\s*\}|\/\/.*$/gm, '')
 function walk(dir, out = []) {
   for (const n of readdirSync(dir)) { const p = join(dir, n); if (statSync(p).isDirectory()) walk(p, out); else if (/\.(jsx?|mjs)$/.test(n)) out.push(p) }
@@ -41,7 +43,7 @@ export function audit(files) {
     const c = code(x.src)
     if (x.path !== DRIVER && x.path !== ANIM && /\bheroKeyframeAnim\s*\(/.test(c)) f.push(`${x.path} plays the movie path itself (heroKeyframeAnim) — sample it through <MovieCamera handle>`)
     if (/\brandomizeHeroStart\b|\b_startOffsetSec\b/.test(c)) f.push(`${x.path} keeps a second start phase (randomizeHeroStart / _startOffsetSec) — the phase is MovieCamera's`)
-    if (x.path !== DRIVER && !harness(x) && /(?<![.\w])camera\.near\s*=[^=]/.test(c)) f.push(`${x.path} writes camera.near — the movie's near plane is quality.movieNear, written by ${DRIVER}`)
+    if (x.path !== NEAR_OWNER && !harness(x) && /(?<![.\w])camera\.near\s*=[^=]/.test(c)) f.push(`${x.path} writes camera.near — the near plane is held by ${NEAR_OWNER}#TownOptics (the movie's is quality.movieNear)`)
   }
   const prof = files.find(x => x.path === PROFILE)
   if (!prof) f.push(`${PROFILE} does not exist`)
@@ -54,8 +56,8 @@ export function audit(files) {
       else info.push(`profile ${id}: movieNear ${m[1]}`)
     }
   }
-  const driver = files.find(x => x.path === DRIVER)
-  if (driver && !/\bmovieNear\b/.test(code(driver.src))) f.push(`${DRIVER} does not read quality.movieNear`)
+  const owner = files.find(x => x.path === NEAR_OWNER)
+  if (owner && !/\bnear\s*=\s*quality\.movieNear\b/.test(code(owner.src))) f.push(`${NEAR_OWNER}#TownOptics does not hold the movie's near at quality.movieNear`)
   const TOWN = 'src/components/Town.jsx'
   const mounts = files.filter(x => /<MovieCamera\b/.test(code(x.src))).map(x => x.path)
   if (mounts.length !== 1 || mounts[0] !== TOWN) f.push(`<MovieCamera> is mounted by ${mounts.join(', ') || 'nothing'} — exactly one module mounts it, and it is ${TOWN} (the Ward imports only Town)`)
@@ -79,6 +81,8 @@ if (process.argv.includes('--self-test')) {
     ['an app mounts its own <MovieCamera> again', () => audit([...files, { path: 'src/fake/App.jsx', src: '<Canvas><Town /><MovieCamera /></Canvas>' }])],
     ['Town drops <MovieCamera>', () => audit(swap('src/components/Town.jsx', s => s.replace(/<MovieCamera\b/g, '<Nothing')))],
     ['the driver is deleted', () => audit(files.filter(x => x.path !== DRIVER))],
+    ['TownOptics stops holding the movie\'s near', () => audit(swap(NEAR_OWNER, s => s.replace(/near\s*=\s*quality\.movieNear/g, 'near = 1')))],
+    ['MovieCamera writes the near again', () => audit(swap(DRIVER, s => s + '\ncamera.near = 10'))],
   ]
   let bad = 0
   for (const [n, run] of cases) { const c = run().f.length > base; if (!c) bad++; console.log(`${c ? '✅ caught' : '⛔ MISSED'} — ${n}`) }
@@ -88,4 +92,4 @@ if (process.argv.includes('--self-test')) {
 const { f, info } = audit(files)
 console.log(info.join('\n'))
 if (f.length) { console.log(`⛔ FAIL — ${f.length}\n   ${f.join('\n   ')}`); process.exit(1) }
-console.log('✅ one movie driver, mounted once by <Town>: it plays the town\'s path, owns its phase and its near plane')
+console.log('✅ one movie driver, mounted once by <Town>: it plays the town\'s path, owns its phase; <Town> holds the near plane')

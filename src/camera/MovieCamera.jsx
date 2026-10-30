@@ -2,17 +2,16 @@
  * MovieCamera — the ONE player of a town's movie: the slab's authored camera path (heroKeyframes + heroMotion),
  * played and never steered. Mounted by an app as <Town>'s sibling (BRIEF-one-movie-driver).
  *
- * It owns: the clock, the start phase, the pose + aim + fov written every frame, the controls' target, and the
- * movie's near plane (the quality profile's `movieNear` — Warden's ruling 2026-09-28: a depth-precision property of
- * the device, not of a town). It does NOT own entering or leaving the movie: an app's tween into the path, its
+ * It owns: the clock, the start phase, the pose + aim + fov written every frame, and the controls' target. The movie's
+ * near plane (the quality profile's `movieNear`) is held by <Town>'s TownOptics, the one writer of the clip planes
+ * (2026-10-30). It does NOT own entering or leaving the movie: an app's tween into the path, its
  * gestures, idle → movie and Stage's scrub stay the app's. An app that tweens into the movie samples the path through
  * `handle.current.pose()`, which reads THIS clock — so the tween lands on the pose the driver then plays.
  * ▶ node checks/claims-one-movie-driver.mjs
  *
  * Props:
  *   keyframes, motion  the path (resolveHeroKeyframes for a slab, the live store in Stage); null = nothing to play
- *   quality            the app's quality profile (src/lib/qualityProfile.js)
- *   active             true (or () => true) while the movie is the shot. Entering seeds the phase; leaving restores the near plane.
+ *   active             true (or () => true) while the movie is the shot. Entering seeds the phase.
  *   start              'random' — a random phase of one cycle, chosen on each entry (a visitor lands somewhere new
  *                      on the operator's path, never outside it) · or () => seconds on the timeline (Stage's playhead)
  *   hold               () => true while the app owns the camera (its tween); the clock keeps running, nothing is written
@@ -72,8 +71,7 @@ export function writeLens(camera, fov) {
   camera.updateProjectionMatrix()
 }
 
-export default function MovieCamera({ keyframes, motion, quality, active, start = 'random', hold, onTime, controlsRef, handle, framing }) {
-  if (!Number.isFinite(quality?.movieNear)) throw new Error('[MovieCamera] ⛔ needs `quality` — a profile from src/lib/qualityProfile.js with a movieNear')
+export default function MovieCamera({ keyframes, motion, active, start = 'random', hold, onTime, controlsRef, handle, framing }) {
   const { camera } = useThree()
   const defaultControls = useThree((s) => s.controls)
   const live = useRef({})
@@ -82,14 +80,13 @@ export default function MovieCamera({ keyframes, motion, quality, active, start 
   const presented = useRef(null)
   if (!presented.current) presented.current = presentedClock()
   const entered = useRef(false)
-  const priorNear = useRef(null)
   // The motion the clock plays: speed is applied to the clock, not inside the path.
   const path = () => {
     const { keyframes: k, motion: m } = live.current
     return k?.length && (k.length < 2 || m?.length > 0) ? { k, m: m ? { length: m.length, mode: m.mode } : null } : null
   }
 
-  // Enter / leave: seed the phase, set / restore the near plane. Called from the frame loop and from pose(), so an
+  // Enter / leave: seed the phase. Called from the frame loop and from pose(), so an
   // app that samples on the very frame it enters sees the seeded phase.
   const sync = () => {
     const a = live.current.active
@@ -101,12 +98,6 @@ export default function MovieCamera({ keyframes, motion, quality, active, start 
       const s = live.current.start
       clock.current = !m ? 0 : s === 'random' ? Math.random() * heroCycleSec(m) : heroClockAt(m, typeof s === 'function' ? s() : s)
       presented.current.reset()
-      priorNear.current = camera.near
-      if (camera.near !== quality.movieNear) { camera.near = quality.movieNear; camera.updateProjectionMatrix() }
-    } else if (priorNear.current != null) {
-      camera.near = priorNear.current
-      priorNear.current = null
-      camera.updateProjectionMatrix()
     }
   }
 
@@ -118,10 +109,6 @@ export default function MovieCamera({ keyframes, motion, quality, active, start 
 
   if (handle) handle.current = { pose: (outPos, outTgt) => { sync(); return sample(outPos, outTgt) } }
 
-  // Leaving by unmount restores the near plane too.
-  useEffect(() => () => {
-    if (priorNear.current != null) { camera.near = priorNear.current; camera.updateProjectionMatrix() }
-  }, [camera])
 
   // The presented frame's timestamp, every frame; a tab returning from hidden starts the interval afresh.
   useEffect(() => {
