@@ -20,6 +20,7 @@ import { NODE_BOUND } from '../src/lib/latticeNode.js'                 // the ro
 import { openCloseCutOnce, openAt, closeAt, partsOf, boolOf, growBy, tagOwn, pieces as ocPieces } from './openClose.mjs'   // the open/close, cut once (openCloseAtStep, waterWithoutDecks)
 import { structureOverWater } from '../src/cartograph/streetClass.js'   // the over-water vocabulary's one home
 import { pourMeasureOf } from '../src/cartograph/streetProfiles.js'      // the pour's measure, the one rule (derive calls it too)
+import { ringViolations } from './coastFile.mjs'                         // the fold's one home (a folded deck refuses, waterWithoutDecks)
 import { DECK_KINDS } from '../src/cartograph/streetClass.js'   // the deck vocabulary's one home, beside isOffGradeWay
 
 const { Clipper, ClipperOffset, Paths, Path, IntPoint, PolyTree, ClipType, PolyType, PolyFillType, JoinType, EndType } = clipperLib
@@ -374,6 +375,11 @@ export function streetDecks(ground, streets, stepM) {
 export function waterWithoutDecks(rings, arcs, deckRings, stepM) {
   if (!deckRings.length) return { rings, arcs, decks: [], slivers: [] }
   if (!(stepM > 0)) throw new Error(`⛔ structures: waterWithoutDecks needs the trace's step (coast.json fineM; got ${stepM}) — water beside a deck narrower than one cell is the deck's, and there is no other measure`)
+  // ⛔ A FOLDED DECK REFUSES BY NAME (Zob's ruling, 2026-10-29): a deck footprint is closed at half a cell (deckFootprints), so it
+  // carries no zero-width spike; one that does was minted by older code (PTown's pre-port decks: deck 0's two folds, read downstream
+  // as a STAIRCASE in the open's source). Read with the coast's own fold test (coastFile.mjs#ringViolations), before any boolean
+  deckRings.forEach((r, k) => { const f = ringViolations(r).find(v => v.kind === 'fold')
+    if (f) throw new Error(`⛔ structures: deck ${k}'s ring has a fold (a zero-width spike) at (${f.at.map(v => +v.toFixed(3)).join(', ')}): its decks were minted by older code; re-pour. Refusing.`) })
   const lat = 1 / SCALE
   // ⭐ WATER BESIDE A STREET DECK NARROWER THAN ONE TRACE CELL IS THE DECK'S (Boz's ruling (B), 2026-10-27; PTown's MacMillan:
   // the trace, at its own resolution, put the shore centimetres off the mapped deck, and the deck taken out left a 4–73 cm

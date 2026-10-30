@@ -10,6 +10,7 @@
 //       open/close (925 mm clear) is clean.
 //   (3) PLANT: two rings 3 mm apart meet as a 'near'; 30 mm apart they do not.
 //   MUTANT (always run): the clearance removed (exact-only restored) → the settled island passes, RED.
+//   (4) a FOLD at the lattice's resolution is a violation · (5) a folded DECK refuses by name in the take-out (each with its mutant)
 //   node checks/claims-a-coast-ring-keeps-the-ink-clear.mjs
 import { readFileSync, writeFileSync, mkdtempSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
@@ -65,6 +66,22 @@ row(!FO.inlet.length, `(4) a real 0.2 m inlet (wider than the rounding) is not a
     try { writeFileSync(join(dir, 'coastFile.mjs'), src.replace(ANCHOR, "> 0 && false) out.push({ kind: 'fold'").replace(/from '(\.{1,2}\/[^']+)'/g, (_, r) => `from "${pathToFileURL(join(base, r)).href}"`))
       const M = folds(await import(pathToFileURL(join(dir, 'coastFile.mjs')).href))
       row(!M.integer.length, `mutant: the fold test removed → the integer take-out's folded crop reads ${M.integer.length} fold(s)${M.integer.length ? ' — the row cannot see it' : ', simple again: RED as it must be'}`)
+    } finally { rmSync(dir, { recursive: true, force: true }) } } }
+// ⛔ (5) A FOLDED DECK REFUSES BY NAME (Zob's ruling, 2026-10-29): structures.mjs#waterWithoutDecks reads each deck's ring with the same
+// fold test before any boolean. PTown's pre-port decks (checks/fixtures/cut-once-ptown-street-decks.json, deck 0's two folds) refuse
+// there; today's decks (-port) build. MUTANT (source mutation of structures.mjs): the guard removed → the same input refuses far from
+// its cause, as a STAIRCASE in the open's source, RED
+{ const fx = (n) => JSON.parse(readFileSync(join(ROOT, `checks/fixtures/cut-once-${n}.json`), 'utf8')), coast = fx('ptown-coast'), water = coast.water.flatMap(b => [b.outer, ...b.holes])
+  const why = (W, n) => { try { W(water, coast.arcs || [], fx(n).rings, coast.fineM); return null } catch (e) { return String(e.message) } }
+  const stale = why(waterWithoutDecks, 'ptown-street-decks'), today = why(waterWithoutDecks, 'ptown-street-decks-port')
+  row(/deck 0's ring has a fold \(a zero-width spike\) at \(275\.745, 266\.811\)/.test(stale || '') && !today, `(5) PTown's pre-port decks: ${stale ? stale.slice(0, 150) : 'BUILD — the guard did not fire'} · today's decks: ${today ? `REFUSE: ${today.slice(0, 100)}` : 'build'}`)
+  const src = readFileSync(join(ROOT, 'cartograph/structures.mjs'), 'utf8'), ANCHOR = "    if (f) throw new Error(`⛔ structures: deck ${k}'s ring has a fold"
+  if (src.split(ANCHOR).length !== 2) row(false, 'mutant: the folded-deck guard is not in structures.mjs once — re-aim the anchor')
+  else { const dir = mkdtempSync(join(tmpdir(), 'deckfold-')), base = join(ROOT, 'cartograph')
+    try { writeFileSync(join(dir, 'structures.mjs'), src.replace(ANCHOR, ANCHOR.replace('if (f)', 'if (false)')).replace(/from '(\.{1,2}\/[^']+)'/g, (_, r) => `from "${pathToFileURL(join(base, r)).href}"`)
+        .replace(/from '([^.'][^']*)'/g, (_, r) => `from "${import.meta.resolve(r)}"`))   // a package resolved from here (the copy sits outside the repo)
+      const M = await import(pathToFileURL(join(dir, 'structures.mjs')).href), m = why(M.waterWithoutDecks, 'ptown-street-decks')
+      row(/STAIRCASE in its SOURCE/.test(m || ''), `mutant: the folded-deck guard removed → ${m ? `refuses far from its cause: ${m.slice(0, 110)}` : 'BUILDS'}${/STAIRCASE in its SOURCE/.test(m || '') ? ', RED as it must be' : ' — not the staircase the guard names'}`)
     } finally { rmSync(dir, { recursive: true, force: true }) } } }
 console.log(red ? `\n⛔ ${red} row(s) RED` : '\n✅ a coast ring keeps the ink clear')
 process.exit(red ? 1 : 0)
