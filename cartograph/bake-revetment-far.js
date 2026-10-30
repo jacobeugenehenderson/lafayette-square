@@ -98,7 +98,7 @@ export function chunkRanges(f) {
  *  nothing. ⭐ Built first for every face: the town's grid (farQuant.js#farSteps) is sized on all of them. */
 export function farChunksOf(f, parts) {
   const { G1, G3, ranges } = chunkRanges(f)
-  const fars = ranges.map(r => {
+  const fars = ranges.map((r, k) => {
     const d = revetmentDrape({ poly: f.poly, crestAt: f.crestAt, toeAt: f.toeAt, berm: f.berm, groundAt: f.groundAt, waterY: f.waterY, globals: G1, stations: r.far })
     if (!d?.stats?.tris) return null
     const { rel, normal, raws } = drapeRelative(d, (x, z) => parts(x, z).raw), v = rel.length / 3
@@ -108,7 +108,7 @@ export function farChunksOf(f, parts) {
       pin[i * 4] = 1; pin[i * 4 + 1] = raws[i]
       band[i * 3] = x; band[i * 3 + 1] = parts(x, z).y; band[i * 3 + 2] = z; up[i * 3 + 1] = 1
     }
-    return { tris: d.stats.tris, pos: rel, normal, pin, band, bandNormal: up, index: new Uint32Array(d.geometry.index.array) }
+    return { key: `${f.key}#${k}`, tris: d.stats.tris, pos: rel, normal, pin, band, bandNormal: up, index: new Uint32Array(d.geometry.index.array) }
   })
   return { G1, G3, ranges, fars }
 }
