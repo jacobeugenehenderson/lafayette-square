@@ -15,7 +15,8 @@
  *     put writes a .bin's BROTLI bytes (equal to slab-wire.mjs#encodeBytes) with --content-encoding br and its type,
  *     and a .json raw with no encoding; probe, against an edge that answers as the one-object trial measured (br
  *     asked → stored length + strong ETag; anything else → decoded, weak ETag, no length), finds every unchanged
- *     object fresh.
+ *     object fresh. ②b a file that does not exist at probe and is written (then rewritten) before put — the
+     manifests/index.json writeIndex makes at upload time, and a stored-br file — goes up as its CURRENT bytes.
  *   ③ THE WORKERS: production-sites' fetch with a mock R2 — a stored-br .bin goes out with content-encoding br, the
  *     STORED length, no accept-ranges and `encodeBody: 'manual'` (the trial: without it the runtime encodes the
  *     brotli a second time); a Range request for it is a 416 BEFORE the get; a raw object keeps accept-ranges and
@@ -27,7 +28,8 @@
  *
  * Usage: node checks/claims-the-slab-ships-compressed.mjs [--mutants]
  */
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, chmodSync } from 'node:fs'
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, chmodSync, existsSync } from 'node:fs'
+import { brotliDecompressSync } from 'node:zlib'
 import { tmpdir } from 'node:os'
 import { join, dirname, basename } from 'node:path'
 import { createServer } from 'node:http'
@@ -115,6 +117,26 @@ async function legUpload(paths, fails) {
     }
     const fresh = await U.probe(files, 2)
     for (const f of files) if (!fresh.has(f.key)) fails.push(`② probe did not find unchanged ${f.key} fresh (it would re-upload on every pour)`)
+
+    // ②b A FILE WRITTEN AT UPLOAD TIME (HPDM's first compressed Publish, 2026-10-30): probe asks for manifests/index.json
+    // before writeIndex has made it, then writeIndex writes (and on the next pour REWRITES) it, then put sends it. A wire
+    // remembered by path handed put the probe's ENOENT, or a rewritten file's old bytes. Same for a stored-br file.
+    const lastBody = () => { let n = 0; while (existsSync(join(tmp, `put-${n + 1}.body`))) n++; return readFileSync(join(tmp, `put-${n}.body`)) }
+    mkdirSync(join(tmp, 'mf'))
+    const idx = { abs: join(tmp, 'mf', 'index.json'), key: 'baked/fx/manifests/index.json', bytes: 0, cache: 'x', index: { town: 'fx', copyKey: 'baked/fx/manifests/aaaa.json', writtenAt: null } }
+    const late = { abs: join(tmp, 'mf', 'late.bin'), key: 'baked/fx/late.bin', bytes: 0, cache: 'x' }
+    for (const [round, copyKey] of [[1, 'baked/fx/manifests/aaaa.json'], [2, 'baked/fx/manifests/bbbb.json']]) {
+      try {
+        await U.probe([idx, late], 2)
+        idx.index.copyKey = copyKey
+        await U.writeIndex(idx)
+        const binRaw = randomBytes(5000 + round); writeFileSync(late.abs, binRaw)
+        await U.put(idx)
+        if (!lastBody().equals(readFileSync(idx.abs))) fails.push(`②b put sent manifests/index.json's ${round === 1 ? 'probe-time' : 'previous'} bytes, not what writeIndex wrote (round ${round})`)
+        await U.put(late)
+        if (!brotliDecompressSync(lastBody()).equals(binRaw)) fails.push(`②b put sent a rewritten .bin's old brotli (round ${round})`)
+      } catch (err) { fails.push(`②b probe → writeIndex → put failed (round ${round}): ${err.message}`) }
+    }
   } finally {
     process.env.PATH = was.PATH; if (was.ASSET_BASE == null) delete process.env.ASSET_BASE; else process.env.ASSET_BASE = was.ASSET_BASE
     server.close(); rmSync(tmp, { recursive: true, force: true })
@@ -174,7 +196,9 @@ async function run(paths) {
 // ── mutants: each a copy beside its original (so its relative imports resolve), the paths pointed at it ────────
 const MUTANTS = [
   ['.bin stored raw (the octet-stream path restored)', 'wire', "bin: ['application/octet-stream', BR]", "bin: ['application/octet-stream', PACKED]"],
-  ['the stored file named after the encode (the race)', 'slabWireNode', "const out = join(_dir, `${createHash('sha256').update(raw).digest('hex')}.${enc}`)\n      const body = await encodeBytes(raw)", "const body = await encodeBytes(raw)\n      const out = join(_dir, `${_wire.size}-x.${enc}`)"],
+  ['the stored file named after the encode (the race)', 'slabWireNode', "const out = join(_dir, `${sha}.${enc}`)\n    const p = encodeBytes(raw).then((body) => {", "const p = encodeBytes(raw).then((body) => {\n      const out = join(_dir, `${_encoded.size}-x.${enc}`)"],
+  ['the encode remembered by path (a rewritten file keeps its old bytes)', 'slabWireNode', 'const k = `${enc}\\0${sha}`', 'const k = `${enc}\\0${abs}`'],
+  ['the read remembered by path, a rejection with it (the HPDM ENOENT)', 'slabWireNode', 'const raw = readFileSync(abs)', 'const raw = ((globalThis.__seen ??= {})[abs] ??= (() => { try { return readFileSync(abs) } catch (e) { return e } })()); if (raw instanceof Error) throw raw'],
   ['put drops --content-encoding', 'upload', "...(wire.encoding ? ['--content-encoding', wire.encoding] : []),", ''],
   ['put writes the raw file', 'upload', "'--file', wire.abs,", "'--file', abs,"],
   ['probe reads back with identity', 'upload', "headers: { 'accept-encoding': readBackEncoding(f.key) }", "headers: { 'accept-encoding': 'identity' }"],
@@ -208,6 +232,10 @@ if (process.argv.includes('--mutants')) {
           const d = join(dirname(P[dep]), `.mutant-${basename(P[dep])}`)
           writeFileSync(d, readFileSync(P[dep], 'utf8').replace(/(['"])([./]*src\/lib\/)slabWire\.js\1/, `$1$2.mutant-slabWire.js$1`)); paths[dep] = d; extra.push(d)
         }
+      }
+      if (which === 'slabWireNode') {   // the uploader must reach the mutant wire too (a query per mutant: one path, one module, else)
+        const d = join(dirname(P.upload), `.mutant-${basename(P.upload)}`)
+        writeFileSync(d, readFileSync(P.upload, 'utf8').replace("from './slab-wire.mjs'", `from './.mutant-slab-wire.mjs?m=${++seq}'`)); paths.upload = d; extra.push(d)
       }
       try { red = (await run(paths)).length > 0 } finally { for (const d of extra) rmSync(d, { force: true }) }
     } finally { rmSync(copy, { force: true }) }

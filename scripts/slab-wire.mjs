@@ -22,29 +22,35 @@ export const encodeBytes = (raw) => brotli(raw, params(raw))
 export const encodeBytesSync = (raw) => brotliCompressSync(raw, params(raw))
 
 let _dir = null
-const _wire = new Map()   // abs → Promise<wire>
+const _encoded = new Map()   // `${enc}\0${sha256(raw)}` → Promise<wire>
 
 /**
  * What `abs` (published under `path`) is stored as: { abs, bytes, md5, encoding }. Stored raw → the file itself,
  * encoding null; stored br → its brotli bytes, written once to a temp file (a file published under two keys — its
  * content name and its plain key — is encoded once).
+ * ⛔ The file is READ ON EVERY CALL and only the encode is memoized, keyed by the raw CONTENT (2026-10-30, HPDM's first
+ * compressed Publish): a memo keyed by path served a file's old bytes after it changed, and cached a rejection.
+ * `manifests/index.json` is written at upload time — after probe had asked for it — so its ENOENT was memoized and
+ * returned to put(). A missing file now rejects that call alone; a rewritten file is new content, so a new key.
  */
-export function wireOf(abs, path) {
+export async function wireOf(abs, path) {
   const enc = storedEncodingFor(path)
-  const k = `${enc}\0${abs}`
-  if (!_wire.has(k)) {
-    _wire.set(k, (async () => {
-      const raw = readFileSync(abs)
-      if (!enc) return { abs, bytes: raw.length, md5: md5(raw), encoding: null }
-      // ⛔ Named by the RAW content, before any await (Zob, 2026-10-30): a name taken after the encode raced — two
-      // same-basename files (every species' trees/<sp>/skeleton-1-lod0.glb) landed on one path, and one tree's
-      // brotli went up under another's key. Equal content shares one file; different content never can.
-      _dir ??= mkdtempSync(join(tmpdir(), 'slab-wire-'))
-      const out = join(_dir, `${createHash('sha256').update(raw).digest('hex')}.${enc}`)
-      const body = await encodeBytes(raw)
+  const raw = readFileSync(abs)
+  if (!enc) return { abs, bytes: raw.length, md5: md5(raw), encoding: null }
+  const sha = createHash('sha256').update(raw).digest('hex')
+  const k = `${enc}\0${sha}`
+  if (!_encoded.has(k)) {
+    // ⛔ Named by the RAW content, before any await (Zob, 2026-10-30): a name taken after the encode raced — two
+    // same-basename files (every species' trees/<sp>/skeleton-1-lod0.glb) landed on one path, and one tree's
+    // brotli went up under another's key. Equal content shares one file; different content never can.
+    _dir ??= mkdtempSync(join(tmpdir(), 'slab-wire-'))
+    const out = join(_dir, `${sha}.${enc}`)
+    const p = encodeBytes(raw).then((body) => {
       writeFileSync(out, body)
       return { abs: out, bytes: body.length, md5: md5(body), encoding: enc }
-    })())
+    })
+    p.catch(() => _encoded.delete(k))   // never keep a rejection
+    _encoded.set(k, p)
   }
-  return _wire.get(k)
+  return _encoded.get(k)
 }
