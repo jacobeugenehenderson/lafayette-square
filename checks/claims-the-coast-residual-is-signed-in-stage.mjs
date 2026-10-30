@@ -10,8 +10,10 @@
 //   (c) the accept route signs only on a matching identity, from the pending record, then removes it and commits that path alone.
 //       MUTANT: the identity guard removed → the route would sign what the operator never saw, RED
 //   (d) the signature is a coast-step INPUT (pourSteps.mjs): deleting it makes the step's recorded reads differ (the Bake re-judges)
-//   (e) the card says what happened and the one thing to do, and its one accept calls the store's accept
+//   (e) the card leads with the scale, says which side has what in plain words, marks the signed pieces, says a row can be clicked; its
+//       pixels at the closest camera are derived; its one accept calls the store's accept
 //   (f) no bake-anyway: the tolerance is written only by sign-coast-residual --accept, the accept route, and the step's own tightening
+//   (g) a piece's size (openCloseJudge.mjs#spanOf, #wideOf) rides in the record, never in coast.json
 //   node checks/claims-the-coast-residual-is-signed-in-stage.mjs
 import { readFileSync, writeFileSync, mkdtempSync, rmSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
@@ -39,7 +41,7 @@ const reads = { 'cartograph/bake-coast.mjs': 'h1', 'cartograph/data/x/clean/over
 
 // (b) the server's ask, from its own source (serve.js is never imported: it starts the server)
 const askSrc = (s) => { const a = s.indexOf('const sameReads = (a, b) =>'), b = s.indexOf('\n}\n', s.indexOf('function coastResidualAsk(scene) {')) + 2; return s.slice(a, b) }
-const askOf = (code, file, now) => new Function('existsSync', 'readFileSync', 'pendingPathOf', 'coastReadsOf', 'recordIdentity', `${code}; return coastResidualAsk`)(existsSync, readFileSync, () => file, () => now, recordIdentity)
+const askOf = (code, file, now, tolFile = file + '.no-tolerance') => new Function('existsSync', 'readFileSync', 'pendingPathOf', 'tolerancePathOf', 'coastReadsOf', 'recordIdentity', `${code}; return coastResidualAsk`)(existsSync, readFileSync, () => file, () => tolFile, () => now, recordIdentity)
 { const dir = mkdtempSync(join(tmpdir(), 'coast-ask-')), f = join(dir, 'pending.json')
   try { writeFileSync(f, JSON.stringify(rec))
     const ask = askOf(askSrc(sv), f, reads)('x'), stale = askOf(askSrc(sv), f, { ...reads, 'cartograph/bake-coast.mjs': 'h9' })('x'), none = askOf(askSrc(sv), join(dir, 'nope.json'), reads)('x')
@@ -47,6 +49,11 @@ const askOf = (code, file, now) => new Function('existsSync', 'readFileSync', 'p
       `(b) the ask: a matching record → ${ask ? `${ask.n} piece(s), identity ${ask.identity.slice(0, 8)}` : 'NULL'} · stale reads → ${stale === null ? 'null' : 'ASKED'} · no record → ${none === null ? 'null' : 'ASKED'}`)
     const M = askOf(askSrc(sv).replace('if (!sameReads(rec.reads, coastReadsOf(scene))) return null', ''), f, { ...reads, 'cartograph/bake-coast.mjs': 'h9' })('x')
     row(M !== null, `(b) mutant: the reads test removed → a stale record is ${M ? 'ASKED about, RED as it must be' : 'still null — the row cannot see it'}`)
+    // a piece the town already signed says so: its key in the tolerance (the same path), and only there
+    const t = join(dir, 'tol.json'); writeFileSync(t, JSON.stringify({ signedAt: '2026-10-29T00:00:00Z', water: { sites: [{ key: 'aaaa' }] }, decks: { sites: [{ key: 'aaaa' }] } }))
+    const S = askOf(askSrc(sv), f, reads, t)('x'); writeFileSync(t, JSON.stringify({ water: { sites: [{ key: 'bbbb' }] } })); const U = askOf(askSrc(sv), f, reads, t)('x')
+    row(S.pieces[0].signed === true && S.signedAt === '2026-10-29T00:00:00Z' && U.pieces[0].signed === false && ask.pieces[0].signed === false,
+      `(b) a signed piece: its key in the tolerance → signed ${S.pieces[0].signed} · another key → ${U.pieces[0].signed} · no tolerance → ${ask.pieces[0].signed}`)
   } finally { rmSync(dir, { recursive: true, force: true }) } }
 { const coastStep = sv.slice(sv.indexOf("try { await runIfDirty('coast'"), sv.indexOf("try { await runIfDirty('coast'") + 500)
   row(/const ask = P\.cancel \? null : coastResidualAsk\(bakeScene\)/.test(coastStep) && /if \(!ask\) throw e/.test(coastStep) && /res\.writeHead\(428/.test(coastStep) && /coastResidual: ask/.test(coastStep),
@@ -70,11 +77,24 @@ const askOf = (code, file, now) => new Function('existsSync', 'readFileSync', 'p
     row(listed && differs, `(d) the town's ${TOLERANCE_FILE} is a coast-step input (${listed}); deleting it changes the step's recorded reads, so the Bake re-judges (${differs})`)
   } finally { rmSync(dir, { recursive: true, force: true }) } }
 
-// (e) the card
+// (e) the card explains or goes away (Jacob, on Huron's first card: "I looked but have no idea what I'm looking at")
 { const card = bm.slice(bm.indexOf('function CoastResidualCard'), bm.indexOf('// Modal overlay shown while'))
-  const what = /coast differs from its definition in \$\{n\} place/.test(card), todo = /Look at each one: if it is the rounding, accept them/.test(card), one = (card.match(/acceptCoastResidual\(\)/g) || []).length === 1, frames = /frameRequest: \{ x: w\.at\[0\], z: w\.at\[1\]/.test(bm)
+  const scale = /The largest is \{sizeOf\(big\)\}; all \{n\} together come to/.test(card) && card.indexOf('The largest is') < card.indexOf('The coast step smooths')
+  const plain = /the exact calculation has \$\{what\} here that the coast doesn't/.test(bm) && /the coast has \$\{what\} here that the exact calculation doesn't/.test(bm) && !/\{w\.side\}/.test(card)
+  const signedSaid = /w\.signed \? ' · signed'/.test(card) && /has signed none of them before/.test(card), click = /Click a row to see it on the map/.test(card)
+  const todo = /If none of them is a real change to the shore, accept them: that signs them for/.test(card), one = (card.match(/acceptCoastResidual\(\)/g) || []).length === 1, frames = /frameRequest: \{ x: w\.at\[0\], z: w\.at\[1\]/.test(bm)
   const store = /acceptCoastResidual: async \(\) => \{/.test(st) && /apiAcceptCoastResidual\(get\(\)\.activeLookId, cr\.identity\)/.test(st)
-  row(what && todo && one && frames && store, `(e) the card names what happened (${what}) and the one thing to do (${todo}), frames each piece (${frames}), and has ONE accept, the store's, sending the card's identity (${one && store})`) }
+  row(scale && plain && signedSaid && click && todo && one && frames && store, `(e) the card leads with the scale (${scale}), says which side has what in plain words, never the raw side (${plain}), marks what the town signed (${signedSaid}), says a row can be clicked (${click}), the one thing to do (${todo}), frames each piece (${frames}), and has ONE accept, the store's, sending the card's identity (${one && store})`)
+  // the pixels are DERIVED: the near plane and the orbit's closest dolly read from their homes, the lens from the town's keyframes
+  const derived = /Math\.max\(TOWN_CAMERA_NEAR_M, REGIMES\.playback\.minDistance\)/.test(bm) && /\(keys \|\| \[\]\)\.map\(k => k\.fov\)/.test(bm) && /camera: \{ near: TOWN_CAMERA_NEAR_M \}/.test(src('src/lib/qualityProfile.js'))
+  row(derived, `(e) "how many pixels at the closest camera" is derived: the town canvas's near plane (qualityProfile.js#TOWN_CAMERA_NEAR_M, the one the canvas uses), the movie orbit's closest dolly (REGIMES.playback) and the narrowest keyframe lens (${derived})`) }
+
+// (g) a piece's size is the piece's: its length (its outer ring's farthest two vertices) and its widest point (the deepest erode it
+// survives), carried by the record, never into coast.json
+{ const { spanOf, wideOf, ip } = await import('../cartograph/openCloseJudge.mjs')
+  const sq = spanOf([{ X: 0, Y: 0 }, { X: 3000, Y: 0 }, { X: 3000, Y: 4000 }, { X: 0, Y: 4000 }]), wd = wideOf(ip([[[0, 0], [3e6, 0], [3e6, 6000], [0, 6000]]]), 3e6), carried = rec.water.sites[0].span === undefined && residualRecord({ nets: { ...nets, water: { ...nets.water, pieces: [{ ...nets.water.pieces[0], span: 0.12, wide: 0.006 }] } }, reads }).water.sites[0].wide === 0.006
+  const kept = /largest: w \? \{ key: w\.key, side: w\.side, m2: w\.m2, at: w\.at \} : null/.test(bc)
+  row(sq === 5000 && Math.abs(wd - 6000) <= 20 && carried && kept, `(g) spanOf a 3 × 4 rectangle → ${sq} (5000); wideOf a 3 m × 6 mm strip → ${(wd / 1000).toFixed(2)} mm (6, to the bisection's step); the record carries a piece's span and width (${carried}); coast.json's largest leaves it out, so its bytes and everything downstream stay put (${kept})`) }
 
 // (f) no bake-anyway
 { const writers = []

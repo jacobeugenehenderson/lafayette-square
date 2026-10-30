@@ -102,8 +102,11 @@ function coastResidualAsk(scene) {
   const f = pendingPathOf(scene); if (!existsSync(f)) return null
   let rec; try { rec = JSON.parse(readFileSync(f, 'utf-8')) } catch { return null }
   if (!sameReads(rec.reads, coastReadsOf(scene))) return null
-  const pieces = ['water', 'decks'].flatMap(path => (rec[path]?.sites || []).map(w => ({ path, ...w })))
-  return { scene, identity: recordIdentity(rec), n: pieces.length, m2: +pieces.reduce((t, w) => t + w.m2, 0).toFixed(4), pieces }
+  // a piece the town has already signed says so (its key in coast-tolerance.json): the stop is for the others
+  const tol = existsSync(tolerancePathOf(scene)) ? JSON.parse(readFileSync(tolerancePathOf(scene), 'utf-8')) : null
+  const signed = new Set(['water', 'decks'].flatMap(path => (tol?.[path]?.sites || []).map(w => `${path}:${w.key}`)))
+  const pieces = ['water', 'decks'].flatMap(path => (rec[path]?.sites || []).map(w => ({ path, ...w, signed: signed.has(`${path}:${w.key}`) })))
+  return { scene, identity: recordIdentity(rec), n: pieces.length, m2: +pieces.reduce((t, w) => t + w.m2, 0).toFixed(4), pieces, signedAt: tol?.signedAt ?? null }
 }
 
 // ⭐⭐ BAKE PROGRESS — the operator sees the bake, step by step, and can stop it.

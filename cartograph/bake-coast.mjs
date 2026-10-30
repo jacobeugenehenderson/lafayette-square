@@ -302,7 +302,7 @@ export const tolerancePathOf = (scene) => join(CARTOGRAPH_DIR, 'data', scene, TO
 export const pendingPathOf = (scene) => join(CARTOGRAPH_DIR, 'data', scene, 'clean', PENDING_FILE)   // a run's state: under clean/, gitignored
 export function residualRecord({ nets, reads, coastSha = null, signedAt = null }) {
   const rec = { signedAt, coastSha, reads }
-  for (const k of ['water', 'decks']) { const r = nets[k]; rec[k] = { n: r.n, m2: r.m2, sites: r.pieces.map(({ key, side, m2, at }) => ({ key, side, m2, at })) } }
+  for (const k of ['water', 'decks']) { const r = nets[k]; rec[k] = { n: r.n, m2: r.m2, sites: r.pieces.map(({ key, side, m2, at, span, wide }) => ({ key, side, m2, at, span, wide })) } }
   return rec }
 export const recordIdentity = (rec) => createHash('sha1').update(JSON.stringify({ reads: rec.reads, keys: ['water', 'decks'].flatMap(k => (rec[k]?.sites || []).map(w => `${k}:${w.key}`)).sort() })).digest('hex')
 // the coast step's reads: its code (its import closure) and the authored inputs it reads, as a content record
@@ -344,7 +344,8 @@ export async function bakeCoast({ scene, outDir = null, write = true, gate = tru
       if (v.act === 'tighten') { tightened[k] = v.tightened; console.log(`[bake-coast] ${scene}: ${v.why}`) }
       else console.log(`[bake-coast] ${v.why} (judged in ${r.judgedS} s)`) }
     if (Object.keys(tightened).length && write) writeIfChanged(tolPath, JSON.stringify({ ...tol, ...tightened }, null, 1)) }
-  const recordOf = (r) => ({ n: r.n, m2: r.m2, largest: r.pieces[0] || null, judgedS: r.judgedS })
+  // the largest piece's span is the card's (residualRecord), not coast.json's: the file's bytes stay what they were, so nothing downstream re-runs
+  const recordOf = (r) => { const w = r.pieces[0]; return { n: r.n, m2: r.m2, largest: w ? { key: w.key, side: w.side, m2: w.m2, at: w.at } : null, judgedS: r.judgedS } }
   // ── IS THIS A COASTAL TOWN? Two records answer, and they must agree. ─────────────────────────────────────────────
   const osmWater = coastRings({ ground: osm.ground || {}, buildings: osm.buildings || [], center: [disc.cx, disc.cz], discR: disc.R, bb: R })
   const hasRecord = fs.existsSync(join(mapDir, 'raw', 'water-datums.json'))

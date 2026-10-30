@@ -42,7 +42,7 @@ export function e2e(k, P, stepM, def = definitionOf(P, stepM)) { const K = up(k)
 // 0.929 m-wide 4.746 m² piece). ⭐ The definition is taken PER PART, as the open/close is (structures.mjs#openCloseAtStep: two parts a
 // metre apart stay two): over the whole set its close joins what the kit keeps apart (Huron's decks read 6 pieces, 7.94 m², of the
 // judge's own making; per part, 2, 2.26 m²). Each piece carries its KEY: the piece itself, never a radius (pieceKey).
-// → { n, m2, pieces: [{ key, side, m2, at }] }, largest first
+// → { n, m2, pieces: [{ key, side, m2, at, span, wide }] }, largest first; span and wide are its LENGTH and widest WIDTH, m
 export const definitionPerPart = (P, stepM) => partsOf(P, 'the definition').flatMap(pp => definitionOf(ip(pp), stepM))
 // a piece's KEY (Zob's ruling): its rings rounded ONCE to the 1 mm lattice (the fine piece → integer mm), each ring rotated to start at
 // its least vertex, the outer counter-clockwise (holes clockwise), then hashed. An exact match or not: a piece that moves 1 mm is new
@@ -51,10 +51,15 @@ export function pieceKey(pp) {
     const sa = q.reduce((t, v, k) => { const w = q[(k + 1) % q.length]; return t + v[0] * w[1] - w[0] * v[1] }, 0); if ((i === 0) !== (sa > 0)) q = q.reverse()
     let m = 0; q.forEach((v, k) => { if (v[0] < q[m][0] || (v[0] === q[m][0] && v[1] < q[m][1])) m = k }); return [...q.slice(m), ...q.slice(0, m)] })
   return createHash('sha1').update(JSON.stringify([rings[0], ...rings.slice(1).sort((a, b) => (a[0][0] - b[0][0]) || (a[0][1] - b[0][1]))])).digest('hex').slice(0, 16) }
+// a piece's LENGTH: the farthest two vertices of its outer ring (fine units). What the operator is told the piece measures (Stage's card)
+export const spanOf = (o) => { let d = 0; for (let i = 0; i < o.length; i++) for (let j = i + 1; j < o.length; j++) d = Math.max(d, Math.hypot(o[i].X - o[j].X, o[i].Y - o[j].Y)); return d }
+// a piece's WIDTH at its widest: twice the deepest erode it survives, to a hundredth of the rounding (bisected from 2·NODE_BOUND, which
+// every listed piece survives, to half its length). A sliver is told by its widest point, never its mean (a 3.75 m hairline averages 0.1 mm)
+export const wideOf = (pp, span) => { let lo = 2 * bound, hi = Math.max(lo, span / 2); while (hi - lo > bound / 100) { const m = (lo + hi) / 2; if (survivesBy(pp, m)) lo = m; else hi = m } return 2 * lo }
 export function residualOf(k, P, stepM, def = definitionPerPart(P, stepM)) { const K = up(k), pieces = []
   const sides = [...piecesOf(op(ClipType.ctDifference, K, def)).map(pp => ({ pp, side: 'candidate only' })), ...piecesOf(op(ClipType.ctDifference, def, K)).map(pp => ({ pp, side: 'definition only' }))]
   for (const x of sides) { if (!survivesBy(x.pp, 2 * bound)) continue; const m2 = area(x.pp) / F / F / 1e6, o = x.pp[0]; let cx = 0, cy = 0; for (const q of o) { cx += q.X; cy += q.Y }
-    pieces.push({ key: pieceKey(x.pp), side: x.side, m2: +m2.toFixed(5), at: [+(cx / o.length / F / 1000).toFixed(3), +(cy / o.length / F / 1000).toFixed(3)] }) }
+    pieces.push({ key: pieceKey(x.pp), side: x.side, m2: +m2.toFixed(5), at: [+(cx / o.length / F / 1000).toFixed(3), +(cy / o.length / F / 1000).toFixed(3)], span: +(spanOf(o) / F / 1000).toFixed(4), wide: +(wideOf(x.pp, spanOf(o)) / F / 1000).toFixed(4) }) }
   pieces.sort((a, b) => b.m2 - a.m2); return { n: pieces.length, m2: +pieces.reduce((t, w) => t + w.m2, 0).toFixed(4), pieces } }
 // THE GATE against the town's SIGNED tolerance (cartograph/data/<town>/coast-tolerance.json, written only by sign-coast-residual.mjs
 // --accept): it compares COUNT, m² and the accepted SET. No tolerance → stop, listing every piece (the first pour). A piece whose key is not
