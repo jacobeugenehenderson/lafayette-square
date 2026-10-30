@@ -479,7 +479,7 @@ who calls `start-thread` directly on a Missed Connections or Emergency post lear
 client hid the "Message" button; the gate must be the server's. Found by Quire (The Ward build).
 **Fixed:** `start-thread` refuses an anonymous post (`forbidden`); `getThreads` never returns the poster's
 handle for a thread on an anonymous or deleted post, which also covers threads already open; `isAnonymousFlag()`
-is the one reading of the flag. ▶ theward `node backend/fortify-harness.mjs <kit>/apps-script/Code.js --only=closing` (branch `plumb/fortify`, 687581e; `--mutants` turns each row red). ⚠️ Not observed against live: that needs a townie device and a test post, a live
+is the one reading of the flag. ▶ theward `node backend/fortify-harness.mjs <kit>/apps-script/Code.js --only=closing` (branch `plumb/fortify`, e83104a; `--mutants` turns each row red). ⚠️ Not observed against live: that needs a townie device and a test post, a live
 write. ⚠️ Its deploy (@68) also shipped two earlier undeployed
 commits: `cd0446a4` (townie standing counts linked devices) and `ee3a33b9` (`guardian-check`, which answers
 **no to everyone until `COMMERCE_SHARED_SECRET` is set** — so the `commerce-write` path refuses every guardian
@@ -490,7 +490,7 @@ Found by Quire: deleting a post leaves its threads open · `postComment` does no
 no server-side length limits (the 1000/500-character limits are client-only) · `is_mine` matches the exact
 device hash while standing counts linked devices, so your own post is not "mine" on your linked device. **MEDIUM since
 2026-10-30:** Townie needs no presence (a check-in takes any `location_id`), so any script writes unbounded text into the one
-spreadsheet every town shares. **Fix:** theward `plumb/fortify` (687581e) `backend/apps-script-fortify-2026-10-30.DRAFT.patch`, after
+spreadsheet every town shares. **Fix:** theward `plumb/fortify` (e83104a) `backend/apps-script-fortify-2026-10-30.DRAFT.patch`, after
 the recovery patch; its header names what it leaves. ▶ theward `node backend/fortify-harness.mjs <Code.js>` (+ `--mutants`).
 
 ### F-20 · MEDIUM · The admin token travels in a URL query string  *(new, 2026-09-28)*
@@ -533,9 +533,8 @@ a device key. ▶ the closing rows, as F-30's.
 **Still OPEN:** two paths reach 'verified' with no one in person: a claim is verified when the same handle is verified there
 on another device (so a claimed link code does it), and `fetchResidenceData` reads a linked device's residence as the
 caller's. **Ruled 2026-10-30 (Jacob), superseding the 2026-09-28 card secret:** the ladder (`references/registry.json`
-`r-the-host-verifies-eye-to-eye`). Townies make themselves; the Host makes a Guardian or a building Rep in person; a Rep
-verifies and renews residents, a Guardian makes Keyholders, each by an in-person scan. No code, link or printed card makes
-a device more than a Townie. Its design is owed to Zob before any build.
+`r-the-host-verifies-eye-to-eye`), verbatim: *"No code, card or link raises a device by itself."* The one exception is F-31's
+staff-signed recovery, which is the Host's act and may carry the handle's roles (Boz, 2026-10-30). Its design is owed to Zob.
 
 ### F-24 · CRITICAL · Request values are written to the sheet as formulas  *(new, 2026-10-07; EXISTING on live)*  — ⚙️ FIXED IN DRAFT 2026-10-13, unreviewed, not deployed
 `apps-script/Code.js` writes request values straight into rows (`appendRow`) and cells (`setValue`), with no check
