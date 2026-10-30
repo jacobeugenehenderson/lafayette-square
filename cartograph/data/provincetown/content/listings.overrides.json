@@ -7334,6 +7334,19 @@
     "pbg-guide-2026 p.33 (photo, cropped at 200 dpi from Jacob's copy)"
    ],
    "_pbg_images_fetched": "2026-10-26"
+  },
+  "osm-215751938": {
+   "name": "Ceraldi Provincetown",
+   "website": "https://www.ceraldicapecod.com/",
+   "history": [
+    {
+     "year": 2025,
+     "event": "CERALDi returns to Provincetown, at 9 Ryder Street."
+    }
+   ],
+   "_source": "https://ptownchamber.com/business-directory/listing/restaurants",
+   "_fetched": "2026-10-30",
+   "_comment": "OSM (way 215751938, v2 2018-05-26) names this restaurant \"9 Ryder Street\", its own address, so the bake refused it (listing-places.js). The Chamber's directory lists \"Ceraldi Provincetown\", 9 Ryder Ext, ceraldicapecod.com: \"A New Chapter Begins at 9 Ryder Street … This summer 2025\". Boz ruled (a), 2026-10-30: the listing follows the tenant. The earlier restaurant (\"9 Ryder\", per a GoFundMe title seen in a search, the page since 404) is not recorded as history: no source read gives its dates."
   }
  },
  "places": {
