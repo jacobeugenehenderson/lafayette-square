@@ -2643,5 +2643,118 @@
    "enriched": true,
    "_match_name": "Total Access Urgent Care"
   }
+ },
+ "places": {
+  "_comment": "One place per (identity, building) (cartograph/listing-places.js). Jacob, 2026-10-30, via Boz: \"accept the duplicates as proposed\"; the merges below are his, and those marked in _translated were the old building-keyed supersede, written unchanged.",
+  "_translated": [
+   "hpdm-lst-0004",
+   "hpdm-lst-0005",
+   "hpdm-lst-0010",
+   "hpdm-lst-0024",
+   "hpdm-lst-0025",
+   "hpdm-lst-0030",
+   "hpdm-lst-0031",
+   "hpdm-lst-0049",
+   "hpdm-lst-0050",
+   "hpdm-lst-0056",
+   "hpdm-lst-0075",
+   "hpdm-lst-0093",
+   "hpdm-lst-0103",
+   "hpdm-lst-0105",
+   "hpdm-lst-0107",
+   "hpdm-lst-0110",
+   "hpdm-lst-0128",
+   "hpdm-lst-0144",
+   "hpdm-lst-0155",
+   "hpdm-lst-0177",
+   "hpdm-lst-0180",
+   "hpdm-lst-0183",
+   "hpdm-lst-0186",
+   "hpdm-lst-0191",
+   "hpdm-lst-0193",
+   "hpdm-lst-0212"
+  ],
+  "merge": {
+   "hpdm-lst-0004": [
+    "osm-620135606"
+   ],
+   "hpdm-lst-0005": [
+    "osm-620135607"
+   ],
+   "hpdm-lst-0010": [
+    "osm-619323289",
+    "osm-619323288"
+   ],
+   "hpdm-lst-0024": [
+    "osm-238687001"
+   ],
+   "hpdm-lst-0025": [
+    "osm-619601829"
+   ],
+   "hpdm-lst-0030": [
+    "osm-622488611"
+   ],
+   "hpdm-lst-0031": [
+    "osm-619919744"
+   ],
+   "hpdm-lst-0049": [
+    "osm-77848866"
+   ],
+   "hpdm-lst-0050": [
+    "osm-619601816"
+   ],
+   "hpdm-lst-0056": [
+    "osm-619919737"
+   ],
+   "hpdm-lst-0075": [
+    "osm-664546509",
+    "osm-664546508"
+   ],
+   "hpdm-lst-0093": [
+    "osm-619601817"
+   ],
+   "hpdm-lst-0103": [
+    "osm-422698562"
+   ],
+   "hpdm-lst-0105": [
+    "osm-77848868"
+   ],
+   "hpdm-lst-0107": [
+    "osm-185357811"
+   ],
+   "hpdm-lst-0110": [
+    "osm-664546504"
+   ],
+   "hpdm-lst-0128": [
+    "osm-112889060"
+   ],
+   "hpdm-lst-0144": [
+    "osm-619919752"
+   ],
+   "hpdm-lst-0155": [
+    "osm-966663774"
+   ],
+   "hpdm-lst-0177": [
+    "osm-506138138"
+   ],
+   "hpdm-lst-0180": [
+    "osm-618362342"
+   ],
+   "hpdm-lst-0183": [
+    "osm-615029865"
+   ],
+   "hpdm-lst-0186": [
+    "osm-1360926463"
+   ],
+   "hpdm-lst-0191": [
+    "osm-615415144"
+   ],
+   "hpdm-lst-0193": [
+    "osm-631683353"
+   ],
+   "hpdm-lst-0212": [
+    "osm-112889071"
+   ]
+  }
  }
 }

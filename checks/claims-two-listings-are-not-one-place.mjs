@@ -19,9 +19,13 @@
  *   · a PERSON beside their practice     — NOMS Family Practice ↔ Christopher Emery
  *
  * ⛔ THIS CHECK DOES NOT RULE ON WHICH IS WHICH, and must not start. "Two tenants" and "a
- * product sold on the forecourt" are the operator's call, and the resolution surface
- * already exists: `content/listings.overrides.json` carries `drops` and `patches`. The
- * check's job is to make the collision impossible to not see.
+ * product sold on the forecourt" are the operator's call, made through the ONE mechanism the
+ * bake has for "these listings are one place" (cartograph/listing-places.js; Boz, 2026-10-30):
+ * `places.merge` in `content/listings.overrides.json` absorbs the listing that should not exist
+ * into the one that should (a dead tenant, a product, a person into their practice; any names),
+ * and `places.apart` says two places really share the address and phone. A pair the operator
+ * marked apart is answered here; an absorbed listing is gone from the next bake. The check's job
+ * is to make an unanswered collision impossible to not see.
  *
  * ⭐ It runs over every town's listings on disk, so a town nobody has opened is checked by
  * the same command — and the test needs no new data, only the `address` and `phone` the
@@ -70,7 +74,12 @@ for (const scene of scenes) {
     const k = `${a}|${ph}`
     byKey.set(k, [...(byKey.get(k) || []), l])
   }
-  const collisions = [...byKey.values()].filter((v) => v.length > 1)
+  // the operator's answer: a pair marked apart, by source key or id (listing-places.js names them the same way)
+  const ov = path.join(DATA, scene, 'content/listings.overrides.json')
+  const apart = new Set((existsSync(ov) ? JSON.parse(readFileSync(ov, 'utf8')).places?.apart || [] : []).map((p) => [...p].sort().join('|')))
+  const refOf = (l) => [l.source_key, l.id].filter(Boolean)
+  const answered = (a, b) => refOf(a).some((x) => refOf(b).some((y) => apart.has([x, y].sort().join('|'))))
+  const collisions = [...byKey.values()].filter((v) => v.length > 1 && v.some((a, i) => v.slice(i + 1).some((b) => !answered(a, b))))
   if (!collisions.length) { ok(`${scene}: ${listings.length} listings, no address+phone collision`); continue }
   bad(`${scene}: ${collisions.length} address+phone collision(s) among ${listings.length} listings — `
     + `each is one place listed twice, two tenants, a product, or a person beside their practice:`)
@@ -79,7 +88,7 @@ for (const scene of scenes) {
     for (const l of c) console.log(`         ${l.id}  ${l.name}`)
   }
   console.log(`     ▶ resolve in cartograph/data/${scene}/content/listings.overrides.json `
-    + `(\`drops\` for a listing that should not exist, \`patches\` to correct one).`)
+    + `(\`places.merge\` for one place listed twice or a listing that should not exist, \`places.apart\` for two places).`)
 }
 if (scanned === 0) bad('no scene has a content/listings.json — nothing measured')
 

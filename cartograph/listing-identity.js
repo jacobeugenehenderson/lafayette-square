@@ -72,10 +72,13 @@ const format = (prefix, n) => `${prefix}-lst-${String(n).padStart(4, '0')}`
  *                       and freeze that numbering — and `sealPrefix` — for every bake after.
  *                       ⛔ A prefix another town already sealed (`sealedBy`, from `sealedPrefixes`) THROWS,
  *                       naming both towns: two businesses would share one id. Never auto-suffixed.
+ * `reserved` — ids that left the slab this bake and are never re-issued: an ABSORBED listing (listing-places.js, an authored
+ *                       merge). An absorbed source key is already reserved by the registry; an absorbed AUTHORED id (a researched
+ *                       add) is not in the registry at all, so it is skipped here like a pinned one.
  * Mutates each listing's `id`; returns the (new) registry and what happened.
  */
-export function assignListingIds(listings, registry, { sealPrefix, scene, sealedBy } = {}) {
-  const pinned = new Set(listings.filter(l => l.id).map(l => l.id))
+export function assignListingIds(listings, registry, { sealPrefix, scene, sealedBy, reserved = [] } = {}) {
+  const pinned = new Set(listings.filter(l => l.id).map(l => l.id)), skip = new Set([...pinned, ...reserved])
   const unpinned = listings.filter(l => !l.id)
 
   const seen = new Set()
@@ -100,7 +103,7 @@ export function assignListingIds(listings, registry, { sealPrefix, scene, sealed
     const ids = {}
     for (const l of byKey) {
       let id
-      do { id = format(prefix, n); n++ } while (pinned.has(id))
+      do { id = format(prefix, n); n++ } while (skip.has(id))
       l.id = id; ids[l._key] = id; high = Math.max(high, n - 1)
     }
     return { registry: { meta: { prefix, highWater: high }, ids }, report: { sealed: true, reused: 0, minted: byKey.length } }
@@ -130,7 +133,7 @@ export function assignListingIds(listings, registry, { sealPrefix, scene, sealed
   for (const l of byKey) {
     if (ids[l._key]) { l.id = ids[l._key]; reused++; continue }
     let id
-    do { high++; id = format(prefix, high) } while (pinned.has(id) || issued.has(id))
+    do { high++; id = format(prefix, high) } while (skip.has(id) || issued.has(id))
     l.id = id; ids[l._key] = id; issued.add(id); minted++
   }
   return { registry: { meta: { prefix, highWater: high }, ids }, report: { sealed: false, reused, minted } }

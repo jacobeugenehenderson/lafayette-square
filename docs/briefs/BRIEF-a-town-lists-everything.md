@@ -19,7 +19,7 @@ PROPERTY, not organised around districts; membership is Extent authoring** (Jaco
 
 - **M** `content/listings.json` (PTown): 446 listings, 377 `osm` + 69 `research`; hours 56, description 179, photos 8,
   history 32, `opening_hours_raw` 24. ▶ `node -e` over `.listings`, counting each field non-empty.
-- **M** `listings.overrides.json`: 69 adds, 116 patches, 0 drops (same `node -e`).
+- **M** `listings.overrides.json`: 69 adds, 116 patches (same `node -e`).
 - **M** Pitch landmarks: Pilgrim Monument, Town Hall, PAAM, Public Library, Chamber of Commerce, FAWC each carry history +
   hours (all but the Chamber a photo). MacMillan Wharf has history only. **King Hiram's Lodge (2 Masonic Place) has no
   listing**, and OSM carries no 2 Masonic Place address (OSM has 5, 5½, 6, 7, 8). ▶ name regex over listings; addr scan of `raw/osm.json`.
@@ -106,7 +106,7 @@ PROPERTY, not organised around districts; membership is Extent authoring** (Jaco
 
 ## 4. Photos and hours
 
-- **Hours:** OSM is thin (29 POIs). Realistic wells: the business's own site, the Chamber export, the PBG guide (address
+- **Hours:** OSM is thin (29 POIs), and what it has is never read: `opening_hours` reaches a listing only as the string `opening_hours_raw`, which no parse turns into `hours` and nothing in src/ reads (ASPIRATION, unbuilt; it waits on the seasonal rule below). Realistic wells: the business's own site, the Chamber export, the PBG guide (address
   and phone; check whether it prints hours), LibCal for libraries, denomination maps for services. ⭐ **Seasonal rule
   (`INTAKE-CATALOGUE §3.2b`):** PTown is a seasonal town; hours carry the season they belong to or are not written. The
   model has no season field today (M), so step 6 is a schema extension of `menu.schedule`'s pattern (that section's ruling),

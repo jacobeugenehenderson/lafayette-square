@@ -7482,5 +7482,13 @@
     }
   },
   "drops": [],
-  "_comment_research": "Place-card research, 2026-09-21/22 — nine beats, 311 records over 278 of 285 listings. ⛔ KEYED BY `ovt-<GERS>`, NOT by the `huro-lst-NNNN` display id the researchers used: display ids are assigned at bake time and shift; `applyListingOverrides` matches on `_key`. ⭐ MERGED IN TIERS, and `_tier` records which: CLEAN = the agent hedged nothing · CAVEATED = merged WITH the agent's own hedge kept in `_confidence` (seasonal, aggregator-sourced, sources disagree) · HOLD = not merged at all, because the PLACE's existence or identity is in doubt and hours on a listing that may not exist is the worst outcome of the three. ⛔ The hedges are not noise to strip — they are the Host's worklist (see scratch/huron-research/HOST-WORKLIST.md): each one is a question Francesca can ask the business, or the thing a guardian will correct when they claim the card. Provenance is stripped by `stripMeta` before the slab."
+  "_comment_research": "Place-card research, 2026-09-21/22 — nine beats, 311 records over 278 of 285 listings. ⛔ KEYED BY `ovt-<GERS>`, NOT by the `huro-lst-NNNN` display id the researchers used: display ids are assigned at bake time and shift; `applyListingOverrides` matches on `_key`. ⭐ MERGED IN TIERS, and `_tier` records which: CLEAN = the agent hedged nothing · CAVEATED = merged WITH the agent's own hedge kept in `_confidence` (seasonal, aggregator-sourced, sources disagree) · HOLD = not merged at all, because the PLACE's existence or identity is in doubt and hours on a listing that may not exist is the worst outcome of the three. ⛔ The hedges are not noise to strip — they are the Host's worklist (see scratch/huron-research/HOST-WORKLIST.md): each one is a question Francesca can ask the business, or the thing a guardian will correct when they claim the card. Provenance is stripped by `stripMeta` before the slab.",
+  "places": {
+    "_comment": "One place per (identity, building) (cartograph/listing-places.js). Jacob, 2026-10-30, via Boz: \"accept the duplicates as proposed\"; the merges below are his, and those marked in _translated were the old building-keyed supersede, written unchanged.",
+    "merge": {
+      "ovt-6c36398c-f642-4e35-adb8-c71b5ba8a557": [
+        "ovt-626f8f69-34cb-42c2-925c-4c61778541f8"
+      ]
+    }
+  }
 }
