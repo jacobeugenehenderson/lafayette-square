@@ -12,6 +12,9 @@
  * most 65,536 vertices, else u32. Every array starts 4-byte aligned. Error bounds: ▶ node checks/claims-the-drape-meets-itself-on-one-line.mjs
  */
 
+import { NODE_BOUND } from './latticeNode.js'
+import { CLIP_SCALE } from './lattice.js'
+
 /** The 16-bit range, and the span a chunk's extent may take on it: round() of an extent of S steps takes S + 1 values. */
 export const Q_MAX = 65535
 const Q_SPAN = Q_MAX - 1
@@ -22,16 +25,20 @@ export const FAR_ARRAYS = [['pin', Float32Array, 4], ['pos', Uint16Array, 3], ['
 export const indexType = (vertexCount) => (vertexCount <= Q_MAX + 1 ? Uint16Array : Uint32Array)
 
 /** The town's grid: per axis, the largest extent of any chunk's far or band positions over Q_SPAN. `chunks` are
- *  [{ pos, band }] (Float32, ground-relative, as drawn before quantization). ⛔ An axis flat in every chunk has no grid. */
+ *  [{ key, pos, band }] (Float32, ground-relative, as drawn before quantization). ⛔ An axis flat in every chunk has no grid.
+ *  ⛔ REFUSED when the grid rounds coarser than the kit's own rounding (Zob, 2026-10-29): its half-diagonal past NODE_BOUND
+ *  (the 1 mm lattice's, latticeNode.js), named by the chunks that sized it. One long chunk would otherwise coarsen every chunk, silently. */
 export function farSteps(chunks) {
-  const ext = [0, 0, 0]
+  const ext = [0, 0, 0], by = [null, null, null]
   for (const c of chunks) for (const P of [c.pos, c.band]) for (let a = 0; a < 3; a++) {
     let lo = Infinity, hi = -Infinity
     for (let i = a; i < P.length; i += 3) { if (P[i] < lo) lo = P[i]; if (P[i] > hi) hi = P[i] }
-    if (hi - lo > ext[a]) ext[a] = hi - lo
+    if (hi - lo > ext[a]) { ext[a] = hi - lo; by[a] = c.key }
   }
   if (ext.some(e => !(e > 0))) throw new Error(`farQuant: the far chunks have no extent on axis ${ext.findIndex(e => !(e > 0))} — no grid can be sized`)
-  return ext.map(e => e / Q_SPAN)
+  const step = ext.map(e => e / Q_SPAN), half = Math.hypot(...step) / 2, bound = NODE_BOUND / CLIP_SCALE
+  if (half > bound) throw new Error(`farQuant: the town's grid rounds a position by up to ${(half * 1000).toFixed(3)} mm, past the kit's ${(bound * 1000).toFixed(3)} mm (NODE_BOUND) — sized by ${[0, 1, 2].map(a => `${'xyz'[a]} ${ext[a].toFixed(1)} m in chunk ${by[a]}`).join(', ')}. ▶ a chunk that long is the defect: shoreChunks.js#drapeChunks`)
+  return step
 }
 
 /** A position on the grid: the decode of its encode, the same arithmetic (round(v/s) is the chunk's origin + its q). */

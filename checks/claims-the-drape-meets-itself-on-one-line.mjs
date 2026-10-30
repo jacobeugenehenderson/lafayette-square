@@ -50,6 +50,8 @@ const copyOf = (a, b, home = HOME) => { const src = readFileSync(home, 'utf8')
   const out = join(mkdtempSync(join(tmpdir(), 'drape-')), home === HOME ? 'revetmentDrape.mjs' : 'farQuant.mjs')
   writeFileSync(out, src.replace(a, b).replace("from 'three'", `from '${import.meta.resolve('three')}'`)
     .replace("from './farQuant.js'", `from '${pathToFileURL(QHOME).href}'`)
+    .replace("from './latticeNode.js'", `from '${pathToFileURL(join(ROOT, 'src/lib/latticeNode.js')).href}'`)
+    .replace("from './lattice.js'", `from '${pathToFileURL(join(ROOT, 'src/lib/lattice.js')).href}'`)
     .replace("from '../../cartograph/shore-armour.mjs'", `from '${pathToFileURL(join(ROOT, 'cartograph/shore-armour.mjs')).href}'`))
   return import(pathToFileURL(out).href) }
 
@@ -238,6 +240,11 @@ judge(M, P, flatRaw, say, { sampleEvery: 1, label: 'planted' })
 const plantedParts = (x, z) => ({ raw: 0.7 * P[0].groundAt(x, z), y: 0.3 * P[0].groundAt(x, z) })
 const PB = plantedBins(P, plantedParts)
 judge4(M, Q, P, plantedParts, PB, say, { sampleEvery: 1, label: 'planted' })
+// the grid refuses past the kit's own rounding (NODE_BOUND), naming the chunk that sized it: a 100 km chunk planted beside a 25 m one
+{ const c = (key, L) => ({ key, pos: new Float32Array([0, 0, 0, L, 1, L]), band: new Float32Array([0, 0, 0, L, 1, L]) })
+  let why = ''; try { farSteps([c('short#0', 25), c('long#1', 1e5)]) } catch (e) { why = e.message }
+  let fine = true; try { farSteps([c('short#0', 25)]) } catch { fine = false }
+  say(why.includes('long#1') && why.includes('NODE_BOUND') && fine, `planted: 4 · the grid refuses a 100 km chunk by name (${why ? 'refused' : 'NOT refused'}) and sizes a 25 m one (${fine ? 'sized' : 'refused'})`) }
 if (!towns.length) say(false, `no coastal town's slab under ${SLAB} (revetment.json + ground + terrain): only the planted shore was checked`)
 for (const t of towns) { const { faces, parts, rawAt } = townFaces(t); judge(M, faces, rawAt, say, { label: t })
   const tb = townBins(t); if (tb.why) say(false, `${t}: 4 · ${tb.why}`); else judge4(M, Q, faces, parts, tb, say, { label: t }) }
