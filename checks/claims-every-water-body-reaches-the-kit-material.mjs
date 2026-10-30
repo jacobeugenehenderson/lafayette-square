@@ -3,7 +3,7 @@
 // ⭐ THE INVARIANT: if a town's pour derived a water body, that body must reach
 // the slab AND resolve to the kit water material at runtime. Both halves, because
 // each fails differently and BOTH fail quietly (and a run that holds NO body against a baked look FAILS by name, shown
-// RED every run on a blank directory):
+// NOT CHECKED every run on a blank directory):
 //   · derived but not baked → the lake is a HOLE IN THE LAND. ① carves
 //     `bb − (WATER ∪ INK)`, so the ground genuinely ends at the shore and nothing
 //     fills what it left. This was the live state until 2026-09-20: huron's Lake
@@ -17,7 +17,7 @@
 // ⛔ THIS IS A KIT CHECK, NOT AN LS CHECK. It walks every scene on disk and asks
 // each the same question. A town with no water passes by having none — ⭐ and it
 // says so out loud, because "0 water bodies" and "this check did not run" must
-// never look the same; a RUN in which no town was judged fails.
+// never look the same; a RUN in which no town was judged is NOT CHECKED.
 //
 // ⭐ It RESOLVES with the runtime's own `isWaterGroupId`, imported, not restated.
 //
@@ -25,7 +25,7 @@
 //   re-bake huron — this goes RED naming the body that vanished.
 //
 //   node checks/claims-every-water-body-reaches-the-kit-material.mjs
-// Read-only. Exits 1 on water that was derived and cannot be seen, or on a run that judged nothing.
+// Read-only. Exits 1 on water that was derived and cannot be seen; 2 (NOT CHECKED) on a run that judged nothing.
 import fs from 'fs'
 import path from 'path'
 import os from 'os'
@@ -90,24 +90,25 @@ for (const scene of scenes) {
   }
 }
 
-// ⛔ "Nothing to check" is a RESULT, and it is RED: a run that held no derived water body against a baked look proves
-// nothing, so it fails by name rather than printing a green tick
-if (!looksJudged) fail.push(`⛔ no derived water body was held against a baked look: judged nothing (${bodiesSeen ? `${bodiesSeen} body/bodies in ${scenesWithWater} scene(s), no slab ground.json for them in ${BAKED}` : `no town in ${DATA} derives water`}). It is not evidence. ▶ pour and bake a town with water`)
-return { fail, scenesWithWater, bodiesSeen, looksJudged }
+// ⛔ "Nothing to check" is a RESULT, NOT CHECKED (exit 2, _scenes.mjs's convention): a run that held no derived water body
+// against a baked look proves nothing, so it says so rather than printing a green tick
+const notChecked = looksJudged ? null : `no derived water body was held against a baked look, so nothing was judged (${bodiesSeen ? `${bodiesSeen} body/bodies in ${scenesWithWater} scene(s), no slab ground.json for them in ${BAKED}` : `no town in ${DATA} derives water`}; ▶ pour and bake a town with water)`
+return { fail, notChecked, scenesWithWater, bodiesSeen, looksJudged }
 }
 
-const { fail, scenesWithWater, bodiesSeen, looksJudged } = judgeWater('cartograph/data', 'public/baked')
+const { fail, notChecked, scenesWithWater, bodiesSeen, looksJudged } = judgeWater('cartograph/data', 'public/baked')
 console.log(`\n${scenesWithWater} scene(s) carry water · ${bodiesSeen} derived body/bodies examined against ${looksJudged} baked look(s).`)
-// the data and slab blanked: an empty directory must turn RED by name
+// the data and slab blanked: an empty directory must say NOT CHECKED, never read green
 { const blank = fs.mkdtempSync(path.join(os.tmpdir(), 'water-')), out = console.log; console.log = () => {}
   let m; try { m = judgeWater(blank, blank) } finally { console.log = out }
-  const caught = m.fail.some(x => /judged nothing/.test(x))
-  console.log(`  ${caught ? '✅' : '⛔'} mutant: the data and slab blanked → ${caught ? 'RED, as it must be' : 'GREEN — judging nothing passes'}`)
+  const caught = !!m.notChecked
+  console.log(`  ${caught ? '✅' : '⛔'} mutant: the data and slab blanked → ${caught ? 'NOT CHECKED, as it must be' : 'GREEN — judging nothing passes'}`)
   if (!caught) fail.push('⛔ mutant: a blank data and slab directory reads green') }
 
 if (fail.length) {
   console.error('\n' + fail.join('\n'))
-  console.error(`\n⛔ ${fail.length} failure(s) — water that was derived and cannot be seen, or a run that judged nothing.`)
+  console.error(`\n⛔ ${fail.length} failure(s) — water that was derived and cannot be seen.${notChecked ? ` And NOT CHECKED: ${notChecked}` : ''}`)
   process.exit(1)
 }
+if (notChecked) { console.log(`⛔ NOT CHECKED — ${notChecked}. It is not evidence; this is a failure to check, not a pass.`); process.exit(2) }
 console.log(`✅ every derived water body reaches the slab and resolves to the kit material.`)

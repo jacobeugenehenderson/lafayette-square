@@ -4,8 +4,8 @@
 // the UNION: PTown's floating docks moored against MacMillan Wharf merged into its footprint, which a street crosses, so they left
 // ①'s water as parcel-less land and drew as the land-use sentinel's grass. Now a street rides the deck WAYS it crosses and, along
 // the structure, every way of the SAME KIND (fixed with fixed, floating with floating) touching one that rides (decksRidden).
-// Every row runs streetDecks / waterWithoutDecks on a planted harbour; every mutant runs the same row on a changed copy of
-// structures.mjs, so a test that cannot see its mutant is RED.
+// Every row runs streetDecks / waterWithoutDecks on a planted harbour; every mutant runs the same row on _importSource's changed
+// copy of structures.mjs, so a test that cannot see its mutant is RED.
 //   (1) a fixed wharf a street crosses rides; a fixed spur touching it rides with it; a FLOATING dock moored against it stays water
 //   (2) a floating marina a street runs on rides with its floating gangway, rooted where the gangway reaches the shore
 //   (3) the seam: the wharf deck's outline over the water, the moored dock's side included, is ONE arc tagged with its deck; the
@@ -15,22 +15,16 @@
 //   rides) → RED · floating never rides along the structure (rule (A) alone) → the marina's gangway falls, RED · the building guard
 //   removed → RED
 //   node checks/claims-a-dock-rides-only-its-own-structure.mjs
-import { readFileSync, writeFileSync, mkdtempSync, rmSync } from 'node:fs'
-import { join } from 'node:path'
-import { tmpdir } from 'node:os'
-import { pathToFileURL } from 'node:url'
-import { ROOT } from './_scenes.mjs'
+import { importSource } from './_importSource.mjs'
 import * as S0 from '../cartograph/structures.mjs'
 
 let red = 0
 const row = (ok, msg) => { if (!ok) red++; console.log(`${ok ? '✅' : '⛔'} ${msg}`) }
-const src = readFileSync(join(ROOT, 'cartograph/structures.mjs'), 'utf8')
-// a changed copy of structures.mjs, its imports made absolute (the copy sits outside the repo); null when the change did not apply
-const withChange = async (from, to) => { if (src.split(from).length !== 2) return null
-  const dir = mkdtempSync(join(tmpdir(), 'dock-')), base = join(ROOT, 'cartograph')
-  try { writeFileSync(join(dir, 'structures.mjs'), src.replace(from, to).replace(/from '(\.{1,2}\/[^']+)'/g, (_, r) => `from "${pathToFileURL(join(base, r)).href}"`)
-      .replace(/from '([^.'][^']*)'/g, (_, r) => `from "${import.meta.resolve(r)}"`))
-    return await import(pathToFileURL(join(dir, 'structures.mjs')).href) } finally { rmSync(dir, { recursive: true, force: true }) } }
+// a changed copy of structures.mjs through the one mutated-copy loader (bare specifiers resolved from here); null when the change
+// did not apply
+const withChange = async (from, to) => { try { return await importSource('cartograph/structures.mjs', { transform: (t) => {
+  if (t.split(from).length !== 2) throw new Error('the line moved')
+  return t.replace(from, to).replace(/from '([^.'/][^']*)'/g, (_, r) => `from '${import.meta.resolve(r)}'`) } }) } catch (e) { if (/the line moved/.test(e.message)) return null; throw e } }
 
 // the planted harbour: water north of z = 0 (a 200 m square; the shore is z = 0)
 const line = (id, w, floating, a, b) => ({ osmId: id, tags: { man_made: 'pier', width: String(w), ...(floating ? { floating: 'yes' } : {}) }, coords: [{ x: a[0], z: a[1] }, { x: b[0], z: b[1] }], isClosed: false })
