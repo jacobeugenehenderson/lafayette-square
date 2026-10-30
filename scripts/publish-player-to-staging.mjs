@@ -37,6 +37,7 @@ import { fileURLToPath } from 'node:url'
 import { execFile, execFileSync } from 'node:child_process'
 import { promisify } from 'node:util'
 import { freshUrl } from '../src/lib/freshUrl.js'
+import { playerShipSet, VITE_MANIFEST } from './player-graph.mjs'
 
 const execFileAsync = promisify(execFile)
 const REPO_ROOT = fileURLToPath(new URL('..', import.meta.url))
@@ -106,16 +107,11 @@ function walk(dir, out = []) {
  * ⭐ It is still READ, never listed: add an ignore rule, or track a new asset, and this
  * honours it on the next publish with no edit here.
  */
-function shippable(files) {
+function publicKept() {
   const tracked = new Set(
     execFileSync('git', ['ls-files', '--', 'public'], { cwd: REPO_ROOT, maxBuffer: 1 << 26, encoding: 'utf8' })
       .trim().split('\n').filter(Boolean).map((l) => l.replace(/^public\//, '')))
-  const keep = [], dropped = []
-  for (const f of files) {
-    const fromPublic = existsSync(join(REPO_ROOT, 'public', f.rel))
-    ;(!fromPublic || tracked.has(f.rel) ? keep : dropped).push(f)
-  }
-  return { keep, dropped }
+  return (rel) => !existsSync(join(REPO_ROOT, 'public', rel)) || tracked.has(rel)
 }
 
 async function put({ abs, rel }) {
@@ -182,12 +178,21 @@ async function alreadyThere(files) {
   if (!existsSync(DIST)) throw new Error('the build produced no dist/ — refusing to publish nothing')
 
   const all = walk(DIST)
-  const { keep: files, dropped } = shippable(all)
+  // ⛔ Only the town player ships: the operator apps built beside it never publish (scripts/player-graph.mjs).
+  // No build manifest is a refusal, never "ship everything".
+  const viteManifestAt = join(DIST, VITE_MANIFEST)
+  if (!existsSync(viteManifestAt)) throw new Error(`the build wrote no ${VITE_MANIFEST} — vite.config.js must set build.manifest; refusing to publish a build whose player cannot be told from the operator apps`)
+  const { ship: files, operator, untracked: dropped } = playerShipSet(all, JSON.parse(readFileSync(viteManifestAt, 'utf8')), publicKept())
   const total = files.reduce((s, f) => s + f.bytes, 0)
   const droppedBytes = dropped.reduce((s, f) => s + f.bytes, 0)
   console.log(`\nship     ${files.length} files, ${mb(total)}`)
+  console.log(`skip     ${operator.length} files, ${mb(operator.reduce((s, f) => s + f.bytes, 0))} — not the player's: `
+    + `the operator apps and the build manifest (scripts/player-graph.mjs)`)
   console.log(`skip     ${dropped.length} files, ${mb(droppedBytes)} — untracked under public/, so the `
     + `deploy has never served them`)
+  // ⭐ Shipped ON PURPOSE, said so on every publish (Boz, 2026-10-30; whether it stays public is Jacob's to rule).
+  const desk = files.filter((f) => f.rel.startsWith('codedesk/'))
+  if (desk.length) console.log(`codedesk ${desk.length} files — public/codedesk ships deliberately: a public-by-design app (OPERATIONS § Production sites)`)
 
   let pending = files
   if (!force) {

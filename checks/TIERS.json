@@ -1,10 +1,10 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 528,
+  "total": 530,
   "counts": {
     "safe": 364,
     "local-effect": 31,
-    "live": 133
+    "live": 135
   },
   "checks": [
     {
@@ -92,6 +92,18 @@
       "tier": "safe",
       "why": [
         "computed import of cartograph/sources.js — read, safe"
+      ]
+    },
+    {
+      "file": "checks/claims-a-built-page-imports-no-dev-module.mjs",
+      "tier": "live",
+      "reasonClass": "outbound",
+      "why": [
+        "calls fetch()",
+        "imports a network module",
+        "imports vite — its server resolves localhost over DNS (caught by the no-network guard)",
+        "writeFileSync",
+        "deletes files"
       ]
     },
     {
@@ -3435,6 +3447,17 @@
       "tier": "safe",
       "why": [
         "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-the-player-publish-ships-only-the-player.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "imports vite — its server resolves localhost over DNS (caught by the no-network guard)",
+        "writeFileSync",
+        "deletes files",
+        "computed import() with no readable target — runs arbitrary modules"
       ]
     },
     {
