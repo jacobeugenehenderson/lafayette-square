@@ -21,7 +21,7 @@ per-place share cards (1d7a0743) · PTown's tagline (64aa9fb3) · one place per 
 4. **Deploy the Workers** (each refuses if a town would go dark; they also ship the place share card):
    `! cd workers/staging-sites && npx wrangler deploy` then `! cd workers/production-sites && npx wrangler deploy`.
    ⛔ production-sites BEFORE any Promote (today's Worker would serve a brotli file unlabelled).
-5. **The new player to staging:** Ward's pin (sha in Ward's report): `! cd ~/Desktop/lafayette-square.nosync/.claude/worktrees/ward-kit && node scripts/publish-kit-bundle.mjs`
+5. **The new player to staging:** Ward's pin 96e9b15 on kit 2a44e317 (built; 38 checks green, the reds standing or an instrument-order defect being fixed): `! cd ~/Desktop/lafayette-square.nosync/.claude/worktrees/ward-kit && node scripts/publish-kit-bundle.mjs`
    then `! cd ~/Desktop/dev.nosync/theward && npm run publish:staging`.
 6. **⭐ JACOB'S PHONE on staging.theward.online/provincetown/:** Browse and Society water reads as water (no sand), the movie, a place link.
 7. **The open production question, on a scratch key** (Groyne's C1–C4: does a .online zone decode br for a non-br client?): the commands are in
