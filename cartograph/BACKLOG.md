@@ -82,6 +82,8 @@ Re-promoted by Jacob the same night on the new player (Ward 25ee07f / kit 19bb2d
 **Follow-ups from the day-strip line (Isotherm, 2026-10-28; Ward's board):** theward checks/kit.mjs resolves KIT relative to the checkout
 (breaks in worktrees) · observed wind for storminess · a cited cloudLayers → cover standard (Jacob's terms) · targetsOf's
 precipitation/wind/visibility defaults (Layer 0 fallbacks) · claims-the-wind-has-one-authority unrun (needs a server).
+**Place-link preview photo (parked, Jacob, 2026-10-30):** always the town's time-of-day shot, or the place's photo where its licence allows (PBG and attribution photos undecided). Built narrow meanwhile: `shareCard.js#PREVIEW_LICENCES` = public domain / CC0, so 2 of PTown's 33 photographed places send their own photo. ▶ `node checks/claims-a-place-link-sends-its-own-card.mjs`
+
 **Two Society reds on the Ward's board (Ward, 2026-10-29; cause not established):** RED identically on kit pins a109ec98 and 527213c7,
 same :5180 dev server, so they came before the far-shore pin. ① theward `checks/society-flight-has-no-long-frame.mjs`: the phone flight
 has frames over budget, varying by run (headless; e.g. LS 183 ms once, Huron 67–83 ms ×9). ② `checks/society-frames-what-it-lights.mjs`:

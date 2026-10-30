@@ -100,7 +100,7 @@ sends to a person's device when someone shares a listing."*
 Workers read `content/listings.json` only for a place path (`placeListings`). A place the listings lack, or a town that
 publishes none, gets the town's card and the `ward-share-card` header says why by name.
 ▶ `node checks/claims-a-place-link-sends-its-own-card.mjs`
-⛔ **Open, Jacob's:** which photos may stand in a preview with no credit. Built narrow: public domain and CC0 only. PTown's
+⛔ **Parked (Jacob, 2026-10-30: "this will have to wait"; BACKLOG row):** which photos may stand in a preview with no credit. Built narrow: public domain and CC0 only. PTown's
 place photos are CC BY / CC BY-SA (attribution required) or the PBG guide's, shown by permission (`rights`), so today
 2 of its 33 photographed places would send their photo.
 
