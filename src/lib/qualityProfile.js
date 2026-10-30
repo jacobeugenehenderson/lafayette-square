@@ -87,6 +87,8 @@ export const QUALITY = {
  * Designer's too, and with `true` the Designer had no AA at all, every edge stair-stepped (Jacob's screenshot,
  * 2026-10-28; off since 095dec54, 2026-10-07).
  */
+// the town camera's near plane, m: nothing nearer is drawn, so it bounds how close any shot shows the ground (Stage's coast card reads it)
+export const TOWN_CAMERA_NEAR_M = 1
 export function townCanvasProps(quality, { composer } = {}) {
   if (!quality?.id) throw new Error('[quality] ⛔ townCanvasProps needs a profile from src/lib/qualityProfile.js')
   if (typeof composer !== 'boolean') throw new Error('[quality] ⛔ townCanvasProps needs { composer: true | false } — does every frame this canvas shows go through <Town>\'s composer?')
@@ -101,7 +103,7 @@ export function townCanvasProps(quality, { composer } = {}) {
     },
     dpr: quality.dpr,
     shadows: quality.shadows,
-    camera: { near: 1 },
+    camera: { near: TOWN_CAMERA_NEAR_M },
   }
 }
 
