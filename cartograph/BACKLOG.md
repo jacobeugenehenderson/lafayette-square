@@ -120,12 +120,11 @@ sources.json but writes the OLD dir (`cartograph/data/lafayette-square`), so re-
 out in the MAIN checkout (Jacob's), stays.
 
 **Still-open rows cited by name elsewhere (short; their history is in the archive):**
-- **the open/close refuses at a source staircase** (cited by `openClose.mjs#emit`'s refusal). A deck ring with a millimetre staircase at a
-  cut (two lines within the lattice's rounding read out of order) refuses by name. Known refusals, by class, site and lengths (never ring
-  indices: where the walk starts), in
-  `claims-the-coast-is-the-lidars`: MacMillan's 10-27 crop and the wharf 10-27 crop (KNOWN_REFUSALS 2). The rule is unbuilt; one attempt (runs
-  joined within NODE_BOUND, local `plumb/staircase-runs`) raised Huron's ratchet, cause not established; it joined Huron 3.65%, PTown decks
-  0.21%, MacMillan's crop 15.4% of edges (LS, HPDM not measured): the rule cannot be "join any sub-step edge". Trace: `macmillan-trace.mjs`.
+- **the open/close refuses at a source staircase** (cited by `openClose.mjs#emit`'s refusal, which names the cut's two edges and the jog
+  between them). Known refusal, by class, site and lengths, in `claims-the-coast-is-the-lidars`: MacMillan's 10-27 crop (KNOWN_REFUSALS 1; the
+  wharf's 1.4 mm step builds under the unit-line rule). Its shape: a 2.8 mm diagonal jog (after a 1 mm unit edge) read BACKWARD between two lines
+  7.2° apart, both targets past a cell (15.9 m, 4.8 m). Q1 and Q2 do not reach it: it is the backward-cut branch, not an out-of-order tag or a
+  trimmed arc. Unbuilt; "join any sub-step edge" raised Huron's ratchet (local `plumb/staircase-runs`). Trace: `macmillan-trace.mjs`.
 - **an island near one terrain cell is kept or dropped on its vertex set** (Zob, 2026-10-29): Huron's (715.43, 214.26) is 29.583 m² at the
   open/close on both paths and the definition, yet kept at base and dropped through the port, downstream (simplify/settle, then "every island
   kept holds a terrain node"); the stage's sensitivity, cause not established.

@@ -371,13 +371,18 @@ function emit(E, T, SRC, d, who, stat, LINES = null) {
           line: L ? JSON.stringify(L) : 'born', lineDeg: L ? +(Math.atan2(L[1][1] - L[0][1], L[1][0] - L[0][0]) * 180 / Math.PI).toFixed(3) : null, pts: `(${p0.X},${p0.Y})→(${p1.X},${p1.Y})` } })
       if (process.env.CUTONCE_DUMP) writeFileSync(process.env.CUTONCE_DUMP, JSON.stringify({ src: srcV, eroded, tokens: around, births }, null, 1))
       // ⭐ THE MESSAGE EXPLAINS (Boz, 2026-10-29): a source STAIRCASE at the cut is named as one, with its site and what the
-      // operator can do: the cut's own edges (those it skips, and its target) whose both ends lie within the lattice's rounding
-      // (NODE_BOUND) of the cut's line
+      // operator can do. ⭐ IT NAMES THE CAUSE (Zob's ruling (B), 2026-10-29; PTown's MacMillan): the cut's own two edges and the JOG between
+      // them, the source edges between the two lines the shorter way round the ring (a backward cut's skipped edges run the whole ring,
+      // and named the site 4.8 m from the jog), each at its own coordinates with its length, a lattice-neighbour edge included (no line,
+      // still source geometry). A staircase: every jog vertex within the lattice's rounding of one of the two lines
       const m3 = (v) => `(${(v.X / SCALE).toFixed(3)}, ${(v.Y / SCALE).toFixed(3)})`
-      const stair = [...inner, u.i].filter(i => [SRC[t.g][i], SRC[t.g][(i + 1) % n]].every(v => onLineTiered(A, [v.X, v.Y], null)))
+      const fwdOf = (a, b) => { const o = []; for (let j = (a + 1) % n; j !== b && o.length < n; j = (j + 1) % n) o.push(j); return o }
+      const jog = STAIR_NAMES_SKIPPED ? [...inner, u.i] : (() => { const x = fwdOf(t.i, u.i), y = fwdOf(u.i, t.i); return x.length <= y.length ? x : y })()
+      const onEither = (v) => onLineTiered(A, [v.X, v.Y], null) || (!STAIR_NAMES_SKIPPED && onLineTiered(B, [v.X, v.Y], null))
+      const stair = STAIR_NAMES_SKIPPED ? jog.filter(i => [SRC[t.g][i], SRC[t.g][(i + 1) % n]].every(onEither)) : (jog.length && jog.every(i => [SRC[t.g][i], SRC[t.g][(i + 1) % n]].every(onEither)) ? jog : [])
       const detail = `detail: the cut joins edge ${t.i} to edge ${u.i} and edge(s) ${inner.slice(0, 4).join(', ')} it skips appear elsewhere in the ring (${JSON.stringify(where)}); tokens round it [${around.join(' ')}]`
       const todo = 'Nothing the operator can do changes it today: the rule is BACKLOG "the open/close refuses at a source staircase" (unbuilt)'
-      if (stair.length) throw new Error(`[${who}] ⛔ the open/close cannot read this ring: a STAIRCASE in its SOURCE at a cut. Ring ${t.g}'s edge(s) ${stair.map(i => `${i} ${m3(SRC[t.g][i])} → ${m3(SRC[t.g][(i + 1) % n])}, ${Math.hypot(SRC[t.g][(i + 1) % n].X - SRC[t.g][i].X, SRC[t.g][(i + 1) % n].Y - SRC[t.g][i].Y).toFixed(1)} mm`).join('; ')} lie within the lattice's rounding of edge ${t.i}'s line, so their offset lines cross and are read out of order. ${todo}. Refusing. (${detail})`)
+      if (stair.length) throw new Error(`[${who}] ⛔ the open/close cannot read this ring: a STAIRCASE in its SOURCE at a cut. Ring ${t.g}'s edges ${t.i} → ${u.i} join across the jog: edge(s) ${stair.map(i => `${i} ${m3(SRC[t.g][i])} → ${m3(SRC[t.g][(i + 1) % n])}, ${Math.hypot(SRC[t.g][(i + 1) % n].X - SRC[t.g][i].X, SRC[t.g][(i + 1) % n].Y - SRC[t.g][i].Y).toFixed(1)} mm`).join('; ')} lie within the lattice's rounding of edge ${t.i}'s or ${u.i}'s line, so their offset lines cross and are read out of order. ${todo}. Refusing. (${detail})`)
       throw new Error(`[${who}] ⛔ the open/close cannot read this ring: at ring ${t.g}${area(SRC[t.g]) < 0 ? ' (a hole)' : ''} near ${m3(SRC[t.g][(t.i + 1) % n])}, a cut from edge ${t.i} to edge ${u.i} runs BACKWARD (the offset reads the ring's lines out of order). Cause not established; no staircase within the rounding there. ${todo}. Refusing. (${detail})`) }
     out.push(X); outL.push(u.int || null); origin(X, t.flt || u.flt ? 'new-line-join' : 'cut-join'); stat.cutJoin++
     const par = (L, q) => { const dx = L[1][0] - L[0][0], dy = L[1][1] - L[0][1]; return ((q[0] - L[0][0]) * dx + (q[1] - L[0][1]) * dy) / (dx * dx + dy * dy) }
@@ -435,6 +440,8 @@ let TRIMMED_ARC_CORNERS = false                   // ⛔ the mutant only (setTri
 export const setTrimmedArcCorners = (v) => { TRIMMED_ARC_CORNERS = !!v }
 let ARC_RAW = false                               // ⛔ the mutant only (setArcRaw): arcs emit raw vertices, no corner call
 export const setArcRaw = (v) => { ARC_RAW = !!v }
+let STAIR_NAMES_SKIPPED = false                   // ⛔ the mutant only (setStairNamesSkipped): the staircase refusal names the cut's skipped edges (and the old test)
+export const setStairNamesSkipped = (v) => { STAIR_NAMES_SKIPPED = !!v }
 let UNIT_LINES_KEPT = false                       // ⛔ the mutant only (setUnitLinesKept): a token joining two lattice neighbours keeps its line
 export const setUnitLinesKept = (v) => { UNIT_LINES_KEPT = !!v }
 let NO_SLIVER_DROP = false                        // ⛔ the mutant only (setNoSliverDrop)
