@@ -472,25 +472,26 @@ Severity = impact × exposure. IDs are stable; cite them in fixes.
   (Authentication → Users). `auth.users` is not readable with the anon key, so this was NOT verified here.
 
 
-### F-30 · HIGH · Starting a thread on an ANONYMOUS bulletin post reveals its author *(numbered F-18 until 2026-10-20, when the ID was found used twice; the anti-scraping finding keeps F-18)*  — ⚙️ FIXED + DEPLOYED 2026-09-28 (`27dc1f2f`, Apps Script @68) · not yet observed live
+### F-30 · HIGH · Starting a thread on an ANONYMOUS bulletin post reveals its author *(numbered F-18 until 2026-10-20, when the ID was found used twice; the anti-scraping finding keeps F-18)*  — ✅ CLOSED 2026-10-30 (fixed `27dc1f2f`, live since @68; held on live @71, read)
 `apps-script/Code.js#postStartThread` does not refuse a thread on an anonymous post: it stores the poster's
 real handle as `a_handle`, and `getThreads` returns it to the thread's starter as `other_handle`. So anyone
 who calls `start-thread` directly on a Missed Connections or Emergency post learns who wrote it. Only the old
 client hid the "Message" button; the gate must be the server's. Found by Quire (The Ward build).
-**Fix:** refuse `start-thread` on an anonymous post, or never return the anonymous party's handle.
 **Fixed:** `start-thread` refuses an anonymous post (`forbidden`); `getThreads` never returns the poster's
 handle for a thread on an anonymous or deleted post, which also covers threads already open; `isAnonymousFlag()`
-is the one reading of the flag. Deployed with `my-role` as @68 (`clasp deploy -i`, same id;
-`claims-deployment-id-single-source` PASS). ⚠️ **Not yet observed live** — a stranger device stops at the Townie
-gate first; a real test needs a townie device and a test post. ⚠️ The deploy also shipped two earlier undeployed
+is the one reading of the flag. ▶ theward `node backend/fortify-harness.mjs <kit>/apps-script/Code.js --only=closing` (branch `plumb/fortify`, 687581e; `--mutants` turns each row red). ⚠️ Not observed against live: that needs a townie device and a test post, a live
+write. ⚠️ Its deploy (@68) also shipped two earlier undeployed
 commits: `cd0446a4` (townie standing counts linked devices) and `ee3a33b9` (`guardian-check`, which answers
 **no to everyone until `COMMERCE_SHARED_SECRET` is set** — so the `commerce-write` path refuses every guardian
 until then).
 
-### F-19 · LOW · Bulletin server gaps  *(new, 2026-09-28)*
+### F-19 · LOW→MEDIUM · Bulletin server gaps  *(new, 2026-09-28)*  — ⚙️ FIXED IN DRAFT 2026-10-30, unreviewed, not deployed
 Found by Quire: deleting a post leaves its threads open · `postComment` does not check the post exists ·
 no server-side length limits (the 1000/500-character limits are client-only) · `is_mine` matches the exact
-device hash while standing counts linked devices, so your own post is not "mine" on your linked device.
+device hash while standing counts linked devices, so your own post is not "mine" on your linked device. **MEDIUM since
+2026-10-30:** Townie needs no presence (a check-in takes any `location_id`), so any script writes unbounded text into the one
+spreadsheet every town shares. **Fix:** theward `plumb/fortify` (687581e) `backend/apps-script-fortify-2026-10-30.DRAFT.patch`, after
+the recovery patch; its header names what it leaves. ▶ theward `node backend/fortify-harness.mjs <Code.js>` (+ `--mutants`).
 
 ### F-20 · MEDIUM · The admin token travels in a URL query string  *(new, 2026-09-28)*
 `src/lib/api.js#getClaimSecret` (admin path: `get('claim-secret', { lid, admin: token })`) and the kit's CodeDesk
@@ -502,41 +503,39 @@ admin surface (step 5) must not reproduce the pattern. The CodeDesk copy dies wi
 `doPost` has no `admin-auth`. The fix adds a POST `admin-auth` and reads `admin_token` from POST bodies everywhere.
 Until it deploys, the Ward has no operator sign-in.
 
-### F-21 · MEDIUM (integrity) · A Guardian can set their own place's rating  *(new, 2026-09-28)*
+### F-21 · MEDIUM (integrity) · A Guardian can set their own place's rating  *(new, 2026-09-28)*  — ✅ CLOSED 2026-10-30 (live since @69)
 `apps-script/Code.js` `postUpdateListing`'s `EDITABLE` includes `rating` and `review_count`, so a full Guardian can
 write their own listing's rating through `update-listing`. No client sends them, but the endpoint accepts them. A
 place's rating is the town's own (the Ward's rating marks), never the owner's. Found by Quire (menu editor).
-**Fix:** drop both from `EDITABLE`; the rating's writer is the operator's path only. ✅ **Fixed in code 2026-09-29**
-(Jacob's go); ✅ **Live 2026-09-29** (web app @69).
+**Fixed:** both left `EDITABLE` (Jacob's go, 2026-09-29); the rating's writer is the operator's path only. ▶ the closing rows, as F-30's.
 ✅ **Ruled 2026-09-28 (Jacob):** `category`/`subcategory` **stay Guardian-editable** — a Guardian may add and
 remove categories and tags; only `rating`/`review_count` leave `EDITABLE`.
 
-### F-22 · HIGH · A 6-character link code hands over another device's credential  *(new, 2026-09-28)*
+### F-22 · HIGH · A 6-character link code hands over another device's credential  *(new, 2026-09-28)*  — ✅ CLOSED 2026-10-30 (live since @69) · a residual is OPEN
 `apps-script/Code.js` GET `check-link-token` returns the SOURCE device's `device_hash` to anyone holding the code
 (6 hex chars from a UUID, 5-minute cache, unauthenticated), for pull and push tokens alike. The old player's pull
 mode then writes it into the new device as its own key (`adoptIdentity`), so linking copies the credential, Guardian
 and Keyholder roles included. Linking needs no credential: `getLinkedHashes` already links devices by shared handle.
 Found by Quire (◉, device link).
-**Fix:** `check-link-token` returns status only; push payloads stop carrying `device_hash`; pull mode is removed. The
-Ward links push-only and never reads `device_hash` from it. ✅ **Fixed in code 2026-09-29** (Jacob's go): status only,
-no key in the payload, pull mode gone (a device without a handle makes no code); ✅ **Live 2026-09-29** (web app @69).
+**Fixed** (Jacob's go, 2026-09-29): status only, no key in the payload, pull mode gone (a device without a handle makes no
+code). ▶ the closing rows, as F-30's.
+**Residual, OPEN:** the code itself is the grant. Whoever claims it first joins the handle and, through `getLinkedHashes`,
+its Guardian, Keyholder and resident standing. Ruled 2026-10-30 (Boz, to Zob and Ward): a self-made link carries the handle
+WITHOUT its roles; a staff-signed recovery (F-31) may carry them. Built with F-23's ladder.
 
-### F-23 · HIGH · Any device can make itself a verified resident of any building  *(new, 2026-09-28)*
+### F-23 · HIGH · Any device can make itself a verified resident of any building  *(new, 2026-09-28)*  — ✅ two holes CLOSED 2026-10-30 (live since @69) · the ladder is OPEN, ruled
 `apps-script/Code.js` `postClaimResidence` trusts `auto_verify` from the request body. POST `claim-residence`
 `{ building_id, auto_verify: true }` makes the caller a VERIFIED resident, moves it out of its old residence, and
 backfills Townie. `/home/<id>` carries no secret, and any id can be typed, so "verified residents only" rests on
-the client's word. Related: `verify-resident` takes another device's `target_hash`, so a neighbour's verification
-needs a device key handed over. Found by Quire (arrival pages).
-**Fix:** the server verifies on a per-building secret (`/home/<id>/<secret>`, like `/claim`'s), never on a client
-flag, and neighbour verification stops taking a device key. The address change is Jacob's (Ward README §2).
-Until then the Ward claims without `auto_verify` (pending only). ✅ **Holes closed in code 2026-09-29** (Jacob's go):
-`auto_verify` is never trusted (a claim is pending unless the operator makes it, or the same handle is verified there
-on another device), and `verify-resident` is closed rather than taking a device key — only the operator verifies until
-the neighbour flow is ruled. ✅ **Live 2026-09-29** (web app @69).
-**Ruled in part 2026-09-28 (Jacob):** *"The Host or neighbors verify residents. There is indeed a secret intended on
-building cards."* ⇒ both verifiers stay; building cards carry a secret. ⛔ **Unruled — a conversation owed:** how a
-neighbour verifies without the target device's key, and how the card's secret and the Host's verification fit
-together. The fix above is not built until that lands, and no building card prints before it.
+the client's word, and `verify-resident` took another device's `target_hash`. Found by Quire (arrival pages).
+**Holes closed** (Jacob's go, 2026-09-29): `auto_verify` is never trusted, and `verify-resident` is closed rather than taking
+a device key. ▶ the closing rows, as F-30's.
+**Still OPEN:** two paths reach 'verified' with no one in person: a claim is verified when the same handle is verified there
+on another device (so a claimed link code does it), and `fetchResidenceData` reads a linked device's residence as the
+caller's. **Ruled 2026-10-30 (Jacob), superseding the 2026-09-28 card secret:** the ladder (`references/registry.json`
+`r-the-host-verifies-eye-to-eye`). Townies make themselves; the Host makes a Guardian or a building Rep in person; a Rep
+verifies and renews residents, a Guardian makes Keyholders, each by an in-person scan. No code, link or printed card makes
+a device more than a Townie. Its design is owed to Zob before any build.
 
 ### F-24 · CRITICAL · Request values are written to the sheet as formulas  *(new, 2026-10-07; EXISTING on live)*  — ⚙️ FIXED IN DRAFT 2026-10-13, unreviewed, not deployed
 `apps-script/Code.js` writes request values straight into rows (`appendRow`) and cells (`setValue`), with no check
