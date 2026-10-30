@@ -7,8 +7,8 @@
  * it are generated from that, near the camera, at runtime. ⛔ Baking THOSE would put
  * 76.5 MB (provincetown) to 401 MB (huron) of drape into a slab, mostly never looked at
  * (▶ scratch/far-shore/oct3-weight.mjs). The FAR layer — the whole armoured shore,
- * coarse, camera-independent — is baked by `bake-revetment-far.js` (~1.2 MB gzip on
- * provincetown, ~3.7 MB on huron) with its overhead band, because building it here
+ * coarse, camera-independent — is baked by `bake-revetment-far.js` (quantized, `farQuant.js`;
+ * the bake prints its weight) with its overhead band, because building it here
  * stalled a cold load for seconds (BRIEF-the-far-shore-is-not-built-at-load).
  *
  * ⛔ NOT A SECOND IMPLEMENTATION. Every piece here already existed and was proven
@@ -38,7 +38,8 @@ import * as THREE from 'three'
 import InstancedBoulders from './InstancedBoulders.jsx'
 import { makeRevetmentMaterial } from './revetmentMaterial.js'
 import { boulderPalette } from '../lib/boulderGeometry.js'
-import { revetmentDrape, drapeLattices, drapeRaws, FAR_OCTAVES, NEAR_OCTAVES, VERTS_PER_WAVELENGTH } from '../lib/revetmentDrape.js'
+import { revetmentDrape, drapeLattices, drapeRelative, FAR_OCTAVES, NEAR_OCTAVES, VERTS_PER_WAVELENGTH } from '../lib/revetmentDrape.js'
+import { decodeFarChunk } from '../lib/farQuant.js'
 import { shoreContext, chunkStones, drapeChunks, CHUNK_M } from '../lib/shoreChunks.js'
 import { revetmentFaces, loadRevetment, loadRevetmentFar, loadRevetmentFarUnseen, toeFromBaked, chunkBox } from '../lib/revetmentFromSlab.js'
 import { overheadResolves } from '../lib/cameraRegimes.js'
@@ -84,17 +85,16 @@ const drawnAt1 = (x, z) => { const g = drawnGroundParts(x, z); return g.raw + g.
  *  perVertex + drawn), so the stone rides the live exaggeration like the drawn ground beneath it; the rest stays in the
  *  geometry. ⛔ It was the FIELD, while the drape is built at drawnAt1: at uExag ≠ 1 the stone stood off the pinned shore by
  *  (pin − field)(1 − uExag) (Ward-seat review, 2026-10-27). The bounds are taken first, from the drawn exag-1 positions.
- *  `revetmentDrape` itself stays absolute: the checks read real heights. The raws are `drapeRaws`, the bake's own: a vertex
- *  lying on the far's row between two far vertices takes their raws' lerp, so the seam holds at every exaggeration. */
-function groundRelative(built) {
+ *  `revetmentDrape` itself stays absolute: the checks read real heights. The step is `drapeRelative`, the bake's own: a vertex
+ *  lying on the far's row between two far vertices takes their raws' lerp, so the seam holds at every exaggeration, and the
+ *  row is the far as DECODED (`step`, the table's grid), so the near meets the far's quantized bytes exactly. */
+function groundRelative(built, step) {
   const g = built?.geometry
   if (!g) return built
   g.computeBoundingSphere(); g.computeBoundingBox()
-  const p = g.attributes.position, pins = new Float32Array(p.count * 4)
-  const raws = drapeRaws(built, (x, z) => drawnGroundParts(x, z).raw)
-  for (let i = 0; i < p.count; i++) { const raw = raws[i]
-    p.setY(i, p.getY(i) - raw); pins[i * 4] = 1; pins[i * 4 + 1] = raw }
-  p.needsUpdate = true
+  const { rel, normal, raws } = drapeRelative(built, (x, z) => drawnGroundParts(x, z).raw, step), pins = new Float32Array(raws.length * 4)
+  for (let i = 0; i < raws.length; i++) { pins[i * 4] = 1; pins[i * 4 + 1] = raws[i] }
+  g.setAttribute('position', new THREE.BufferAttribute(rel, 3)); g.setAttribute('normal', new THREE.BufferAttribute(normal, 3))
   g.setAttribute('aDrawnRaw', new THREE.BufferAttribute(pins, 4))
   return built
 }
@@ -197,7 +197,7 @@ export default function SlabRevetment({ lookId, bakeLastMs, visible = true }) {
         return m || f.poly[0]
       })
       const ctx = shoreContext({ poly: f.poly, crestAt: f.crestAt, taperAt: f.taperAt, toeAt: f.toeAt, berm: f.berm, groundAt: f.groundAt, waterY: f.waterY, oversample: 10, paletteSize: palette.length, seed: doc.seed })
-      return { ...f, G, G1, ranges, at, ctx, cache: new Map() }
+      return { ...f, G, G1, ranges, at, ctx, step: doc.far.quant.step, cache: new Map() }
     })
   }, [doc, palette, groundGen])
 
@@ -219,12 +219,12 @@ export default function SlabRevetment({ lookId, bakeLastMs, visible = true }) {
     for (const c of doc.far.chunks) {
       const bin = bins[c.bin]
       if (!bin) continue                                  // the never-seen bin, before the reveal
-      const v = c.vertexCount, o = c.offsets, view = (T, at, n, size) => new THREE.BufferAttribute(new T(bin, at, n * size), size)
-      const index = view(Uint32Array, o.index, c.indexCount, 1)
+      // ⭐ decoded on the town's grid (farQuant.js, format 3): the bytes the bake wrote, and the row the near meets
+      const A = decodeFarChunk(bin, c, doc.far.quant.step), attr = (a, size) => new THREE.BufferAttribute(a, size)
+      const index = attr(A.index, 1), pin = attr(A.pin, 4)
       const far = new THREE.BufferGeometry(), band = new THREE.BufferGeometry()
-      far.setAttribute('position', view(Float32Array, o.pos, v, 3)); far.setAttribute('normal', view(Float32Array, o.normal, v, 3))
-      band.setAttribute('position', view(Float32Array, o.band, v, 3)); band.setAttribute('normal', view(Float32Array, o.bandNormal, v, 3))
-      const pin = view(Float32Array, o.pin, v, 4)
+      far.setAttribute('position', attr(A.pos, 3)); far.setAttribute('normal', attr(A.normal, 3))
+      band.setAttribute('position', attr(A.band, 3)); band.setAttribute('normal', attr(A.bandNormal, 3))
       far.setAttribute('aDrawnRaw', pin); band.setAttribute('aDrawnRaw', pin)
       far.setIndex(index); band.setIndex(index)
       // three's culling bounds: the chunk's box over every exaggeration it can be drawn at (0 … the town's ceiling, or 1 at Street),
@@ -274,7 +274,7 @@ export default function SlabRevetment({ lookId, bakeLastMs, visible = true }) {
         chosen.add(k)
         if (!f.cache.has(k)) {
           try {
-            f.cache.set(k, groundRelative(revetmentDrape({ poly: f.poly, crestAt: f.crestAt, toeAt: f.toeAt, berm: f.berm, groundAt: f.groundAt, waterY: f.waterY, globals: f.G, stations: f.ranges[k], conform: f.G1 })))
+            f.cache.set(k, groundRelative(revetmentDrape({ poly: f.poly, crestAt: f.crestAt, toeAt: f.toeAt, berm: f.berm, groundAt: f.groundAt, waterY: f.waterY, globals: f.G, stations: f.ranges[k], conform: f.G1 }), f.step))
           } catch (e) { console.error(`[revetment] drape chunk ${f.key}#${k} failed —`, e); continue }
         }
         const built = f.cache.get(k)

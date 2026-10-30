@@ -13,10 +13,20 @@
 //       c · its in-between ones lie on the far's segments, the normals are the far's unnormalized lerp, the ground pins
 //           (drapeRaws) the far's lerped: residues reported, and the display height at exag 0 and 2;
 //       d · the near draws exactly the boundary segments the far-side column draws (Zob: the far's DRAW decides, not keep).
+//   4 · AFTER DECODE (revetment-far format 3, src/lib/farQuant.js; Jacob, 2026-10-29: "compress, fine normals"), off the bins
+//       (the town's on disk; the planted shore's packed in memory by the bake's own functions):
+//       a · each chunk decodes to its build on the town's grid, to the bit (positions snapped, normals through the octahedral
+//           round trip, pins and index exact), and every built vertex is the WHOLE-FACE far build's, position and normal:
+//           so the far drawn is the whole-face build up to the quantization. Max errors reported: position against the 1 mm
+//           lattice (bound: half a step, plus f32's half ulp), normal in degrees;
+//       b · every vertex two far chunks share decodes to the same bits in both (one grid, so the seam is 0 after decode);
+//       c · at each boundary sampled, the near seated by drapeRelative on the town's grid meets the DECODED far: shared
+//           vertices and normals to the bit, in-between ones on the decoded segment (residue reported).
 // ⛔ No town found is RED: pass --slab=<dir holding <town>/>. The planted shore runs regardless.
 // ⭐ MUTANTS (--mutants), on the planted shore, each must turn it RED: the near computing its own boundary row → 3 ·
 // the far not through farRow → 3 · the 201-sample sizing back → 1 · the near's own fan at the boundary → 3 ·
-// the trim by the near's keep → 3 · each lattice rounding its own count → 2.
+// the trim by the near's keep → 3 · each lattice rounding its own count → 2 · the decode skipped (the u16 drawn as
+// metres) → 4 · the near meeting the far before quantization → 4.
 // ▶ node checks/claims-the-drape-meets-itself-on-one-line.mjs [--slab=<dir>] [--every=<n>] [--mutants]
 import { readFileSync, readdirSync, existsSync, writeFileSync, mkdtempSync } from 'node:fs'
 import { join, dirname } from 'node:path'
@@ -24,19 +34,22 @@ import { tmpdir } from 'node:os'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { revetmentFaces } from '../src/lib/revetmentFromSlab.js'
 import { drapeChunks } from '../src/lib/shoreChunks.js'
-import { prepareFaces } from '../cartograph/bake-revetment-far.js'
+import { prepareFaces, farChunksOf, buildFaceChunks, pack } from '../cartograph/bake-revetment-far.js'
+import { FAR_FORMAT } from '../src/lib/revetmentFromSlab.js'
+import { farSteps } from '../src/lib/farQuant.js'
 import { MIN_ARMOUR_D50_M } from '../cartograph/shore-armour.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
-const HOME = join(ROOT, 'src/lib/revetmentDrape.js')
+const HOME = join(ROOT, 'src/lib/revetmentDrape.js'), QHOME = join(ROOT, 'src/lib/farQuant.js')
 const arg = (n, d) => process.argv.find(a => a.startsWith(`--${n}=`))?.slice(n.length + 3) ?? d
 const SLAB = arg('slab', join(ROOT, 'public/baked')), EVERY = +arg('every', '25'), DENSE = 1e6
 
 // a copy of the module with one edit, its imports made absolute so it loads from the OS temp dir
-const copyOf = (a, b) => { const src = readFileSync(HOME, 'utf8')
-  if (!src.includes(a)) throw new Error(`⛔ mutant target gone from revetmentDrape.js: ${JSON.stringify(a)}`)
-  const out = join(mkdtempSync(join(tmpdir(), 'drape-')), 'revetmentDrape.mjs')
+const copyOf = (a, b, home = HOME) => { const src = readFileSync(home, 'utf8')
+  if (!src.includes(a)) throw new Error(`⛔ mutant target gone from ${home.slice(ROOT.length + 1)}: ${JSON.stringify(a)}`)
+  const out = join(mkdtempSync(join(tmpdir(), 'drape-')), home === HOME ? 'revetmentDrape.mjs' : 'farQuant.mjs')
   writeFileSync(out, src.replace(a, b).replace("from 'three'", `from '${import.meta.resolve('three')}'`)
+    .replace("from './farQuant.js'", `from '${pathToFileURL(QHOME).href}'`)
     .replace("from '../../cartograph/shore-armour.mjs'", `from '${pathToFileURL(join(ROOT, 'cartograph/shore-armour.mjs')).href}'`))
   return import(pathToFileURL(out).href) }
 
@@ -55,7 +68,19 @@ const towns = existsSync(SLAB) ? readdirSync(SLAB).filter(t => ['revetment.json'
 const ab = (b) => b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength)
 const townFaces = (t) => { const rd = (f) => readFileSync(join(SLAB, t, f))
   const { faces, parts } = prepareFaces({ revetment: JSON.parse(rd('revetment.json')), terrainJson: JSON.parse(rd('terrain.json')), terrainBin: ab(rd('terrain.bin')), groundJson: JSON.parse(rd('ground.json')), groundBin: ab(rd('ground.bin')) })
-  return { faces, rawAt: (x, z) => parts(x, z).raw } }
+  return { faces, parts, rawAt: (x, z) => parts(x, z).raw } }
+/** The town's far table and bins as the player fetches them, or why not. */
+const townBins = (t) => { const p = (f) => join(SLAB, t, f)
+  if (!existsSync(p('revetment-far.json'))) return { why: 'no revetment-far.json' }
+  const doc = JSON.parse(readFileSync(p('revetment-far.json'), 'utf8'))
+  if (doc.version !== FAR_FORMAT) return { why: `revetment-far.json is format ${doc.version}, not ${FAR_FORMAT} ▶ re-run revetment-far for ${t}` }
+  return { doc, bins: Object.fromEntries(['revetment-far.bin', 'revetment-far-unseen.bin'].map(n => [n, ab(readFileSync(p(n)))])) } }
+/** The planted shore baked in memory by the bake's own functions (farChunksOf → farSteps → buildFaceChunks → pack). */
+const plantedBins = (faces, parts) => {
+  const built = faces.map(f => farChunksOf(f, parts)), step = farSteps(built.flatMap(b => b.fars.filter(Boolean)))
+  const chunks = faces.flatMap((f, i) => buildFaceChunks({ ...f, toe: null }, parts, built[i], step)); for (const c of chunks) c.firstSeen = c.arrays ? 0 : null
+  const { doc, bins } = pack(chunks, faces.map(f => ({ ...f, toe: null })), {}, step)
+  return { doc, bins: Object.fromEntries(Object.entries(bins).map(([n, b]) => [n, ab(b)])) } }
 
 const key3 = (P, v) => `${P[v * 3]},${P[v * 3 + 1]},${P[v * 3 + 2]}`
 const bitEq = (a, b) => a.length === b.length && a.every((x, i) => Object.is(x, b[i]))
@@ -138,14 +163,84 @@ function judge(M, faces, rawAt, say, { sampleEvery = EVERY, label }) {
   return { j1, j2, j3 }
 }
 
+/** 4 · after decode: the bins against the builds (bake-revetment-far.js#farChunksOf, the bake's own), the far against
+ *  itself across chunks, and the near (module M) against the decoded far (module Q decodes). */
+function judge4(M, Q, faces, parts, { doc, bins }, say, { sampleEvery = EVERY, label }) {
+  const step = doc.quant?.step, rawAt = (x, z) => parts(x, z).raw
+  const j = { chunks: 0, a: [], b: [], c: [], posErr: 0, slack: 0, nErr: 0, shared: 0, seams: 0, nearShared: 0, nearRes: 0 }
+  if (!Array.isArray(step)) { say(false, `${label}: 4 · revetment-far.json has no quant.step — the bins cannot be decoded`); return j }
+  const rowsOf = new Map(); for (const c of doc.chunks) rowsOf.set(`${c.face}#${c.k}`, c)
+  const kf = (P, i) => `${P[i * 3]},${P[i * 3 + 1]},${P[i * 3 + 2]}`
+  const ang = (a, i, b, k) => { const d = a[i] * b[k] + a[i + 1] * b[k + 1] + a[i + 2] * b[k + 2], l = Math.hypot(a[i], a[i + 1], a[i + 2]) * Math.hypot(b[k], b[k + 1], b[k + 2]); return Math.acos(Math.min(1, d / l)) * 180 / Math.PI }
+  const round = (n, i) => { const o = new Float32Array(3); Q.octDecode(...Q.octEncode(n[i], n[i + 1], n[i + 2]), o, 0); return o }
+  for (const f of faces) {
+    const B = farChunksOf(f, parts)
+    // the whole-face far build: what the chunks partition
+    const whole = M.revetmentDrape({ poly: f.poly, crestAt: f.crestAt, toeAt: f.toeAt, berm: f.berm, groundAt: f.groundAt, waterY: f.waterY, globals: B.G1 })
+    const W = whole?.stats?.tris ? M.drapeRelative(whole, rawAt) : null, wAt = new Map()
+    if (W) for (let i = 0; i < W.rel.length / 3; i++) wAt.set(kf(W.rel, i), i)
+    const dec = B.fars.map((F, k) => { if (!F) return null
+      const c = rowsOf.get(`${f.key}#${k}`), where = `${label} ${f.key}#${k}`
+      if (!c) { j.a.push(`${where}: built and not in the table`); return null }
+      const bin = bins[c.bin]; if (!bin) { j.a.push(`${where}: its bin ${c.bin} is missing`); return null }
+      const A = Q.decodeFarChunk(bin, c, step); j.chunks++
+      let bad = null
+      for (let i = 0; i < F.pos.length && !bad; i++) { const want = Math.fround(Q.snap(F.pos[i], step[i % 3])), e = Math.abs(A.pos[i] - F.pos[i])
+        if (!Object.is(A.pos[i], want)) bad = `position ${Math.floor(i / 3)} decodes to ${A.pos[i]}, its build on the grid is ${want}`
+        j.posErr = Math.max(j.posErr, e); j.slack = Math.max(j.slack, e - step[i % 3] / 2) }
+      for (let i = 0; i < F.normal.length / 3 && !bad; i++) { const o = round(F.normal, i * 3)
+        if (![0, 1, 2].every(c2 => Object.is(o[c2], A.normal[i * 3 + c2]))) bad = `normal ${i} is not its build's octahedral round trip`
+        j.nErr = Math.max(j.nErr, ang(A.normal, i * 3, F.normal, i * 3)) }
+      if (!bad && !(A.pin.length === F.pin.length && A.pin.every((x, i) => Object.is(x, F.pin[i])))) bad = 'its pins are not its build\'s'
+      if (!bad && !(A.index.length === F.index.length && A.index.every((x, i) => x === F.index[i]))) bad = 'its index is not its build\'s'
+      if (!bad && W) for (let i = 0; i < F.pos.length / 3 && !bad; i++) { const w = wAt.get(kf(F.pos, i))
+        if (w == null) bad = `vertex ${i} is not a vertex of the whole-face far build`
+        else if (![0, 1, 2].every(c2 => Object.is(W.normal[w * 3 + c2], F.normal[i * 3 + c2]))) bad = `vertex ${i}'s normal is not the whole-face build's` }
+      if (bad) j.a.push(`${where}: ${bad}`)
+      return { F, A, at: new Map(Array.from({ length: F.pos.length / 3 }, (_, i) => [kf(F.pos, i), i])) } })
+    // b · far against far
+    for (let k = 1; k < dec.length; k++) { const p = dec[k - 1], q = dec[k]; if (!p || !q) continue
+      for (const [key, i] of q.at) { const h = p.at.get(key); if (h == null) continue
+        j.shared++
+        if (![0, 1, 2].every(c2 => Object.is(p.A.pos[h * 3 + c2], q.A.pos[i * 3 + c2]))) { j.b.push(`${label} ${f.key}: a vertex chunks ${k - 1} and ${k} share decodes apart`); break } } }
+    // c · the near against the decoded far, at sampled boundaries
+    if (B.G1.hMax < MIN_ARMOUR_D50_M) continue
+    for (let k = 1; k < B.ranges.length; k += sampleEvery) {
+      const p = dec[k - 1]; if (!p) continue
+      const near = M.revetmentDrape({ poly: f.poly, crestAt: f.crestAt, toeAt: f.toeAt, berm: f.berm, groundAt: f.groundAt, waterY: f.waterY, globals: B.G3, stations: B.ranges[k].near, conform: B.G1 })
+      const seam = near?.geometry?.userData.seams?.find(s => s.station === B.ranges[k].near[0]); if (!seam) continue
+      const { rel, normal } = M.drapeRelative(near, rawAt, step), Fp = seam.far, where = `${label} ${f.key} boundary ${k}`
+      const farIdx = (J) => p.at.get(`${Fp[J * 3]},${Math.fround(Fp[J * 3 + 1] - rawAt(Fp[J * 3], Fp[J * 3 + 2]))},${Fp[J * 3 + 2]}`)
+      j.seams++
+      for (let jj = 0; jj < seam.verts.length; jj++) { const v = seam.verts[jj]; if (v < 0) continue
+        const J = Math.floor(jj / seam.r), w = (jj % seam.r) / seam.r, a = farIdx(J), b = w ? farIdx(J + 1) : a
+        if (a == null || b == null) continue                     // a far vertex the far chunk does not draw
+        if (!w) { j.nearShared++
+          if (![0, 1, 2].every(c2 => Object.is(rel[v * 3 + c2], p.A.pos[a * 3 + c2]) && Object.is(normal[v * 3 + c2], p.A.normal[a * 3 + c2]))) { j.c.push(`${where}: near vertex ${jj} is not the decoded far vertex ${J}`); break }
+          continue }
+        for (let c2 = 0; c2 < 3; c2++) { const A0 = p.A.pos[a * 3 + c2], B0 = p.A.pos[b * 3 + c2]; j.nearRes = Math.max(j.nearRes, Math.abs(rel[v * 3 + c2] - (A0 + (B0 - A0) * w))) } }
+    }
+  }
+  say(!j.a.length && j.chunks > 0, `${label}: 4a · ${j.chunks} far chunks decode to their builds on the grid (${step.map(x => (x * 1000).toFixed(3)).join(' × ')} mm), every vertex the whole-face build's · max position error ${(j.posErr * 1000).toFixed(3)} mm against the 1 mm lattice (${(j.slack * 1e6).toFixed(2)} µm past half a step: f32), normal ${j.nErr.toFixed(4)}°${j.a.length ? ` — ${j.a.length} failed, first ${j.a[0]}` : ''}`)
+  say(!j.b.length && j.shared > 0, `${label}: 4b · ${j.shared} vertices two far chunks share decode to the same bits in both: the far's seam after decode is 0${j.b.length ? ` — ${j.b[0]}` : ''}`)
+  say(!j.c.length && j.nearShared > 0 && j.posErr < 5e-4 && j.nErr < 0.01, `${label}: 4c · ${j.seams} near/far boundaries after decode: ${j.nearShared} shared vertices and normals the decoded far's to the bit, in-between residue ${j.nearRes.toExponential(2)} m${j.c.length ? ` — ${j.c[0]}` : ''}${j.posErr >= 5e-4 ? ' — a position error reaches half the 1 mm lattice' : ''}${j.nErr >= 0.01 ? ' — a normal error reaches 0.01°' : ''}`)
+  return j
+}
+
 const M = await import(pathToFileURL(HOME).href)
+const Q = await import(pathToFileURL(QHOME).href)
 const bad = []
 const say = (ok, what) => { console.log(`  ${ok ? '✅' : '⛔'} ${what}`); if (!ok) bad.push(what) }
 console.log('── the drape meets itself on one line (revetmentDrape.js)')
 const P = planted(), flatRaw = (x, z) => P[0].groundAt(x, z)
 judge(M, P, flatRaw, say, { sampleEvery: 1, label: 'planted' })
+// the planted ground in two parts (a raw and the drawn ground's own), so the band and the pins are not trivial
+const plantedParts = (x, z) => ({ raw: 0.7 * P[0].groundAt(x, z), y: 0.3 * P[0].groundAt(x, z) })
+const PB = plantedBins(P, plantedParts)
+judge4(M, Q, P, plantedParts, PB, say, { sampleEvery: 1, label: 'planted' })
 if (!towns.length) say(false, `no coastal town's slab under ${SLAB} (revetment.json + ground + terrain): only the planted shore was checked`)
-for (const t of towns) { const { faces, rawAt } = townFaces(t); judge(M, faces, rawAt, say, { label: t }) }
+for (const t of towns) { const { faces, parts, rawAt } = townFaces(t); judge(M, faces, rawAt, say, { label: t })
+  const tb = townBins(t); if (tb.why) say(false, `${t}: 4 · ${tb.why}`); else judge4(M, Q, faces, parts, tb, say, { label: t }) }
 
 if (process.argv.includes('--mutants')) {
   console.log('── mutants, on the planted shore (each must turn it RED)')
@@ -157,7 +252,18 @@ if (process.argv.includes('--mutants')) {
     ["the trim by the near's keep", 3, 'const draws = by ? by[0].row[by[1]][Math.floor((j - 1) / by[0].r)] : keep[a] + keep[b] + keep[c] + keep[e] >= 3', 'const draws = (by ? stationRow(G, by[0].i, P, new Float32Array(nRows * nAcross * 3), keep, (by[0].i - bld0) * nAcross) : 0, keep[a] + keep[b] + keep[c] + keep[e] >= 3)'],
     ['each lattice rounding its own count', 2, 'const nest = 2 ** (o - 1), nAlong = (n1 - 1) * nest + 1', 'const nest = 2 ** (o - 1), nAlong = Math.round((s1 - s0) / (step1 / nest)) + 1'],
   ]
+  // after decode: each must turn judge 4 RED
+  const MUT4 = [
+    ['the decode skipped (the u16 drawn as metres)', 'P[i] = (origin[i % 3] + q[i]) * step[i % 3]', 'P[i] = q[i]', QHOME],
+    ['the near meeting the far before quantization', 'p: p.map((x, a) => Math.fround(snap(x, step[a])))', 'p', HOME],
+  ]
   let alive = 0
+  for (const [name, a, b, home] of MUT4) {
+    const mod = await copyOf(a, b, home), red = []
+    try { judge4(home === HOME ? mod : M, home === QHOME ? mod : Q, P, plantedParts, PB, (ok) => { if (!ok) red.push(ok) }, { sampleEvery: 1, label: 'mutant' })
+      console.log(`  mutant: ${name} → judge 4 ${red.length ? 'RED ✓' : 'GREEN ✗'}`); if (!red.length) alive++ }
+    catch (e) { console.log(`  mutant: ${name} → threw (${e.message.split('\n')[0].slice(0, 120)}) — RED ✓`) }
+  }
   for (const [name, want, a, b] of MUT) {
     const red = []
     try { const R = judge(await copyOf(a, b), P, flatRaw, (ok) => { if (!ok) red.push(ok) }, { sampleEvery: 1, label: 'mutant' })

@@ -34,7 +34,8 @@ const copyOf = (a, b) => { const src = readFileSync(HOME, 'utf8')
   if (!src.includes(a)) throw new Error(`⛔ mutant target gone from revetmentDrape.js: ${JSON.stringify(a)}`)
   const out = join(mkdtempSync(join(tmpdir(), 'drape-')), 'revetmentDrape.mjs')
   writeFileSync(out, src.replace(a, b).replace("from 'three'", `from '${import.meta.resolve('three')}'`)
-    .replace("from '../../cartograph/shore-armour.mjs'", `from '${pathToFileURL(join(ROOT, 'cartograph/shore-armour.mjs')).href}'`))
+    .replace("from '../../cartograph/shore-armour.mjs'", `from '${pathToFileURL(join(ROOT, 'cartograph/shore-armour.mjs')).href}'`)
+    .replace("from './farQuant.js'", `from '${pathToFileURL(join(ROOT, 'src/lib/farQuant.js')).href}'`))
   return import(pathToFileURL(out).href) }
 
 const towns = existsSync(SLAB) ? readdirSync(SLAB).filter(t => ['revetment.json', 'ground.json', 'ground.bin', 'terrain.json', 'terrain.bin'].every(f => existsSync(join(SLAB, t, f)))) : []
