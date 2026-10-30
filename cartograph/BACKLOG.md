@@ -8,6 +8,31 @@ Active trunk `curb-offset-draw` (→ staging via `staging.yml`; the old `cartogr
 
 ## ▶ Forward list (2026-10-28) — this tranche LS · HPDM · Huron; PTown and Altadena parked
 
+### ⭐⭐ MORNING RELEASE — 2026-10-30 (Boz). PTown stable for outreach. Run in this order; paste any refusal to Boz.
+Merged on integration (head 2a44e317+): the overhead camera's near (phone water/seabed fix, 3a032bd5) · slab compression (br-5, 801fc795) ·
+per-place share cards (1d7a0743) · PTown's tagline (64aa9fb3) · one place per building + Jacob's 17 (2a44e317). Commands from
+`~/Desktop/lafayette-square.nosync/.claude/worktrees/integration` unless named.
+1. **Publish each town's slab to staging** (every .bin/.glb re-uploads once, brotli): `! curl -s -X POST localhost:3333/looks/<id>/publish` for
+   provincetown, huron, hipointedemun (the panel's "bakes first: coast" on PTown/Huron is the judge's re-run, a no-op; the direct POST skips it).
+   PTown's content also re-bakes for the duplicates: Stage Bake on PTown first if its plan shows content (it asks nothing else).
+2. **Purge the staging edge once, AFTER all publishes:** Cloudflare dashboard → zone theward.online → Caching → Configuration → Purge Cache →
+   Custom Purge → Prefix → `assets.theward.online/staging/baked/` → Purge.
+3. **Gate staging:** `! node scratch/slab-compressed-gate.mjs https://assets.theward.online/staging/ provincetown` (and huron, hipointedemun). Exit 0.
+4. **Deploy the Workers** (each refuses if a town would go dark; they also ship the place share card):
+   `! cd workers/staging-sites && npx wrangler deploy` then `! cd workers/production-sites && npx wrangler deploy`.
+   ⛔ production-sites BEFORE any Promote (today's Worker would serve a brotli file unlabelled).
+5. **The new player to staging:** Ward's pin (sha in Ward's report): `! cd ~/Desktop/lafayette-square.nosync/.claude/worktrees/ward-kit && node scripts/publish-kit-bundle.mjs`
+   then `! cd ~/Desktop/dev.nosync/theward && npm run publish:staging`.
+6. **⭐ JACOB'S PHONE on staging.theward.online/provincetown/:** Browse and Society water reads as water (no sand), the movie, a place link.
+7. **The open production question, on a scratch key** (Groyne's C1–C4: does a .online zone decode br for a non-br client?): the commands are in
+   Groyne's message to Boz, 2026-10-30. Run them, read the [gzip]/[identity] rows, and delete the key.
+8. **Promote provincetown and hipointedemun:** back up first, `! node scratch/promote-rollback/backup-prod-slab.mjs --look=<id> --out=scratch/promote-rollback/<id>-prod-$(date +%Y%m%d)`;
+   then `! curl -s -X POST localhost:3333/looks/<id>/promote`; then purge prefix `assets.theward.online/baked/`;
+   then `! node scratch/slab-compressed-gate.mjs https://provincetown.online/ provincetown` (and hipointedemun). Exit 0.
+9. **Re-time PTown:** `scratch/browse-perf/load.mjs` cold ×3 + a throttled run (before: 7.2–8.5 s desktop, 120.9 MB).
+OPEN for Jacob (none blocking): the share image fixed vs time-of-day (it works as designed; send links by day) · hours (56/447) · the
+preview-photo licence (parked) · a floating dock riding the tide · LS's cutover. In progress: Plumb on the marina docks drawn as treelawn.
+
 ### ⭐ HANDOFF — 2026-10-28 (the sprint closed; Swash for Boz). Read this block first; everything below is detail.
 The layered night notes of 10-25 → 10-28 are archived VERBATIM: `cartograph/_archive/HANDOFF-2026-10-28.md`. Live state only here.
 
