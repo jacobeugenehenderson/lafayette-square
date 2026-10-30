@@ -93,6 +93,10 @@ after the port merges. The full refusal census on the merged port, then one clas
 empty; 42 near-only chunks named KNOWN in claims-the-armoured-shore-is-never-empty) and Jacob's seam ruling ("call them from the same
 place") in one rewrite of `drapeGlobals`: one nested lattice sized from what it builds, `farRow` the one producer of the near/far edge.
 Groyne, a follow-up off groyne/far-shore.
+**▶ BRIEFED: `docs/briefs/BRIEF-the-slab-ships-compressed.md`** (Jacob, 2026-10-30): every slab .bin is served UNCOMPRESSED (Ward, measured:
+PTown's six bins 85.86 MB raw vs 30.03 MB brotli; 120.9 MB first load). The largest load lever left.
+- Small: Preview's DeploymentPanel shows "could not read the deployment: Unexpected end of JSON input" when :3333 is restarting; say the
+  bake server isn't answering (Jacob's rule: a message explains or goes away).
 **▶ NEXT LOAD COST (Ward, measured on PTown production 2026-10-29, after the far shore landed: reveal 10.6–12.6 s, from 14.7–15.7 s):**
 the largest main-thread task is now `drawnGround.js#makeDrawnGround`'s triangle-grid binning, 1.6–1.9 s, camera-independent (Groyne's C9
 census: a view over baked bytes, so outside the far-shore check's class). Candidate: the cell grid baked into the slab, or built in a worker.
