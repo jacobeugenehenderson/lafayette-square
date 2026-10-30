@@ -7335,5 +7335,19 @@
    ],
    "_pbg_images_fetched": "2026-10-26"
   }
+ },
+ "places": {
+  "_comment": "One place per (identity, building) (cartograph/listing-places.js). These three were the old building-keyed supersede (a researched add over its OSM twin), written as merges unchanged on 2026-10-30; every other pair the bake names is the operator's to decide.",
+  "merge": {
+   "prov-lst-0424": [
+    "osm-170530742"
+   ],
+   "prov-lst-0426": [
+    "osm-n3022167233"
+   ],
+   "prov-lst-0439": [
+    "osm-215751416"
+   ]
+  }
  }
 }

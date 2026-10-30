@@ -105,7 +105,7 @@ PROPERTY, not organised around districts; membership is Extent authoring** (Jaco
 
 ## 4. Photos and hours
 
-- **Hours:** OSM is thin (29 POIs). Realistic wells: the business's own site, the Chamber export, the PBG guide (address
+- **Hours:** OSM is thin (29 POIs), and what it has is never read: `opening_hours` reaches a listing only as the string `opening_hours_raw`, which no parse turns into `hours` and nothing in src/ reads (ASPIRATION, unbuilt; it waits on the seasonal rule below). Realistic wells: the business's own site, the Chamber export, the PBG guide (address
   and phone; check whether it prints hours), LibCal for libraries, denomination maps for services. ⭐ **Seasonal rule
   (`INTAKE-CATALOGUE §3.2b`):** PTown is a seasonal town; hours carry the season they belong to or are not written. The
   model has no season field today (M), so step 6 is a schema extension of `menu.schedule`'s pattern (that section's ruling),

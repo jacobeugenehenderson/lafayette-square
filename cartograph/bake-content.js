@@ -55,6 +55,7 @@ import { createVocabularyGate } from './osm-vocabulary.mjs'
 import { rankRoster } from './prominence.mjs'
 import { buildingIdOf } from './membership.mjs'
 import { addressKey, addressParts, streetKey } from '../src/lib/addressKey.js'
+import { normName, onePlacePerIdentity, addressNamed, refusePlaces } from './listing-places.js'
 import { registryPath as listingIdPath, loadRegistry as loadListingIds, serializeRegistry as serializeListingIds, assignListingIds, idsThatWouldMove, guardSeal, seedPrefix, sealedPrefixes } from './listing-identity.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -1051,22 +1052,23 @@ function buildBaseListingsFromOverture(artifact, buildingGrid) {
 // with anchor re-resolution so hand-added listings inherit slab membership).
 // ──────────────────────────────────────────────────────────────────────────
 
-const normName = s => (s || '').toLowerCase().replace(/['’.]/g, '').replace(/&/g, 'and').replace(/\s+/g, ' ').trim()
 
-function applyListingOverrides(base, overrides, ctx) {
+export function applyListingOverrides(base, overrides, ctx) {
   const { buildingGrid, bakedIds, parcels, parcelByAddr } = ctx
-  const report = { patched: 0, added: 0, add_reanchored: 0, add_dropped: [], base_superseded: 0, patch_unresolved: [] }
+  const report = { patched: 0, added: 0, add_reanchored: 0, add_dropped: [], patch_unresolved: [], match_name_ambiguous: [] }
   const patches = overrides.patches || {}
-  // index base by stable key + by (building_id|normName) for name-match patching
+  // index base by stable key (a name-matched patch is resolved by name, below)
   const byKey = new Map(base.map(l => [l._key, l]))
-  const byBidName = new Map(base.map(l => [`${l.building_id}|${normName(l.name)}`, l]))
 
   // 1) patches
   for (const [key, patch] of Object.entries(patches)) {
     let target = byKey.get(key)
     if (!target && patch._match_name) {
-      // name-match fallback (osm keys can drift): match on normName
-      target = base.find(l => normName(l.name) === normName(patch._match_name))
+      // name-match fallback (osm keys can drift): match on normName. ⛔ A name that reaches more than one listing (a chain's two
+      // counters) names no ONE place: refused by name, never the first one found (listing-places.js, one place per identity)
+      const hits = base.filter(l => normName(l.name) === normName(patch._match_name))
+      if (hits.length > 1) { report.match_name_ambiguous.push(`${key} (_match_name "${patch._match_name}") reaches ${hits.length} listings: ${hits.map(l => `${l._key} on ${l.building_id}${l.address ? ` at ${l.address}` : ''}`).join(' · ')}`); continue }
+      target = hits[0]
     }
     if (target) { Object.assign(target, stripMeta(patch)); target.enriched = true; report.patched++ }
     // ⛔ A patch whose key reaches no listing is authoring that does nothing — said by name, every bake.
@@ -1075,7 +1077,6 @@ function applyListingOverrides(base, overrides, ctx) {
 
   // 2) adds (research). Re-resolve building_id from anchor every run.
   const result = [...base]
-  const consumed = new Set()
   for (const add of (overrides.adds || [])) {
     const rec = stripMeta(add)
     // ⭐ An add with no authored id carries its own source key, and the town's id registry mints its permanent id
@@ -1096,15 +1097,11 @@ function applyListingOverrides(base, overrides, ctx) {
     if (!bid) { report.add_dropped.push({ id: rec.id, name: rec.name, reason: 'anchor outside baked set' }); continue }
     rec.building_id = bid
     rec.enriched = rec.enriched ?? true
-    // supersede a duplicate base OSM listing on the same building (hand-curated wins)
-    const dupKey = `${bid}|${normName(rec.name)}`
-    const dup = byBidName.get(dupKey)
-    if (dup && !consumed.has(dup._key)) { consumed.add(dup._key); report.base_superseded++ }
     result.push(rec)
     report.added++
   }
-  const merged = result.filter(l => !(l.source === 'osm' && consumed.has(l._key)))
-  return { listings: merged, report }
+  // ⭐ An add beside its base twin is ONE place, decided by the operator (listing-places.js, places.merge), never superseded here
+  return { listings: result, report }
 }
 
 /**
@@ -1446,16 +1443,23 @@ export function bakeContent({ scene, force = false, dryRun = false } = {}) {
   }
   const rosterOverrides = loadJsonOr(join(contentDir(scene), 'roster.overrides.json'), { patches: {} })
   let listings, report = null, listingIds, idPath
-  if (skipListings) listings = baseListings
+  // ⭐ ONE PLACE PER (identity, building), and never an address as a name (listing-places.js), judged on what a visitor would
+  // be served, whichever producer made it. A dry run writes nothing, so it prints the refusal and goes on measuring
+  const judgePlaces = (r, opts) => { try { refusePlaces(scene, r, addressNamed(r.listings), opts) } catch (e) { if (!dryRun) throw e; console.warn(`  ⚠️ dry run, nothing written: ${e.message}`) } }
+  if (skipListings) { listings = baseListings; judgePlaces(onePlacePerIdentity(baseListings, { parcelOf }), { handCurated: true }) }
   else {
-    const { listings: merged, report: r } = applyListingOverrides(baseListings, listingOverrides,
+    const { listings: overridden, report: r } = applyListingOverrides(baseListings, listingOverrides,
       { buildingGrid, bakedIds, parcels, parcelByAddr })
     report = r
+    const places = onePlacePerIdentity(overridden, { places: listingOverrides.places, parcelOf })
+    places.refusals.push(...r.match_name_ambiguous.map(x => `patch ${x}`))
+    judgePlaces(places)
+    const merged = places.listings
     // ⭐ PERMANENT LISTING IDS — sealed by the scene's registry (`listing-identity.js`, ROADMAP H-29).
     // The prefix is sealed WITH the registry and read back from it; the scene's name seeds it only on
     // the first seal, so renaming a town never renames its listings.
     idPath = listingIdPath(contentDir(scene))
-    const { registry, report: idReport } = assignListingIds(merged, loadListingIds(idPath), { sealPrefix: seedPrefix(scene), scene, sealedBy: sealedPrefixes(dirname(mapDir(scene)), scene) })
+    const { registry, report: idReport } = assignListingIds(merged, loadListingIds(idPath), { sealPrefix: seedPrefix(scene), scene, sealedBy: sealedPrefixes(dirname(mapDir(scene)), scene), reserved: places.absorbed.map(x => x.absorbed.id).filter(Boolean) })
     if (idReport.sealed) {
       // The first sealed bake numbers positionally; that carries today's ids over only if the input
       // is unchanged since the last bake. Prove it against the file on disk before sealing.
@@ -1467,7 +1471,7 @@ export function bakeContent({ scene, force = false, dryRun = false } = {}) {
   for (const l of merged) { l.source_key = l._key ?? null; delete l._key }
   listings = merged; listingIds = registry
   console.log(`  listing ids: ${idReport.sealed ? `SEALED ${idReport.minted} into ${idPath.split('/').slice(-3).join('/')}` : `${idReport.reused} kept · ${idReport.minted} new (high water ${listingIds.meta.highWater})`}`)
-  console.log(`  overrides: +${report.added} adds (${report.add_reanchored} re-anchored, ${report.add_dropped.length} dropped), ${report.patched} patches, ${report.base_superseded} base superseded`)
+  console.log(`  overrides: +${report.added} adds (${report.add_reanchored} re-anchored, ${report.add_dropped.length} dropped), ${report.patched} patches`)
   if (report.add_dropped.length) for (const d of report.add_dropped) console.log(`    ⚠️ dropped add: ${d.name} (${d.id}) — ${d.reason} → check the Extent`)
   if (report.patch_unresolved.length) console.log(`    ⚠️ ${report.patch_unresolved.length} patch key(s) reach no listing (the patch does nothing): ${report.patch_unresolved.join(' · ')}`)
   }
