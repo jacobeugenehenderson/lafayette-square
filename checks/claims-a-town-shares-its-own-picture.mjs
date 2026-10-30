@@ -107,7 +107,7 @@ else ok(`${real.n} instants, ${registeredMaps().length} towns: the card names th
 }
 for (const w of ['workers/staging-sites/src/index.js', 'workers/production-sites/src/index.js']) {
   const src = readFileSync(path.join(ROOT, w), 'utf8')
-  if (!/import \{ cardFor(, withShareCard)? \} from '\.\.\/\.\.\/\.\.\/src\/lib\/shareCard\.js'/.test(src)) bad(`${w} does not take its card from src/lib/shareCard.js#cardFor`)
+  if (!/import \{ cardFor(, withShareCard)?(, placeListings)? \} from '\.\.\/\.\.\/\.\.\/src\/lib\/shareCard\.js'/.test(src)) bad(`${w} does not take its card from src/lib/shareCard.js#cardFor`)
   else if (/suncalc|SunCalc|'(sunrise|sunset|golden|dusk|dawn)'/.test(src)) bad(`${w} holds slot logic of its own`)
   else ok(`${w} takes its card from cardFor and holds no slot logic`)
 }

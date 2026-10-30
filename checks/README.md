@@ -258,6 +258,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-a-town-is-live-by-its-manifest.mjs` | "DOES EACH WORKER DECIDE A TOWN IS LIVE BY THE ONE FILE WHOSE NAME NEVER CHANGES?" |
 | `checks/claims-a-town-never-bakes-from-the-whole-library.mjs` | CAN A TREE BAKE PLANT A SPECIES FROM OUTSIDE THE TOWN'S GROVE? |
 | `checks/claims-a-town-shares-its-own-picture.mjs` | a shared link shows the town's own picture, at the time of day it is |
+| `checks/claims-a-place-link-sends-its-own-card.mjs` | a shared place link previews as that place; an unknown place or a photo that needs a credit falls to the town's, said in the header |
 | `checks/claims-a-towns-colours-are-its-own.mjs` | "ARE A TOWN'S CATEGORY COLOURS — ITS NEON, ITS CHIPS — ITS OWN?" |
 | `checks/claims-a-towns-identity-is-its-own.mjs` | IS HOW A TOWN LOOKS AUTHORED IN ONE PLACE, AND CARRIED WHOLE? |
 | `checks/claims-a-towns-listings-reach-its-surfaces.mjs` | with no error anywhere. Provincetown, 2026-09-25: 445 listings on disk, 0 in the staging player, |

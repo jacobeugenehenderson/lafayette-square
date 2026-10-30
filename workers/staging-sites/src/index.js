@@ -218,7 +218,7 @@ async function wardBuild(env) {
  * ⛔ A map with no entry gets NEUTRAL tags (its id, no image), never Lafayette Square's.
  */
 import { decideProductionDomain } from '../../../src/lib/productionDomain.js'
-import { cardFor, withShareCard } from '../../../src/lib/shareCard.js'
+import { cardFor, withShareCard, placeListings } from '../../../src/lib/shareCard.js'
 import { wireHeaders } from '../../../src/lib/slabWire.js'
 
 /**
@@ -274,9 +274,11 @@ async function renamedTable(env) {
 
 async function shareCard(response, map, url, env, kitBase) {
   const manObj = await env.ASSETS.get(`staging/baked/${map}/manifest.json`)
-  const card = cardFor({ town: (await townsIndex(env))[map] || null, map, path: url.pathname,
-    manifest: manObj ? await manObj.json() : null, slabBase: `${env.SLAB_BASE}baked/${map}/`,
-    pageUrl: `${url.origin}/${map}/`, when: new Date() })
+  const manifest = manObj ? await manObj.json() : null
+  const path = url.pathname.slice(`/${map}`.length) || '/'   // the path within the town, as production sees it
+  const card = cardFor({ town: (await townsIndex(env))[map] || null, map, path,
+    manifest, slabBase: `${env.SLAB_BASE}baked/${map}/`, pageUrl: `${url.origin}/${map}/`,
+    ...await placeListings(env, `staging/baked/${map}/`, manifest, path), when: new Date() })
   const { domain } = await townDomain(env, map)
   return withShareCard(new HTMLRewriter()
     // ⭐ WHERE THE SLAB IS — the published player is built with `VITE_ASSET_BASE=runtime` and
