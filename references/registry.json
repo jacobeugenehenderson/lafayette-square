@@ -5274,7 +5274,8 @@
         "r-a-look-carries-one-motion",
         "r-the-strands-hang-from-the-ridge-and-the-pinnacle-carries-the-show",
         "r-a-look-is-layers-each-with-one-motion",
-        "r-provincetown-light-season-is-authored"
+        "r-provincetown-light-season-is-authored",
+        "r-the-lights-run-dusk-to-dawn-and-the-show-plays-on-the-hour"
       ]
     }
   ],
@@ -9119,6 +9120,23 @@
       "quote": "\"dates not important, we won't be live. Say the 11th.\"",
       "canon": "docs/briefs/BRIEF-the-monument-lights-up.md (ROADMAP H-36)",
       "notes": "Labelled as authored, per H-31 (a season with no settled source is the operator's)."
+    },
+    {
+      "id": "r-the-lights-run-dusk-to-dawn-and-the-show-plays-on-the-hour",
+      "question": "q-how-a-town-authors-a-display",
+      "kind": "ruling",
+      "value": {
+        "scope": "the Light Show display, in a town that has added it; NOT a rule for every town or every display (Jacob, 2026-10-31: \"This is not for every town!\"). Displays vary by town (r-displays-is-a-stage-section-of-plugins) and a show is what a display MAY do (r-a-show-is-what-a-display-may-do-not-what-it-is)",
+        "glow": "in season, the Light Show glows from the town's dusk to the town's dawn (dusk and dawn derived from the town's position, never typed)",
+        "show": "the show plays every hour on the hour while the display glows, opening from the white glow and settling back to it",
+        "refusal": "a show longer than the gap between showtimes refuses by name; it is never clipped",
+        "knobs": "NONE YET: the schedule is the Light Show plugin's for now, so in practice every town that adds a Light Show gets it. Immaterial until a second town has displays; per-town authoring (r-a-displays-setups-belong-to-its-town) is built then (Jacob, 2026-10-31: \"immaterial until other towns get displays and we'll build it out then\"). Stage shows the schedule read-only."
+      },
+      "by": "Jacob",
+      "date": "2026-10-31",
+      "quote": "\"Hourly on the hour, dusk until dawn is fine\"",
+      "canon": "docs/briefs/BRIEF-the-monument-lights-up.md (ROADMAP H-36)",
+      "notes": "Boz proposed it (hourly makes an appointment a visitor can keep, the ticker's next showtime; nightly is too rare; a loop is never must-see). The refusal is Boz's reading under CLAUDE.md Layer 0, not Jacob's words. UNBUILT: today Stage offers only the preview buttons."
     }
   ]
 }
