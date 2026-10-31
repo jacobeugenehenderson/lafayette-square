@@ -9043,11 +9043,12 @@
         "glow": "the tree is a Christmas tree: white lights",
         "show": "2-3x more strands in full colour, for resolution; the show may open by dramatically, magically changing from the white to the colour",
         "start": "64 white strands, 192 colour strands, ~96 bulbs per strand: authored starting values on the display",
-        "bulbs": "always bright, visible bulbs; where two are too close to distinguish, that is what makes the image smooth (no switch to a flat image at distance)"
+        "bulbs": "always bright, visible bulbs; where two are too close to distinguish, that is what makes the image smooth (no switch to a flat image at distance)",
+        "brightness": "like ~120 W bulbs: very bright, visible from all around the town; their colour washes the tower and the ground at its foot"
       },
       "by": "Jacob",
       "date": "2026-10-30",
-      "quote": "\"I am considering doubling the number of strands for the shows to give us better \\\"resolution\\\" in the images\" · \"The tree is supposed to be a christmas tree... perhaps the show can open by dramatically magically changing from the white lights to 2-3x more full-color lights.\" · \"start with those strand counts. phone res is kind of irrelevant; sub pixel detail becomes a resolved image\" · \"No: the bulbs are very bright and visible. If two of them get too close together to distinguish that's what gives us a smooth image in the lights\"",
+      "quote": "\"I am considering doubling the number of strands for the shows to give us better \\\"resolution\\\" in the images\" · \"The tree is supposed to be a christmas tree... perhaps the show can open by dramatically magically changing from the white lights to 2-3x more full-color lights.\" · \"start with those strand counts. phone res is kind of irrelevant; sub pixel detail becomes a resolved image\" · \"No: the bulbs are very bright and visible. If two of them get too close together to distinguish that's what gives us a smooth image in the lights\" · \"IRL they are like 120 watt bulbs or something so they're very bright and very visible from all around\"",
       "canon": "docs/briefs/BRIEF-the-monument-lights-up.md (ROADMAP H-36)"
     },
     {
