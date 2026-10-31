@@ -16,14 +16,15 @@
  *      that class failed on a Refusal and on giving up, so the gate says why the town is held; a clean remount clears
  *      a failure it wrote (never another producer's) with a mark of its own (the gate hears only new marks); every class has exactly one such boundary. Stage's
  *      banner is portalled above the splash (its zIndex over CanvasOverlay's, read from Town.jsx).
- *   5. THE DEV FLAG (`?refuse=<layer>`, for seeing the banner in Stage) is gone from a production build.
+ *   5. NO URL FLAG: the boundary reads nothing from the page's address (the dev-only `?refuse=` was removed after its
+ *      Stage validation).
  *   4. ONE SINK: exactly one store of failures under src/ (src/lib/failures.js); both boundaries report to it; Stage
  *      shows it at the top of its panel.
  *
  * Usage: node checks/claims-a-refusal-is-never-swallowed.mjs [--mutants] [-v]
  *   --mutants: the boundary retries a Refusal · the boundary drops the report · it never reports giving up · an untyped
  *   `⛔` throw returns · a ⛔ message held in a const returns untyped · httpFailure calls a 503 a Refusal · a second sink
- *   returns · the dev flag loses its gate · Stage drops the banner · a reveal refusal or give-up
+ *   returns · a URL flag returns · Stage drops the banner · a reveal refusal or give-up
  *   unmarked · a clear the gate never hears · a clean remount clears a foreign failure · a reveal class with no boundary · the banner back under the splash
  *   → each must go red.
  */
@@ -105,8 +106,7 @@ async function http(transform) {
 // ── 3. the boundary, driven ─────────────────────────────────────────────────────────────────────────────────────────────
 async function boundary(transform, marksT) {
   const fails = []
-  // import.meta.env is Vite's; node has none, so the dev flag reads as a production build here (5. proves it is one).
-  const B = (await importSource('src/components/R3FErrorBoundary.jsx', { transform: (s) => (transform ? transform(s) : s).replaceAll('import.meta.env.DEV', 'false'),
+  const B = (await importSource('src/components/R3FErrorBoundary.jsx', { ...(transform ? { transform } : {}),
     ...(marksT ? { redirect: { 'src/lib/startupMarks.js': { transform: marksT } } } : {}) })).default
   const M = marksT ? await importSource('src/lib/startupMarks.js', { transform: marksT }) : await import(pathToFileURL(join(ROOT, 'src/lib/startupMarks.js')))
   const { Refusal } = await import(pathToFileURL(join(ROOT, 'src/lib/refusal.js')))
@@ -164,18 +164,13 @@ async function boundary(transform, marksT) {
   return fails
 }
 
-// ── 5. the dev flag is gone from a build ────────────────────────────────────────────────────────────────────────────────
-// `?refuse=<layer>` lets the operator see the banner work. Built as production (DEV false, minified, tree-shaken, as Vite
-// builds) it must leave no trace; built as dev it must be there, so this cannot pass by the flag being absent everywhere.
-function devFlag(transform) {
-  const esbuild = require('esbuild'), src = (transform || ((s) => s))(sourceOf('src/components/R3FErrorBoundary.jsx'))
-  const built = (dev) => esbuild.transformSync(src, { loader: 'jsx', format: 'esm', minify: true, treeShaking: true, define: { 'import.meta.env.DEV': String(dev) } }).code
-  const fails = []
-  // the flag's own traces: its query key, quoted, and its message ("refused" alone is the boundary's ordinary wording)
-  const FLAG = /["'`]refuse["'`]|refused on purpose/
-  if (!FLAG.test(built(true))) fails.push('the dev flag ?refuse= is not in a dev build of R3FErrorBoundary.jsx (this check would prove nothing)')
-  if (FLAG.test(built(false))) fails.push('the dev flag ?refuse= survives a production build of R3FErrorBoundary.jsx: a public URL could make a layer throw')
-  return fails
+// ── 5. no URL makes a layer throw ───────────────────────────────────────────────────────────────────────────────────────
+// The `?refuse=<layer>` flag that let Stage's banner be seen was removed after its validation (2026-10-31). The boundary
+// reads nothing from the page's address: a URL that makes a layer throw is a footgun on a public site.
+function noUrlFlag(files) {
+  const src = files.find(([f]) => f === 'src/components/R3FErrorBoundary.jsx')?.[1] || ''
+  return /\blocation\b|URLSearchParams/.test(src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, ''))
+    ? ['R3FErrorBoundary.jsx reads the page\'s address: a URL could make a layer throw'] : []
 }
 
 // ── 4. one sink, shown ──────────────────────────────────────────────────────────────────────────────────────────────────
@@ -202,11 +197,11 @@ function oneSink(files) {
   return fails
 }
 
-async function verdict({ files: mutate, boundary: bt, http: ht, dev: dt, marks: mt } = {}) {
+async function verdict({ files: mutate, boundary: bt, http: ht, marks: mt } = {}) {
   let files = SRC.map(f => [f, readFileSync(join(ROOT, f), 'utf8')])
   if (mutate) files = mutate(files)
   const c = contract(files)
-  const fails = [...c.fails, ...await http(ht), ...await boundary(bt, mt), ...devFlag(dt), ...oneSink(files)]
+  const fails = [...c.fails, ...await http(ht), ...await boundary(bt, mt), ...noUrlFlag(files), ...oneSink(files)]
   return { fails, c }
 }
 
@@ -231,7 +226,7 @@ if (process.argv.includes('--mutants')) {
     ['a ⛔ error rejected untyped', { files: (fs) => [...fs, ['src/__mutant.js', "export const f = () => Promise.reject(new Error('[x] ⛔ rejected'))\n"]] }],
     ['httpFailure calls a 503 a Refusal', { http: must('s >= 500 ||', '') }],
     ['a second sink returns', { files: (fs) => [...fs, ['src/displays/failures.js', "import { create } from 'zustand'\nexport default create((set) => ({ failed: {}, report: () => {} }))\n"]] }],
-    ['the dev flag loses its gate', { dev: (s) => must('if (import.meta.env.DEV && DEV_REFUSE', 'if (DEV_REFUSE')(must('const DEV_REFUSE = import.meta.env.DEV ?', 'const DEV_REFUSE = true ?')(s)) }],
+    ['a URL flag returns', { files: swap('src/components/R3FErrorBoundary.jsx', 'export default class R3FErrorBoundary', "const FLAG = new URLSearchParams(globalThis.location?.search || '').get('refuse')\nexport default class R3FErrorBoundary") }],
     ['a reveal refusal left unmarked', { boundary: must("if (this.props.reveal) markFailed(this.props.reveal, `${layer} refused: ${reasonOf(error)}`)", '') }],
     ['a reveal give-up left unmarked', { boundary: must("if (this.props.reveal) markFailed(this.props.reveal, `${layer} ${reason}`)", '') }],
     ['a clear the gate never hears', { marks: must("  performance.mark(MARK_PREFIX + 'cleared:' + id)\n", '') }],

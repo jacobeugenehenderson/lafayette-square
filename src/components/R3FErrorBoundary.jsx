@@ -1,4 +1,4 @@
-import { Component, createElement } from 'react'
+import { Component } from 'react'
 import { Refusal } from '../lib/refusal.js'
 import useFailures, { reasonOf } from '../lib/failures.js'
 import { TownContext } from './townContext.js'
@@ -20,11 +20,6 @@ import { markFailed, clearFailed, failureOf } from '../lib/startupMarks.js'
  * ▶ node checks/claims-a-refusal-is-never-swallowed.mjs
  */
 const RETRY_DELAYS_MS = [250, 500, 1000, 2000, 4000, 4000, 4000]
-
-// DEV ONLY, and the build removes it (import.meta.env.DEV is false there): `?refuse=<layer>` makes that layer refuse, so
-// the operator can see Stage's banner work. ⛔ Never a production URL that makes a layer throw.
-const DEV_REFUSE = import.meta.env.DEV ? new URLSearchParams(globalThis.location?.search || '').get('refuse') : null
-function DevRefuse({ layer }) { throw new Refusal(`[${layer}] ⛔ refused on purpose by ?refuse=${layer} (a dev-only flag)`) }
 
 export default class R3FErrorBoundary extends Component {
   static contextType = TownContext
@@ -77,7 +72,6 @@ export default class R3FErrorBoundary extends Component {
 
   render() {
     if (this.state.hasError) return null
-    if (import.meta.env.DEV && DEV_REFUSE && DEV_REFUSE === this.props.name) return createElement(DevRefuse, { layer: this.props.name })
     return this.props.children
   }
 }
