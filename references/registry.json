@@ -5272,7 +5272,9 @@
         "r-looks-are-abstractions",
         "r-the-tree-glows-white-and-the-show-is-colour",
         "r-a-look-carries-one-motion",
-        "r-the-strands-hang-from-the-ridge-and-the-pinnacle-carries-the-show"
+        "r-the-strands-hang-from-the-ridge-and-the-pinnacle-carries-the-show",
+        "r-a-look-is-layers-each-with-one-motion",
+        "r-provincetown-light-season-is-authored"
       ]
     }
   ],
@@ -9043,13 +9045,13 @@
       "value": {
         "glow": "the tree is a Christmas tree: white lights",
         "show": "2-3x more strands in full colour, for resolution; the show may open by dramatically, magically changing from the white to the colour",
-        "start": "REOPENED 2026-10-31: the 64 / 192 / ~96 here were Tinsel's, not the monument's. The real tree is 20 strands (5 a side, ~3,000 bulbs); Jacob's '2-3x' means 40-60 colour strands. See r-the-strands-hang-from-the-ridge-and-the-pinnacle-carries-the-show.",
+        "start": "60 colour strands for the show (3x the real 20, 5 a side), ruled 2026-10-31; an authored value on the display",
         "bulbs": "always bright, visible bulbs; where two are too close to distinguish, that is what makes the image smooth (no switch to a flat image at distance)",
         "brightness": "like ~120 W bulbs: very bright, visible from all around the town; what they light around them is one AVERAGE glow (the tree's mean colour), never a light per bulb"
       },
       "by": "Jacob",
       "date": "2026-10-30",
-      "quote": "\"I am considering doubling the number of strands for the shows to give us better \\\"resolution\\\" in the images\" · \"The tree is supposed to be a christmas tree... perhaps the show can open by dramatically magically changing from the white lights to 2-3x more full-color lights.\" · \"start with those strand counts. phone res is kind of irrelevant; sub pixel detail becomes a resolved image\" · \"No: the bulbs are very bright and visible. If two of them get too close together to distinguish that's what gives us a smooth image in the lights\" · \"IRL they are like 120 watt bulbs or something so they're very bright and very visible from all around\" · \"I also think an average glow all over things would suffice\"",
+      "quote": "\"I am considering doubling the number of strands for the shows to give us better \\\"resolution\\\" in the images\" · \"The tree is supposed to be a christmas tree... perhaps the show can open by dramatically magically changing from the white lights to 2-3x more full-color lights.\" · \"start with those strand counts. phone res is kind of irrelevant; sub pixel detail becomes a resolved image\" · \"No: the bulbs are very bright and visible. If two of them get too close together to distinguish that's what gives us a smooth image in the lights\" · \"IRL they are like 120 watt bulbs or something so they're very bright and very visible from all around\" · \"I also think an average glow all over things would suffice\" · on the show's strand count, 40 or 60: \"60\"",
       "canon": "docs/briefs/BRIEF-the-monument-lights-up.md (ROADMAP H-36)"
     },
     {
@@ -9081,6 +9083,37 @@
       "quote": "\"can we add the pinnacle tower level with the \\\"light show\\\" up there, too? I think that will really rock it.\" · \"Once we get the top of the tower turned on we can make it the white puff on santa's hat and make it red to the top.\" · \"there is no star, confirmed\" · \"You should also attempt to create the real proportions because in real life the bands are very sparse; only 5 per side and our styling misrepresents it completely\" · \"Look at the plans for the monument. There is a ridge on top of which is the pinnacle; the lights come from that ridge.\" · \"The light at the top is a bit severe now, and should probably be more like a gradient instead of flat. Oh I see, you've made that an LED *screen*: I meant more like a strip light.\"",
       "canon": "docs/briefs/BRIEF-the-monument-lights-up.md (ROADMAP H-36); src/setpieces/pilgrimMonument.js DOSSIER.balcony",
       "notes": "Kit consequence (Tinsel's reading): a set-piece renderer DECLARES where strands attach (a ring: height + half-width) and its display surfaces (the pinnacle: from, to, half-width), read from its own dimensions; the plugin never hardcodes them. The 64/192 starting counts in r-the-tree-glows-white-and-the-show-is-colour were Tinsel's, never measured; reopened here."
+    },
+    {
+      "id": "r-a-look-is-layers-each-with-one-motion",
+      "question": "q-how-a-town-authors-a-display",
+      "kind": "ruling",
+      "value": {
+        "look": "a stack of LAYERS, bottom to top, each with ONE built-in motion",
+        "motions": "still, fall, rise, spin, spiral, twinkle, pulse, strobe, fade; and, drawn by the system as frames, turn, swing, tumble, build",
+        "scope": "a motion may touch one colour only, or keep to part of the tree",
+        "objects": "a layer may be a MOTION OBJECT (the Progress flag's chevron) that transitions can move: below the ground, in place, or rising on past it"
+      },
+      "by": "Jacob",
+      "date": "2026-10-31",
+      "quote": "\"yes file it\" (on: a look is a few layers, each with one motion, with turn, swing and tumble drawn by the system)",
+      "canon": "docs/briefs/BRIEF-the-monument-lights-up.md (ROADMAP H-36)",
+      "notes": "Extends r-a-look-carries-one-motion: one motion per LAYER. Still no hand-drawn motion (r-a-setup-composes-its-plugins-motions)."
+    },
+    {
+      "id": "r-provincetown-light-season-is-authored",
+      "question": "q-how-a-town-authors-a-display",
+      "kind": "ruling",
+      "value": {
+        "start": "November 11 (the Mayflower anniversary)",
+        "end": "not ruled",
+        "status": "AUTHORED by the operator, not sourced: the sources disagree (Nov 11 in some years; Thanksgiving eve, 2026-11-25, in one listing; off through New Year's Day, into January, or about five weeks), and the show will not be live"
+      },
+      "by": "Jacob",
+      "date": "2026-10-31",
+      "quote": "\"dates not important, we won't be live. Say the 11th.\"",
+      "canon": "docs/briefs/BRIEF-the-monument-lights-up.md (ROADMAP H-36)",
+      "notes": "Labelled as authored, per H-31 (a season with no settled source is the operator's)."
     }
   ]
 }

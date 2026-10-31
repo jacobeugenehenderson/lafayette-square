@@ -107,7 +107,7 @@ function geometry(strands) {
   return { back, front };
 }
 const GEO = { 20: geometry(20), 40: geometry(40), 60: geometry(60), 192: geometry(192) };
-let SHOW = 60;   // colour strands for the show: 2-3x the real 20
+let SHOW = 60;   // colour strands for the show: 3x the real 20, ruled 2026-10-31
 
 function hash(i) { let x = Math.imul(i ^ 0x9e3779b9, 0x85ebca6b); x ^= x >>> 13; x = Math.imul(x, 0xc2b2ae35); return ((x ^ (x >>> 16)) >>> 0) / 4294967296; }
 function hexRGB(h) { return [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)]; }
