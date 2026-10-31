@@ -85,6 +85,7 @@ and flag. The stop is the deliverable, not a failure of the brief.
 
 ## Zob's co-sign
 
-Zob, 2026-10-31: co-signed. Split per Boz: the spot's camera move waits on a kit point-frame prop (pin 2a44e317 frames
-building ids only), named as a TODO in the code; the spot's mark uses TownPoint lat/lon; no fallback to Browse. Changes 1
-(roster into happenings, pending not notShown), 2 (placeless ticker key) and 3 (the {building} fixture) taken.
+Zob, 2026-10-31: co-signed. Split per Boz: the spot's camera move AND its mark wait on the kit point-frame prop (a card
+covers the map: Usher's stop), named as a TODO; no fallback to Browse. Changes 1 (roster into happenings, pending not
+notShown), 2 (placeless ticker key) and 3 (the {building} fixture) taken. Static PASS on theward 7621861 (Zob, 2026-10-31);
+the build and browser checks are owed in the main checkout.
