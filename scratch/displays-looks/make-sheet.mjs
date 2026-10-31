@@ -11,12 +11,14 @@
 import { readFileSync, writeFileSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { DOSSIER, FT } from '../../src/setpieces/pilgrimMonument.js'   // the monument's documented dimensions, never retyped
+import { DOSSIER, FT, placeholderStages } from '../../src/setpieces/pilgrimMonument.js'   // the monument's documented dimensions, never retyped
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 // The strands hang from the BALCONY's edge (the ridge, 204 ft 4 in, 29 ft 6 in square); the pinnacle is the upper stage
 // (21 ft 4 in square) standing on it, to the top (252 ft 7.5 in). Dossier §1/§5 via pilgrimMonument.js.
-const MON = { top: DOSSIER.topZ * FT, deck: DOSSIER.balcony.z * FT, pinHalf: DOSSIER.belfryTopSq * FT / 2, ridgeHalf: DOSSIER.balcony.sq * FT / 2, shaftHalf: DOSSIER.wash3.sq * FT / 2 }
+// The tower itself: the SAME stacked prisms the town draws (placeholderStages), in metres, half-widths.
+const STAGES = placeholderStages().map(s => ({ name: s.name, h: s.sq * FT / 2, y0: Math.max(0, s.z0 * FT), y1: s.z1 * FT }))
+const MON = { top: DOSSIER.topZ * FT, deck: DOSSIER.balcony.z * FT, pinHalf: DOSSIER.belfryTopSq * FT / 2, ridgeHalf: DOSSIER.balcony.sq * FT / 2 }
 const M = JSON.parse(readFileSync(join(HERE, 'looks.json'), 'utf8'))
 const uri = (file) => 'data:image/svg+xml;base64,' + readFileSync(join(HERE, file)).toString('base64')
 const looks = M.looks.map(L => ({ ...L, layers: L.layers.map(l => ({ ...l, frames: l.frames.map(uri) })) }))
@@ -73,7 +75,8 @@ const FW = ${M.frame.w}, FH = ${M.frame.h}, P = ${M.frame.pinH}, FACES = ${M.fra
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 // ── The monument, from its dossier (MON, injected): strands from the balcony ridge; the pinnacle above it, to the top. ──
-const TOP = ${MON.top}, DECK = ${MON.deck}, A = ${MON.pinHalf}, RIDGE = ${MON.ridgeHalf}, SHAFT = ${MON.shaftHalf}, R = 31, CW = 270, CH = 340, S = 3.2, GX = CW / 2, GY = CH - 24, ELEV = 0.22, VY = 0.42;
+const STAGES = ${JSON.stringify(STAGES)};
+const TOP = ${MON.top}, DECK = ${MON.deck}, A = ${MON.pinHalf}, RIDGE = ${MON.ridgeHalf}, R = 31, CW = 270, CH = 340, S = 3.2, GX = CW / 2, GY = CH - 24, ELEV = 0.22, VY = 0.42;
 const view = (x, y, z) => { const xr = x * Math.cos(VY) - z * Math.sin(VY), zr = x * Math.sin(VY) + z * Math.cos(VY); return { sx: GX + xr * S, sy: GY - y * S + zr * S * ELEV, z: zr }; };
 const onFace = (k, u, d) => { const rot = -k * Math.PI / 2, x0 = u * d, z0 = d; return [x0 * Math.cos(rot) - z0 * Math.sin(rot), x0 * Math.sin(rot) + z0 * Math.cos(rot)]; };
 function geometry(strands) {
@@ -129,11 +132,12 @@ function sample(look, c, row, t) {
 }
 const glowColour = (p, t) => { const h = hash(p.c * 131 + p.row), w = 0.8 + 0.2 * Math.sin(t * 1.5 + h * 30); return [255 * w, 214 * w, 150 * w]; };
 
-function paintPoints(buf, pts, look, t, glow) {
+function paintPoints(buf, pts, look, t, glow, avg) {
   const img = buf.ctx.createImageData(CW, CH), d = img.data;
   for (const p of pts) {
     if (glow && p.row < P) continue;                            // the glow is the strands alone; the pinnacle is dark
     const [r, g, b] = glow ? glowColour(p, t) : sample(look, p.c, p.row, t);
+    if (avg) { avg[0] += r; avg[1] += g; avg[2] += b; avg[3]++; }
     if (r + g + b < 6) continue;
     for (let dy = 0; dy < 2; dy++) for (let dx = 0; dx < 2; dx++) {
       const xx = p.sx + dx, yy = p.sy + dy; if (xx < 0 || yy < 0 || xx >= CW || yy >= CH) continue;
@@ -145,20 +149,33 @@ function paintPoints(buf, pts, look, t, glow) {
 }
 function drawMonument(ctx, bufs, look, t, strands, glow) {
   const G = GEO[strands];
-  paintPoints(bufs.back, G.back, look, t, glow);
-  paintPoints(bufs.front, G.front, look, t, glow);
+  const avg = [0, 0, 0, 0];   // the tree's mean colour: the one average glow that lights everything round it
+  paintPoints(bufs.back, G.back, look, t, glow, avg);
+  paintPoints(bufs.front, G.front, look, t, glow, avg);
   ctx.globalCompositeOperation = 'source-over'; ctx.clearRect(0, 0, CW, CH);
   ctx.drawImage(bufs.back.c, 0, 0);
-  // the granite: the shaft up to the deck, the pinnacle above it (its lit faces paint over it)
-  ctx.fillStyle = '#191c28';
-  const half = Math.abs(view(SHAFT, 0, SHAFT).sx - view(-SHAFT, 0, -SHAFT).sx) / 2, base = view(0, 0, 0).sy, deck = view(0, DECK, 0).sy, top = view(0, TOP, 0).sy;
-  ctx.fillRect(GX - half, deck, half * 2, base - deck);
-  ctx.fillRect(GX - half * A / SHAFT, top, half * 2 * A / SHAFT, deck - top);
-  ctx.fillStyle = '#23273a'; ctx.fillRect(GX - half * RIDGE / SHAFT, deck - 2, half * 2 * RIDGE / SHAFT, 4);   // the ridge
+  drawTower(ctx, avg[3] ? [avg[0] / avg[3], avg[1] / avg[3], avg[2] / avg[3]] : [0, 0, 0]);
   ctx.drawImage(bufs.front.c, 0, 0);
   ctx.globalCompositeOperation = 'lighter';
   for (const [blur, a] of [[2, 0.45], [8, 0.3]]) { ctx.filter = 'blur(' + blur + 'px)'; ctx.globalAlpha = a; ctx.drawImage(bufs.back.c, 0, 0); ctx.drawImage(bufs.front.c, 0, 0); }
   ctx.filter = 'none'; ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+}
+// The granite, block by block: each stage's sides that face the viewer and its top, washed by the tree's average glow.
+function drawTower(ctx, glow) {
+  const shade = (k) => { const c = [24, 27, 38].map((v, i) => Math.min(255, Math.round(v * k + glow[i] * 0.2 * k))); return 'rgb(' + c.join(',') + ')'; };
+  for (const st of STAGES) {
+    const h = st.h, ring = (y) => [[-h, y, h], [h, y, h], [h, y, -h], [-h, y, -h]].map(([x, yy, z]) => view(x, yy, z));
+    const lo = ring(st.y0), hi = ring(st.y1);
+    for (let i = 0; i < 4; i++) {
+      const j = (i + 1) % 4, mx = (lo[i].z + lo[j].z) / 2;
+      if (mx <= 0) continue;                                    // a side turned away from us
+      const nz = Math.min(1, mx / (h * 1.0));
+      ctx.fillStyle = shade(0.55 + 0.6 * nz);
+      ctx.beginPath(); ctx.moveTo(lo[i].sx, lo[i].sy); ctx.lineTo(lo[j].sx, lo[j].sy); ctx.lineTo(hi[j].sx, hi[j].sy); ctx.lineTo(hi[i].sx, hi[i].sy); ctx.closePath(); ctx.fill();
+    }
+    ctx.fillStyle = shade(1.25);
+    ctx.beginPath(); hi.forEach((p, i) => i ? ctx.lineTo(p.sx, p.sy) : ctx.moveTo(p.sx, p.sy)); ctx.closePath(); ctx.fill();
+  }
 }
 function drawFlat(ctx, look, t) {
   const W = FW * 2, Hh = FH * 2, img = ctx.createImageData(W, Hh), d = img.data;
