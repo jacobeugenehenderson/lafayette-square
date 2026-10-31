@@ -65,6 +65,7 @@ import { fileURLToPath } from 'node:url'
 import { instanceForMap, registeredMaps } from '../src/instances/registry.js'
 import CATEGORIES from '../src/tokens/categories.js'
 import { notPublished } from '../scripts/slab-publish-rule.mjs'
+import { drawerDir, frameRel } from '../src/displays/drawerPath.js'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const arg = process.argv.find(a => a.startsWith('--town='))
@@ -157,17 +158,19 @@ if (existsSync(listingsFile)) {
 const displays = {}
 for (const d of identity.displays || []) {
   const where = `"${town}" display "${d.id}"`
-  if (typeof d.drawer !== 'string' || !d.drawer.endsWith('.json')) { console.error(`⛔ ${where} names no drawer (a looks.json under its content)`); process.exit(2) }
+  // ⛔ The path is checked BEFORE anything is emptied or read: only under displays/<name>/, never '..' (drawerPath.js).
+  let dir
+  try { dir = drawerDir(d.drawer, where) } catch (e) { console.error(e.message); process.exit(2) }
   const drawerSrc = resolve(contentSrc, d.drawer)
   if (!existsSync(drawerSrc)) { console.error(`⛔ ${where}: its drawer ${relative(ROOT, drawerSrc)} is not on disk — a show with no looks is not published`); process.exit(2) }
   let looks
   try { looks = JSON.parse(readFileSync(drawerSrc, 'utf8')) } catch (e) { console.error(`⛔ ${where}: ${relative(ROOT, drawerSrc)} is not valid JSON: ${e.message}`); process.exit(2) }
-  const dir = dirname(d.drawer)
   rmSync(resolve(contentOut, dir), { recursive: true, force: true })   // never a frame from an earlier bake left behind
   const files = {}
   const put = (rel) => { const f = publishBeside(resolve(contentSrc, rel), rel); files[f.path] = { bytes: f.bytes, sha256: f.sha256 } }
   put(d.drawer)
   for (const L of looks.looks || []) for (const layer of L.layers || []) for (const frame of layer.frames || []) {
+    try { frameRel(frame, `${where} look "${L.id}"`) } catch (e) { console.error(e.message); process.exit(2) }   // never a file from outside the drawer
     const rel = `${dir}/${frame}`
     if (!existsSync(resolve(contentSrc, rel))) { console.error(`⛔ ${where}: look "${L.id}" names frame ${frame}, and ${relative(ROOT, resolve(contentSrc, rel))} is not on disk`); process.exit(2) }
     if (!files['content/' + rel]) put(rel)

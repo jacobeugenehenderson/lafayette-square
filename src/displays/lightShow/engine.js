@@ -13,6 +13,7 @@
  * ⛔ An unknown look, motion or transition THROWS by name. Nothing here falls back.
  */
 import { TRANSITIONS } from './transitions.js'
+import { drawerDir, frameRel } from '../drawerPath.js'
 export { uplightTarget } from '../dim.js'
 
 export const MOTIONS = ['still', 'fall', 'rise', 'spin', 'spiral', 'twinkle', 'pulse', 'strobe', 'fade']
@@ -38,6 +39,7 @@ export function validateDrawer(drawer, where) {
   for (const L of looks || []) for (const [i, layer] of L.layers.entries()) {
     if (!MOTIONS.includes(layer.motion?.kind)) throw new Error(`[lightShow] ⛔ ${where}: look "${L.id}" layer ${i} has motion "${layer.motion?.kind}", which the Light Show does not have (have: ${MOTIONS.join(', ')})`)
     if (!layer.frames?.length) throw new Error(`[lightShow] ⛔ ${where}: look "${L.id}" layer ${i} has no frames`)
+    for (const f of layer.frames) frameRel(f, `${where}: look "${L.id}" layer ${i}`)   // inside the drawer, as the bake demands
     // The layer's clock fields: refused unless meaningful, never read as something plausible (Zob, 2026-10-31).
     if (layer.frames.length > 1 && !(typeof layer.fps === 'number' && layer.fps > 0)) throw new Error(`[lightShow] ⛔ ${where}: look "${L.id}" layer ${i} has ${layer.frames.length} frames and no fps (a number > 0), so it has no clock to play them on`)
     if ('once' in layer && typeof layer.once !== 'boolean') throw new Error(`[lightShow] ⛔ ${where}: look "${L.id}" layer ${i} has once ${JSON.stringify(layer.once)}; once is true or false`)
@@ -52,6 +54,7 @@ export function validateDrawer(drawer, where) {
  */
 export function validateDisplay(display, drawer, where) {
   validateDrawer(drawer, where)
+  drawerDir(display.drawer, where)   // under displays/<name>/, as the bake demands
   if (display.dimUplights !== undefined && !(display.dimUplights >= 0 && display.dimUplights <= 1)) throw new Error(`[lightShow] ⛔ ${where}: dimUplights (${display.dimUplights}) is a fraction of the uplights, 0 … 1`)
   const st = display.strands
   if (!(st?.glow > 0 && st?.show > 0 && st?.ringRadiusM > 0)) throw new Error(`[lightShow] ⛔ ${where}: strands needs glow, show and ringRadiusM`)

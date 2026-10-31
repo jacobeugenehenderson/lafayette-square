@@ -37,13 +37,18 @@ async function runStep(mutate, plant) {
   try {
     const contentSrc = join(root, 'src'), contentOut = join(root, 'out')
     mkdirSync(join(contentSrc, 'displays/show/looks/a'), { recursive: true })
-    const looks = { frame: { w: 4, h: 3, pinH: 1, faces: 4 }, looks: [{ id: 'a', layers: [{ motion: { kind: 'still' }, frames: ['looks/a/0.svg', 'looks/a/1.svg'] }] }] }
+    // an escaping frame: displays/show/ + ../../../ reaches the planted secret outside the town's content
+    const frames = plant === 'escaping-frame' ? ['looks/a/0.svg', '../../../secret.txt'] : ['looks/a/0.svg', 'looks/a/1.svg']
+    const looks = { frame: { w: 4, h: 3, pinH: 1, faces: 4 }, looks: [{ id: 'a', layers: [{ motion: { kind: 'still' }, frames }] }] }
+    writeFileSync(join(root, 'secret.txt'), 'outside the town')   // what an escaping frame would reach
+    if (plant === 'root-drawer') writeFileSync(join(contentSrc, 'looks.json'), JSON.stringify(looks))
     writeFileSync(join(contentSrc, 'displays/show/looks.json'), JSON.stringify(looks))
     writeFileSync(join(contentSrc, 'displays/show/looks/a/0.svg'), '<svg/>')
     if (plant !== 'missing-frame') writeFileSync(join(contentSrc, 'displays/show/looks/a/1.svg'), '<svg></svg>')
     mkdirSync(join(contentOut, 'displays/show/looks/old'), { recursive: true })
     writeFileSync(join(contentOut, 'displays/show/looks/old/stale.svg'), '<svg/>')   // left from an earlier bake
-    const drawer = plant === 'missing-drawer' ? 'displays/none/looks.json' : 'displays/show/looks.json'
+    writeFileSync(join(contentOut, 'listings.json'), '[]')   // a canary: the content this same run wrote, never emptied
+    const drawer = plant === 'missing-drawer' ? 'displays/none/looks.json' : plant === 'root-drawer' ? 'looks.json' : 'displays/show/looks.json'
     const prefix = `const ROOT = ${JSON.stringify(root)}, town = 't', contentSrc = ${JSON.stringify(contentSrc)}, contentOut = ${JSON.stringify(contentOut)}
 const identity = { displays: [{ id: 'show', drawer: ${JSON.stringify(drawer)} }] }
 const process = { exit: (c) => { throw Object.assign(new Error('exit ' + c), { exitCode: c }) } }
@@ -51,6 +56,7 @@ const console = { error: () => {}, log: () => {} }
 import { readFileSync, writeFileSync, existsSync, mkdirSync, rmSync } from 'node:fs'
 import { createHash } from 'node:crypto'
 import { resolve, relative, dirname } from 'node:path'
+import { drawerDir, frameRel } from '../src/displays/drawerPath.js'
 `
     // bake-manifest's own text, from its copier through its displays step (photos run between them, and find no listings)
     let exited = null, displays = null
@@ -58,7 +64,8 @@ import { resolve, relative, dirname } from 'node:path'
       const M = await importSource('cartograph/bake-manifest.mjs', { span: { from: '/** Copy one file beside the content and index it', to: '// ── board: the town' }, prefix, suffix: '\nexport { displays }', ...(mutate ? { transform: mutate } : {}) })
       displays = M.displays
     } catch (e) { exited = e.exitCode ?? String(e.message) }
-    return { displays, exited, stale: existsSync(join(contentOut, 'displays/show/looks/old/stale.svg')), copied: existsSync(join(contentOut, 'displays/show/looks/a/1.svg')) }
+    return { displays, exited, stale: existsSync(join(contentOut, 'displays/show/looks/old/stale.svg')), copied: existsSync(join(contentOut, 'displays/show/looks/a/1.svg')),
+      canary: existsSync(join(contentOut, 'listings.json')), leaked: Object.keys(displays?.show?.files || {}).some(k => k.includes('..')) }
   } finally { rmSync(root, { recursive: true, force: true }) }
 }
 
@@ -73,6 +80,14 @@ async function verdict({ step, names, sweep, url, show, files = {}, mirror } = {
   F(!ok.stale, 'a frame left from an earlier bake is still published (the output dir was not emptied first)')
   F((await runStep(step, 'missing-frame')).exited === 2, 'a missing frame does not exit 2')
   F((await runStep(step, 'missing-drawer')).exited === 2, 'a missing drawer does not exit 2')
+  const rootD = await runStep(step, 'root-drawer')
+  F(rootD.exited === 2 && rootD.canary, `a drawer at the content root is not refused before anything is emptied (exit ${rootD.exited}, the town's content ${rootD.canary ? 'kept' : 'WIPED'})`)
+  const esc = await runStep(step, 'escaping-frame')
+  F(esc.exited === 2 && !esc.leaked, `a frame escaping the drawer's folder is not refused (exit ${esc.exited}${esc.leaked ? ', and a file from outside the town was published' : ''})`)
+  // the same rule in the engine, so Stage refuses it too
+  const E = await importSource('src/displays/lightShow/engine.js')
+  const fr = { w: 4, h: 3, pinH: 1, faces: 4 }
+  F(!!(() => { try { E.validateDrawer({ frame: fr, looks: [{ id: 'a', layers: [{ motion: { kind: 'still' }, frames: ['../../x.svg'] }] }] }, 'w') } catch (e) { return /inside the drawer/.test(e.message) } })(), 'the engine (Stage) accepts a frame escaping the drawer')
   const bm = code(sourceOf('cartograph/bake-manifest.mjs'))
   F((bm.match(/publishBeside\(/g) || []).length >= 3 && /photos\[url\] = publishBeside\(/.test(bm), 'photos and drawers do not share one copier (publishBeside)')
   F(/^\s*displays,$/m.test(bm), 'the manifest does not carry `displays`')
@@ -118,6 +133,8 @@ else console.log("✅ the bake carries its displays: every frame published and i
 if (process.argv.includes('--mutants')) {
   const mutants = [
     ['a stale frame left published', { step: (s) => s.replace('rmSync(resolve(contentOut, dir), { recursive: true, force: true })', 'void 0') }],
+    ['a drawer at the content root accepted', { step: (s) => s.replace('try { dir = drawerDir(d.drawer, where) } catch (e) { console.error(e.message); process.exit(2) }', 'dir = dirname(d.drawer)') }],
+    ['a frame escaping its folder accepted', { step: (s) => s.replace('try { frameRel(frame, `${where} look "${L.id}"`) } catch (e) { console.error(e.message); process.exit(2) }', '') }],
     ['a missing frame accepted', { step: (s) => s.replace("is not on disk`); process.exit(2) }\n    if (!files", "is not on disk`); continue }\n    if (!files") }],
     ['the resolver blind to drawers', { names: (s) => s.replace('for (const d of Object.values(manifest?.displays || {})) if (d?.files?.[rel]) return d.files[rel].sha256', '') }],
     ['the sweep blind to drawers', { sweep: (s) => s.replace("for (const d of Object.values(manifest.displays || {})) for (const [rel, f] of Object.entries(d?.files || {})) out.add(base + contentName(rel, f.sha256))", '') }],
