@@ -5165,7 +5165,8 @@
       "neededBy": "PTown golden.jpg (Monument blurred): off the path the focus fell to the orbit pivot by the code's design (Ferrule, 2026-10-28)",
       "status": "answered",
       "findings": [
-        "r-stage-focuses-the-object-and-captures-the-screen"
+        "r-stage-focuses-the-object-and-captures-the-screen",
+        "r-the-focus-object-is-everything-hung-on-it"
       ]
     },
     {
@@ -8752,6 +8753,21 @@
       "quote": "\"[outside the movie, the depth of field takes the aim] … nonsensical and dumb and obviously not the intent\" · \"the share image images should look like what's on screen; that's why it's in the Stage so the operator can pose the camera and set up the shot\" · \"I don't think it's Hero: I think it's Stage. Any time I see a setup I like I can capture it as the share screen. That could be in any camera or view\" · \"And yes, Street stays where the camera is pointing\" · \"a town with no hero and no keyframe focus is blurry. It's not attractive, but that's a visual judgement for the operator.\" · \"the focus amount can still be set to 0 and you just get a sharp scene; DoF is meaningless if there's no specific thing to focus on\" · \"if there's no hero object we just make the edge of the radius the infinity point and we just do a smooth depth blur… having a distance inside the scene doesn't work because it changes frame to frame\" · \"go\" (on Boz's reading: distance from the disc centre)",
       "canon": "cartograph/OPERATIONS.md (Hero shot · Focus; Image · Focus (DoF); Share image)",
       "notes": "Today MovieCamera publishes movieFocus only while the movie plays or is held on the path; otherwise usePostFxDriver focuses the controls target and drops heroRect and the hero ladder. That fallback goes for Hero; Street keeps the aim by ruling. Capture refusing while the Hero shot plays is to be re-read against this ruling."
+    },
+    {
+      "id": "r-the-focus-object-is-everything-hung-on-it",
+      "question": "q-what-the-dof-focuses-in-stage",
+      "kind": "ruling",
+      "value": {
+        "rule": "the focus object is its whole subtree, everything hung on it (a display's strands, bulbs, glass, uplight cones), and every pixel of it is blurred at the focus object's distance, whatever the depth buffer holds",
+        "box": "the focus box covers the subtree's reach, never only the set-piece's own extent",
+        "kit": "kit-wide, any focus object and any display; no town in it"
+      },
+      "by": "Jacob",
+      "date": "2026-10-31",
+      "quote": "\"yes\" (to: the focus object includes everything hung on it, at its distance) · \"the bulbs and strands don't have depth AND they're not attached to the hero object for sharpness\"",
+      "canon": "cartograph/OPERATIONS.md (Focus (DoF))",
+      "notes": "Zob, read in source 2026-10-31: sharpness is per pixel from depth (RomanceDoF.jsx#mainImage); the clean-edge mask (HeroLadder.jsx, focusObject.js#focusMeshes) already holds the display's meshes but is scissored to focusBox, the set-piece's own ~4.3 m half-width, while the strands reach 31 m; the bulbs are depthWrite:false, so they read the depth behind them. UNBUILT. OPERATIONS' Focus line changes when it lands."
     },
     {
       "id": "r-the-arch-is-geo-anchored-with-an-authored-presence",
