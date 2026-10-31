@@ -4,8 +4,11 @@
  * set-piece's declared `extent` (`ridge`, `pinnacle`); everything else is the display's authored record and its town's
  * drawer of looks. (BRIEF-the-monument-lights-up; the engine is ./engine.js, pure.)
  *
- *   · the GLOW: `strands.glow` warm-white strands, ridge to the foot ring
- *   · the SHOW: `strands.show` colour strands on the same cone, playing the run (looks separated by transitions)
+ *   · ONE set of `strands.show` strands on the cone. Every strand is a dark gray CORD with CLEAR glass bulbs, each in its
+ *     dark Edison socket (Jacob, 2026-10-31); a bulb's light is inside its glass, so an unlit bulb is clear, never black.
+ *   · the GLOW hangs every (show ÷ glow)-th strand, the real ones, lit warm white; a SHOW hangs them all and lights them
+ *     with the run (looks separated by transitions). Out of season nothing hangs; in season by day the glow strands
+ *     hang unlit.
  *   · the PINNACLE: a strip light at the foot of each face, washing up it in a gradient (never a screen)
  * Sizes and strengths are derived (./geometry.js), never one tower's. The drawer is the TOWN's content (its contentRoot).
  *   · one AVERAGE GLOW: a light tinted by the tree's mean colour, washing everything round it
@@ -20,10 +23,12 @@ import * as THREE from 'three'
 import useTimeOfDay from '../../hooks/useTimeOfDay'
 import { townClockOf } from '../../lib/townClock.js'
 import { validateDrawer, compileRun, showAt, showSeconds, glowColour, liveState, uplightTarget } from './engine.js'
-import { checkFaces, strandEnds, pinnacleFace, bulbRadius, avgGlow } from './geometry.js'
+import { checkFaces, strandEnds, pinnacleFace, bulbRadius, cordRadius, SOCKET_OF_BULB, avgGlow } from './geometry.js'
 import useDisplayPreview from '../preview.js'
 
 const SHOW_GAIN = 2.4, GLOW_GAIN = 1.7                         // HDR, so the bulbs bloom like high-wattage lamps
+const CORD = '#3a3a3c'                                          // the cords: dark gray (Jacob, 2026-10-31)
+const CORE_OF_BULB = 0.7                                        // the light inside each clear glass bulb, as a fraction of it
 
 /** Loads the town's drawer: looks.json, then every layer frame rasterized at the frame's size to RGBA. */
 function useDrawer(url, where) {
@@ -52,18 +57,27 @@ function useDrawer(url, where) {
   return drawer
 }
 
-function Bulbs({ name, ends, rows, meshRef }) {
-  const geo = useMemo(() => new THREE.SphereGeometry(1, 6, 4), [])   // unit: each bulb is scaled to its strand's spacing
-  const mat = useMemo(() => new THREE.MeshBasicMaterial({ toneMapped: false }), [])
-  const count = ends.length * rows
-  useEffect(() => () => { geo.dispose(); mat.dispose() }, [geo, mat])
-  return <instancedMesh name={name} ref={meshRef} args={[geo, mat, count]} frustumCulled={false} />
+/** The strands: the bulbs' clear glass, the light inside each, its socket, and the cords. Instanced; sizes come in the matrices. */
+function Strands({ count, strands, glassRef, coreRef, socketRef, cordRef }) {
+  const bulb = useMemo(() => new THREE.SphereGeometry(1, 8, 6), [])                  // unit: scaled to the strand's spacing
+  const tube = useMemo(() => new THREE.CylinderGeometry(1, 1, 1, 6, 1), [])           // unit: socket and cord alike
+  const glass = useMemo(() => new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.05, metalness: 0, transparent: true, opacity: 0.22, depthWrite: false }), [])
+  const core = useMemo(() => new THREE.MeshBasicMaterial({ toneMapped: false, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }), [])
+  const dark = useMemo(() => new THREE.MeshStandardMaterial({ color: CORD, roughness: 0.8, metalness: 0 }), [])
+  useEffect(() => () => { bulb.dispose(); tube.dispose(); glass.dispose(); core.dispose(); dark.dispose() }, [bulb, tube, glass, core, dark])
+  return (<>
+    <instancedMesh name="light-show:glass" ref={glassRef} args={[bulb, glass, count]} frustumCulled={false} />
+    <instancedMesh name="light-show:light" ref={coreRef} args={[bulb, core, count]} frustumCulled={false} />
+    <instancedMesh name="light-show:sockets" ref={socketRef} args={[tube, dark, count]} frustumCulled={false} />
+    <instancedMesh name="light-show:cords" ref={cordRef} args={[tube, dark, strands]} frustumCulled={false} />
+  </>)
 }
 
 export default function LightShow({ display, extent, calendar, contentRoot, dim, where }) {
   if (!extent?.ridge || !extent?.pinnacle) throw new Error(`[LightShow] ⛔ ${where}: the set-piece declares no ridge and pinnacle in its extent, so the strands have nowhere to hang`)
   const st = display.strands
   if (!(st?.glow > 0 && st?.show > 0 && st?.ringRadiusM > 0)) throw new Error(`[LightShow] ⛔ ${where}: strands needs glow, show and ringRadiusM`)
+  if (st.show % st.glow || st.glow % extent.ridge.sides) throw new Error(`[LightShow] ⛔ ${where}: strands.show (${st.show}) must be a whole multiple of strands.glow (${st.glow}), and glow of the ridge's ${extent.ridge.sides} sides, so the glow strands are show strands`)
   if (!(st.footHeightM >= 0 && st.footHeightM < extent.ridge.yM)) throw new Error(`[LightShow] ⛔ ${where}: strands.footHeightM (${st.footHeightM}) must be authored, from the base up to below the ridge (${extent.ridge.yM.toFixed(1)} m)`)
   const preview = useDisplayPreview(s => s.modes[display.id])
   // Load the drawer only when the display can be on: Stage's preview, or a calendar to read the season from.
@@ -73,11 +87,11 @@ export default function LightShow({ display, extent, calendar, contentRoot, dim,
   const F = drawer?.frame, rows = F ? F.h - F.pinH : 0
   if (F) checkFaces(F.faces, extent, where)
 
-  const glowEnds = useMemo(() => F ? strandEnds(st.glow, extent.ridge.sides, extent.ridge.halfWidthM, st.ringRadiusM) : [], [F, st, extent])
-  const showEnds = useMemo(() => F ? strandEnds(st.show, extent.ridge.sides, extent.ridge.halfWidthM, st.ringRadiusM) : [], [F, st, extent])
+  const ends = useMemo(() => F ? strandEnds(st.show, extent.ridge.sides, extent.ridge.halfWidthM, st.ringRadiusM) : [], [F, st, extent])
+  const every = st.show / st.glow, isGlow = (s) => s % every === Math.floor(every / 2)   // the real strands among the show's
 
-  const root = useRef(), glowRef = useRef(), showRef = useRef(), pinRef = useRef(), lightRef = useRef()
-  const placed = useRef(false)
+  const root = useRef(), glassRef = useRef(), coreRef = useRef(), socketRef = useRef(), cordRef = useRef(), pinRef = useRef(), lightRef = useRef()
+  const hung = useRef(null)                                     // which strands hang now: 'none' | 'glow' | 'all'
 
   const pinFaces = useMemo(() => {
     if (!F) return null
@@ -89,7 +103,7 @@ export default function LightShow({ display, extent, calendar, contentRoot, dim,
   }, [F, extent])
   const pinMat = useMemo(() => new THREE.MeshBasicMaterial({ vertexColors: true, toneMapped: false, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }), [])
 
-  const tmp = useMemo(() => ({ m: new THREE.Matrix4(), c: new THREE.Color() }), [])
+  const tmp = useMemo(() => ({ m: new THREE.Matrix4(), c: new THREE.Color(), q: new THREE.Quaternion(), u: new THREE.Vector3(), p: new THREE.Vector3(), s: new THREE.Vector3(), Y: new THREE.Vector3(0, 1, 0) }), [])
   // While lit, the set-piece's uplights ease down to dimUplights; off, back to as authored. Gone when this unmounts.
   useEffect(() => () => { if (dim) delete dim.byDisplay[display.id] }, [dim, display.id])
 
@@ -100,23 +114,7 @@ export default function LightShow({ display, extent, calendar, contentRoot, dim,
   useFrame((_, delta) => {
     if (frameDead.current) return
     try {
-    if (!F || !compiled || !root.current || !glowRef.current || !showRef.current) return
-    // ── where: lay the bulbs along each strand, ridge to its foot (once: the set-piece's base frame carries them) ───────
-    if (!placed.current) {
-      const footY = st.footHeightM
-      for (const [ref, ends] of [[glowRef, glowEnds], [showRef, showEnds]]) {
-        ends.forEach((e, s) => {
-          const r = bulbRadius(Math.hypot(e.bx - e.tx, footY - extent.ridge.yM, e.bz - e.tz), rows)
-          for (let j = 0; j < rows; j++) {
-            const t = (j + 0.5) / rows
-            tmp.m.makeScale(r, r, r).setPosition(e.tx + (e.bx - e.tx) * t, extent.ridge.yM + (footY - extent.ridge.yM) * t, e.tz + (e.bz - e.tz) * t)
-            ref.current.setMatrixAt(s * rows + j, tmp.m)
-          }
-        })
-        ref.current.instanceMatrix.needsUpdate = true
-      }
-      placed.current = true
-    }
+    if (!F || !compiled || !root.current || !glassRef.current || !coreRef.current || !socketRef.current || !cordRef.current) return
     // ── when: live by the town's clock and schedule, or Stage's preview from the moment it was pressed ───────────────
     const instant = useTimeOfDay.getState().currentTime
     let mode, t, now, up = true                                                         // Stage's preview hangs them
@@ -129,40 +127,44 @@ export default function LightShow({ display, extent, calendar, contentRoot, dim,
       ;({ mode, t, up } = liveState(display, compiled, townClockOf(instant), calendar, sunDown, where)); now = instant.getTime() / 1000
     }
     const show = mode === 'show' ? showAt(F, compiled, drawer.byId, t, now) : null
-    // What hangs: the GLOW strands are the real ones, up in season (dark by day, gone out of it); the SHOW strands exist
-    // only while a show plays (they are the show's resolution, not hardware), and so do the pinnacle's strips. Unlit
-    // bulbs are never left in the scene: the show strands share the glow strands' places and would cover them.
-    showRef.current.visible = !!show; if (pinRef.current) pinRef.current.visible = !!show
+    if (pinRef.current) pinRef.current.visible = !!show
+    // ── where: hang the strands (ridge to foot ring): none out of season, the glow's by day and at glow, all in a show ─
+    const hang = !up ? 'none' : show ? 'all' : 'glow'
+    if (hung.current !== hang) {
+      const footY = st.footHeightM, put = (mesh, i, x, y, z, sx, sy) => mesh.setMatrixAt(i, tmp.m.compose(tmp.p.set(x, y, z), tmp.q, tmp.s.set(sx, sy, sx)))
+      ends.forEach((e, s) => {
+        const on = hang === 'all' || (hang === 'glow' && isGlow(s))
+        const len = Math.hypot(e.bx - e.tx, footY - extent.ridge.yM, e.bz - e.tz), k = on ? 1 : 0
+        const r = bulbRadius(len, rows) * k, sr = r * SOCKET_OF_BULB.radius, sh = r * SOCKET_OF_BULB.height
+        tmp.u.set(e.tx - e.bx, extent.ridge.yM - footY, e.tz - e.bz).normalize(); tmp.q.setFromUnitVectors(tmp.Y, tmp.u)   // up the strand
+        put(cordRef.current, s, (e.tx + e.bx) / 2, (extent.ridge.yM + footY) / 2, (e.tz + e.bz) / 2, cordRadius(len, rows) * k, len * k)
+        for (let j = 0; j < rows; j++) {
+          const t = (j + 0.5) / rows, x = e.tx + (e.bx - e.tx) * t, y = extent.ridge.yM + (footY - extent.ridge.yM) * t, z = e.tz + (e.bz - e.tz) * t
+          put(glassRef.current, s * rows + j, x, y, z, r, r)
+          put(coreRef.current, s * rows + j, x, y, z, r * CORE_OF_BULB, r * CORE_OF_BULB)
+          const o = r + sh / 2 - r * 0.15                                                 // the socket, on the bulb's cord side
+          put(socketRef.current, s * rows + j, x + tmp.u.x * o, y + tmp.u.y * o, z + tmp.u.z * o, sr, sh)
+        }
+      })
+      for (const m of [glassRef, coreRef, socketRef, cordRef]) m.current.instanceMatrix.needsUpdate = true
+      hung.current = hang
+    }
     if (dim) { const cur = dim.byDisplay[display.id] ?? 1, to = uplightTarget(mode, display); dim.byDisplay[display.id] = cur + (to - cur) * Math.min(1, delta * 1.5) }
     // ── what: colour every bulb ───────────────────────────────────────────────────────────────────────────────────
     const avg = [0, 0, 0]; let n = 0
-    const glowK = mode === 'glow' ? 1 : show ? show.glow : 0
-    // …and once the show owns the strands (the glow faded out), the glow strands go too: unlit, they would cover a third of it.
-    glowRef.current.visible = up && !(show && glowK === 0)
-    glowEnds.forEach((e, s) => {
-      const c = Math.floor(s * F.w / st.glow)
+    // The show OVERTAKES the glow (Jacob, 2026-10-31): a glow strand's bulb stays lit white until the show's front reaches
+    // it, then it takes the show's colour; at the close the white takes the strands back the same way. Never a fade-out.
+    ends.forEach((e, s) => {
+      const c = Math.floor(s * F.w / st.show), real = isGlow(s)
       for (let j = 0; j < rows; j++) {
-        const g = glowK > 0 ? glowColour(c, j, now) : [0, 0, 0]
-        tmp.c.setRGB(g[0] / 255 * glowK * GLOW_GAIN, g[1] / 255 * glowK * GLOW_GAIN, g[2] / 255 * glowK * GLOW_GAIN)
-        glowRef.current.setColorAt(s * rows + j, tmp.c)
-        if (glowK > 0) { avg[0] += g[0] * glowK; avg[1] += g[1] * glowK; avg[2] += g[2] * glowK; n++ }
+        const row = F.pinH + j, r = show ? (show.reveal ? show.reveal(c, row) : 'on') : 'off'
+        const rgb = r === 'spark' ? [255, 246, 228] : r === 'on' ? show.colour(c, row).map(v => v * SHOW_GAIN) : real && mode !== 'off' ? glowColour(c, j, now).map(v => v * GLOW_GAIN) : [0, 0, 0]
+        tmp.c.setRGB(rgb[0] / 255, rgb[1] / 255, rgb[2] / 255)          // the light inside the glass (additive: unlit adds nothing)
+        coreRef.current.setColorAt(s * rows + j, tmp.c)
+        if (rgb[0] + rgb[1] + rgb[2] > 0) { avg[0] += rgb[0]; avg[1] += rgb[1]; avg[2] += rgb[2]; n++ }
       }
     })
-    showEnds.forEach((e, s) => {
-      const c = Math.floor(s * F.w / st.show)
-      for (let j = 0; j < rows; j++) {
-        const row = F.pinH + j
-        let rgb = [0, 0, 0]
-        if (show) {
-          const r = show.reveal ? show.reveal(c, row) : 'on'
-          rgb = r === 'spark' ? [255, 246, 228] : r === 'on' ? show.colour(c, row) : rgb
-        }
-        tmp.c.setRGB(rgb[0] / 255 * SHOW_GAIN, rgb[1] / 255 * SHOW_GAIN, rgb[2] / 255 * SHOW_GAIN)
-        showRef.current.setColorAt(s * rows + j, tmp.c)
-        if (show) { avg[0] += rgb[0]; avg[1] += rgb[1]; avg[2] += rgb[2]; n++ }
-      }
-    })
-    glowRef.current.instanceColor.needsUpdate = true; showRef.current.instanceColor.needsUpdate = true
+    coreRef.current.instanceColor.needsUpdate = true
     // ── the pinnacle: each face's strip, washing up it ──────────────────────────────────────────────────────────────
     if (pinRef.current && pinFaces) pinFaces.forEach((face, k) => {
       const lo = [0, 0, 0], hi = [0, 0, 0]; let nl = 0, nh = 0
@@ -194,8 +196,7 @@ export default function LightShow({ display, extent, calendar, contentRoot, dim,
   if (!F) return null
   return (
     <group ref={root} name="display:light-show">
-      <Bulbs name="light-show:glow" ends={glowEnds} rows={rows} meshRef={glowRef} />
-      <Bulbs name="light-show:show" ends={showEnds} rows={rows} meshRef={showRef} />
+      <Strands count={ends.length * rows} strands={ends.length} glassRef={glassRef} coreRef={coreRef} socketRef={socketRef} cordRef={cordRef} />
       <group ref={pinRef} name="light-show:pinnacle">
         {pinFaces.map((f, k) => <mesh key={k} geometry={f.g} material={pinMat} position={f.position} rotation={f.rotation} />)}
       </group>

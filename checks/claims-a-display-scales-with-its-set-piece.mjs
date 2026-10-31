@@ -31,6 +31,9 @@ async function verdict(transform) {
   // 1. bulbs never merge, and keep one look at any size
   for (const [name, x] of [['the Pilgrim Monument', big], ['a quarter-size set-piece', small]]) if (!(ratio(x) < 1)) fails.push(`${name}: a bulb's diameter is ${ratio(x).toFixed(2)}× its spacing; the strand is a solid tube`)
   if (Math.abs(ratio(big) - ratio(small)) > 1e-9) fails.push(`bulbs are ${ratio(big).toFixed(2)}× their spacing on the monument and ${ratio(small).toFixed(2)}× on a smaller piece: a bulb size tuned to one tower`)
+  // 1b. the cord: thinner than the bulb and the same fraction of the spacing at any size
+  const cord = (x) => { const e = G.strandEnds(60, x.ridge.sides, x.ridge.halfWidthM, x.ring)[0], len = Math.hypot(e.bx - e.tx, x.ridge.yM - x.foot, e.bz - e.tz); return G.cordRadius(len, rows) / G.bulbRadius(len, rows) }
+  if (!(cord(big) < 1) || Math.abs(cord(big) - cord(small)) > 1e-9) fails.push(`the cord is ${cord(big).toFixed(3)}× a bulb on the monument and ${cord(small).toFixed(3)}× on a smaller piece: a cord thickness tuned to one tower`)
   // 2. the average glow lights the foot of each alike
   const lux = (x) => { const g = G.avgGlow(x, 1); return g.intensity / (g.y * g.y) }
   if (Math.abs(lux(big) - lux(small)) > 1e-6 * lux(big)) fails.push(`the average glow gives ${lux(big).toFixed(2)} lx at the monument's foot and ${lux(small).toFixed(2)} lx at a smaller piece's: a glow tuned to one tower`)
@@ -44,7 +47,7 @@ async function verdict(transform) {
   if (!refused) fails.push('a 4-face frame on a 6-sided ridge was accepted: a count the geometry cannot place must refuse')
   // 4. the renderer has no size or strength of its own
   const ls = code(sourceOf('src/displays/lightShow/LightShow.jsx'))
-  if (!/bulbRadius\(/.test(ls) || !/avgGlow\(/.test(ls)) fails.push('LightShow.jsx does not take its bulb size and glow from geometry.js')
+  if (!/bulbRadius\(/.test(ls) || !/cordRadius\(/.test(ls) || !/avgGlow\(/.test(ls)) fails.push('LightShow.jsx does not take its bulb size, cord and glow from geometry.js')
   if (/SphereGeometry\(\s*0\.\d/.test(ls) || /intensity\s*=\s*\d{3,}/.test(ls)) fails.push('LightShow.jsx sets a bulb size or a glow strength of its own')
   return fails
 }
@@ -56,6 +59,7 @@ else console.log('✅ a display scales with its set-piece: bulbs keep their spac
 if (process.argv.includes('--mutants')) {
   const mutants = [
     ['a fixed 0.22 m bulb', (s) => s.replace('export const bulbRadius = (length, rows) => BULB_OF_SPACING * length / rows', 'export const bulbRadius = (length, rows) => 0.22')],
+    ['a fixed 3 cm cord', (s) => s.replace('export const cordRadius = (length, rows) => CORD_OF_SPACING * length / rows', 'export const cordRadius = (length, rows) => 0.015')],
     ['a fixed 4000 cd glow', (s) => s.replace('intensity: AVG_GLOW_LUX * d * d * lum', 'intensity: 4000 * lum')],
     ['a quarter-turn per face', (s) => s.replace('const rot = -k * 2 * Math.PI / sides, half', 'const rot = -k * Math.PI / 2, half')],
   ]

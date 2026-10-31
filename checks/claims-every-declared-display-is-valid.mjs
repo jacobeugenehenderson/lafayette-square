@@ -11,7 +11,8 @@
  * carries them; then this moves into the bake's own validation and the check reads it there.
  *
  * Usage: node checks/claims-every-declared-display-is-valid.mjs [--mutants]
- *   --mutants: a running order naming a look the drawer lacks → red; a display of an unknown kind → red.
+ *   --mutants: a running order naming a look the drawer lacks, a display of an unknown kind, a show that is not a whole
+ *   multiple of the glow → red.
  */
 import { readdirSync, readFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
@@ -52,6 +53,7 @@ if (process.argv.includes('--mutants')) {
     const mutants = [
       ['a look the drawer lacks', (d) => { d.run = [...d.run, { transition: 'iris' }, { look: 'no-such-look', seconds: 3 }]; return d }],
       ['a display of an unknown kind', (d) => { d.kind = 'no-such-plugin'; return d }],
+      ['a show that is not a multiple of the glow', (d) => { d.strands = { ...d.strands, show: d.strands.glow * 3 - 1 }; return d }],
     ]
     let bad = 0
     for (const [name, m] of mutants) { const f = verdict(m); console.log(`${f.length ? '🔴' : '⚪ SURVIVED'} mutant: ${name}`); if (!f.length) bad++ }
