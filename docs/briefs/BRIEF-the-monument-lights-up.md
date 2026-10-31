@@ -54,7 +54,8 @@ Provincetown is first to use, never a Provincetown patch.
   image at distance; a far bulb keeps a minimum size and glow so it never drops out.
 - **A show is what a display MAY do, not what it is.** The Light Show glows all season and plays timed shows; arches play
   none (`r-a-show-is-what-a-display-may-do-not-what-it-is`).
-- Look names are drawer labels; visitors never see them. ⚠️ **Open:** Santa's buckle per face, or on two opposite sides.
+- Look names are drawer labels; visitors never see them. A glyph that must be seen from every side (Santa's buckle)
+  repeats on every face.
 
 ## 2. What the code says (checked 2026-10-30; confirm again at build, by symbol)
 
