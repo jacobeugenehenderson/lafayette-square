@@ -25,6 +25,8 @@ const wrapIn = (v, lo, n) => lo + (((v - lo) % n) + n) % n
 const clamp = (x) => Math.min(1, Math.max(0, x))
 export const smooth = (x) => { const t = clamp(x); return t * t * (3 - 2 * t) }
 const fadeAlpha = (t, period) => clamp(((0.5 + 0.5 * Math.sin(2 * Math.PI * t / period)) - 0.25) * 2)
+/** Which of a layer's frames shows at t: looped, or played ONCE from the look's start and held at either end. */
+const frameAt = (L, t) => { const n = L.px.length; if (n === 1) return 0; const i = Math.floor(t * L.fps); return L.once ? Math.min(n - 1, Math.max(0, i)) : ((i % n) + n) % n }
 
 /** Checks a drawer (looks.json) against the engine: every motion known, every layer's frames present. Throws by name. */
 export function validateDrawer(drawer, where) {
@@ -53,13 +55,15 @@ export function validateDisplay(display, drawer, where) {
 }
 
 /**
- * What one bulb of a look shows at time t (seconds on the show clock). `look.layers[i].px` are the layer's frames.
+ * What one bulb of a look shows at time t: seconds on the LOOK's own clock, 0 when its segment begins (negative while a
+ * transition brings it in), so a motion's phase is the look's, the same at every showing. `look.layers[i].px` are the
+ * layer's frames; a fade's `phase` (0 … 1 of its period) is where it stands at t = 0.
  * `enter` places the look's motion objects: 0 below the ground, 1 in place, past 1 rising on.
  */
 export function sampleLook(F, look, c, row, t, top = look.layers.length - 1, enter = 1) {
   const { w: FW, h: FH, pinH: P } = F, CONE = FH - P
   for (let li = top; li >= 0; li--) {
-    const L = look.layers[li], m = L.motion, px = L.px[L.px.length > 1 ? Math.floor(t * L.fps) % L.px.length : 0], sp = m.speed ?? 6
+    const L = look.layers[li], m = L.motion, px = L.px[frameAt(L, t)], sp = m.speed ?? 6
     let cc = c, rr = row
     let lo = row < P ? 0 : P, n = row < P ? P : CONE
     if (m.rows && row >= P) { lo = P + m.rows[0]; n = m.rows[1] - m.rows[0]; if (row < lo || row >= lo + n) continue }
@@ -79,7 +83,7 @@ export function sampleLook(F, look, c, row, t, top = look.layers.length - 1, ent
       if (m.kind === 'pulse') k = 0.4 + 0.6 * (0.5 + 0.5 * Math.sin(t * 2 * Math.PI * (m.speed ?? 1)))
       if (m.kind === 'strobe') k = (t % 1.2) < 0.06 || ((t % 1.2) > 0.14 && (t % 1.2) < 0.2) ? 3 : 1
     }
-    if (m.kind === 'fade') { const a = fadeAlpha(t, m.period ?? 6); if (a < 1) { const u = sampleLook(F, look, c, row, t, li - 1, enter); return [u[0] + (r - u[0]) * a, u[1] + (g - u[1]) * a, u[2] + (b - u[2]) * a] } }
+    if (m.kind === 'fade') { const a = fadeAlpha(t + (m.phase ?? 0) * (m.period ?? 6), m.period ?? 6); if (a < 1) { const u = sampleLook(F, look, c, row, t, li - 1, enter); return [u[0] + (r - u[0]) * a, u[1] + (g - u[1]) * a, u[2] + (b - u[2]) * a] } }
     return [r * k, g * k, b * k]
   }
   return [0, 0, 0]
@@ -115,7 +119,8 @@ export function compileRun(run, looksById, where) {
  *   { reveal: null | (c, row) → 'on' | 'off' | 'spark', pin: 0…1, colour: (c, row) → rgb }
  * During the opening the show's front spirals down from the ridge: behind it 'on' (the show's colour), ahead of it 'off',
  * where the glow strands stay lit white until the show overtakes them; at the close the same, reversed.
- * `now` is the clock the looks' own motions run on (the town's instant, in seconds).
+ * `now` is the town's instant in seconds: only the sparkles read it. Each look's motions run on its OWN clock, from the
+ * start of its segment (Jacob, 2026-10-31: the ribbon's build starts black; Trans arrives on its lilac).
  */
 export function showAt(F, compiled, looksById, t, now) {
   const E = { FW: F.w, FH: F.h, P: F.pinH, CONE: F.h - F.pinH, FACES: F.faces, hash }
@@ -123,13 +128,13 @@ export function showAt(F, compiled, looksById, t, now) {
   const tt = Math.min(Math.max(t, 0), total)
   const runT = Math.min(Math.max(tt - OPEN_SECONDS, 0), compiled.seconds - 1e-6)
   const seg = compiled.segs.find(s => runT >= s.at && runT < s.at + s.seconds) || compiled.segs.at(-1)
-  const L = (id, enter) => (c, row) => sampleLook(F, looksById[id], c, row, now, undefined, enter)
   let colour
-  if (seg.kind === 'look') colour = L(seg.look, seg.enter)
+  if (seg.kind === 'look') colour = (c, row) => sampleLook(F, looksById[seg.look], c, row, runT - seg.at, undefined, seg.enter)
   else {
-    const p = (runT - seg.at) / seg.seconds, nextLook = compiled.segs[compiled.segs.indexOf(seg) + 1]
-    const A = (c, row, k = 1) => sampleLook(F, looksById[seg.from], c, row, now, undefined, k)
-    const B = (c, row, k = nextLook?.enter ?? 1) => sampleLook(F, looksById[seg.to], c, row, now, undefined, k)
+    const i = compiled.segs.indexOf(seg), prevLook = compiled.segs[i - 1], nextLook = compiled.segs[i + 1]
+    const p = (runT - seg.at) / seg.seconds, tA = runT - prevLook.at, tB = runT - nextLook.at   // each look on its own clock
+    const A = (c, row, k = 1) => sampleLook(F, looksById[seg.from], c, row, tA, undefined, k)
+    const B = (c, row, k = nextLook.enter ?? 1) => sampleLook(F, looksById[seg.to], c, row, tB, undefined, k)
     colour = (c, row) => seg.tr.mix(A, B, c, row, p, now, E)
   }
   // The Transformation: the show overtakes the glow, spiralling down from the ridge; the pinnacle comes up last.

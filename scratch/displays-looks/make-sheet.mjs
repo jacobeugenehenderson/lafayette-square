@@ -24,7 +24,7 @@ const M = JSON.parse(readFileSync(join(DRAWER, 'looks.json'), 'utf8'))
 const uri = (file) => 'data:image/svg+xml;base64,' + readFileSync(join(DRAWER, file)).toString('base64')
 const TRANSITIONS_SRC = readFileSync(join(HERE, '../../src/displays/lightShow/transitions.js'), 'utf8').replace(/^export /m, '')
 // Each transition is shown between two looks that suit it: from → to.
-const PAIRS = { cascade: ['santa', 'santas-hat'], 'rising-spiral': ['candy-cane', 'classic-tree'], iris: ['holly', 'stars'], curtain: ['gift-red', 'gift-pride'], sparkle: ['snowfall', 'snowflakes'], melt: ['frosty', 'snowfall'], twirl: ['peppermint', 'candy-cane'], 'blackout-bloom': ['menorah', 'dreidel'], shatter: ['ornaments', 'white-bulbs'], 'expanding-stripes': ['plaid', 'gingerbread'], chevron: ['progress-pride', 'bear'] }
+const PAIRS = { cascade: ['santa', 'santas-hat'], 'rising-spiral': ['candy-cane', 'classic-tree'], iris: ['holly', 'stars'], curtain: ['gift-red', 'gift-pride'], sparkle: ['snowfall', 'snowflakes'], melt: ['snowman', 'snowfall'], twirl: ['peppermint', 'candy-cane'], 'blackout-bloom': ['menorah', 'dreidel'], shatter: ['ornaments', 'white-bulbs'], 'expanding-stripes': ['plaid', 'gingerbread'], chevron: ['progress-pride', 'trans'] }
 const looks = M.looks.map(L => ({ ...L, layers: L.layers.map(l => ({ ...l, frames: l.frames.map(uri) })) }))
 
 const TRANSITIONS_LIST_LEN = (TRANSITIONS_SRC.match(/\bid: '/g) || []).length
@@ -118,7 +118,7 @@ const wrapIn = (v, lo, n) => lo + (((v - lo) % n) + n) % n;
 // What a bulb shows at time t: the top layer that has paint there, moved by that layer's motion. Pure.
 function sample(look, c, row, t, top = look.layers.length - 1, enter = 1) {
   for (let li = top; li >= 0; li--) {
-    const L = look.layers[li], m = L.motion, px = L.px[L.px.length > 1 ? Math.floor(t * L.fps) % L.px.length : 0], sp = m.speed ?? 6;
+    const L = look.layers[li], m = L.motion, px = L.px[frameAt(L, t)], sp = m.speed ?? 6;
     let cc = c, rr = row;
     let lo = row < P ? 0 : P, n = row < P ? P : CONE;
     if (m.rows && row >= P) { lo = P + m.rows[0]; n = m.rows[1] - m.rows[0]; if (row < lo || row >= lo + n) continue; }   // a motion kept to part of the tree
@@ -142,7 +142,7 @@ function sample(look, c, row, t, top = look.layers.length - 1, enter = 1) {
       if (m.kind === 'strobe') k = (t % 1.2) < 0.06 || ((t % 1.2) > 0.14 && (t % 1.2) < 0.2) ? 3 : 1;
     }
     if (m.kind === 'fade') {                                    // the layer washes in over what is beneath it, and back out
-      const a = fadeAlpha(t, m.period ?? 6);
+      const a = fadeAlpha(t + (m.phase ?? 0) * (m.period ?? 6), m.period ?? 6);
       if (a < 1) { const u = sample(look, c, row, t, li - 1, enter); return [u[0] + (r - u[0]) * a, u[1] + (g - u[1]) * a, u[2] + (b - u[2]) * a]; }
     }
     return [r * k, g * k, b * k];
@@ -151,6 +151,8 @@ function sample(look, c, row, t, top = look.layers.length - 1, enter = 1) {
 }
 /** A source is a look, or anything with sample(c, row, t): a transition between two looks. */
 const S_ = (src, c, row, t) => src.sample ? src.sample(c, row, t) : sample(src, c, row, t);
+// As the engine: looped, or played ONCE and held; on a card a once-layer replays, with a 3 s hold at its end.
+function frameAt(L, t) { const n = L.px.length; if (n === 1) return 0; if (L.once) { const u = t % (n / L.fps + 3); return Math.min(n - 1, Math.max(0, Math.floor(u * L.fps))); } const i = Math.floor(t * L.fps); return ((i % n) + n) % n; }
 function fadeAlpha(t, period) { const s = 0.5 + 0.5 * Math.sin(2 * Math.PI * t / period); return Math.min(1, Math.max(0, (s - 0.25) * 2)); }
 const glowColour = (p, t) => { const h = hash(p.c * 131 + p.row), w = 0.8 + 0.2 * Math.sin(t * 1.5 + h * 30); return [255 * w, 214 * w, 150 * w]; };
 
@@ -293,7 +295,7 @@ const byId = Object.fromEntries(LOOKS.map(L => [L.id, L]));
 function transitionSource(tr, from, to) {
   const hold = 1.6, dur = tr.seconds, period = 2 * (hold + dur), E = { FW, FH, P, CONE, FACES, hash };
   return { sample(c, row, now) {
-    const u = now % period, Af = (cc, rr, k = 1) => sample(from, cc, rr, now, undefined, k), Bf = (cc, rr, k = 1) => sample(to, cc, rr, now, undefined, k);
+    const u = now % period, Af = (cc, rr, k = 1) => sample(from, cc, rr, now, undefined, k), Bf = (cc, rr, k = 1) => sample(to, cc, rr, u - hold - dur, undefined, k);   // the incoming look on its own clock, 0 as it lands
     if (u < hold) return Af(c, row, tr.fromEnter ?? 1);
     if (u < hold + dur) return tr.mix(Af, Bf, c, row, (u - hold) / dur, now, E);
     if (u < 2 * hold + dur) return Bf(c, row);
