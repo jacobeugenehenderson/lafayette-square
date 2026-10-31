@@ -196,7 +196,7 @@ function App() {
   return (
     <div style={{ width: W, height: H }}>
       <Canvas frameloop="always" {...tcp} dpr={1} camera={{ fov: FOV, near: 0.3, far: 2e5 }} gl={{ ...tcp.gl, preserveDrawingBuffer: true }}>
-        <Town town={townForLook(LOOK, 'the shore gap-finder')} lookId={LOOK} quality={QP} shot="movie" flight={false} listings={[]}
+        <Town town={townForLook(LOOK, 'the shore gap-finder')} lookId={LOOK} quality={QP} shot="movie" flight={false} listings={[]} displaySource="authoring"
           weatherMode="clear" interactive={false} layers={LAYERS} movie={{ hold: () => true, playing: false }}>
           <Walker stencil={ctx.stencil} groups={ctx.groups} />
         </Town>

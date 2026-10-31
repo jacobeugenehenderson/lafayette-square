@@ -1256,7 +1256,7 @@ function CanvasContents({ town, layers, shot, quality }) {
   // BasicLights — an inspection fallback lit only while the sky layer is off.
   return (
     <>
-      <Town town={town} lookId={lookId} quality={quality} listings={listings} shot={TOWN_SHOT[shot]} interactive={false}
+      <Town town={town} lookId={lookId} quality={quality} listings={listings} shot={TOWN_SHOT[shot]} interactive={false} displaySource="published"
         flightRef={flightRef} onFlightEnd={onFlightEnd} streetAt={streetAt} viewInset={PREVIEW_INSET} controls
         frameKey={frameKey} planHeading={planHeading} bearingRef={bearingRef} litIds={litIds ?? undefined} paused={probePaused}
         towerLight={towerLight} onTowerLight={(state) => { window.__towerLight = { state, at: performance.now() } }}

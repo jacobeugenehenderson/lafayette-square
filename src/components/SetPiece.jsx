@@ -42,7 +42,7 @@ const RENDERERS = {
   'pilgrim-monument': PilgrimMonument,
 }
 
-export default function SetPiece({ town, lookId, lightOverride, ...props }) {
+export default function SetPiece({ town, lookId, lightOverride, displaySource, ...props }) {
   if (!town) throw new Error('[SetPiece] ⛔ needs `town` — the installation being drawn')
   if (!lookId) throw new Error('[SetPiece] ⛔ needs `lookId` — the Look being drawn')
   const scene = useSceneJson(lookId)
@@ -71,7 +71,7 @@ export default function SetPiece({ town, lookId, lightOverride, ...props }) {
       <R town={town} lookId={lookId} footprint={b.footprint} focusName={`focus:${id}`} {...props}>
         <SetPieceUplights channel={lightOverride ?? scene?.setPieceLight ?? null} topM={R.extent?.topM} halfWidthM={R.extent?.halfWidthM} dim={dim} />
         {/* The town's displays that hang on its set-piece (src/displays): nothing, for a town that declares none. */}
-        <Displays town={town} lookId={lookId} attach="setPiece" extent={R.extent} dim={dim} />
+        <Displays town={town} lookId={lookId} attach="setPiece" extent={R.extent} dim={dim} drawerSource={displaySource} />
       </R>
     </group>
   )

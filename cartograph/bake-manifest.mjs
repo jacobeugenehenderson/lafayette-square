@@ -31,6 +31,12 @@
  *               false`, generic labels, ids kept stable; Cary's group only where delivery is on.
  *   photos    — every photo a published listing names, copied beside the content, indexed by the
  *               listing's own url (null when the file is missing). Credit/licence ride on the listing.
+ *   displays  — each display the identity declares, its DRAWER published beside the content: the drawer's looks.json
+ *               and every frame it names, under content/<display.drawer's dir>/, indexed { [id]: { drawer, files } }.
+ *               Preview and the player read it through the slab resolver; Stage reads the authoring drawer
+ *               (src/displays/drawerUrl.js; Boz's ruling, 2026-10-31). ⛔ STRICTER than photos: a missing drawer or
+ *               frame exits 2 (a show with a hole is not published). The output dir is emptied first, so a frame
+ *               deleted from the drawer is never left published. ▶ node checks/claims-the-bake-carries-its-displays.mjs
  *   tide      — tidal towns only (terrain.json `water.tidal`): the station's harmonic constituents, MSL above MLLW and
  *               its datums, from raw/tide.json (fetch-water-datums --tide-only). The player times
  *               the tide from them (cartograph/tide.mjs); the levels stay the town's own. Kept whole, unrounded
@@ -52,7 +58,7 @@
 import { categoryNeon, categoryDetail, isAuthoredCategory } from '../src/lib/categoryColor.js'
 import { readDeployment } from '../src/lib/deployment.js'
 import { resolveIdentity } from '../src/lib/townIdentity.js'
-import { readFileSync, writeFileSync, readdirSync, statSync, existsSync, mkdirSync } from 'node:fs'
+import { readFileSync, writeFileSync, readdirSync, statSync, existsSync, mkdirSync, rmSync } from 'node:fs'
 import { createHash } from 'node:crypto'
 import { resolve, relative, dirname, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -121,6 +127,13 @@ for (const name of CONTENT_PAYLOAD) {
 // said, never skipped. Credit and licence travel on the listing record; the player must show them.
 // ⚠️ Photos living in the app's public/photos/ are town data outside the town's folder (BRIEF-slab-loading ③);
 // the manifest reports how many, so the move is visible.
+/** Copy one file beside the content and index it: { path, bytes, sha256 }. Photos and drawers alike. */
+function publishBeside(src, rel) {
+  const buf = readFileSync(src), out = resolve(contentOut, rel)
+  mkdirSync(dirname(out), { recursive: true })
+  writeFileSync(out, buf)
+  return { path: 'content/' + rel, bytes: buf.length, sha256: createHash('sha256').update(buf).digest('hex') }
+}
 const photos = {}
 let photosOutsideTown = 0
 const listingsFile = resolve(contentSrc, 'listings.json')
@@ -135,13 +148,31 @@ if (existsSync(listingsFile)) {
       const src = url.startsWith('/') ? resolve(ROOT, 'public', url.slice(1)) : resolve(contentSrc, url)
       if (!existsSync(src)) { photos[url] = null; continue }
       if (url.startsWith('/')) photosOutsideTown++
-      const buf = readFileSync(src)
-      const out = resolve(contentOut, 'photos', tail)
-      mkdirSync(dirname(out), { recursive: true })
-      writeFileSync(out, buf)
-      photos[url] = { path: 'content/photos/' + tail, bytes: buf.length, sha256: createHash('sha256').update(buf).digest('hex') }
+      photos[url] = publishBeside(src, 'photos/' + tail)   // ⚠️ the photos dir is not emptied first: a removed photo stays published (latent, as Zob noted)
     }
   }
+}
+
+// ── displays: each declared display's drawer, published beside the content (header) ──
+const displays = {}
+for (const d of identity.displays || []) {
+  const where = `"${town}" display "${d.id}"`
+  if (typeof d.drawer !== 'string' || !d.drawer.endsWith('.json')) { console.error(`⛔ ${where} names no drawer (a looks.json under its content)`); process.exit(2) }
+  const drawerSrc = resolve(contentSrc, d.drawer)
+  if (!existsSync(drawerSrc)) { console.error(`⛔ ${where}: its drawer ${relative(ROOT, drawerSrc)} is not on disk — a show with no looks is not published`); process.exit(2) }
+  let looks
+  try { looks = JSON.parse(readFileSync(drawerSrc, 'utf8')) } catch (e) { console.error(`⛔ ${where}: ${relative(ROOT, drawerSrc)} is not valid JSON: ${e.message}`); process.exit(2) }
+  const dir = dirname(d.drawer)
+  rmSync(resolve(contentOut, dir), { recursive: true, force: true })   // never a frame from an earlier bake left behind
+  const files = {}
+  const put = (rel) => { const f = publishBeside(resolve(contentSrc, rel), rel); files[f.path] = { bytes: f.bytes, sha256: f.sha256 } }
+  put(d.drawer)
+  for (const L of looks.looks || []) for (const layer of L.layers || []) for (const frame of layer.frames || []) {
+    const rel = `${dir}/${frame}`
+    if (!existsSync(resolve(contentSrc, rel))) { console.error(`⛔ ${where}: look "${L.id}" names frame ${frame}, and ${relative(ROOT, resolve(contentSrc, rel))} is not on disk`); process.exit(2) }
+    if (!files['content/' + rel]) put(rel)
+  }
+  displays[d.id] = { drawer: 'content/' + d.drawer, files }
 }
 
 // ── board: the town's bulletin sections ───────────────────────────────────────
@@ -226,6 +257,7 @@ const manifest = {
   board: { authored: false, groups: boardGroups },
   content,
   photos,
+  displays,
   ...(tide ? { tide } : {}),
   deployment,
   files,
