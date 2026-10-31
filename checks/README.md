@@ -15,7 +15,7 @@ gated without anyone remembering to gate it, which is what makes this work on to
 
 A non-zero exit is a **finding for the board**, not a runner fault. The suite reports; it does not fix.
 
-## ⛔ live — 135. Never in a default run.
+## ⛔ live — 136. Never in a default run.
 
 Two reason classes, and they are not the same thing. **outbound** — a demonstrated call out.
 **unreadable** — runs code the parser cannot read, so it *may* contact nothing but cannot be shown
@@ -81,6 +81,7 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `checks/claims-authored-skelids-keep-their-ways.mjs` | unreadable | deletes files — only under its own temp dir · child_process with a non-literal command — cannot be read |
 | `checks/claims-deployment-has-one-authority.mjs` | unreadable | imports vite — its server resolves localhost over DNS (caught by the no-network guard) · imports package(s) vite — not read from source |
 | `checks/claims-every-app-mounts-the-set-piece.mjs` | unreadable | computed import() with no readable target — runs arbitrary modules · computed import() with no readable target — runs arbitrary modules |
+| `checks/claims-every-declared-display-is-valid.mjs` | unreadable | importSource of src/displays/lightShow/engine.js — read, safe · computed import() with no readable target — runs arbitrary modules |
 | `checks/claims-every-ground-surface-takes-the-lamp.mjs` | unreadable | imports vite — its server resolves localhost over DNS (caught by the no-network guard) · imports package(s) vite — not read from source |
 | `checks/claims-every-tree-candidate-is-accounted-for.mjs` | unreadable | deletes files — only under its own temp dir · imports arborist/bake-trees.js, which can: writeFile, imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files, imports arborist/roster-coverage.js, which can: imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command |
 | `checks/claims-extent-never-seeds-a-committed-radius.mjs` | outbound | writeFileSync — only under its own temp dir · deletes files — only under its own temp dir · imports a temp copy of src/cartograph/api.js, which can: calls fetch() · imports a mutated copy of src/cartograph/extentRadius.js from its own temp dir — read as src/cartograph/extentRadius.js, safe · imports a mutated copy of src/cartograph/api.js from its own temp dir — read as src/cartograph/api.js, safe |
@@ -201,7 +202,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 365. This is `npm test`.
+## safe — 375. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -223,10 +224,15 @@ Writes into the repo or a scratch dir.
 | `checks/claims-a-corner-is-where-one-turns.mjs` | ⭐⭐⭐ A CORNER IS WHERE ① TURNS — THE LABEL NEVER DECIDES IT. A CENSUS, not a gate: where the owner label changes on |
 | `checks/claims-a-curb-arc-belongs-to-one-tile.mjs` | CLAIM — IN THE FROZEN SHAPE, A CURB CONTOUR BELONGS TO ONE TILE, SO A RUN (skelId · side · poly) IS LISTED ONCE. |
 | `checks/claims-a-deck-is-every-object-that-covers-it.mjs` | IS EVERY POINT A DECK OBJECT COVERS ON THE DECK? |
+| `checks/claims-a-display-dims-its-set-piece-only-while-lit.mjs` | "DO A SET-PIECE'S UPLIGHTS DIM ONLY WHILE ITS DISPLAY IS LIT?" (Jacob, 2026-10-31: "it's only during the show/glow that |
+| `checks/claims-a-display-hangs-only-in-season.mjs` | "ARE THE STRANDS THERE ONLY WHEN THEY WOULD BE?" (Jacob, 2026-10-31: "hide the strands out of season"; "All cords |
+| `checks/claims-a-display-is-the-same-for-every-viewer.mjs` | "DOES EVERY VIEWER SEE THE SAME LIGHT AT THE SAME INSTANT?" (BRIEF-the-monument-lights-up §4, gate 1) |
+| `checks/claims-a-display-scales-with-its-set-piece.mjs` | "DOES A DISPLAY LOOK RIGHT ON A SET-PIECE NOBODY TUNED IT FOR?" (Zob's review and Boz's ruling, 2026-10-31; Layer 0's |
 | `checks/claims-a-district-is-the-towns-own.mjs` | DOES A TOWN'S ROSTER NAME ITS OWN HISTORIC DISTRICT, OR HI-POINTE–DEMUN'S? |
 | `checks/claims-a-dock-rides-only-its-own-structure.mjs` | CLAIM — A DOCK RIDES ONLY ITS OWN STRUCTURE (Boz's rulings (A) and (A1), 2026-10-30; Jacob: "markings on the sandbed are grass"). |
 | `checks/claims-a-face-takes-the-land-use-that-covers-it.mjs` | ⭐⭐ THREE INVARIANTS — ① and ② ruled by Jacob 2026-09-25, ③ 2026-10-04: |
 | `checks/claims-a-failed-tree-load-names-itself.mjs` | WHEN THE GROVE'S ATLAS (OR THE TREE MATERIALS) FAIL TO LOAD, DOES THE REVEAL SAY SO? |
+| `checks/claims-a-failing-display-is-named-and-contained.mjs` | "WHEN A DISPLAY FAILS AT RUNTIME, IS IT CONTAINED AND NAMED?" (Boz's ruling, 2026-10-31.) |
 | `checks/claims-a-fitted-loop-stays-on-its-road.mjs` | DOES EVERY CLOSED-LOOP STREET CHAIN'S LINE STAY ON ITS ROAD? |
 | `checks/claims-a-flat-town-is-not-refined.mjs` | CLAIM — A TOWN WITH NO TERRAIN SHIPS ITS GROUND UNREFINED (F3, Jacob 2026-09-24). |
 | `checks/claims-a-focus-object-resolves-in-its-own-slab.mjs` | "CAN THE OPERATOR PICK A FOCUS OBJECT THAT ISN'T THERE?" — A11/A00, the authoring-UI surface. |
@@ -235,9 +241,11 @@ Writes into the repo or a scratch dir.
 | `checks/claims-a-keyframe-carries-its-aim.mjs` | IS EVERY SHOT THE OPERATOR'S OWN? |
 | `checks/claims-a-kink-recovers-but-a-corner-does-not.mjs` | WHY THIS EXISTS. Jacob, 2026-09-08: "streets should continue their predominant direction into an |
 | `checks/claims-a-level-body-has-one-surface.mjs` | IS THE LAKE FLAT IN OUR OWN HEIGHTFIELD? |
+| `checks/claims-a-light-show-runs-dusk-to-dawn-on-the-hour.mjs` | "DOES THE LIGHT SHOW GLOW DUSK TO DAWN AND PLAY ON THE HOUR?" (r-the-lights-run-dusk-to-dawn-and-the-show-plays-on- |
 | `checks/claims-a-listing-keeps-its-id.mjs` | a business keeps its display id across every bake, whatever else |
 | `checks/claims-a-look-authors-its-curb-width.mjs` | DOES EVERY LOOK RESOLVE ONE CURB, FROM ONE HOME, AND SAY WHICH RUNG DECIDED? |
 | `checks/claims-a-look-keyed-tool-is-called-with-its-look.mjs` | every spawn of a Look-strict tool passes `--look`. |
+| `checks/claims-a-look-runs-on-its-own-clock.mjs` | "DOES EVERY LOOK START FROM ITS OWN BEGINNING?" (BRIEF-the-monument-lights-up; Jacob, 2026-10-31: the Red Ribbon's |
 | `checks/claims-a-memo-returns-its-value.mjs` | DOES EVERY useMemo HAND BACK WHAT IT COMPUTES? |
 | `checks/claims-a-menu-price-is-in-cents.mjs` | a menu price is an integer count of cents, on every |
 | `checks/claims-a-missing-revetment-is-not-a-shoreless-town.mjs` | ⭐⭐ THE INVARIANT: the renderer may draw "no shore" only when it has been TOLD there is no shore — and the town's |
@@ -246,6 +254,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-a-nodeless-crossing-is-grade-separated.mjs` | WHERE TWO OSM STREET WAYS CROSS IN 2D WITHOUT A SHARED NODE, DOES OSM |
 | `checks/claims-a-oneway-runs-in-travel-order.mjs` | CLAIM — EVERY ONE-WAY CHAIN RUNS IN TRAVEL ORDER, AND A REVERSED WAY'S TAGS POINT THE WAY IT NOW RUNS. |
 | `checks/claims-a-parcel-keeps-all-its-parts.mjs` | DOES A MULTIPART PARCEL REACH THE MAP WHOLE? |
+| `checks/claims-a-pinnacle-stays-in-gamut.mjs` | "DOES THE PINNACLE'S WASH STAY THE LOOK'S COLOUR?" (Jacob, 2026-10-31: the red pinnacle went pink, "out of gamut or |
 | `checks/claims-a-pour-adds-no-gitignore-lines.mjs` | "DOES A POUR ADD LINES TO .gitignore?" — the standing guard on scene tracking. |
 | `checks/claims-a-production-host-serves-only-its-own-town.mjs` | A TOWN'S PRODUCTION DOMAIN SERVES THAT TOWN AND NOTHING ELSE — and only a domain we own, live. |
 | `checks/claims-a-published-edit-reaches-the-map.mjs` | a Host's published correction is what the map shows. |
@@ -270,6 +279,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-a-town-never-bakes-from-the-whole-library.mjs` | CAN A TREE BAKE PLANT A SPECIES FROM OUTSIDE THE TOWN'S GROVE? |
 | `checks/claims-a-town-shares-its-own-picture.mjs` | a shared link shows the town's own picture, at the time of day it is |
 | `checks/claims-a-towns-colours-are-its-own.mjs` | "ARE A TOWN'S CATEGORY COLOURS — ITS NEON, ITS CHIPS — ITS OWN?" |
+| `checks/claims-a-towns-displays-are-its-own-content.mjs` | "DOES ONE TOWN'S DISPLAY SHIP IN EVERY TOWN'S PLAYER?" (Boz's ruling, 2026-10-31: a town's looks are TOWN CONTENT.) |
 | `checks/claims-a-towns-identity-is-its-own.mjs` | IS HOW A TOWN LOOKS AUTHORED IN ONE PLACE, AND CARRIED WHOLE? |
 | `checks/claims-a-towns-listings-reach-its-surfaces.mjs` | with no error anywhere. Provincetown, 2026-09-25: 445 listings on disk, 0 in the staging player, |
 | `checks/claims-a-towns-sources-are-its-own.mjs` | DOES SOURCES NAME THIS TOWN'S SOURCE, OR ANOTHER COUNTRY'S? |
@@ -403,6 +413,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-no-slab-outlives-its-schema.mjs` | CLAIM: no baked slab is read under a fade model it was not baked for. |
 | `checks/claims-no-sub-ink-edge-between-two-owners.mjs` | CLAIM — ① HAS NO EDGE SHORTER THAN ITS INK IS WIDE BETWEEN TWO OWNERS, EXCEPT WHERE THE EXACT INK HAS ONE. ① is every |
 | `checks/claims-no-town-carries-the-mould.mjs` | "DOES ANY TOWN CARRY ANOTHER TOWN'S PLACES?" — continuity map §7 #2 (Phase 2 C, 2026-10-04). |
+| `checks/claims-no-town-in-display-code.mjs` | "IS THERE A TOWN IN THE DISPLAYS' CODE?" (BRIEF-the-monument-lights-up §4, gate 2; CLAUDE.md Layer 0) |
 | `checks/claims-no-town-name-gates-the-kit.mjs` | "DOES ANY KIT CODE STILL DECIDE BY A TOWN'S NAME?" — BRIEF-ls-bleed-excision (Jacob, 2026-10-07: "fix the LS |
 | `checks/claims-no-town-rides-in-the-bundle.mjs` | "DOES ONE TOWN'S DATA SHIP TO EVERY TOWN?" — the stowaway, made impossible. |
 | `checks/claims-no-town-wears-another-towns-mark.mjs` | no LS asset is hardcoded into a shared surface. |

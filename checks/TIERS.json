@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 539,
+  "total": 542,
   "counts": {
-    "safe": 372,
+    "safe": 375,
     "local-effect": 31,
     "live": 136
   },
@@ -518,6 +518,14 @@
       ]
     },
     {
+      "file": "checks/claims-a-light-show-runs-dusk-to-dawn-on-the-hour.mjs",
+      "tier": "safe",
+      "why": [
+        "importSource of src/displays/lightShow/engine.js — read, safe",
+        "importSource of src/lib/townClock.js — read, safe"
+      ]
+    },
+    {
       "file": "checks/claims-a-listing-keeps-its-id.mjs",
       "tier": "safe",
       "why": [
@@ -557,6 +565,13 @@
         "computed import() with no readable target — runs arbitrary modules",
         "computed import() with no readable target — runs arbitrary modules",
         "runs `/Applications/Google Chrome.app/Contents` — not a known-local command"
+      ]
+    },
+    {
+      "file": "checks/claims-a-look-runs-on-its-own-clock.mjs",
+      "tier": "safe",
+      "why": [
+        "importSource of src/displays/lightShow/engine.js — read, safe"
       ]
     },
     {
@@ -653,6 +668,13 @@
         "deletes files",
         "computed import() with no readable target — runs arbitrary modules",
         "computed import() with no readable target — runs arbitrary modules"
+      ]
+    },
+    {
+      "file": "checks/claims-a-pinnacle-stays-in-gamut.mjs",
+      "tier": "safe",
+      "why": [
+        "importSource of src/displays/lightShow/geometry.js — read, safe"
       ]
     },
     {
