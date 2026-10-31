@@ -31,12 +31,30 @@ Provincetown is first to use, never a Provincetown patch.
   town has added (`r-displays-is-a-stage-section-of-plugins`).
 - **Each display is a plugin**, like an After Effects effect. The plugin is kit code (its motions and transitions); every
   town may add any plugin. The first three: **Light Show** (this brief), **Fireworks**, **Street Arches**.
-- **Setups belong to the town's instance**, not a cross-town library. The section lets the operator see, create, edit and
-  delete them; Provincetown expects 20+ with transitions (`r-a-displays-setups-belong-to-its-town`).
+- **A show is LOOKS separated by TRANSITIONS** (`r-a-show-is-looks-separated-by-transitions`). Two drawers, both the
+  town's, not a cross-town library (`r-a-displays-setups-belong-to-its-town`):
+  - **Looks:** named SVGs at the display's FRAME resolution, one pixel = one bulb. The frame is the cone unrolled: the top
+    edge is the crown's four sides, the bottom edge the ground circle; columns are strands, rows are bulbs. Each look
+    carries one built-in motion: still · fall · rise · spin · twinkle · pulse · strobe (`r-a-look-carries-one-motion`).
+    ⛔ No per-bulb editor in the panel; a look is drawn in a vector app on a template with the grid marked.
+  - **Transitions:** kit code, and they should be cool. At least: cascade from the crown · rising spiral · iris · curtain
+    sweep · sparkle dissolve · melt · twirl · strobe flash · blackout-and-bloom · shatter to twinkle · rising stripes ·
+    expanding stripes · drop-in stripes with a bounce. **Strobe is also an accent** a transition carries at its dynamic
+    moment (the leading edge of a melt, a stripe's landing).
+  - **The system creates the initial set:** 20+ looks and the transitions above.
+- **Looks are abstractions, never pictures** (`r-looks-are-abstractions`): colour-blocked and conceptual. Santa, bottom
+  to top: white (boot tops) · red (pants) · white (coat trim) · red (coat) · black belt with gold buckles · red · white to
+  the crown. Motifs: snow, snowflakes, gifts, snowman, Santa, reindeer, Hanukkah, Kwanzaa, candy, peace, holly, bells,
+  stars, plaids, bows, and more. Jacob reviews them as a contact sheet before they go on the tree.
+- **The tree glows WHITE; the show is COLOUR** (`r-the-tree-glows-white-and-the-show-is-colour`). The glow is a white
+  Christmas tree; a show opens with a magical transformation into 2–3× as many full-colour strands, and reverses at
+  the end. Starting values, authored on the display: 64 white, 192 colour, ~96 bulbs per strand. Bulbs are always bright
+  and visible; where they are too close to tell apart, their glows merge into a smooth image. ⛔ No switch to a flat
+  image at distance; a far bulb keeps a minimum size and glow so it never drops out.
 - **A show is what a display MAY do, not what it is.** The Light Show glows all season and plays timed shows; arches play
   none (`r-a-show-is-what-a-display-may-do-not-what-it-is`).
-- **A setup only combines the plugin's built-in motions** (and its transitions); no hand-drawn motion
-  (`r-a-setup-composes-its-plugins-motions`).
+- ⚠️ **Open:** visitor-facing names for Frosty and Rudolph (trademarked characters; proposed: Snowman, Reindeer) ·
+  Santa's buckle per face, or on two opposite sides.
 
 ## 2. What the code says (checked 2026-10-30; confirm again at build, by symbol)
 
@@ -62,15 +80,17 @@ Provincetown is first to use, never a Provincetown patch.
 
 ## 3. Standup before code
 
-Bring Jacob, through Boz: the plugin seam in one paragraph; the Displays section in Stage (a sketch); what a viewer sees
-and when; the first motions and transitions; how someone finds the show (the appointment, through the ticker's season
-entry); and a still from `:5173`. ⛔ No build before his yes.
+Held 2026-10-30 (the plan to Boz; the rulings above are its outcome). Before the tree: the looks as a contact sheet for
+Jacob. Order: the pure core and its checks → the bulbs in the slot, in Stage → the bake carries `displays` → the
+Displays panel (two drawers and the show strip) → `<Town calendar>` with Ward → phone frame time → PTown's season dates.
+Later: the ticker's next showtime (Ward) · the Street view · Fireworks (closed-form sparks, a camera flight with the show).
 
 ## 4. Gates
 
 - Same town-clock instant → same light state (a check that reads the clock source; a mutant on the viewer's clock → RED).
 - No town name, id or coordinate in plugin code: a check reads the plugin sources, with a mutant.
-- Setups are read from one authored place; an unknown motion, transition or season refuses by name (no silent default).
+- Looks and the show are read from one authored place; an unknown look, motion, transition or season, or a look not at
+  the frame's resolution, refuses by name (no silent default).
 - The calendar prop is fed from the published calendar, never the merged set (Ward's check, with a mutant feeding
   `events`).
 - Phone frame time with the show running vs the same scene with it off.
@@ -81,4 +101,4 @@ entry); and a still from `:5173`. ⛔ No build before his yes.
 Worktree `.claude/worktrees/tinsel`, branch `tinsel/displays` from `integration/2026-10-20`; merge integration in
 before handing it to Boz. `git commit -- <paths>`. ⛔ No publish, Promote, upload or deploy: those are Jacob's. No new
 dev server without Boz's word. Registers: FEATURES (Displays, in a marketer's words) and OPERATIONS (how a town adds a
-display and authors its setups).
+display, draws a look and builds a show).

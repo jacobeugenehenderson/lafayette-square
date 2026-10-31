@@ -5267,7 +5267,11 @@
         "r-displays-is-a-stage-section-of-plugins",
         "r-a-displays-setups-belong-to-its-town",
         "r-a-show-is-what-a-display-may-do-not-what-it-is",
-        "r-a-setup-composes-its-plugins-motions"
+        "r-a-setup-composes-its-plugins-motions",
+        "r-a-show-is-looks-separated-by-transitions",
+        "r-looks-are-abstractions",
+        "r-the-tree-glows-white-and-the-show-is-colour",
+        "r-a-look-carries-one-motion"
       ]
     }
   ],
@@ -8967,7 +8971,8 @@
       "by": "Jacob",
       "date": "2026-10-30",
       "quote": "\"I think there needs to be a helper surface where the user can see/edit/create/delete patterns\" · \"We want to do like 20+light setups with transitions\" · on 'presets: your 20+ setups, saved and reusable on any town': \"No makes no sense\"",
-      "canon": "docs/briefs/BRIEF-the-monument-lights-up.md (ROADMAP H-36)"
+      "canon": "docs/briefs/BRIEF-the-monument-lights-up.md (ROADMAP H-36)",
+      "notes": "'Setups' superseded by LOOKS the same day: r-a-show-is-looks-separated-by-transitions."
     },
     {
       "id": "r-a-show-is-what-a-display-may-do-not-what-it-is",
@@ -8995,7 +9000,69 @@
       "date": "2026-10-30",
       "quote": "\"setups only made by combining the plugin's built-in motions\"",
       "canon": "docs/briefs/BRIEF-the-monument-lights-up.md (ROADMAP H-36)",
-      "notes": "The consequence is Tinsel's reading, not Jacob's words."
+      "notes": "The consequence is Tinsel's reading, not Jacob's words. 'Setups' superseded by LOOKS the same day: r-a-show-is-looks-separated-by-transitions."
+    },
+    {
+      "id": "r-a-show-is-looks-separated-by-transitions",
+      "question": "q-how-a-town-authors-a-display",
+      "kind": "ruling",
+      "value": {
+        "looks": "a DRAWER of named SVGs, each drawn at the display's FRAME resolution (one pixel = one bulb)",
+        "frame": "the cone unrolled into a rectangle: the top edge is the crown's four sides, the bottom edge the ground circle's circumference; columns are strands, rows are bulbs",
+        "transitions": "a DRAWER of named transitions (kit code)",
+        "show": "looks separated by transitions",
+        "panel": "no per-bulb editor (the sky builder's click-a-cell grid is impossible at this resolution); drawing happens in a vector app",
+        "initial": "the system creates the initial looks and transitions"
+      },
+      "by": "Jacob",
+      "date": "2026-10-30",
+      "quote": "\"I expect the system to create the initial patterns and transitions\" · \"I personally don't think there's space for a proper interface in the panel; take a look in the caryograph at the sky builder. It is a grid of colored squares so *theoretically* a user could go one-by-one and create colored bulbs but I think that seems... not efficient. Impossible, even. I almost think what we need is svgs (or whatever) at our \\\"frame\\\" size (the four sides on the top and the circumference of the bottom, flattened and stretched into a rectangle) basically at the resolution of single rows and columns. And I think the transitions should be cool; you can do it! The way I'm picturing it is we end up with a \\\"drawer\\\" of simple SVGs that have the primitive pattern on it and each has a name. Then, we have a drawer of transitions. The show is just looks separated by transitions.\"",
+      "canon": "docs/briefs/BRIEF-the-monument-lights-up.md (ROADMAP H-36)",
+      "notes": "Supersedes the 'setups' wording of r-a-displays-setups-belong-to-its-town and r-a-setup-composes-its-plugins-motions: a setup is now a LOOK (an SVG + one built-in motion, r-a-look-carries-one-motion); ownership by the town is unchanged."
+    },
+    {
+      "id": "r-looks-are-abstractions",
+      "question": "q-how-a-town-authors-a-display",
+      "kind": "ruling",
+      "value": {
+        "rule": "looks are clever, conceptual colour-blocked abstractions, never pictures",
+        "example": "Santa, bottom to top: white (boot tops), red (pants), white (coat trim), red (coat body), black belt with big gold buckles, red (coat), white to the top",
+        "motifs": "20+: snow, gifts, Frosty, Santa, Rudolph, Hanukkah, candy, peace, Kwanzaa, holly, bells, stars, snowflakes, plaids, bows, etc."
+      },
+      "by": "Jacob",
+      "date": "2026-10-30",
+      "quote": "\"The 20+ pattern motifs should looks like snow, gifts, Frosty, Santa, Rudolph, Hannukah, Candy, Peace, Kwanzaa, Holly, bells, stars, etc. etc.\" · \"Santa = White stripe (boots top), red stripe (pants), White stripe (coat trim), red stripe (Coat body), black stripe with two big gold buckles on either side is santa's belt and buckle, red again for his coat, then white to the top... these will all need to be clever and conceptual, that's why I know you'll do a great job. These things will all be abstractions. Snowflakes, plaids, bows\"",
+      "canon": "docs/briefs/BRIEF-the-monument-lights-up.md (ROADMAP H-36)",
+      "notes": "OPEN: the visitor-facing names for Frosty and Rudolph (trademarked characters; Tinsel proposed Snowman / Reindeer); whether Santa's buckle repeats per face or sits on two opposite sides."
+    },
+    {
+      "id": "r-the-tree-glows-white-and-the-show-is-colour",
+      "question": "q-how-a-town-authors-a-display",
+      "kind": "ruling",
+      "value": {
+        "glow": "the tree is a Christmas tree: white lights",
+        "show": "2-3x more strands in full colour, for resolution; the show may open by dramatically, magically changing from the white to the colour",
+        "start": "64 white strands, 192 colour strands, ~96 bulbs per strand: authored starting values on the display",
+        "bulbs": "always bright, visible bulbs; where two are too close to distinguish, that is what makes the image smooth (no switch to a flat image at distance)"
+      },
+      "by": "Jacob",
+      "date": "2026-10-30",
+      "quote": "\"I am considering doubling the number of strands for the shows to give us better \\\"resolution\\\" in the images\" · \"The tree is supposed to be a christmas tree... perhaps the show can open by dramatically magically changing from the white lights to 2-3x more full-color lights.\" · \"start with those strand counts. phone res is kind of irrelevant; sub pixel detail becomes a resolved image\" · \"No: the bulbs are very bright and visible. If two of them get too close together to distinguish that's what gives us a smooth image in the lights\"",
+      "canon": "docs/briefs/BRIEF-the-monument-lights-up.md (ROADMAP H-36)"
+    },
+    {
+      "id": "r-a-look-carries-one-motion",
+      "question": "q-how-a-town-authors-a-display",
+      "kind": "ruling",
+      "value": {
+        "looks": "each look carries one built-in motion (still, fall, rise, spin, twinkle, pulse, strobe)",
+        "transitions": "include rising stripes, expanding stripes, drop-in stripes with a bounce",
+        "strobes": "mixed into the dynamic moments: the leading edge of a melt or a drop"
+      },
+      "by": "Jacob",
+      "date": "2026-10-30",
+      "quote": "\"We also discussed strobes.\" · \"add rising stripes, expanding stripes... drop-in stripes (with bounce effect)... mix strobes into the dynamic moments (the leading edge of a melt or drop)\" · \"yes motion per look\"",
+      "canon": "docs/briefs/BRIEF-the-monument-lights-up.md (ROADMAP H-36)"
     }
   ]
 }
