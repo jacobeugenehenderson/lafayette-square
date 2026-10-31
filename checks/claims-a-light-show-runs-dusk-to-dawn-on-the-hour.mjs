@@ -58,7 +58,7 @@ async function verdict({ engine, view } = {}) {
   F(starts.filter(h => h === '01:00').length === 2, `the repeated 01:00 of the change of clocks did not get both its shows: ${starts}`)
   // 5. the record's refusals.
   const drawer = { frame: { w: 8, h: 6, pinH: 2, faces: 4 }, looks: [{ id: 'a', layers: [{ motion: { kind: 'still' }, frames: ['x'] }] }] }
-  const rec = (extra) => ({ id: 'd', season: 's', strands: { glow: 1, show: 1, ringRadiusM: 1, footHeightM: 1 }, run: [{ look: 'a', seconds: 60 }], ...extra })
+  const rec = (extra) => ({ id: 'd', drawer: 'displays/d/looks.json', season: 's', strands: { glow: 1, show: 1, ringRadiusM: 1, footHeightM: 1 }, run: [{ look: 'a', seconds: 60 }], ...extra })
   const refuses = (r, named) => { try { E.validateDisplay(r, drawer, 'check'); return false } catch (e) { return named.test(e.message) } }
   F(refuses(rec({ run: [{ look: 'a', seconds: 3700 }] }), /longer than the hour/), 'a show longer than the hour is not refused by name')
   F(refuses(rec({ shows: { every: 'hour' } }), /shows/), 'a `shows` field is not refused by name')
