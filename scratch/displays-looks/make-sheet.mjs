@@ -21,8 +21,12 @@ const STAGES = placeholderStages().map(s => ({ name: s.name, h: s.sq * FT / 2, y
 const MON = { top: DOSSIER.topZ * FT, deck: DOSSIER.balcony.z * FT, pinHalf: DOSSIER.belfryTopSq * FT / 2, ridgeHalf: DOSSIER.balcony.sq * FT / 2 }
 const M = JSON.parse(readFileSync(join(HERE, 'looks.json'), 'utf8'))
 const uri = (file) => 'data:image/svg+xml;base64,' + readFileSync(join(HERE, file)).toString('base64')
+const TRANSITIONS_SRC = readFileSync(join(HERE, 'transitions.js'), 'utf8').replace(/if \(typeof module[^\n]*\n?/, '')
+// Each transition is shown between two looks that suit it: from → to.
+const PAIRS = { cascade: ['santa', 'santas-hat'], 'rising-spiral': ['candy-cane', 'classic-tree'], iris: ['holly', 'stars'], curtain: ['gift-red', 'gift-pride'], sparkle: ['snowfall', 'snowflakes'], melt: ['frosty', 'snowfall'], twirl: ['peppermint', 'candy-cane'], 'strobe-flash': ['rudolph', 'santa'], 'blackout-bloom': ['menorah', 'dreidel'], shatter: ['ornaments', 'white-bulbs'], 'rising-stripes': ['kwanzaa-bands', 'kinara'], 'expanding-stripes': ['plaid', 'gingerbread'], 'drop-in': ['bear', 'progress-pride'] }
 const looks = M.looks.map(L => ({ ...L, layers: L.layers.map(l => ({ ...l, frames: l.frames.map(uri) })) }))
 
+const TRANSITIONS_LIST_LEN = (TRANSITIONS_SRC.match(/\bid: '/g) || []).length
 const html = `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -44,16 +48,22 @@ h1 span { color: var(--gold); }
 .lede { color: var(--muted); max-width: 70ch; line-height: 1.55; margin: 0; font-size: 15px; }
 .facts { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 0; padding: 0; list-style: none; }
 .facts li { font-family: var(--mono); font-size: 12px; color: var(--ink); border: 1px solid var(--rule); border-radius: 999px; padding: 4px 10px; }
+.tabs { display: flex; gap: 6px; margin-top: 2px; }
+.tabs a { font: 500 14px var(--body); color: var(--muted); text-decoration: none; border-bottom: 2px solid transparent; padding: 4px 2px; margin-right: 14px; }
+.tabs a[aria-current="page"] { color: var(--ink); border-color: var(--gold); }
+.tabs a:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.intro { max-width: 1240px; margin: 0 auto; padding: 8px 24px 0; }
+[hidden] { display: none !important; }
 .switch { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 6px; font-size: 13px; color: var(--muted); }
 .switch button { font: 500 13px var(--mono); color: var(--ink); background: transparent; border: 1px solid var(--rule); border-radius: 6px; padding: 6px 12px; cursor: pointer; }
 .switch button[aria-pressed="true"] { border-color: var(--gold); color: var(--gold); }
 .switch button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 .grid { max-width: 1240px; margin: 0 auto; padding: 20px 24px 64px; display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); }
-.card { background: var(--panel); border: 1px solid var(--rule); border-radius: 10px; overflow: hidden; display: grid; grid-template-rows: auto auto 1fr; }
+.card { min-width: 0; grid-template-columns: minmax(0, 1fr); background: var(--panel); border: 1px solid var(--rule); border-radius: 10px; overflow: hidden; display: grid; grid-template-rows: auto auto 1fr; }
 .card canvas.cone { width: 100%; aspect-ratio: 27 / 34; display: block; background: radial-gradient(ellipse at 50% 100%, #10183a 0%, #050713 70%); }
 .card canvas.flat { width: 100%; aspect-ratio: 192 / 114; display: block; background: #000; border-top: 1px solid var(--rule); }
 .meta { padding: 12px 14px 14px; display: grid; gap: 6px; align-content: start; }
-.meta .row { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.meta .row { flex-wrap: wrap; display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
 .meta h2 { font-family: var(--display); font-weight: 500; font-size: 20px; margin: 0; }
 .meta .chip { font-family: var(--mono); font-size: 11px; color: var(--gold); border: 1px solid #4a3a12; border-radius: 999px; padding: 2px 8px; white-space: nowrap; }
 .meta p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.45; }
@@ -62,14 +72,19 @@ footer { max-width: 1240px; margin: 0 auto; padding: 0 24px 48px; color: var(--m
 </style></head>
 <body>
 <header>
-  <h1>The Pilgrim Monument's looks · <span>draft 2</span></h1>
+  <h1>The Pilgrim Monument's light show · <span>drafts</span></h1>
+  <nav class="tabs" aria-label="Sheets"><a href="#looks" data-view="looks">Looks</a><a href="#transitions" data-view="transitions">Transitions</a></nav>
   <p class="lede">${looks.length} looks at the real tree's proportions, with the pinnacle lit too: a strip light at the foot of each of its four faces washes the stone in the look's colour, above the cone of strands that hangs from the balcony ridge beneath it to the ground. Each look is drawn as SVG layers at the show's frame and lit here exactly as the monument would light it, one pixel per bulb. Above each card, the monument from the harbour side, motion running, at the number of colour strands chosen below; under it, the full drawing, the pinnacle's colours in the band at the top. The real tree has 5 strands a side; switch between 2×, 3× and 192 to see what each resolution can carry.</p>
   <ul class="facts"><li>the real tree: 5 strands a side, 20 in all, ~3,000 bulbs</li><li>pinnacle: a strip light on each face</li><li>black = bulbs off</li><li>ring radius illustrative</li></ul>
   <div class="switch" role="group" aria-label="Colour strands for the show"><span>Show strands</span><button type="button" data-n="40">40 · 2×</button><button type="button" data-n="60" aria-pressed="true">60 · 3×</button><button type="button" data-n="192">192</button></div>
 </header>
-<main class="grid" id="grid"></main>
-<footer>Motions, one per layer: still · fall · rise · spin (round the tree) · spiral (round and up) · twinkle · pulse · strobe · fade (washing in over the layer beneath and back out), and three that move glyphs in place, drawn by the system: turn (the peppermints), swing (the bells), tumble (the snowflakes), build (the ribbon's lines wrapping on into a lattice, one by one). "One colour" means the motion touches only that colour. Transitions are the next sheet.</footer>
+<main class="grid" id="grid" data-sheet="looks"></main>
+<section class="intro" data-sheet="transitions"><p class="lede">${TRANSITIONS_LIST_LEN} transitions and the opening Transformation. Each card plays a pair of looks: the first look, the transition, the second, and the same transition back. Transitions marked <b>strobe accent</b> flash hard white at their moving edge, the dynamic moment. They are kit code: the operator picks them in the show strip, never draws them.</p></section>
+<main class="grid" id="tgrid" data-sheet="transitions"></main>
+<footer>Motions, one per layer: still · fall · rise · spin (round the tree) · spiral (round and up) · twinkle · pulse · strobe · fade (washing in over the layer beneath and back out), and three that move glyphs in place, drawn by the system: turn (the peppermints), swing (the bells), tumble (the snowflakes), build (the ribbon's lines wrapping on into a lattice, one by one). "One colour" means the motion touches only that colour. </footer>
 <script>
+${TRANSITIONS_SRC}
+const PAIRS = ${JSON.stringify(PAIRS)};
 const LOOKS = ${JSON.stringify(looks)};
 const FW = ${M.frame.w}, FH = ${M.frame.h}, P = ${M.frame.pinH}, FACES = ${M.frame.faces}, CONE = FH - P;
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -131,14 +146,16 @@ function sample(look, c, row, t, top = look.layers.length - 1) {
   }
   return [0, 0, 0];
 }
+/** A source is a look, or anything with sample(c, row, t): a transition between two looks. */
+const S_ = (src, c, row, t) => src.sample ? src.sample(c, row, t) : sample(src, c, row, t);
 function fadeAlpha(t, period) { const s = 0.5 + 0.5 * Math.sin(2 * Math.PI * t / period); return Math.min(1, Math.max(0, (s - 0.25) * 2)); }
 const glowColour = (p, t) => { const h = hash(p.c * 131 + p.row), w = 0.8 + 0.2 * Math.sin(t * 1.5 + h * 30); return [255 * w, 214 * w, 150 * w]; };
 
-function paintPoints(buf, pts, look, t, glow, avg) {
-  const img = buf.ctx.createImageData(CW, CH), d = img.data;
+function paintInto(img, pts, fn, avg) {
+  const d = img.data;
   for (const p of pts) {
-    const [r, g, b] = glow ? glowColour(p, t) : sample(look, p.c, p.row, t);
-    if (avg) { avg[0] += r; avg[1] += g; avg[2] += b; avg[3]++; }
+    const [r, g, b] = fn(p);
+    avg[0] += r; avg[1] += g; avg[2] += b; avg[3]++;
     if (r + g + b < 6) continue;
     for (let dy = 0; dy < 2; dy++) for (let dx = 0; dx < 2; dx++) {
       const xx = p.sx + dx, yy = p.sy + dy; if (xx < 0 || yy < 0 || xx >= CW || yy >= CH) continue;
@@ -146,16 +163,16 @@ function paintPoints(buf, pts, look, t, glow, avg) {
       d[o] = Math.max(d[o], Math.min(255, r * p.lit)); d[o + 1] = Math.max(d[o + 1], Math.min(255, g * p.lit)); d[o + 2] = Math.max(d[o + 2], Math.min(255, b * p.lit)); d[o + 3] = 255;
     }
   }
-  buf.ctx.putImageData(img, 0, 0);
 }
-function drawMonument(ctx, bufs, look, t, strands, glow) {
-  const G = GEO[strands];
+/** Draws sets of strands ([geometry, bulb → colour]), the tower, and the pinnacle strips (pins(avg) → faces, or null). */
+function drawSets(ctx, bufs, sets, pins) {
   const avg = [0, 0, 0, 0];   // the tree's mean colour: the one average glow that lights everything round it
-  paintPoints(bufs.back, G.back, look, t, glow, avg);
-  paintPoints(bufs.front, G.front, look, t, glow, avg);
+  const ib = bufs.back.ctx.createImageData(CW, CH), jf = bufs.front.ctx.createImageData(CW, CH);
+  for (const [G, fn] of sets) { paintInto(ib, G.back, fn, avg); paintInto(jf, G.front, fn, avg); }
+  bufs.back.ctx.putImageData(ib, 0, 0); bufs.front.ctx.putImageData(jf, 0, 0);
   ctx.globalCompositeOperation = 'source-over'; ctx.clearRect(0, 0, CW, CH);
   ctx.drawImage(bufs.back.c, 0, 0);
-  const pinFaces = glow ? null : pinnacleColours(look, t, avg);
+  const pinFaces = pins ? pins(avg) : null;
   drawTower(ctx, avg[3] ? [avg[0] / avg[3], avg[1] / avg[3], avg[2] / avg[3]] : [0, 0, 0]);
   if (pinFaces) drawPinnacle(ctx, pinFaces);
   ctx.drawImage(bufs.front.c, 0, 0);
@@ -163,14 +180,33 @@ function drawMonument(ctx, bufs, look, t, strands, glow) {
   for (const [blur, a] of [[2, 0.45], [8, 0.3]]) { ctx.filter = 'blur(' + blur + 'px)'; ctx.globalAlpha = a; ctx.drawImage(bufs.back.c, 0, 0); ctx.drawImage(bufs.front.c, 0, 0); }
   ctx.filter = 'none'; ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
 }
+function drawMonument(ctx, bufs, src, t, strands, glow) {
+  const fn = glow ? (p) => glowColour(p, t) : (p) => S_(src, p.c, p.row, t);
+  drawSets(ctx, bufs, [[GEO[strands], fn]], glow ? null : (avg) => pinnacleColours(src, t, avg));
+}
+// THE TRANSFORMATION, the show's opening: the 20 white strands fade as the colour strands spiral down from the ridge,
+// their front strobing; the pinnacle's strips come up last. Then the reverse.
+const smooth = (x) => { const t = Math.min(1, Math.max(0, x)); return t * t * (3 - 2 * t); };
+function drawTransformation(ctx, bufs, look, now) {
+  const hold = 1.6, dur = 3.8, period = 2 * (hold + dur), u = now % period;
+  const t = u < hold ? 0 : u < hold + dur ? (u - hold) / dur : u < 2 * hold + dur ? 1 : 1 - (u - 2 * hold - dur) / dur;
+  const front = t * 3.1, kg = 1 - smooth((t - 0.15) / 0.6), kp = smooth((t - 0.7) / 0.3);
+  const glowFn = (p) => glowColour(p, now).map(v => v * kg);
+  const showFn = (p) => {
+    const key = (p.row - P) / CONE * 2 + p.c / FW;
+    if (t > 0 && t < 1 && Math.abs(key - front) * 14 < 1.4 && Math.floor(now * 16) % 2 === 0) return [255, 255, 255];
+    return key < front ? sample(look, p.c, p.row, now) : [0, 0, 0];
+  };
+  drawSets(ctx, bufs, [[GEO[20], glowFn], [GEO[SHOW], showFn]], (avg) => pinnacleColours(look, now, avg).map(f => ({ k: f.k, L: f.L.map(v => v * kp), H: f.H.map(v => v * kp) })));
+}
 // The pinnacle is STRIP-LIT: a strip at the foot of each face, on the ridge, washing up the stone and fading toward the
 // top. Its colour per face is that face's pinnacle region of the frame (lower half → the strip, upper half → the fade).
-function pinnacleColours(look, t, avg) {
+function pinnacleColours(src, t, avg) {
   const out = [];
   for (let k = 0; k < FACES; k++) {
     const lo = [0, 0, 0], hi = [0, 0, 0]; let nl = 0, nh = 0;
     for (let c = k * FW / FACES; c < (k + 1) * FW / FACES; c += 3) for (let row = 0; row < P; row += 2) {
-      const v = sample(look, c, row, t), into = row >= P / 2 ? lo : hi; into[0] += v[0]; into[1] += v[1]; into[2] += v[2]; row >= P / 2 ? nl++ : nh++;
+      const v = S_(src, c, row, t), into = row >= P / 2 ? lo : hi; into[0] += v[0]; into[1] += v[1]; into[2] += v[2]; row >= P / 2 ? nl++ : nh++;
     }
     const L = lo.map(v => v / nl), H = hi.map(v => v / nh);
     avg[0] += L[0] * 40; avg[1] += L[1] * 40; avg[2] += L[2] * 40; avg[3] += 40;
@@ -208,15 +244,15 @@ function drawTower(ctx, glow) {
     ctx.beginPath(); hi.forEach((p, i) => i ? ctx.lineTo(p.sx, p.sy) : ctx.moveTo(p.sx, p.sy)); ctx.closePath(); ctx.fill();
   }
 }
-function drawFlat(ctx, look, t) {
+function drawFlat(ctx, src, t) {
   const W = FW * 2, Hh = FH * 2, img = ctx.createImageData(W, Hh), d = img.data;
   for (let row = P; row < FH; row++) for (let c = 0; c < FW; c++) {   // the cone: one dot per bulb
-    const [r, g, b] = sample(look, c, row, t), o = ((row * 2) * W + c * 2) * 4;
+    const [r, g, b] = S_(src, c, row, t), o = ((row * 2) * W + c * 2) * 4;
     d[o] = Math.min(255, r); d[o + 1] = Math.min(255, g); d[o + 2] = Math.min(255, b); d[o + 3] = 255;
   }
   ctx.putImageData(img, 0, 0);
   // the pinnacle: four strip lights, one per face, each washing up its band (no bulbs)
-  for (const { k, L, H } of pinnacleColours(look, t, [0, 0, 0, 0])) {
+  for (const { k, L, H } of pinnacleColours(src, t, [0, 0, 0, 0])) {
     const x0 = k * W / FACES, rgb = (c, m) => 'rgb(' + c.map(v => Math.min(255, Math.round(v * m))).join(',') + ')';
     const gr = ctx.createLinearGradient(0, P * 2, 0, 0);
     gr.addColorStop(0, rgb(L, 0.95)); gr.addColorStop(0.35, rgb(L.map((v, i) => (v + H[i]) / 2), 0.55)); gr.addColorStop(1, rgb(H, 0.18));
@@ -248,13 +284,42 @@ const loadPx = (src) => new Promise(res => { const im = new Image(); im.onload =
   x.drawImage(im, 0, 0, FW, FH); res(x.getImageData(0, 0, FW, FH).data); }; im.src = src; });
 
 const items = [];
+const byId = Object.fromEntries(LOOKS.map(L => [L.id, L]));
+/** A transition card's source: from, the transition, to, and the same transition back, on a loop. */
+function transitionSource(tr, from, to) {
+  const hold = 1.6, dur = tr.seconds, period = 2 * (hold + dur), E = { FW, FH, P, CONE, FACES, hash };
+  return { sample(c, row, now) {
+    const u = now % period, Af = (cc, rr) => sample(from, cc, rr, now), Bf = (cc, rr) => sample(to, cc, rr, now);
+    if (u < hold) return Af(c, row);
+    if (u < hold + dur) return tr.mix(Af, Bf, c, row, (u - hold) / dur, now, E);
+    if (u < 2 * hold + dur) return Bf(c, row);
+    return tr.mix(Bf, Af, c, row, (u - 2 * hold - dur) / dur, now, E);
+  } };
+}
+function tcard(name, chip, notes, num, flat) {
+  const el = document.createElement('article'); el.className = 'card';
+  el.innerHTML = '<canvas class="cone" width="' + CW + '" height="' + CH + '"></canvas>' + (flat ? '<canvas class="flat" width="' + FW * 2 + '" height="' + FH * 2 + '"></canvas>' : '') +
+    '<div class="meta"><div class="row"><h2></h2><span class="chip"></span></div><p></p><span class="num"></span></div>';
+  el.querySelector('h2').textContent = name; el.querySelector('.chip').textContent = chip; el.querySelector('p').textContent = notes; el.querySelector('.num').textContent = num;
+  document.getElementById('tgrid').appendChild(el);
+  return el;
+}
+const titems = [];
 const glowCard = card({ name: 'The Glow', glow: true, notes: 'The real tree, all season after dark: 20 warm-white strands, five a side, from the balcony ridge to the ground; the pinnacle stays dark. A show opens by turning this into the colour strands and the lit pinnacle.' }, 0);
 items.push({ el: glowCard, glow: true, ctx: glowCard.querySelector('.cone').getContext('2d') });
 Promise.all(LOOKS.map(async (L, i) => {
   for (const l of L.layers) { l.px = await Promise.all(l.frames.map(loadPx)); if (l.motion.only) l.motion._only = hexRGB(l.motion.only); }
   const el = card(L, i + 1);
   items[i + 1] = { el, look: L, ctx: el.querySelector('.cone').getContext('2d'), flat: el.querySelector('.flat').getContext('2d') };
-})).then(start);
+})).then(() => {
+  const tf = byId['classic-tree'], tfEl = tcard('The Transformation', 'opening · strobe accent', 'The show opens: the 20 white strands fade as the colour strands spiral down from the ridge, their front strobing, and the pinnacle’s strips come up last. It reverses at the end.', 'the glow → Classic Tree', false);
+  titems.push({ el: tfEl, ctx: tfEl.querySelector('.cone').getContext('2d'), transformation: tf });
+  for (const tr of TRANSITIONS) {
+    const [a, b] = PAIRS[tr.id], el = tcard(tr.name, tr.seconds + ' s' + (tr.accent ? ' · strobe accent' : ''), tr.notes, byId[a].name + ' → ' + byId[b].name, true);
+    titems.push({ el, src: transitionSource(tr, byId[a], byId[b]), ctx: el.querySelector('.cone').getContext('2d'), flat: el.querySelector('.flat').getContext('2d') });
+  }
+  start();
+});
 
 function start() {
   const mk = () => { const c = document.createElement('canvas'); c.width = CW; c.height = CH; return { c, ctx: c.getContext('2d') }; };
@@ -263,18 +328,29 @@ function start() {
   items.forEach(it => grid.appendChild(it.el));                 // the drawer's order, whatever loaded first
   const visible = new Set();
   const io = new IntersectionObserver(es => es.forEach(e => e.isIntersecting ? visible.add(e.target) : visible.delete(e.target)), { rootMargin: '100px' });
-  items.forEach(it => io.observe(it.el));
-  const paint = (it, t) => { drawMonument(it.ctx, bufs, it.look, t, it.glow ? 20 : SHOW, it.glow); if (it.flat) drawFlat(it.flat, it.look, t); };
-  items.forEach(it => paint(it, 1.3));                          // complete at rest: every card painted once
+  const all = items.concat(titems);
+  all.forEach(it => io.observe(it.el));
+  const paint = (it, t) => {
+    if (it.transformation) return drawTransformation(it.ctx, bufs, it.transformation, t);
+    const src = it.src || it.look;
+    drawMonument(it.ctx, bufs, src, t, it.glow ? 20 : SHOW, it.glow); if (it.flat) drawFlat(it.flat, src, t);
+  };
+  const route = () => {
+    const v = location.hash === '#transitions' ? 'transitions' : 'looks';
+    document.querySelectorAll('[data-sheet]').forEach(el => { el.hidden = el.dataset.sheet !== v; });
+    document.querySelectorAll('.tabs a').forEach(a => { if (a.dataset.view === v) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
+  };
+  route(); addEventListener('hashchange', route);
+  all.forEach(it => paint(it, 2.4));                            // complete at rest: every card painted once
   document.querySelectorAll('.switch button').forEach(b => b.addEventListener('click', () => {
     SHOW = +b.dataset.n;
     document.querySelectorAll('.switch button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
-    items.forEach(it => paint(it, performance.now() / 1000));
+    all.forEach(it => paint(it, performance.now() / 1000));
   }));
   if (reduce) return;
   let last = 0;
   const loop = (now) => {
-    if (now - last > 66) { last = now; const t = now / 1000; items.forEach(it => { if (visible.has(it.el)) paint(it, t); }); }
+    if (now - last > 66) { last = now; const t = now / 1000; all.forEach(it => { if (visible.has(it.el)) paint(it, t); }); }
     requestAnimationFrame(loop);
   };
   requestAnimationFrame(loop);
