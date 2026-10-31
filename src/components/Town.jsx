@@ -757,7 +757,7 @@ export default function Town({
         {/* The map's data credit (ODbL), in the canvas's corner in every app that draws a town (MapCredit.jsx). */}
         <CanvasOverlay><MapCredit lookId={lookId} /></CanvasOverlay>
         <group name="town:ground" visible={on('ground') && revealed} userData={{ gatedOn: on('ground') }}>
-          <R3FErrorBoundary name="BakedGround"><BakedGround lookId={lookId} bakeLastMs={bake} targetExag={targetExag} swellMs={revealTiming.swell * 1000} surfacesOverride={o.surfaces} /></R3FErrorBoundary>
+          <R3FErrorBoundary name="BakedGround" reveal="ground"><BakedGround lookId={lookId} bakeLastMs={bake} targetExag={targetExag} swellMs={revealTiming.swell * 1000} surfacesOverride={o.surfaces} /></R3FErrorBoundary>
           {/* The shore median diagnostic shows the region with every treatment OFF, so the revetment hides while it is on. */}
           <R3FErrorBoundary name="SlabRevetment"><SlabRevetment lookId={lookId} bakeLastMs={bake} /></R3FErrorBoundary>
           {/* "minimum ground" is marked by the ground SURFACES (BakedGround's GroundMeshes), not by any mesh here: the
@@ -771,13 +771,13 @@ export default function Town({
             hiddenLayers={{ building: true, neon: !on('neon'), labels: !on('labels'), parkTitle: scene?.layerVis?.parkTitle === false }} />
         </R3FErrorBoundary>
         <group name="town:buildings" visible={on('buildings') && revealed} userData={{ gatedOn: on('buildings') }}>
-          <R3FErrorBoundary name="SlabBuildings"><SlabBuildings key={`slab-${bake || 0}`} lookId={lookId} interactive={interactive}
+          <R3FErrorBoundary name="SlabBuildings" reveal="buildings"><SlabBuildings key={`slab-${bake || 0}`} lookId={lookId} interactive={interactive}
             materialPhysicsOverride={o.materialPhysics} paletteOverride={o.buildingPalette} wallPalettesOverride={o.wallPalettes}
             litIds={litIds} litTintOverride={o.litTint} /></R3FErrorBoundary>
           <DrawnAnchor id="buildings" />
         </group>
         <group name="town:trees" visible={on('trees') && revealed} userData={{ gatedOn: on('trees') }}>
-          <R3FErrorBoundary name="InstancedTrees"><InstancedTrees lookId={lookId} bakeLastMs={bake} canopyOverride={o.canopy} treeWindOverride={o.treeWind} /></R3FErrorBoundary>
+          <R3FErrorBoundary name="InstancedTrees" reveal="trees"><InstancedTrees lookId={lookId} bakeLastMs={bake} canopyOverride={o.canopy} treeWindOverride={o.treeWind} /></R3FErrorBoundary>
           <DrawnAnchor id="trees" />
         </group>
         <group name="town:park" visible={on('park') && revealed} userData={{ gatedOn: on('park') }}>
