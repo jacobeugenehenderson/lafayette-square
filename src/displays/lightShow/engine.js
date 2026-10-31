@@ -36,6 +36,19 @@ export function validateDrawer(drawer, where) {
 }
 
 /**
+ * A whole display record against its drawer, before it ships: the strands, the season, the schedule and the running
+ * order. Throws by name. (The first line; DisplayBoundary is the last.)
+ */
+export function validateDisplay(display, drawer, where) {
+  validateDrawer(drawer, where)
+  const st = display.strands
+  if (!(st?.glow > 0 && st?.show > 0 && st?.ringRadiusM > 0)) throw new Error(`[lightShow] ⛔ ${where}: strands needs glow, show and ringRadiusM`)
+  if (typeof display.season !== 'string' || !display.season) throw new Error(`[lightShow] ⛔ ${where}: the display names no season`)
+  if (display.shows && display.shows.every !== 'hour') throw new Error(`[lightShow] ⛔ ${where}: shows.every "${display.shows.every}" is not a schedule the Light Show knows (have: hour)`)
+  compileRun(display.run, Object.fromEntries(drawer.looks.map(L => [L.id, L])), where)
+}
+
+/**
  * What one bulb of a look shows at time t (seconds on the show clock). `look.layers[i].px` are the layer's frames.
  * `enter` places the look's motion objects: 0 below the ground, 1 in place, past 1 rising on.
  */

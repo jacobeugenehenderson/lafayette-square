@@ -37,6 +37,7 @@ import { LampGlowEditor } from '../cartograph/CartographSurfaces.jsx'
 import { StoreChannel } from '../cartograph/CartographSkyLight.jsx'
 import { setPieceOf, townForLook } from '../instance.js'
 import useDisplayPreview from '../displays/preview.js'
+import useDisplayFailures from '../displays/failures.js'
 import { PLUGINS as DISPLAY_PLUGINS } from '../displays/Displays.jsx'
 import { keyframeFocusIds } from '../lib/focusObject.js'
 import useListings from '../hooks/useListings'
@@ -139,13 +140,18 @@ function Uplights() {
 function DisplaysSection() {
   const lookId = useCartographStore(s => s.activeLookId)
   const list = (lookId && townForLook(lookId)?.displays) || []
-  const modes = useDisplayPreview(s => s.modes), setMode = useDisplayPreview(s => s.setMode)
+  const modes = useDisplayPreview(s => s.modes), setMode = useDisplayPreview(s => s.setMode), failed = useDisplayFailures(s => s.failed)
   return (
     <Collapsible label="Displays">
       {list.map(d => {
         const cur = modes[d.id]?.mode || 'live'
-        return (
-          <div key={d.id} className="flex items-center justify-between gap-2 py-1">
+        return (<div key={d.id}>
+          {failed[`${lookId}/${d.id}`] && (
+            <div role="alert" className="text-caption rounded px-2 py-1 my-1" style={{ background: 'var(--error-container, #5c1a1a)', color: 'var(--on-error-container, #ffdad6)' }}>
+              Display {d.id} failed: {failed[`${lookId}/${d.id}`]}
+            </div>
+          )}
+          <div className="flex items-center justify-between gap-2 py-1">
             <span className="text-caption" style={{ color: 'var(--on-surface-variant)' }}>{d.name || DISPLAY_PLUGINS[d.kind]?.label || d.kind}</span>
             <div className="flex gap-1">
               {['live', 'glow', 'show'].map(m => (
@@ -155,7 +161,7 @@ function DisplaysSection() {
               ))}
             </div>
           </div>
-        )
+        </div>)
       })}
     </Collapsible>
   )
