@@ -14,6 +14,9 @@
  *   4. a town's calendar is its own content/events.json, found by path (loadInstanceData's TOWN_CALENDARS): no per-town
  *      row names an events file.
  *
+ * ⚠️ The mount match stops at a tag's first `>`: an arrow-function prop (`=>`) placed BEFORE `calendar=` cuts it and reads as
+ *   "passes no calendar". It fails safe (a false red): put `calendar=` before any arrow prop, or widen the match (Zob, 2026-10-31).
+ *
  * Usage: node checks/claims-a-towns-calendar-reaches-its-displays.mjs [--mutants]
  */
 import { readdirSync, statSync } from 'node:fs'
