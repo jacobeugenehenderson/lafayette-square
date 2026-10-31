@@ -14,9 +14,18 @@ NO ROUTINE PURGE: content names give a changed file a fresh name, and our reader
 ### ⭐ STATE AT JACOB'S BEDTIME, 2026-10-31 (Boz). Read this first.
 - **LS PROMOTED 2026-10-31** (`scratch/ls-cutover-runbook.md`): lafayettesquare.online + www serve LS on Ward 4334c64 / kit 2a44e317;
   backup `scratch/promote-rollback/lafayettesquare-prod-20261031`. **The .com → .online 301 is LIVE** (Jacob's Cloudflare rule,
-  2026-10-31): runbook §6's curl gates pass, both hosts, every card route, query kept; the slab gate passes. Open: Jacob's and
+  2026-10-31): runbook §6's curl gates pass, both hosts, every card route, query kept; the slab gate passes. Jacob's eye ✅ ("absolutely responsive and *totally* gorgeous"). Open:
   Ward's eye on both addresses (phone first) · the §6 retirements · `/favicon.svg` 404s on .online, and the instances'
-  branding.faviconUrl names the .com one, which now redirects there (which reader fetches it: not established).
+  branding.faviconUrl names the .com one, which now redirects there. ▶ Ward measured it (2026-10-31): the static icon tag on
+  LS + HPDM comes from towns.json `faviconUrl` (publish-player-to-staging.mjs ← INSTANCE.branding.faviconUrl); the Ward then
+  overwrites it at boot with the Look's identity.mark. Two sources for one icon. OWED, kit brief: derive towns.json's icon from
+  the Look's identity.mark (a data: URI; no mark → the Ward's stated initial); delete the instances' old-player branding
+  (faviconUrl/markSvg/mark, 'UNTIL CUTOVER', now due) and townMark.js's reader; a check on every town's served tag. Then a
+  staging publish; how towns.json reaches production hosts is not established. Jacob: "Get rid of the arch" (LS → ⚜️).
+  Brief: `docs/briefs/BRIEF-a-town-has-one-icon.md`.
+  Dead wiring (Ward, measured 2026-10-31: every served host and staging town runs the Ward 4334c64): the "legacy" player
+  accepted by set-staging-player.mjs and both Workers. Remove once an R2 read of hosts/*.json + staging/ward/current.json
+  (Jacob's credentials) shows no record names it.
 - **Backend: two sittings after the cutover, all built and Zob-PASSed, none deployed.** Sitting 1: hotfix + recovery B + fortify
   (`scratch/backend-deploy-runbook.md`). Sitting 2 (§E): patches ④–⑫ as ONE set (theward plumb/fortify) + Ward's client
   (ward/ladder-client) + Operations signers + kit plumb/ladder-docs (merge on deploy only). Deploy-day hands: predeploy-audit items 6–12.
@@ -29,7 +38,9 @@ NO ROUTINE PURGE: content names give a changed file a fresh name, and our reader
   `[tag] ⛔` throws in 53 files; one sink with `src/displays/failures.js`, not two. ② **Ward (in dispatch, co-signed):** a
   boundary for throws outside those layers. Building: Fuse, `BRIEF-a-refusal-is-never-swallowed` (every ⛔ throw typed Refusal or
   Transient). ⚠️ Gap for a follow-up brief (Fuse, read): `reloadTerrain` is called with no await/catch (TownPlace.jsx,
-  CartographApp), so a terrain refusal leaves the town on its splash with the reason in the console only. ③ **Ward:** Scene.jsx passes the published calendar, with the values of the kit's
+  CartographApp), so a terrain refusal leaves the town on its splash with the reason in the console only; useFrame throws too.
+  And refusals that never throw: ⛔ console.error/warn then render nothing (Fuse's grep: 154 lines in 45 files, 28 in Town's
+  wrapped layers, e.g. InstancedTrees/BakedLamps anchors → no trees/lamps). Follow-up brief: classify each, route to the sink. ③ **Ward:** Scene.jsx passes the published calendar, with the values of the kit's
   `useTownCalendar.js#readTownCalendar` (null unread · rows · {absent} · {error}; on tinsel/displays 5725b7c7, not yet on
   integration), from its own read (`content.js#loadContent`), no second reader. Today that read turns absent AND failed into [].
   Event card: Ward briefs it (registry `r-an-event-has-a-host-and-a-venue-and-opens-at-the-venue`); the kit validator goes to Tinsel.

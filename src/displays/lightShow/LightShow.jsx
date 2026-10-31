@@ -10,7 +10,8 @@
  *     with the run (looks separated by transitions). Out of season nothing hangs; in season by day the glow strands
  *     hang unlit.
  *   · the PINNACLE: a strip light at the foot of each face, washing up it in a gradient (never a screen)
- * Sizes and strengths are derived (./geometry.js), never one tower's. The drawer is the TOWN's content (its contentRoot).
+ * Sizes and strengths are derived (./geometry.js), never one tower's. The drawer is the TOWN's content, read from where the
+ * app names (../drawerUrl.js: Stage's authoring drawer, or the copy the bake published for Preview and the player).
  *   · one AVERAGE GLOW: a light tinted by the tree's mean colour, washing everything round it
  * The strands end at a ring `strands.footHeightM` above the set-piece's base (the display's authored value: on the
  * Pilgrim Monument, about 20 ft up, Jacob 2026-10-31), never on the terrain.
@@ -27,36 +28,45 @@ import { validateDrawer, compileRun, showAt, showSeconds, glowColour, liveState,
 import { checkFaces, strandEnds, pinnacleFace, pinnacleWash, bulbRadius, cordRadius, SOCKET_OF_BULB, avgGlow } from './geometry.js'
 import useDisplayPreview from '../preview.js'
 import { nightAt } from '../night.js'
-import { Refusal } from '../../lib/refusal.js'
+import { drawerUrls } from '../drawerUrl.js'
+import { Refusal, Transient, httpFailure } from '../../lib/refusal.js'
 
 const SHOW_GAIN = 2.4, GLOW_GAIN = 1.7                         // HDR, so the bulbs bloom like high-wattage lamps
 const CORD = '#3a3a3c'                                          // the cords: dark gray (Jacob, 2026-10-31)
 const CORE_OF_BULB = 0.7                                        // the light inside each clear glass bulb, as a fraction of it
+// DEV-ONLY instrument (?displayDebug=noWash): hide the pinnacle's wash, to tell its colour from the stone's own lighting
+// (Jacob, 2026-10-31: a cyan band across the pinnacle; cause not established). Never in a build.
+const NO_WASH = import.meta.env.DEV && typeof window !== 'undefined' && (new URLSearchParams(window.location.search).get('displayDebug') || '').split(',').includes('noWash')
 
-/** Loads the town's drawer: looks.json, then every layer frame rasterized at the frame's size to RGBA. */
-function useDrawer(url, where) {
+/** Loads the town's drawer, from where the app names (../drawerUrl.js): looks.json, then every layer frame rasterized at
+ *  the frame's size to RGBA. `on` false (no preview, no calendar) loads nothing. */
+function useDrawer(on, source, { lookId, display, contentRoot, where }) {
   const [drawer, setDrawer] = useState(null), [err, setErr] = useState(null)
   useEffect(() => {
-    if (!url) return
+    if (!on) return
     let dead = false
     ;(async () => {
+      const { drawer: url, frame } = await drawerUrls(source, { lookId, display, contentRoot, where })
       const res = await fetch(url)
-      if (!res.ok) throw new Error(`the drawer ${url} answered ${res.status}`)
+      if (!res.ok) throw httpFailure(res, `the drawer ${url} answered ${res.status}`)
       const d = await res.json()
       validateDrawer(d, where)
-      const base = url.slice(0, url.lastIndexOf('/') + 1), { w, h } = d.frame
+      const { w, h } = d.frame
       const canvas = document.createElement('canvas'); canvas.width = w; canvas.height = h
       const ctx = canvas.getContext('2d', { willReadFrequently: true })
       const raster = (src) => new Promise((ok, no) => {
         const im = new Image(); im.onload = () => { ctx.clearRect(0, 0, w, h); ctx.drawImage(im, 0, 0, w, h); ok(ctx.getImageData(0, 0, w, h).data) }
-        im.onerror = () => no(new Error(`the look frame ${src} did not load`)); im.src = base + src
+        im.onerror = () => no(new Error(`the look frame ${src} did not load`)); im.src = frame(src)
       })
       for (const L of d.looks) for (const layer of L.layers) layer.px = await Promise.all(layer.frames.map(raster))
       if (!dead) setDrawer({ ...d, byId: Object.fromEntries(d.looks.map(L => [L.id, L])) })
     })().catch(e => { if (!dead) setErr(e) })
     return () => { dead = true }
-  }, [url, where])
-  if (err) throw new Refusal(`[LightShow] ⛔ ${where}: ${err.message}`)
+  }, [on, source, lookId, display.id, display.drawer, contentRoot, where])
+  // The cause keeps its class (src/lib/refusal.js): a Refusal stays one; anything else (no answer, a 5xx, a frame that
+  // did not load) may load on a second ask, so it is a Transient. A display is never retried either way; Stage names it.
+  if (err instanceof Refusal) throw new Refusal(`[LightShow] ⛔ ${where}: ${err.message}`)
+  if (err) throw new Transient(`[LightShow] ⛔ ${where}: ${err.message}`)
   return drawer
 }
 
@@ -76,16 +86,16 @@ function Strands({ count, strands, glassRef, coreRef, socketRef, cordRef }) {
   </>)
 }
 
-export default function LightShow({ display, extent, calendar, contentRoot, dim, where }) {
+export default function LightShow({ display, extent, calendar, contentRoot, lookId, drawerSource, dim, where }) {
   if (!extent?.ridge || !extent?.pinnacle) throw new Refusal(`[LightShow] ⛔ ${where}: the set-piece declares no ridge and pinnacle in its extent, so the strands have nowhere to hang`)
   const st = display.strands
   if (!(st?.glow > 0 && st?.show > 0 && st?.ringRadiusM > 0)) throw new Refusal(`[LightShow] ⛔ ${where}: strands needs glow, show and ringRadiusM`)
   if (st.show % st.glow || st.glow % extent.ridge.sides) throw new Refusal(`[LightShow] ⛔ ${where}: strands.show (${st.show}) must be a whole multiple of strands.glow (${st.glow}), and glow of the ridge's ${extent.ridge.sides} sides, so the glow strands are show strands`)
   if (!(st.footHeightM >= 0 && st.footHeightM < extent.ridge.yM)) throw new Refusal(`[LightShow] ⛔ ${where}: strands.footHeightM (${st.footHeightM}) must be authored, from the base up to below the ridge (${extent.ridge.yM.toFixed(1)} m)`)
   const preview = useDisplayPreview(s => s.modes[display.id])
-  // Load the drawer only when the display can be on: Stage's preview, or a calendar to read the season from.
-  if (contentRoot == null) throw new Refusal(`[LightShow] ⛔ ${where}: the town declares no contentRoot, so its drawer has no home`)
-  const drawer = useDrawer(preview || calendar ? `${import.meta.env.BASE_URL}${contentRoot}${display.drawer}` : null, where)
+  // Load the drawer only when the display can be on: Stage's preview, or a calendar to read the season from; from the
+  // source the app names (Stage: its authoring drawer · Preview, the player: the published copy).
+  const drawer = useDrawer(!!(preview || calendar), drawerSource, { lookId, display, contentRoot, where })
   const compiled = useMemo(() => (drawer ? compileRun(display.run, drawer.byId, where) : null), [drawer, display.run, where])
   const F = drawer?.frame, rows = F ? F.h - F.pinH : 0
   if (F) checkFaces(F.faces, extent, where)
@@ -200,8 +210,10 @@ export default function LightShow({ display, extent, calendar, contentRoot, dim,
   return (
     <group ref={root} name="display:light-show" userData={{ focusReach: { radiusM: st.ringRadiusM + bulbR, fromM: Math.max(0, st.footHeightM - bulbR), toM: extent.pinnacle.toM } }}>
       <Strands count={ends.length * rows} strands={ends.length} glassRef={glassRef} coreRef={coreRef} socketRef={socketRef} cordRef={cordRef} />
-      <group ref={pinRef} name="light-show:pinnacle">
-        {pinFaces.map((f, k) => <mesh key={k} geometry={f.g} material={pinMat} position={f.position} rotation={f.rotation} />)}
+      <group visible={!NO_WASH}>
+        <group ref={pinRef} name="light-show:pinnacle">
+          {pinFaces.map((f, k) => <mesh key={k} geometry={f.g} material={pinMat} position={f.position} rotation={f.rotation} />)}
+        </group>
       </group>
       <pointLight ref={lightRef} position={[0, avgGlow(extent, 0).y, 0]} intensity={0} decay={2} distance={0} />
     </group>
