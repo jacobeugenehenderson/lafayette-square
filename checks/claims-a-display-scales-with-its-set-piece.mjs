@@ -22,10 +22,10 @@ async function verdict(transform) {
   const fails = []
   const G = await importSource('src/displays/lightShow/geometry.js', transform ? { transform } : {})
   const { displayExtent } = await importSource('src/setpieces/pilgrimMonument.js')
-  const big = { ...displayExtent(), ring: 31 }
-  const small = { ridge: { sides: 4, yM: big.ridge.yM / 4, halfWidthM: big.ridge.halfWidthM / 4 }, pinnacle: { ...big.pinnacle, fromM: big.pinnacle.fromM / 4, toM: big.pinnacle.toM / 4, halfWidthM: big.pinnacle.halfWidthM / 4 }, ring: 31 / 4 }
+  const big = { ...displayExtent(), ring: 31, foot: 6.1 }
+  const small = { ridge: { sides: 4, yM: big.ridge.yM / 4, halfWidthM: big.ridge.halfWidthM / 4 }, pinnacle: { ...big.pinnacle, fromM: big.pinnacle.fromM / 4, toM: big.pinnacle.toM / 4, halfWidthM: big.pinnacle.halfWidthM / 4 }, ring: 31 / 4, foot: 6.1 / 4 }
   const rows = 96, ratio = (x) => {
-    const e = G.strandEnds(60, x.ridge.sides, x.ridge.halfWidthM, x.ring)[0], len = Math.hypot(e.bx - e.tx, x.ridge.yM, e.bz - e.tz)
+    const e = G.strandEnds(60, x.ridge.sides, x.ridge.halfWidthM, x.ring)[0], len = Math.hypot(e.bx - e.tx, x.ridge.yM - x.foot, e.bz - e.tz)
     return 2 * G.bulbRadius(len, rows) / (len / rows)
   }
   // 1. bulbs never merge, and keep one look at any size

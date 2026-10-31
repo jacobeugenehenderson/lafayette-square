@@ -4,12 +4,13 @@
  * set-piece's declared `extent` (`ridge`, `pinnacle`); everything else is the display's authored record and its town's
  * drawer of looks. (BRIEF-the-monument-lights-up; the engine is ./engine.js, pure.)
  *
- *   · the GLOW: `strands.glow` warm-white strands, ridge to ground ring
+ *   · the GLOW: `strands.glow` warm-white strands, ridge to the foot ring
  *   · the SHOW: `strands.show` colour strands on the same cone, playing the run (looks separated by transitions)
  *   · the PINNACLE: a strip light at the foot of each face, washing up it in a gradient (never a screen)
  * Sizes and strengths are derived (./geometry.js), never one tower's. The drawer is the TOWN's content (its contentRoot).
  *   · one AVERAGE GLOW: a light tinted by the tree's mean colour, washing everything round it
- * The ground ring follows the drawn terrain at each strand's foot, live with the exaggeration.
+ * The strands end at a ring `strands.footHeightM` above the set-piece's base (the display's authored value: on the
+ * Pilgrim Monument, about 20 ft up, Jacob 2026-10-31), never on the terrain.
  * The clock: LIVE reads the town's one clock (useTimeOfDay.currentTime) and the display's schedule; Stage's preview
  * (./preview.js) plays the glow or the show from the moment it is pressed, on the page's own time, Stage only.
  */
@@ -18,8 +19,6 @@ import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import useTimeOfDay from '../../hooks/useTimeOfDay'
 import { townClockOf } from '../../lib/townClock.js'
-import { drawnGroundParts, onDrawnGround } from '../../utils/elevation.js'
-import { onTerrainReload, terrainExag } from '../../utils/terrainShader.js'
 import { validateDrawer, compileRun, showAt, showSeconds, glowColour, liveState } from './engine.js'
 import { checkFaces, strandEnds, pinnacleFace, bulbRadius, avgGlow } from './geometry.js'
 import useDisplayPreview from '../preview.js'
@@ -65,6 +64,7 @@ export default function LightShow({ display, extent, calendar, contentRoot, wher
   if (!extent?.ridge || !extent?.pinnacle) throw new Error(`[LightShow] ⛔ ${where}: the set-piece declares no ridge and pinnacle in its extent, so the strands have nowhere to hang`)
   const st = display.strands
   if (!(st?.glow > 0 && st?.show > 0 && st?.ringRadiusM > 0)) throw new Error(`[LightShow] ⛔ ${where}: strands needs glow, show and ringRadiusM`)
+  if (!(st.footHeightM >= 0 && st.footHeightM < extent.ridge.yM)) throw new Error(`[LightShow] ⛔ ${where}: strands.footHeightM (${st.footHeightM}) must be authored, from the base up to below the ridge (${extent.ridge.yM.toFixed(1)} m)`)
   const preview = useDisplayPreview(s => s.modes[display.id])
   // Load the drawer only when the display can be on: Stage's preview, or a calendar to read the season from.
   if (contentRoot == null) throw new Error(`[LightShow] ⛔ ${where}: the town declares no contentRoot, so its drawer has no home`)
@@ -76,12 +76,8 @@ export default function LightShow({ display, extent, calendar, contentRoot, wher
   const glowEnds = useMemo(() => F ? strandEnds(st.glow, extent.ridge.sides, extent.ridge.halfWidthM, st.ringRadiusM) : [], [F, st, extent])
   const showEnds = useMemo(() => F ? strandEnds(st.show, extent.ridge.sides, extent.ridge.halfWidthM, st.ringRadiusM) : [], [F, st, extent])
 
-  // The ground under each strand's foot, from the drawn terrain (re-read when the terrain changes).
   const root = useRef(), glowRef = useRef(), showRef = useRef(), pinRef = useRef(), lightRef = useRef()
-  const [terrainGen, setTerrainGen] = useState(0)
-  useEffect(() => onTerrainReload(() => setTerrainGen(g => g + 1)), [])
-  useEffect(() => onDrawnGround(() => setTerrainGen(g => g + 1)), [])
-  const placed = useRef({ gen: -1, exag: NaN, y0: NaN })
+  const placed = useRef(false)
 
   const pinFaces = useMemo(() => {
     if (!F) return null
@@ -103,15 +99,11 @@ export default function LightShow({ display, extent, calendar, contentRoot, wher
     if (frameDead.current) return
     try {
     if (!F || !compiled || !root.current || !glowRef.current || !showRef.current) return
-    // ── where: lay the bulbs along each strand, ridge to the ground at its foot ───────────────────────────────────────
-    const exag = terrainExag.value
-    root.current.getWorldPosition(tmp.w)
-    const p = placed.current
-    if (p.gen !== terrainGen || Math.abs(p.exag - exag) > 1e-3 || Math.abs(p.y0 - tmp.w.y) > 1e-3) {
+    // ── where: lay the bulbs along each strand, ridge to its foot (once: the set-piece's base frame carries them) ───────
+    if (!placed.current) {
+      const footY = st.footHeightM
       for (const [ref, ends] of [[glowRef, glowEnds], [showRef, showEnds]]) {
         ends.forEach((e, s) => {
-          tmp.v.set(e.bx, 0, e.bz); root.current.localToWorld(tmp.v)
-          const gp = drawnGroundParts(tmp.v.x, tmp.v.z), footY = gp.raw * exag + gp.y - tmp.w.y + 0.3
           const r = bulbRadius(Math.hypot(e.bx - e.tx, footY - extent.ridge.yM, e.bz - e.tz), rows)
           for (let j = 0; j < rows; j++) {
             const t = (j + 0.5) / rows
@@ -121,7 +113,7 @@ export default function LightShow({ display, extent, calendar, contentRoot, wher
         })
         ref.current.instanceMatrix.needsUpdate = true
       }
-      placed.current = { gen: terrainGen, exag, y0: tmp.w.y }
+      placed.current = true
     }
     // ── when: live by the town's clock and schedule, or Stage's preview from the moment it was pressed ───────────────
     const instant = useTimeOfDay.getState().currentTime
