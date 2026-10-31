@@ -5,11 +5,13 @@
  *
  *   1. the rule (engine.js#liveState): out of season, or with no calendar read, the strands are not up; in season they
  *      are, lit after dark and hanging dark by day;
- *   2. the renderer: the glow strands (the real ones) are visible exactly when up; the show strands and the pinnacle's
- *      strips only while a show plays; no unlit bulb is left in the scene to cover a lit one.
+ *   2. the renderer: the glow strands (the real ones) are visible when up and not once a show has faded them out; the
+ *      show strands and the pinnacle's strips only while a show plays. Both ways round, no unlit bulb is left in the
+ *      scene where a lit one stands (the two sets share places: every third show strand is a glow strand).
  *
  * Usage: node checks/claims-a-display-hangs-only-in-season.mjs [--mutants]
- *   --mutants: strands up out of season → (1) red; show strands left visible outside a show → (2) red.
+ *   --mutants: strands up out of season → (1) red; show strands left visible outside a show, or glow strands left
+ *   visible through a show → (2) red.
  */
 import { importSource, sourceOf } from './_importSource.mjs'
 
@@ -28,7 +30,7 @@ async function verdict({ engine, view } = {}) {
   if (day.up !== true || day.mode !== 'off') fails.push(`in season by day the strands should hang dark (up, off); got up=${day.up}, mode=${day.mode}`)
   if (ask(CAL, at('2026-11-20', 18), true).up !== true) fails.push('in season after dark, the strands are not up')
   const ls = code(view ? view(sourceOf('src/displays/lightShow/LightShow.jsx')) : sourceOf('src/displays/lightShow/LightShow.jsx'))
-  if (!/glowRef\.current\.visible = up;/.test(ls)) fails.push('LightShow: the glow strands are not shown exactly when up')
+  if (!/glowRef\.current\.visible = up && !\(show && glowK === 0\)/.test(ls)) fails.push('LightShow: the glow strands are not shown exactly when up and not overrun by a show (unlit in a show, they cover a third of it)')
   if (!/showRef\.current\.visible = !!show;/.test(ls) || !/pinRef\.current\.visible = !!show/.test(ls)) fails.push('LightShow: the show strands or the pinnacle strips are visible outside a show (unlit, they cover the glow)')
   if (!/\{ mode, t, up \} = liveState\(/.test(ls)) fails.push('LightShow: the live path does not take `up` from liveState')
   return fails
@@ -42,6 +44,7 @@ if (process.argv.includes('--mutants')) {
   const mutants = [
     ['strands up out of season', { engine: (s) => s.replace('  const up = inSeason(calendar, display.season, clock.date, where)\n', '  const up = calendar == null || inSeason(calendar, display.season, clock.date, where) || true\n') }],
     ['show strands visible outside a show', { view: (s) => s.replace('showRef.current.visible = !!show;', 'showRef.current.visible = true;') }],
+    ['glow strands left visible through a show', { view: (s) => s.replace('glowRef.current.visible = up && !(show && glowK === 0)', 'glowRef.current.visible = up') }],
   ]
   let bad = 0
   for (const [name, m] of mutants) { const f = await verdict(m); console.log(`${f.length ? '🔴' : '⚪ SURVIVED'} mutant: ${name}`); if (!f.length) bad++ }

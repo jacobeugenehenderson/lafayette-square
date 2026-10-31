@@ -132,11 +132,13 @@ export default function LightShow({ display, extent, calendar, contentRoot, dim,
     // What hangs: the GLOW strands are the real ones, up in season (dark by day, gone out of it); the SHOW strands exist
     // only while a show plays (they are the show's resolution, not hardware), and so do the pinnacle's strips. Unlit
     // bulbs are never left in the scene: the show strands share the glow strands' places and would cover them.
-    glowRef.current.visible = up; showRef.current.visible = !!show; if (pinRef.current) pinRef.current.visible = !!show
+    showRef.current.visible = !!show; if (pinRef.current) pinRef.current.visible = !!show
     if (dim) { const cur = dim.byDisplay[display.id] ?? 1, to = uplightTarget(mode, display); dim.byDisplay[display.id] = cur + (to - cur) * Math.min(1, delta * 1.5) }
     // ── what: colour every bulb ───────────────────────────────────────────────────────────────────────────────────
     const avg = [0, 0, 0]; let n = 0
     const glowK = mode === 'glow' ? 1 : show ? show.glow : 0
+    // …and once the show owns the strands (the glow faded out), the glow strands go too: unlit, they would cover a third of it.
+    glowRef.current.visible = up && !(show && glowK === 0)
     glowEnds.forEach((e, s) => {
       const c = Math.floor(s * F.w / st.glow)
       for (let j = 0; j < rows; j++) {
