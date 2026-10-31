@@ -277,17 +277,21 @@ look('trans', 'Trans', 'Light blue, pink, white, pink, light blue, sparkling, wi
   L({ kind: 'twinkle' }, bands(['#5bcefa', '#f5a9b8', '#ffffff', '#f5a9b8', '#5bcefa']), band(0, PIN_H, C.white)),
   L({ kind: 'fade', period: 6 }, band(0, CONE_H, '#b46cff'), band(0, PIN_H, '#b46cff')),
 ])
-const RIBBON_FRAMES = 150, RIBBON_FPS = 6                   // 25 s: calm and reverent, never abrupt
+const RIBBON_FRAMES = 300, RIBBON_FPS = 12                  // 25 s: a quick twist on, then a long, reverent hold
 /** One diagonal line of the ribbon: its top centred at column xt, slanting s = ±1 (48 columns across the cone's height),
  *  drawn again a frame-width over each way so it wraps round the tree. */
 const ribbonLine = (s, xt, op = 1) => [-FRAME_W, 0, FRAME_W].map(o => poly([[xt + o - 9, 0], [xt + o + 9, 0], [xt + o + 9 + s * 48, CONE_H], [xt + o - 9 + s * 48, CONE_H]], C.red, op < 1 ? ` opacity="${f(op)}"` : '')).join('')
 const ease = (x) => { const t = Math.min(1, Math.max(0, x)); return t * t * (3 - 2 * t) }
-look('red-ribbon', 'Red Ribbon', 'The ribbon: two red stripes on opposite sides, slanting opposite ways, a V on black. Then, slowly, more diagonal lines rise into being one after another, in both directions, crossing into a lattice that wraps the whole tree; it holds, and dims gently back to the V. Calm and reverent: one cycle is about 25 seconds.', [
+look('red-ribbon', 'Red Ribbon', 'The ribbon: two red stripes on opposite sides, slanting opposite ways, a V on black. Then, quickly and smoothly, more diagonal lines slide on from left to right, in both directions, crossing into a lattice, so the tree seems to twist on; it holds for a long, reverent moment, and dims gently back to the V. One cycle is about 25 seconds.', [
   L({ kind: 'still' }, ribbonLine(1, 24) + ribbonLine(-1, 168), band(0, PIN_H, C.red)),
   L({ kind: 'still' }, (ph) => {
     const T = ph * RIBBON_FRAMES / RIBBON_FPS, out = 1 - ease((T - 20.5) / 4)   // build 1.5–15 s, hold, dim 20.5–24.5 s
-    const order = [[1, 72], [-1, 120], [1, 120], [-1, 72], [1, 168], [-1, 24]]   // alternating directions: a lattice, never a chevron
-    return order.map(([sl, xt], i) => { const op = ease((T - 1.5 - i * 2.2) / 2.6) * out; return op > 0.01 ? ribbonLine(sl, xt, op) : '' }).join('')
+    // Left to right round the tree, each line sliding into place as it fades up on a fast eased ramp: the tree twists on.
+    const order = [[-1, 24], [1, 72], [-1, 72], [1, 120], [-1, 120], [1, 168]]
+    return order.map(([sl, xt], i) => {
+      const k = ease((T - 1.5 - i * 0.35) / 0.7), op = k * out
+      return op > 0.01 ? ribbonLine(sl, xt - 30 * (1 - k), op) : ''
+    }).join('')
   }, '', { frames: RIBBON_FRAMES, fps: RIBBON_FPS, turn: 'build' }),
 ])
 // ═══ TREES & TRIMMINGS ═══════════════════════════════════════════════════════════════════════════════════════════════
