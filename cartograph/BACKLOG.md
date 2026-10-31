@@ -16,7 +16,12 @@ NO ROUTINE PURGE: content names give a changed file a fresh name, and our reader
   backup `scratch/promote-rollback/lafayettesquare-prod-20261031`. **The .com → .online 301 is LIVE** (Jacob's Cloudflare rule,
   2026-10-31): runbook §6's curl gates pass, both hosts, every card route, query kept; the slab gate passes. Open: Jacob's and
   Ward's eye on both addresses (phone first) · the §6 retirements · `/favicon.svg` 404s on .online, and the instances'
-  branding.faviconUrl names the .com one, which now redirects there (which reader fetches it: not established).
+  branding.faviconUrl names the .com one, which now redirects there. ▶ Ward measured it (2026-10-31): the static icon tag on
+  LS + HPDM comes from towns.json `faviconUrl` (publish-player-to-staging.mjs ← INSTANCE.branding.faviconUrl); the Ward then
+  overwrites it at boot with the Look's identity.mark. Two sources for one icon. OWED, kit brief: derive towns.json's icon from
+  the Look's identity.mark (a data: URI; no mark → the Ward's stated initial); delete the instances' old-player branding
+  (faviconUrl/markSvg/mark, 'UNTIL CUTOVER', now due) and townMark.js's reader; a check on every town's served tag. Then a
+  staging publish; how towns.json reaches production hosts is not established.
 - **Backend: two sittings after the cutover, all built and Zob-PASSed, none deployed.** Sitting 1: hotfix + recovery B + fortify
   (`scratch/backend-deploy-runbook.md`). Sitting 2 (§E): patches ④–⑫ as ONE set (theward plumb/fortify) + Ward's client
   (ward/ladder-client) + Operations signers + kit plumb/ladder-docs (merge on deploy only). Deploy-day hands: predeploy-audit items 6–12.
