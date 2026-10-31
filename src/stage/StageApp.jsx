@@ -38,6 +38,8 @@ import { StoreChannel } from '../cartograph/CartographSkyLight.jsx'
 import { setPieceOf, townForLook } from '../instance.js'
 import useDisplayPreview from '../displays/preview.js'
 import useDisplayFailures from '../displays/failures.js'
+import { nightAt } from '../displays/night.js'
+import { glowSpan, showtimes, runSeconds } from '../displays/lightShow/engine.js'
 import { PLUGINS as DISPLAY_PLUGINS } from '../displays/Displays.jsx'
 import { keyframeFocusIds } from '../lib/focusObject.js'
 import useListings from '../hooks/useListings'
@@ -161,9 +163,37 @@ function DisplaysSection() {
               ))}
             </div>
           </div>
+          {d.kind === 'light-show' && <TonightStrip display={d} />}
         </div>)
       })}
     </Collapsible>
+  )
+}
+
+/**
+ * Tonight, read-only (r-the-lights-run-dusk-to-dawn-and-the-show-plays-on-the-hour): the Light Show's schedule is the
+ * plugin's (no knobs), drawn here from the same engine functions the live show runs on, so the strip and the show agree.
+ * Noon to noon, so the night is one band; a tick at each showtime. A night with no dusk or no dawn is named, not hidden.
+ */
+function TonightStrip({ display }) {
+  const now = useTimeOfDay(s => s.currentTime)
+  const night = nightAt(now), span = glowSpan(night), secs = runSeconds(display.run), times = showtimes(night, secs)
+  const hhmm = (m) => `${String(Math.floor(m / 60) % 24).padStart(2, '0')}:${String(Math.round(m % 60)).padStart(2, '0')}`
+  const x = (m) => `${((m - 720 + 1440) % 1440) / 1440 * 100}%`
+  const line = !span ? 'No dusk tonight: the sun stays above twilight, so the lights stay off.'
+    : span.len === 1440 ? `No dawn tonight: it glows all day, a show every hour (${Math.floor(secs / 60)}:${String(Math.round(secs % 60)).padStart(2, '0')} each).`
+    : `Tonight: glows ${hhmm(span.from)}–${hhmm(span.from + span.len)} · ${times.length} shows on the hour, ${Math.floor(secs / 60)}:${String(Math.round(secs % 60)).padStart(2, '0')} each`
+  const from = span ? (span.len === 1440 ? 0 : ((span.from - 720 + 1440) % 1440) / 1440 * 100) : 0, width = span ? (span.len === 1440 ? 100 : span.len / 1440 * 100) : 0
+  return (
+    <div className="py-1" aria-label="Tonight's schedule">
+      <div className="text-caption" style={{ color: 'var(--on-surface-variant)' }}>{line}</div>
+      <div className="relative rounded my-1" style={{ height: 10, background: 'var(--surface-container)', border: '1px solid var(--outline-variant)' }}>
+        {span && <div className="absolute rounded" style={{ left: `${from}%`, width: `${Math.min(width, 100 - from)}%`, top: 0, bottom: 0, background: 'var(--tod-dusk)', opacity: 0.6 }} />}
+        {span && from + width > 100 && <div className="absolute rounded" style={{ left: 0, width: `${from + width - 100}%`, top: 0, bottom: 0, background: 'var(--tod-dusk)', opacity: 0.6 }} />}
+        {times.map(m => <div key={m} title={hhmm(m)} className="absolute" style={{ left: x(m), top: -2, bottom: -2, width: 2, background: 'var(--on-surface)' }} />)}
+      </div>
+      <div className="flex justify-between text-caption" style={{ color: 'var(--on-surface-variant)' }}><span>noon</span><span>midnight</span><span>noon</span></div>
+    </div>
   )
 }
 

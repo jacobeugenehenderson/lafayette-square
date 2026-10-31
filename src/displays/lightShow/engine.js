@@ -25,6 +25,11 @@ const wrapIn = (v, lo, n) => lo + (((v - lo) % n) + n) % n
 const clamp = (x) => Math.min(1, Math.max(0, x))
 export const smooth = (x) => { const t = clamp(x); return t * t * (3 - 2 * t) }
 const fadeAlpha = (t, period) => clamp(((0.5 + 0.5 * Math.sin(2 * Math.PI * t / period)) - 0.25) * 2)
+/** A fade played OUT once: whole until the look's start, then each bulb turns at its own moment in the next `out`
+ *  seconds, glinting white as it turns (Jacob, 2026-10-31: the lilac "fade/sparkles into the trans flag"). */
+const fadeOut = (t, out, h) => { const at = h * out; return t < at ? 1 : t < at + 0.12 ? -1 : 0 }
+/** Which of a layer's frames shows at t: looped, or played ONCE from the look's start and held at either end. */
+const frameAt = (L, t) => { const n = L.px.length; if (n === 1) return 0; const i = Math.floor(t * L.fps); return L.once ? Math.min(n - 1, Math.max(0, i)) : ((i % n) + n) % n }
 
 /** Checks a drawer (looks.json) against the engine: every motion known, every layer's frames present. Throws by name. */
 export function validateDrawer(drawer, where) {
@@ -33,6 +38,11 @@ export function validateDrawer(drawer, where) {
   for (const L of looks || []) for (const [i, layer] of L.layers.entries()) {
     if (!MOTIONS.includes(layer.motion?.kind)) throw new Error(`[lightShow] ⛔ ${where}: look "${L.id}" layer ${i} has motion "${layer.motion?.kind}", which the Light Show does not have (have: ${MOTIONS.join(', ')})`)
     if (!layer.frames?.length) throw new Error(`[lightShow] ⛔ ${where}: look "${L.id}" layer ${i} has no frames`)
+    // The layer's clock fields: refused unless meaningful, never read as something plausible (Zob, 2026-10-31).
+    if (layer.frames.length > 1 && !(typeof layer.fps === 'number' && layer.fps > 0)) throw new Error(`[lightShow] ⛔ ${where}: look "${L.id}" layer ${i} has ${layer.frames.length} frames and no fps (a number > 0), so it has no clock to play them on`)
+    if ('once' in layer && typeof layer.once !== 'boolean') throw new Error(`[lightShow] ⛔ ${where}: look "${L.id}" layer ${i} has once ${JSON.stringify(layer.once)}; once is true or false`)
+    const out = layer.motion.out
+    if (out !== undefined && !(layer.motion.kind === 'fade' && typeof out === 'number' && out > 0)) throw new Error(`[lightShow] ⛔ ${where}: look "${L.id}" layer ${i} has out ${JSON.stringify(out)} on a ${layer.motion.kind} layer; out is a fade's seconds to play out, a number > 0`)
   }
 }
 
@@ -48,18 +58,21 @@ export function validateDisplay(display, drawer, where) {
   if (st.show % st.glow) throw new Error(`[lightShow] ⛔ ${where}: strands.show (${st.show}) must be a whole multiple of strands.glow (${st.glow}): the glow strands are show strands`)
   if (!(st.footHeightM >= 0)) throw new Error(`[lightShow] ⛔ ${where}: strands.footHeightM, the ring's height above the set-piece's base, is not authored`)
   if (typeof display.season !== 'string' || !display.season) throw new Error(`[lightShow] ⛔ ${where}: the display names no season`)
-  if (display.shows && display.shows.every !== 'hour') throw new Error(`[lightShow] ⛔ ${where}: shows.every "${display.shows.every}" is not a schedule the Light Show knows (have: hour)`)
-  compileRun(display.run, Object.fromEntries(drawer.looks.map(L => [L.id, L])), where)
+  if ('shows' in display) throw new Error(`[lightShow] ⛔ ${where}: the display authors \`shows\`, and the Light Show has no such field: its schedule is the plugin's, dusk to dawn with a show on every hour (r-the-lights-run-dusk-to-dawn-and-the-show-plays-on-the-hour)`)
+  const compiled = compileRun(display.run, Object.fromEntries(drawer.looks.map(L => [L.id, L])), where)
+  if (showSeconds(compiled) > 3600) throw new Error(`[lightShow] ⛔ ${where}: the show runs ${Math.round(showSeconds(compiled))} s, longer than the hour between showtimes; it would be clipped, so it is refused`)
 }
 
 /**
- * What one bulb of a look shows at time t (seconds on the show clock). `look.layers[i].px` are the layer's frames.
+ * What one bulb of a look shows at time t: seconds on the LOOK's own clock, 0 when its segment begins (negative while a
+ * transition brings it in), so a motion's phase is the look's, the same at every showing. `look.layers[i].px` are the
+ * layer's frames; a fade with `out` is whole until t = 0 and sparkles away over `out` seconds, never returning.
  * `enter` places the look's motion objects: 0 below the ground, 1 in place, past 1 rising on.
  */
 export function sampleLook(F, look, c, row, t, top = look.layers.length - 1, enter = 1) {
   const { w: FW, h: FH, pinH: P } = F, CONE = FH - P
   for (let li = top; li >= 0; li--) {
-    const L = look.layers[li], m = L.motion, px = L.px[L.px.length > 1 ? Math.floor(t * L.fps) % L.px.length : 0], sp = m.speed ?? 6
+    const L = look.layers[li], m = L.motion, px = L.px[frameAt(L, t)], sp = m.speed ?? 6
     let cc = c, rr = row
     let lo = row < P ? 0 : P, n = row < P ? P : CONE
     if (m.rows && row >= P) { lo = P + m.rows[0]; n = m.rows[1] - m.rows[0]; if (row < lo || row >= lo + n) continue }
@@ -79,6 +92,7 @@ export function sampleLook(F, look, c, row, t, top = look.layers.length - 1, ent
       if (m.kind === 'pulse') k = 0.4 + 0.6 * (0.5 + 0.5 * Math.sin(t * 2 * Math.PI * (m.speed ?? 1)))
       if (m.kind === 'strobe') k = (t % 1.2) < 0.06 || ((t % 1.2) > 0.14 && (t % 1.2) < 0.2) ? 3 : 1
     }
+    if (m.kind === 'fade' && m.out) { const a = fadeOut(t, m.out, hash(row * FW + c + 7919)); if (a < 0) return [255, 246, 228]; if (a === 0) { if (li === 0) return [0, 0, 0]; return sampleLook(F, look, c, row, t, li - 1, enter) } return [r, g, b] }
     if (m.kind === 'fade') { const a = fadeAlpha(t, m.period ?? 6); if (a < 1) { const u = sampleLook(F, look, c, row, t, li - 1, enter); return [u[0] + (r - u[0]) * a, u[1] + (g - u[1]) * a, u[2] + (b - u[2]) * a] } }
     return [r * k, g * k, b * k]
   }
@@ -115,7 +129,8 @@ export function compileRun(run, looksById, where) {
  *   { reveal: null | (c, row) → 'on' | 'off' | 'spark', pin: 0…1, colour: (c, row) → rgb }
  * During the opening the show's front spirals down from the ridge: behind it 'on' (the show's colour), ahead of it 'off',
  * where the glow strands stay lit white until the show overtakes them; at the close the same, reversed.
- * `now` is the clock the looks' own motions run on (the town's instant, in seconds).
+ * `now` is the town's instant in seconds: only the sparkles read it. Each look's motions run on its OWN clock, from the
+ * start of its segment (Jacob, 2026-10-31: the ribbon's build starts black; Trans arrives on its lilac).
  */
 export function showAt(F, compiled, looksById, t, now) {
   const E = { FW: F.w, FH: F.h, P: F.pinH, CONE: F.h - F.pinH, FACES: F.faces, hash }
@@ -123,13 +138,13 @@ export function showAt(F, compiled, looksById, t, now) {
   const tt = Math.min(Math.max(t, 0), total)
   const runT = Math.min(Math.max(tt - OPEN_SECONDS, 0), compiled.seconds - 1e-6)
   const seg = compiled.segs.find(s => runT >= s.at && runT < s.at + s.seconds) || compiled.segs.at(-1)
-  const L = (id, enter) => (c, row) => sampleLook(F, looksById[id], c, row, now, undefined, enter)
   let colour
-  if (seg.kind === 'look') colour = L(seg.look, seg.enter)
+  if (seg.kind === 'look') colour = (c, row) => sampleLook(F, looksById[seg.look], c, row, runT - seg.at, undefined, seg.enter)
   else {
-    const p = (runT - seg.at) / seg.seconds, nextLook = compiled.segs[compiled.segs.indexOf(seg) + 1]
-    const A = (c, row, k = 1) => sampleLook(F, looksById[seg.from], c, row, now, undefined, k)
-    const B = (c, row, k = nextLook?.enter ?? 1) => sampleLook(F, looksById[seg.to], c, row, now, undefined, k)
+    const i = compiled.segs.indexOf(seg), prevLook = compiled.segs[i - 1], nextLook = compiled.segs[i + 1]
+    const p = (runT - seg.at) / seg.seconds, tA = runT - prevLook.at, tB = runT - nextLook.at   // each look on its own clock
+    const A = (c, row, k = 1) => sampleLook(F, looksById[seg.from], c, row, tA, undefined, k)
+    const B = (c, row, k = nextLook.enter ?? 1) => sampleLook(F, looksById[seg.to], c, row, tB, undefined, k)
     colour = (c, row) => seg.tr.mix(A, B, c, row, p, now, E)
   }
   // The Transformation: the show overtakes the glow, spiralling down from the ridge; the pinnacle comes up last.
@@ -144,23 +159,43 @@ export function showAt(F, compiled, looksById, t, now) {
   return { reveal, pin: smooth((open - 0.7) / 0.3), colour }
 }
 export const showSeconds = (compiled) => OPEN_SECONDS + compiled.seconds + OPEN_SECONDS
+/** A running order's length (the opening and close included), without its drawer: for Stage's Tonight strip. */
+export const runSeconds = (run) => OPEN_SECONDS * 2 + run.reduce((a, s) => a + (s.look ? s.seconds : TRANSITION[s.transition]?.seconds ?? NaN), 0)
 
 /**
- * LIVE: what the display is doing at a town instant, by its own schedule. `clock` is townClockOf(instant); `sunDown` is
- * the sun below the horizon at the town. Off out of season or by day; the glow after dark; a show from each showtime
- * (`shows: { every: 'hour', from: 'HH:MM', to: 'HH:MM' }`, town time) for as long as the show runs.
- * Returns { mode: 'off' | 'glow' | 'show', t, up } with t the seconds since the show began and `up` whether the strands
- * are hung at all: in season (by day they hang dark), never out of it (Jacob, 2026-10-31: "hide the strands out of season").
+ * THE SCHEDULE (r-the-lights-run-dusk-to-dawn-and-the-show-plays-on-the-hour; Jacob, 2026-10-31: "Hourly on the hour,
+ * dusk until dawn is fine"). The plugin's, not the record's: no knobs until a second town has displays.
+ * `night` is { dusk, dawn }: the town's civil dusk and dawn as minutes on ITS clock (from its position, never typed), or
+ * null where the sun does not reach them: dusk null, it never gets dark (white nights), so no glow; dawn null, it never
+ * gets light (polar night), so the glow runs the whole town day.
+ * `glowSpan`: the glow as { from, len } minutes (len 1440 = all day), or null.
  */
-export function liveState(display, compiled, clock, calendar, sunDown, where) {
-  const up = inSeason(calendar, display.season, clock.date, where)
-  if (!up || !sunDown) return { mode: 'off', t: 0, up }
-  const s = display.shows
-  if (s?.every === 'hour') {
-    const toMin = (hhmm) => { const [h, m] = hhmm.split(':').map(Number); return h * 60 + m }
-    const startMin = clock.hours * 60, t = clock.minutes * 60 + clock.seconds
-    if (startMin >= toMin(s.from) && startMin <= toMin(s.to) && t < showSeconds(compiled)) return { mode: 'show', t, up }
-  } else if (s) throw new Error(`[lightShow] ⛔ ${where}: shows.every "${s.every}" is not a schedule the Light Show knows (have: hour)`)
+const DAY_MIN = 1440
+export function glowSpan(night) {
+  if (night.dusk == null) return null
+  if (night.dawn == null) return { from: 0, len: DAY_MIN }
+  return { from: night.dusk, len: ((night.dawn - night.dusk) % DAY_MIN + DAY_MIN) % DAY_MIN }
+}
+const offsetIn = (span, minute) => ((minute - span.from) % DAY_MIN + DAY_MIN) % DAY_MIN
+/** Tonight's showtimes: every whole hour of the town's clock inside the glow at which the WHOLE show ends before the
+ *  glow does (a show it cannot finish is no showtime: never clipped). Minutes of the day, in clock order. */
+export function showtimes(night, seconds) {
+  const span = glowSpan(night); if (!span) return []
+  const out = []
+  for (let h = 0; h < 24; h++) if (span.len === DAY_MIN || offsetIn(span, h * 60) + seconds / 60 <= span.len) out.push(h * 60)
+  return out
+}
+/**
+ * LIVE: what the display is doing at a town instant. `clock` is townClockOf(instant), so a whole hour is the town's own
+ * :00, through a change of clocks. Off out of season or outside the glow; a show from each showtime for as long as it
+ * runs; the glow otherwise. Returns { mode: 'off' | 'glow' | 'show', t, up }: t the seconds since the show began, `up`
+ * whether the strands hang at all: in season (by day they hang dark), never out of it (Jacob, 2026-10-31).
+ */
+export function liveState(display, compiled, clock, calendar, night, where) {
+  const up = inSeason(calendar, display.season, clock.date, where), span = glowSpan(night)
+  if (!up || !span || offsetIn(span, clock.hours * 60 + clock.minutes) >= span.len) return { mode: 'off', t: 0, up }
+  const t = clock.minutes * 60 + clock.seconds, seconds = showSeconds(compiled)
+  if (t < seconds && showtimes(night, seconds).includes(clock.hours * 60)) return { mode: 'show', t, up }
   return { mode: 'glow', t: 0, up }
 }
 

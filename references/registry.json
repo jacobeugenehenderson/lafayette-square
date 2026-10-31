@@ -9138,6 +9138,35 @@
       "notes": "Labelled as authored, per H-31 (a season with no settled source is the operator's)."
     },
     {
+      "id": "r-the-show-plays-every-look-spread-through",
+      "question": "q-how-a-town-authors-a-display",
+      "kind": "ruling",
+      "value": {
+        "run": "every look in the drawer plays, spread through the show rather than grouped by tradition, so each tradition recurs and no two neighbours share a main colour",
+        "fixed": "Classic Tree opens; Progress Pride, the Chevron, then Trans (vertical stripes, the chevron, horizontal stripes); Doves, Red Ribbon, White Bulbs close"
+      },
+      "by": "Jacob",
+      "date": "2026-10-31",
+      "quote": "\"put all 26 in … I am inclined to say distribute these throughout\" · \"What if we paired the progress flag with the trans-lilac state. Then we go from vertical stripes to chevrons to horizontal stripes\"",
+      "canon": "docs/briefs/BRIEF-the-monument-lights-up.md (ROADMAP H-36)",
+      "notes": "The run is the town record in src/instances/provincetown.js until Stage writes it."
+    },
+    {
+      "id": "r-a-look-starts-from-its-own-beginning",
+      "question": "q-how-a-town-authors-a-display",
+      "kind": "ruling",
+      "value": {
+        "clock": "a look's motions run on the look's own clock, 0 when its segment begins, never on the town's instant",
+        "once": "a layer may play ONCE (the Red Ribbon's build: starts black, the ribbons swirl on, the pinnacle to half, all but the central /\\ fade, the pinnacle to full)",
+        "fadeOut": "a fade may play OUT once: whole as its look lands, then each bulb sparkles away into the layer beneath (Trans: the chevron rises off to the lilac, and the lilac sparkles into the flag; distinct phases, no sparkle on the chevron)"
+      },
+      "by": "Jacob",
+      "date": "2026-10-31",
+      "quote": "\"Ribbon build change: Starts black · Ribbons draw on in a swirl · Pinnacle goes to 50% · All ribbons but 1 disappear · Pinnacle goes to 100%\" · \"the central /; it's supposed to emulate an AIDS ribbon\" · \"the reveal lands on the lilac and resolve into stripes\" · \"Chevron doesn't need sparkles on the motion layer, and the 'curtain' is supposed to raise to lilac, which fade/sparkles into the trans flag. They're all distinct phases\"",
+      "canon": "docs/briefs/BRIEF-the-monument-lights-up.md (ROADMAP H-36)",
+      "notes": "Still pure: the look clock is the show time less the segment start. ▶ node checks/claims-a-look-runs-on-its-own-clock.mjs --mutants"
+    },
+    {
       "id": "r-the-lights-run-dusk-to-dawn-and-the-show-plays-on-the-hour",
       "question": "q-how-a-town-authors-a-display",
       "kind": "ruling",

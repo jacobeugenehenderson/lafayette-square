@@ -46,6 +46,25 @@ export function pinnacleFace(k, pin) {
   return { width: 2 * pin.halfWidthM * Math.tan(Math.PI / pin.sides), height: H, position: [-a * Math.sin(rot), pin.fromM + H / 2, a * Math.cos(rot)], rotation: [0, -rot, 0] }
 }
 
+/**
+ * The pinnacle's wash at height `up` on a face (0 at the strip, 1 at the top): the face's lower colour `lo` and upper
+ * colour `hi` (each 0…1 per channel, the look's own pinnacle, already scaled by how far the pinnacle is up), brightest
+ * at the strip and falling away up the stone. Writes rgb into `out`.
+ * ⛔ NEVER OUT OF GAMUT: the wash is drawn without tone mapping, so a channel past 1 is not light, it is a different
+ * colour; Jacob, 2026-10-31, saw a red pinnacle go pink. The strip's gain is applied, and then, where any channel would
+ * pass 1, the whole colour is scaled down together, so it keeps its hue (never clamped channel by channel).
+ * ▶ node checks/claims-a-pinnacle-stays-in-gamut.mjs --mutants
+ */
+export const PIN_STRIP_GAIN = 1.6
+export function pinnacleWash(lo, hi, up, out) {
+  const m = up < 0.35 ? 0.95 + (0.55 - 0.95) * up / 0.35 : 0.55 + (0.18 - 0.55) * (up - 0.35) / 0.65
+  const mix = Math.min(1, up / 0.35) * 0.5 + Math.max(0, up - 0.35) / 0.65 * 0.5, g = m * PIN_STRIP_GAIN
+  for (let i = 0; i < 3; i++) out[i] = (lo[i] + (hi[i] - lo[i]) * mix) * g
+  const k = Math.max(out[0], out[1], out[2])
+  if (k > 1) for (let i = 0; i < 3; i++) out[i] /= k
+  return out
+}
+
 /** A bulb's radius on a strand of `length` metres carrying `rows` bulbs. */
 export const bulbRadius = (length, rows) => BULB_OF_SPACING * length / rows
 // The cord and each bulb's Edison socket, sized from the same spacing, so neither is a thickness tuned to one tower.

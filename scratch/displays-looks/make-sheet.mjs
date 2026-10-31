@@ -24,7 +24,7 @@ const M = JSON.parse(readFileSync(join(DRAWER, 'looks.json'), 'utf8'))
 const uri = (file) => 'data:image/svg+xml;base64,' + readFileSync(join(DRAWER, file)).toString('base64')
 const TRANSITIONS_SRC = readFileSync(join(HERE, '../../src/displays/lightShow/transitions.js'), 'utf8').replace(/^export /m, '')
 // Each transition is shown between two looks that suit it: from → to.
-const PAIRS = { cascade: ['santa', 'santas-hat'], 'rising-spiral': ['candy-cane', 'classic-tree'], iris: ['holly', 'stars'], curtain: ['gift-red', 'gift-pride'], sparkle: ['snowfall', 'snowflakes'], melt: ['frosty', 'snowfall'], twirl: ['peppermint', 'candy-cane'], 'blackout-bloom': ['menorah', 'dreidel'], shatter: ['ornaments', 'white-bulbs'], 'expanding-stripes': ['plaid', 'gingerbread'], chevron: ['progress-pride', 'bear'] }
+const PAIRS = { cascade: ['santa', 'santas-hat'], 'rising-spiral': ['candy-cane', 'classic-tree'], iris: ['holly', 'stars'], curtain: ['gift-red', 'gift-pride'], sparkle: ['snowfall', 'snowflakes'], melt: ['snowman', 'snowfall'], twirl: ['peppermint', 'candy-cane'], 'blackout-bloom': ['menorah', 'dreidel'], shatter: ['ornaments', 'white-bulbs'], 'expanding-stripes': ['plaid', 'gingerbread'], chevron: ['progress-pride', 'trans'] }
 const looks = M.looks.map(L => ({ ...L, layers: L.layers.map(l => ({ ...l, frames: l.frames.map(uri) })) }))
 
 const TRANSITIONS_LIST_LEN = (TRANSITIONS_SRC.match(/\bid: '/g) || []).length
@@ -103,7 +103,7 @@ function geometry(strands) {
     const th = ((c + 0.5) / strands - 0.5 / FACES) * 2 * Math.PI, bx = R * Math.sin(th), bz = R * Math.cos(th);
     for (let j = 0; j < CONE; j++) {
       const t = (j + 0.5) / CONE, p = view(tx + (bx - tx) * t, DECK + (FOOT - DECK) * t, tz + (bz - tz) * t);
-      (p.z < 0 ? back : front).push({ c: Math.floor(c * FW / strands), row: P + j, sx: p.sx | 0, sy: p.sy | 0, lit: p.z < 0 ? 0.32 : 1 });
+      (p.z < 0 ? back : front).push({ s: c, c: Math.floor(c * FW / strands), row: P + j, sx: p.sx | 0, sy: p.sy | 0, lit: p.z < 0 ? 0.32 : 1 });
     }
   }
   return { back, front };
@@ -118,7 +118,7 @@ const wrapIn = (v, lo, n) => lo + (((v - lo) % n) + n) % n;
 // What a bulb shows at time t: the top layer that has paint there, moved by that layer's motion. Pure.
 function sample(look, c, row, t, top = look.layers.length - 1, enter = 1) {
   for (let li = top; li >= 0; li--) {
-    const L = look.layers[li], m = L.motion, px = L.px[L.px.length > 1 ? Math.floor(t * L.fps) % L.px.length : 0], sp = m.speed ?? 6;
+    const L = look.layers[li], m = L.motion, px = L.px[frameAt(L, t)], sp = m.speed ?? 6;
     let cc = c, rr = row;
     let lo = row < P ? 0 : P, n = row < P ? P : CONE;
     if (m.rows && row >= P) { lo = P + m.rows[0]; n = m.rows[1] - m.rows[0]; if (row < lo || row >= lo + n) continue; }   // a motion kept to part of the tree
@@ -142,6 +142,7 @@ function sample(look, c, row, t, top = look.layers.length - 1, enter = 1) {
       if (m.kind === 'strobe') k = (t % 1.2) < 0.06 || ((t % 1.2) > 0.14 && (t % 1.2) < 0.2) ? 3 : 1;
     }
     if (m.kind === 'fade') {                                    // the layer washes in over what is beneath it, and back out
+      if (m.out) { const at = hash(row * FW + c + 7919) * m.out; if (t < at) return [r * k, g * k, b * k]; if (t < at + 0.12) return [255, 246, 228]; return li ? sample(look, c, row, t, li - 1, enter) : [0, 0, 0]; }
       const a = fadeAlpha(t, m.period ?? 6);
       if (a < 1) { const u = sample(look, c, row, t, li - 1, enter); return [u[0] + (r - u[0]) * a, u[1] + (g - u[1]) * a, u[2] + (b - u[2]) * a]; }
     }
@@ -151,6 +152,8 @@ function sample(look, c, row, t, top = look.layers.length - 1, enter = 1) {
 }
 /** A source is a look, or anything with sample(c, row, t): a transition between two looks. */
 const S_ = (src, c, row, t) => src.sample ? src.sample(c, row, t) : sample(src, c, row, t);
+// As the engine: looped, or played ONCE and held; on a card a once-layer replays, with a 3 s hold at its end.
+function frameAt(L, t) { const n = L.px.length; if (n === 1) return 0; if (L.once) { const u = t % (n / L.fps + 3); return Math.min(n - 1, Math.max(0, Math.floor(u * L.fps))); } const i = Math.floor(t * L.fps); return ((i % n) + n) % n; }
 function fadeAlpha(t, period) { const s = 0.5 + 0.5 * Math.sin(2 * Math.PI * t / period); return Math.min(1, Math.max(0, (s - 0.25) * 2)); }
 const glowColour = (p, t) => { const h = hash(p.c * 131 + p.row), w = 0.8 + 0.2 * Math.sin(t * 1.5 + h * 30); return [255 * w, 214 * w, 150 * w]; };
 
@@ -187,21 +190,22 @@ function drawMonument(ctx, bufs, src, t, strands, glow) {
   const fn = glow ? (p) => glowColour(p, t) : (p) => S_(src, p.c, p.row, t);
   drawSets(ctx, bufs, [[GEO[strands], fn]], glow ? null : (avg) => pinnacleColours(src, t, avg));
 }
-// THE TRANSFORMATION, the show's opening: the 20 white strands fade as the colour strands spiral down from the ridge,
-// their front strobing; the pinnacle's strips come up last. Then the reverse.
+// THE TRANSFORMATION, the show's opening, as the product draws it (LightShow.jsx): ONE set of strands, the glow's every
+// (SHOW ÷ 20)-th among them. The show's front spirals down from the ridge and OVERTAKES the glow: a glow strand's bulb
+// stays lit white until the front reaches it, then takes the show's colour; never a fade-out (Jacob, 2026-10-31). The
+// pinnacle's strips come up last. Then the reverse: the white takes the strands back the same way.
 const smooth = (x) => { const t = Math.min(1, Math.max(0, x)); return t * t * (3 - 2 * t); };
 function drawTransformation(ctx, bufs, look, now) {
   const hold = 1.6, dur = 3.8, period = 2 * (hold + dur), u = now % period;
   const t = u < hold ? 0 : u < hold + dur ? (u - hold) / dur : u < 2 * hold + dur ? 1 : 1 - (u - 2 * hold - dur) / dur;
-  const front = t * 3.1, kg = 1 - smooth((t - 0.15) / 0.6), kp = smooth((t - 0.7) / 0.3);
-  const glowFn = (p) => glowColour(p, now).map(v => v * kg);
+  const front = t * 3.1, kp = smooth((t - 0.7) / 0.3), every = SHOW / 20, isGlow = (s) => s % every === Math.floor(every / 2);
   const showFn = (p) => {
     const key = (p.row - P) / CONE * 2 + p.c / FW;
     const dd = Math.abs(key - front) * 14;                     // the front sparkles: random glints, thinning away from it
     if (t > 0 && t < 1 && dd < 4 && hash((p.row * FW + p.c) * 31 + Math.floor(now * 12 + hash(p.row * 977 + p.c) * 12)) < 0.5 * (1 - dd / 4)) return [255, 246, 228];
-    return key < front ? sample(look, p.c, p.row, now) : [0, 0, 0];
+    return key < front ? sample(look, p.c, p.row, now) : isGlow(p.s) ? glowColour(p, now) : [0, 0, 0];
   };
-  drawSets(ctx, bufs, [[GEO[20], glowFn], [GEO[SHOW], showFn]], (avg) => pinnacleColours(look, now, avg).map(f => ({ k: f.k, L: f.L.map(v => v * kp), H: f.H.map(v => v * kp) })));
+  drawSets(ctx, bufs, [[GEO[SHOW], showFn]], (avg) => pinnacleColours(look, now, avg).map(f => ({ k: f.k, L: f.L.map(v => v * kp), H: f.H.map(v => v * kp) })));
 }
 // The pinnacle is STRIP-LIT: a strip at the foot of each face, on the ridge, washing up the stone and fading toward the
 // top. Its colour per face is that face's pinnacle region of the frame (lower half → the strip, upper half → the fade).
@@ -291,13 +295,22 @@ const items = [];
 const byId = Object.fromEntries(LOOKS.map(L => [L.id, L]));
 /** A transition card's source: from, the transition, to, and the same transition back, on a loop. */
 function transitionSource(tr, from, to) {
-  const hold = 1.6, dur = tr.seconds, period = 2 * (hold + dur), E = { FW, FH, P, CONE, FACES, hash };
+  // The card holds the incoming look until its own animation is done (a fade played out, a once-played build), then
+  // a breath more, before the way back (Jacob, 2026-10-31: "the chevron needs to wait long enough for the trans
+  // animation to complete").
+  const settle = Math.max(0, ...to.layers.map(L => L.motion.out ? L.motion.out + 0.2 : L.once ? L.frames.length / L.fps : 0));
+  const hold = 1.6, holdB = Math.max(hold, settle + 1), dur = tr.seconds, period = hold + holdB + 2 * dur, E = { FW, FH, P, CONE, FACES, hash };
+  // A mirrored transition's card plays the WHOLE sequence, then the whole of it in reverse (Jacob, 2026-10-31: for
+  // Progress Pride → Trans, "stripes, chevron, solid lilac, sparkle reveal trans flag. Maybe the whole thing in reverse").
+  const half = hold + dur + holdB
   return { sample(c, row, now) {
-    const u = now % period, Af = (cc, rr, k = 1) => sample(from, cc, rr, now, undefined, k), Bf = (cc, rr, k = 1) => sample(to, cc, rr, now, undefined, k);
+    let u = now % period
+    if (tr.mirror) { u = now % (2 * half); if (u > half) u = 2 * half - u }
+    const Af = (cc, rr, k = 1) => sample(from, cc, rr, now, undefined, k), Bf = (cc, rr, k = 1) => sample(to, cc, rr, u - hold - dur, undefined, k);   // the incoming look on its own clock, 0 as it lands
     if (u < hold) return Af(c, row, tr.fromEnter ?? 1);
     if (u < hold + dur) return tr.mix(Af, Bf, c, row, (u - hold) / dur, now, E);
-    if (u < 2 * hold + dur) return Bf(c, row);
-    const back = (u - 2 * hold - dur) / dur;
+    if (u < hold + holdB + dur) return Bf(c, row);
+    const back = (u - hold - holdB - dur) / dur;
     return tr.mirror ? tr.mix(Af, Bf, c, row, 1 - back, now, E) : tr.mix(Bf, Af, c, row, back, now, E);
   } };
 }
@@ -317,7 +330,7 @@ Promise.all(LOOKS.map(async (L, i) => {
   const el = card(L, i + 1);
   items[i + 1] = { el, look: L, ctx: el.querySelector('.cone').getContext('2d'), flat: el.querySelector('.flat').getContext('2d') };
 })).then(() => {
-  const tf = byId['classic-tree'], tfEl = tcard('The Transformation', 'opening · sparkle accent', 'The show opens: the 20 white strands fade as the colour strands spiral down from the ridge, their front sparkling, and the pinnacle’s strips come up last. It reverses at the end.', 'the glow → Classic Tree', false);
+  const tf = byId['classic-tree'], tfEl = tcard('The Transformation', 'opening · sparkle accent', 'The show opens: its front spirals down from the ridge, sparkling, and overtakes the 20 white strands; each glow bulb stays white until the front reaches it, then takes the show’s colour. The pinnacle’s strips come up last. It reverses at the end.', 'the glow → Classic Tree', false);
   titems.push({ el: tfEl, ctx: tfEl.querySelector('.cone').getContext('2d'), transformation: tf });
   for (const tr of TRANSITIONS) {
     const [a, b] = PAIRS[tr.id], el = tcard(tr.name, tr.seconds + ' s' + (tr.accent ? ' · sparkle accent' : ''), tr.notes, byId[a].name + ' → ' + byId[b].name, true);

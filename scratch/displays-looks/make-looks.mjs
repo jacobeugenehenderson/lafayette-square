@@ -60,7 +60,7 @@ function scatterApart(seed, n, y0, y1, min, draw) {
 const C = {
   red: '#ff1f2d', white: '#fff6e8', gold: '#ffc23a', green: '#14c24a', deepGreen: '#0a7a2c', blue: '#1f5cff',
   navy: '#0a1e66', brown: '#a8521c', tan: '#f0a860', orange: '#ff6200', purple: '#a23cff', silver: '#d8e4ff',
-  amber: '#c98a12', pink: '#ff3fa4', cyan: '#18e6ff', lime: '#9dff1a', yellow: '#ffe81a', snowShade: '#8fa6d6',
+  amber: '#c98a12', pink: '#ff3fa4', cyan: '#18e6ff', lime: '#9dff1a', yellow: '#ffe81a',
 }
 
 const LOOKS = []
@@ -84,23 +84,24 @@ look('santas-hat', "Santa's Hat", 'The whole tree is the hat: red up to the balc
   }, band(0, PIN_H, C.white)),
 ])
 
-// ═══ FROSTY: three stacked snowballs, each shaded round; a diagonally striped scarf; a proper carrot. ══════════════
-function snowball(y0, y1) {   // lit in the middle, falling to blue-grey at its top and bottom edges
-  const id = `sb${y0}`
-  return `<defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${C.snowShade}"/><stop offset="0.35" stop-color="${C.white}"/><stop offset="0.6" stop-color="${C.white}"/><stop offset="1" stop-color="#5a6f9e"/></linearGradient></defs>` + band(y0, y1, `url(#${id})`)
+// ═══ SNOWMAN: abstract, a stack of bands (Jacob, 2026-10-31), with the coal buttons kept and the nose orange circles. ═══
+/** Diagonal stripes in one band, rows y0…y1: seamless round the tree (the repeat, sw × colours, divides FRAME_W). */
+function diagBand(y0, y1, cols, sw = 6) {
+  if (FRAME_W % (sw * cols.length)) throw new Error(`diagBand: a repeat of ${sw * cols.length} does not divide ${FRAME_W}, so the stripes would break at the seam`)
+  const h = y1 - y0; let s = ''
+  for (let i = -Math.ceil(h / sw) - 2; i * sw < FRAME_W + 2; i++) { const x = i * sw; s += poly([[x, y0], [x + sw + 0.2, y0], [x + sw + 0.2 + h, y1], [x + h, y1]], cols[((i % cols.length) + cols.length) % cols.length]) }
+  return s
 }
-look('frosty', 'Frosty', 'His black hat with a red band is the pinnacle. Three shaded snowballs stacked down the tree, coal eyes and a bright carrot on every face, a red-and-white striped scarf, coal buttons.', [
-  L({ kind: 'still' }, () => {
-    let s = snowball(0, 24) + snowball(31, 58) + snowball(59, 96) + band(58, 59.2, '#000')
-    // the scarf: diagonal red and white stripes around the neck, with a hanging end on every face
-    s += `<defs><pattern id="scarf" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(40)"><rect width="4" height="8" fill="${C.red}"/><rect x="4" width="4" height="8" fill="${C.white}"/></pattern></defs>`
-    s += band(24, 31, 'url(#scarf)') + perFace((cx) => rect(cx + 7, 30, 7, 16, 'url(#scarf)'))
-    s += perFace((cx) =>
-      circle(cx - 5.5, 9, 2, '#000') + circle(cx + 5.5, 9, 2, '#000') +
-      poly([[cx - 1, 12.5], [cx + 14, 15.5], [cx - 1, 18]], C.orange) + circle(cx - 3, 20.5, 0.9, '#000') + circle(cx, 21.4, 0.9, '#000') + circle(cx + 3, 20.5, 0.9, '#000') +
-      circle(cx, 39, 2.4, '#000') + circle(cx, 48, 2.4, '#000') + circle(cx, 71, 2.6, '#000'))
-    return s
-  }, band(0, PIN_H, '#000') + band(11, 14, C.red)),
+look('snowman', 'Snowman', 'Abstract, in bands from the ground up: a snowball, a line, a snowball with coal buttons, thin brown arms, white, a diagonally striped red-and-white scarf, white, orange circles for the nose, white, a thin black band of eyes, a white forehead. His black hat with a red band is the pinnacle.', [
+  L({ kind: 'still' }, () =>
+    band(0, CONE_H, C.white) +
+    band(8, 10.5, '#000') +                                                    // the eyes
+    perFace((cx) => circle(cx, 16, 2.6, C.orange)) +                           // the nose
+    diagBand(22, 30, [C.red, C.white]) +                                       // the scarf
+    band(36, 38.5, C.brown) +                                                  // the arms
+    band(62, 63.3, '#000') +                                                   // the line between the snowballs
+    perFace((cx) => circle(cx, 46, 2.4, '#000') + circle(cx, 55, 2.4, '#000') + circle(cx, 76, 2.6, '#000')),   // the buttons
+  band(0, PIN_H, '#000') + band(11, 14, C.red)),
 ])
 
 look('rudolph', 'Rudolph', 'No antlers: brown, the tan stripe, and a scalloped hem low on the tree; where each pair of scallops meets, a red nose glows and pulses, two eyes above it. The pinnacle washes red.', [
@@ -146,19 +147,23 @@ look('snowflakes', 'Snowflakes', 'Six-armed flakes tumbling as they fall, on bri
 ])
 
 // ═══ GIFTS: two parcels, opposite sides; a ribbon wrapping each diagonally, a big bow in the middle of the top. ═════
-/** Diagonal stripes clipped to columns x0…x0+w: a parcel's wrapping. dir ±1 slants them either way.
- *  ⭐ Seamless round the tree only if the repeat (sw × colours) divides FRAME_W: 16 × 2 = 32, 16 × 6 = 96. Refused otherwise. */
-function wrapPaper(id, x0, w, cols, sw, dir) {
-  if (w === FRAME_W && FRAME_W % (sw * cols.length)) throw new Error(`wrapPaper: a repeat of ${sw * cols.length} does not divide ${FRAME_W}, so the stripes would break at the seam`)
-  let s = `<defs><clipPath id="${id}"><rect x="${x0}" y="0" width="${w}" height="${CONE_H}"/></clipPath></defs><g clip-path="url(#${id})">`
-  for (let i = -24; i < 40; i++) { const x = x0 + i * sw; s += poly([[x, 0], [x + sw + 0.2, 0], [x + sw + 0.2 + dir * 60, CONE_H], [x + dir * 60, CONE_H]], cols[((i % cols.length) + cols.length) % cols.length]) }
-  return s + '</g>'
+/** Wrapping paper: stripes `sw` rows thick, running the LONG way round the tree, a shallow diagonal that drops `lap`
+ *  rows per lap (Jacob, 2026-10-31: "horizontally diagonal instead of vertically; on the long dimension"). dir ±1 slants
+ *  them either way. ⭐ Seamless only if a lap drops a whole number of repeats (sw × colours): refused otherwise. */
+function wrapPaper(cols, sw, dir, lap = 48) {
+  if (lap % (sw * cols.length)) throw new Error(`wrapPaper: a lap of ${lap} rows is not a whole number of ${sw * cols.length}-row repeats, so the stripes would break at the seam`)
+  const k = dir * lap / FRAME_W; let s = ''
+  for (let i = -Math.ceil((lap + sw) / sw) - 1; i * sw < CONE_H + lap + sw; i++) {
+    const y = i * sw - (dir > 0 ? lap : 0)
+    s += poly([[-2, y - 2 * k], [FRAME_W + 2, y + (FRAME_W + 2) * k], [FRAME_W + 2, y + sw + 0.2 + (FRAME_W + 2) * k], [-2, y + sw + 0.2 - 2 * k]], cols[((i % cols.length) + cols.length) % cols.length])
+  }
+  return s
 }
-look('gift-red', 'Red Gift', 'The whole tree wrapped like a present: wide diagonal stripes of red and gold.', [
-  L({ kind: 'still' }, () => wrapPaper('gA', 0, FRAME_W, [C.red, C.gold], 16, 1), band(0, PIN_H, C.gold)),
+look('gift-red', 'Red Gift', 'The whole tree wrapped like a present: stripes of red and gold spiralling the long way round it.', [
+  L({ kind: 'still' }, () => wrapPaper([C.red, C.gold], 8, 1), band(0, PIN_H, C.gold)),
 ])
-look('gift-pride', 'Pride Gift', 'The whole tree wrapped like a present in the Pride flag: wide diagonal stripes, red through violet.', [
-  L({ kind: 'still' }, () => wrapPaper('gB', 0, FRAME_W, RAINBOW, 16, -1), band(0, PIN_H, C.white)),
+look('gift-pride', 'Pride Gift', 'The whole tree wrapped like a present in the Pride flag: stripes red through violet, spiralling the long way round it.', [
+  L({ kind: 'still' }, () => wrapPaper(RAINBOW, 8, 1), band(0, PIN_H, C.white)),
 ])
 // ═══ CANDY ═══════════════════════════════════════════════════════════════════════════════════════════════════════════
 look('candy-cane', 'Candy Cane', 'Red and white spiralling from the ridge to the ground, turning.', [
@@ -170,8 +175,8 @@ look('candy-cane', 'Candy Cane', 'Red and white spiralling from the ridge to the
 ])
 
 const PEPPER = 6
-look('peppermint', 'Peppermint', 'A peppermint pinwheel on every face, each spinning in place, between green bands; red pinnacle.', [
-  L({ kind: 'still' }, band(0, 10, C.green) + band(10, 86, '#000') + band(86, 96, C.green), band(0, PIN_H, C.red)),
+look('peppermint', 'Peppermint', 'A peppermint pinwheel on every face, each spinning in place, between bands of diagonal green and gold stripes; red pinnacle.', [
+  L({ kind: 'still' }, () => diagBand(0, 10, [C.green, C.gold]) + band(10, 86, '#000') + diagBand(86, 96, [C.green, C.gold]), band(0, PIN_H, C.red)),
   L({ kind: 'still' }, (ph) => perFace((cx) => {
     let s = circle(cx, 48, 18, C.white)
     for (let i = 0; i < 8; i += 2) {
@@ -215,15 +220,15 @@ look('stars', 'Stars', 'Gold and white stars spread evenly over night blue, neve
   L({ kind: 'twinkle' }, band(0, CONE_H, '#06134a') + scatterApart(11, 34, 6, 92, 15, (x, y, r) => star(x, y, 2.6 + r() * 2.6, r() > 0.3 ? C.gold : C.white)), band(0, PIN_H, C.gold)),
 ])
 // ═══ HANUKKAH ════════════════════════════════════════════════════════════════════════════════════════════════════════
-look('menorah', 'Menorah', 'A nine-branched menorah on every face, the shamash raised, on bands of blue: blue, darkest blue, dark blue, blue, lighter blue. Only the flames flicker.', [
-  L({ kind: 'twinkle', only: C.gold }, bands(['#1f5cff', '#04124a', '#0b2a8c', '#1f5cff', '#6fa0ff']) + perFace((cx) => {
-    let s = rect(cx - 18, 70, 36, 2.5, C.white) + rect(cx - 1.5, 72, 3, 14, C.white) + rect(cx - 8, 86, 16, 3, C.white)
-    for (let i = -4; i <= 4; i++) {
-      const x = cx + i * 4, top = i === 0 ? 40 : 46
-      s += rect(x - 1, top, 2, 70 - top, C.white) + `<ellipse cx="${x}" cy="${top - 3}" rx="1.4" ry="2.6" fill="${C.gold}"/>`
+look('menorah', 'Menorah', 'The whole tree is one menorah, kept geometric: nine white candle stripes rising from a white bar round the tree, the shamash taller, a gold square flame on each; only the flames flicker.', [
+  L({ kind: 'twinkle', only: C.gold }, () => {
+    let s = band(0, CONE_H, '#0b2a8c') + band(80, 84, C.white) + band(84, CONE_H, '#04124a')
+    for (let i = 0; i < 9; i++) {
+      const x = FRAME_W * (i + 0.5) / 9, top = i === 4 ? 30 : 40                  // the shamash stands taller
+      s += wrapped(x, (xx) => rect(xx - 2, top, 4, 80 - top, C.white) + rect(xx - 2, top - 6, 4, 4, C.gold))
     }
     return s
-  }), band(0, PIN_H, '#9fc0ff')),
+  }, band(0, PIN_H, '#9fc0ff')),
 ])
 
 const DREIDEL_LETTERS = ['נ', 'ג', 'ה', 'ש']
@@ -236,8 +241,12 @@ look('dreidel', 'Dreidel', 'The whole tree is one dreidel: a silver handle at th
   }), band(0, PIN_H, C.silver)),
 ])
 // ═══ KWANZAA ═════════════════════════════════════════════════════════════════════════════════════════════════════════
-look('kwanzaa-bands', 'Kwanzaa Bands', 'Red over black over green, rising slowly; red pinnacle.', [
+const KWANZAA_SPARKS = 8
+look('kwanzaa-bands', 'Kwanzaa Bands', 'Red over black over green, rising slowly, with gold sparkles in the black; red pinnacle.', [
   L({ kind: 'rise', speed: 4 }, bands([C.red, '#000', C.green]), band(0, PIN_H, C.red)),
+  // the sparkles ride with the bands (the same rise), and the system draws them coming and going, frame by frame
+  L({ kind: 'rise', speed: 4 }, (ph) => scatter(300 + Math.round(ph * KWANZAA_SPARKS), 36, CONE_H / 3 + 1.5, CONE_H * 2 / 3 - 1.5, (x, y) => circle(x, y, 0.9, C.gold)),
+    '', { frames: KWANZAA_SPARKS, fps: 6, turn: 'sparkle' }),
 ])
 
 // ═══ DOVES: peace, ecclesiastical ═══════════════════════════════════════════════════════════════════════════════════
@@ -250,41 +259,49 @@ look('doves', 'Doves', 'A white dove with an olive sprig on every face, among go
   L({ kind: 'still' }, perFace((cx, k) => g(cx + (k % 2 ? 6 : -6), [44, 60, 76, 52][k], 0, dove(C.white), 1.1))),
 ])
 // ═══ PRIDE ═══════════════════════════════════════════════════════════════════════════════════════════════════════════
+// The flag's pink (#f5a9b8) is so pale that, lit, it reads as white beside the white stripe: deepened so the flag
+// reads blue, pink and white (Jacob, 2026-10-31). Used wherever the trans colours appear (Progress chevron, Trans).
+const TRANS_PINK = '#ff5c9a'
 const RAINBOW = ['#e40303', '#ff8c00', '#ffed00', '#008026', '#004dff', '#750787']
 look('progress-pride', 'Progress Pride', 'Two flags on opposite sides, turned upright: the rainbow in vertical stripes, and the Progress chevron rising from the ground, white at its heart, through pink, light blue and brown to black. The chevron is a motion object: in the Chevron transition it rises into place, pauses, and rises on to reveal the next look.', [
-  L({ kind: 'still' }, () => halves((cx) => RAINBOW.map((c, i) => rect(cx - 48 + i * 16, 0, 16.2, CONE_H, c)).join('')), bands(['#5bcefa', '#f5a9b8', C.white], 0, PIN_H)),
-  L({ kind: 'still' }, () => halves((cx) => ['#000', '#784f17', '#5bcefa', '#f5a9b8', C.white].map((c, i) => { const w = i ? 46 - i * 8 : 49;   // the black legs reach the seam, so neighbouring flags' chevrons meet at the ground
+  L({ kind: 'still' }, () => halves((cx) => RAINBOW.map((c, i) => rect(cx - 48 + i * 16, 0, 16.2, CONE_H, c)).join('')), bands(['#5bcefa', TRANS_PINK, C.white], 0, PIN_H)),
+  L({ kind: 'still' }, () => halves((cx) => ['#000', '#784f17', '#5bcefa', TRANS_PINK, C.white].map((c, i) => { const w = i ? 46 - i * 8 : 49;   // the black legs reach the seam, so neighbouring flags' chevrons meet at the ground
     return poly([[cx - w, 97], [cx, 26 + i * 10], [cx + w, 97]], c) }).join('')), '', { enter: 'rise' }),
 ])
 const BEAR = ['#623804', '#d56300', '#fedd63', '#fee6b8', '#ffffff', '#555555', '#000000']
-look('bear', 'Bear', 'A plaid woven from the bear pride colours: dark brown and rust crossed with gold, tan, white and grey threads.', [
+look('bear', 'Bear', 'A plaid woven from the bear pride colours, each kept distinct as light: dark brown and rust crossed with gold, tan, white and grey threads. The brown, tan and grey glow less, so they read as themselves beside the bright ones.', [
   L({ kind: 'still' }, () => {
-    let s = band(0, CONE_H, '#623804')
-    for (let y = 0; y < CONE_H; y += 24) s += band(y + 2, y + 12, '#d56300', ' opacity="0.8"') + band(y + 14, y + 15.5, '#fedd63') + band(y + 18, y + 19, '#fee6b8')
-    for (let x = 0; x < FRAME_W; x += 24) s += rect(x + 4, 0, 10, CONE_H, '#d56300', ' opacity="0.55"') + rect(x + 16, 0, 1.5, CONE_H, '#ffffff', ' opacity="0.8"') + rect(x + 20, 0, 2, CONE_H, '#555555') + rect(x + 1, 0, 2, CONE_H, '#000', ' opacity="0.7"')
+    const BROWN = '#3e1c02', RUST = '#e05200', GOLD = '#ffcc1a', TAN = '#b8895a', WHITE = '#ffffff', GREY = '#3a3a3a'
+    let s = band(0, CONE_H, BROWN)
+    for (let y = 0; y < CONE_H; y += 24) s += band(y + 2, y + 11, RUST) + band(y + 13, y + 16, GOLD) + band(y + 18, y + 21, TAN)
+    for (let x = 0; x < FRAME_W; x += 24) s += rect(x + 5, 0, 7, CONE_H, RUST, ' opacity="0.6"') + rect(x + 15, 0, 2.5, CONE_H, WHITE) + rect(x + 20, 0, 3, CONE_H, GREY) + rect(x, 0, 2, CONE_H, '#000')
     return s
-  }, band(0, PIN_H, '#d56300')),
+  }, band(0, PIN_H, '#e05200')),
 ])
-look('trans', 'Trans', 'Light blue, pink, white, pink, light blue, sparkling, with their average, a bright lilac, washing in over them and back out again.', [
-  L({ kind: 'twinkle' }, bands(['#5bcefa', '#f5a9b8', '#ffffff', '#f5a9b8', '#5bcefa']), band(0, PIN_H, C.white)),
-  L({ kind: 'fade', period: 6 }, band(0, CONE_H, '#b46cff'), band(0, PIN_H, '#b46cff')),
+look('trans', 'Trans', 'Light blue, pink, white, pink, light blue, held still: the flag, shown plainly. It arrives as their average, a solid bright lilac, and the lilac sparkles away, bulb by bulb, revealing the flag (Jacob, 2026-10-31: after the Progress flag\u2019s chevron rises off to the lilac).', [
+  L({ kind: 'still' }, bands(['#5bcefa', TRANS_PINK, '#ffffff', TRANS_PINK, '#5bcefa']), band(0, PIN_H, C.white)),
+  L({ kind: 'fade', out: 2.5 }, band(0, CONE_H, '#b46cff'), band(0, PIN_H, '#b46cff')),
 ])
-const RIBBON_FRAMES = 300, RIBBON_FPS = 12                  // 25 s: a quick twist on, then a long, reverent hold
-/** One diagonal line of the ribbon: its top centred at column xt, slanting s = ±1 (48 columns across the cone's height),
- *  drawn again a frame-width over each way so it wraps round the tree. */
-const ribbonLine = (s, xt, op = 1) => [-FRAME_W, 0, FRAME_W].map(o => poly([[xt + o - 9, 0], [xt + o + 9, 0], [xt + o + 9 + s * 48, CONE_H], [xt + o - 9 + s * 48, CONE_H]], C.red, op < 1 ? ` opacity="${f(op)}"` : '')).join('')
+const RIBBON_FRAMES = 300, RIBBON_FPS = 12                  // 25 s, played ONCE from the look's start, holding its last frame
+/** One diagonal line of the ribbon, drawn from the ridge down to row `d`: its top centred at column xt, slanting s = ±1
+ *  (48 columns across the cone's height), drawn again a frame-width over each way so it wraps round the tree. */
+const ribbonLine = (s, xt, d = CONE_H, op = 1) => d <= 0 ? '' : [-FRAME_W, 0, FRAME_W].map(o => poly([[xt + o - 6, 0], [xt + o + 6, 0], [xt + o + 6 + s * 48 * d / CONE_H, d], [xt + o - 6 + s * 48 * d / CONE_H, d]], C.red, op < 1 ? ` opacity="${f(op)}"` : '')).join('')
 const ease = (x) => { const t = Math.min(1, Math.max(0, x)); return t * t * (3 - 2 * t) }
-look('red-ribbon', 'Red Ribbon', 'The ribbon: two red stripes on opposite sides, slanting opposite ways, a V on black. Then, quickly and smoothly, more diagonal lines slide on from left to right, in both directions, crossing into a lattice, so the tree seems to twist on; it holds for a long, reverent moment, and dims gently back to the V. One cycle is about 25 seconds.', [
-  L({ kind: 'still' }, ribbonLine(1, 24) + ribbonLine(-1, 168), band(0, PIN_H, C.red)),
+// Every face's crossing: a /\ whose legs cross a quarter of the way down, like the ribbon's loop. The KEPT face is the
+// one that stays: the AIDS ribbon (Jacob, 2026-10-31: "the central /\").
+const RIBBON_KEEP = [0]
+const RIBBON_LINES = Array.from({ length: FACES }, (_, k) => [[1, faceCx(k) - 12, k], [-1, faceCx(k) + 12, k]]).flat()
+look('red-ribbon', 'Red Ribbon', 'Starts black. Red ribbons draw on, one after another, swirling round the tree into a lattice; the pinnacle comes up to half; every ribbon but the central /\\ fades away, leaving the AIDS ribbon; the pinnacle comes up to full, and it holds. One play is 25 seconds.', [
   L({ kind: 'still' }, (ph) => {
-    const T = ph * RIBBON_FRAMES / RIBBON_FPS, out = 1 - ease((T - 20.5) / 4)   // build 1.5–15 s, hold, dim 20.5–24.5 s
-    // Left to right round the tree, each line sliding into place as it fades up on a fast eased ramp: the tree twists on.
-    const order = [[-1, 24], [1, 72], [-1, 72], [1, 120], [-1, 120], [1, 168]]
-    return order.map(([sl, xt], i) => {
-      const k = ease((T - 1.5 - i * 0.35) / 0.7), op = k * out
-      return op > 0.01 ? ribbonLine(sl, xt - 30 * (1 - k), op) : ''
+    const T = ph * RIBBON_FRAMES / RIBBON_FPS, others = 1 - ease((T - 15) / 3)       // draw on 1–11 s · the rest fade 15–18 s
+    return band(0, CONE_H, '#000') + RIBBON_LINES.map(([sl, xt, k], i) => {
+      const d = ease((T - 1 - i * 1.2) / 1.6) * CONE_H, op = RIBBON_KEEP.includes(k) ? 1 : others
+      return op > 0.01 ? ribbonLine(sl, xt, d, op) : ''
     }).join('')
-  }, '', { frames: RIBBON_FRAMES, fps: RIBBON_FPS, turn: 'build' }),
+  }, (ph) => {
+    const T = ph * RIBBON_FRAMES / RIBBON_FPS, p = 0.5 * ease((T - 11) / 1.5) + 0.5 * ease((T - 18) / 1.5)   // half at 11–12.5 s, full at 18–19.5 s
+    return band(0, PIN_H, '#000') + (p > 0.01 ? band(0, PIN_H, C.red, ` opacity="${f(p)}"`) : '')
+  }, { frames: RIBBON_FRAMES, fps: RIBBON_FPS, turn: 'build', once: true }),
 ])
 // ═══ TREES & TRIMMINGS ═══════════════════════════════════════════════════════════════════════════════════════════════
 look('plaid', 'Plaid', 'Red tartan with green bands, dark threads and a gold line; green pinnacle.', [
@@ -344,7 +361,7 @@ for (const look of LOOKS) {
       const file = `looks/${look.id}/${li}${n > 1 ? `-${k}` : ''}.svg`
       writeFileSync(join(DRAWER, file), frameSvg(layer, k / n)); files.push(file)
     }
-    return { motion: layer.motion, ...(n > 1 ? { turn: layer.turn, fps: layer.fps } : {}), ...(layer.enter ? { enter: layer.enter } : {}), frames: files }
+    return { motion: layer.motion, ...(n > 1 ? { turn: layer.turn, fps: layer.fps, ...(layer.once ? { once: true } : {}) } : {}), ...(layer.enter ? { enter: layer.enter } : {}), frames: files }
   })
   manifest.push({ id: look.id, name: look.name, notes: look.notes, layers })
 }

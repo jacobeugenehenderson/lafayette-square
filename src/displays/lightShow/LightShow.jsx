@@ -14,7 +14,8 @@
  *   · one AVERAGE GLOW: a light tinted by the tree's mean colour, washing everything round it
  * The strands end at a ring `strands.footHeightM` above the set-piece's base (the display's authored value: on the
  * Pilgrim Monument, about 20 ft up, Jacob 2026-10-31), never on the terrain.
- * The clock: LIVE reads the town's one clock (useTimeOfDay.currentTime) and the display's schedule; Stage's preview
+ * The clock: LIVE reads the town's one clock (useTimeOfDay.currentTime) and the plugin's schedule (dusk to dawn, a show
+ * on every hour: engine.js#liveState, the night from ../night.js); Stage's preview
  * (./preview.js) plays the glow or the show from the moment it is pressed, on the page's own time, Stage only.
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -23,8 +24,9 @@ import * as THREE from 'three'
 import useTimeOfDay from '../../hooks/useTimeOfDay'
 import { townClockOf } from '../../lib/townClock.js'
 import { validateDrawer, compileRun, showAt, showSeconds, glowColour, liveState, uplightTarget } from './engine.js'
-import { checkFaces, strandEnds, pinnacleFace, bulbRadius, cordRadius, SOCKET_OF_BULB, avgGlow } from './geometry.js'
+import { checkFaces, strandEnds, pinnacleFace, pinnacleWash, bulbRadius, cordRadius, SOCKET_OF_BULB, avgGlow } from './geometry.js'
 import useDisplayPreview from '../preview.js'
+import { nightAt } from '../night.js'
 
 const SHOW_GAIN = 2.4, GLOW_GAIN = 1.7                         // HDR, so the bulbs bloom like high-wattage lamps
 const CORD = '#3a3a3c'                                          // the cords: dark gray (Jacob, 2026-10-31)
@@ -103,7 +105,7 @@ export default function LightShow({ display, extent, calendar, contentRoot, dim,
   }, [F, extent])
   const pinMat = useMemo(() => new THREE.MeshBasicMaterial({ vertexColors: true, toneMapped: false, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }), [])
 
-  const tmp = useMemo(() => ({ m: new THREE.Matrix4(), c: new THREE.Color(), q: new THREE.Quaternion(), u: new THREE.Vector3(), p: new THREE.Vector3(), s: new THREE.Vector3(), Y: new THREE.Vector3(0, 1, 0) }), [])
+  const tmp = useMemo(() => ({ m: new THREE.Matrix4(), c: new THREE.Color(), q: new THREE.Quaternion(), u: new THREE.Vector3(), p: new THREE.Vector3(), s: new THREE.Vector3(), Y: new THREE.Vector3(0, 1, 0), w: [0, 0, 0] }), [])
   // While lit, the set-piece's uplights ease down to dimUplights; off, back to as authored. Gone when this unmounts.
   useEffect(() => () => { if (dim) delete dim.byDisplay[display.id] }, [dim, display.id])
 
@@ -123,8 +125,7 @@ export default function LightShow({ display, extent, calendar, contentRoot, dim,
       mode = preview.mode; now = instant.getTime() / 1000 + since; t = since % (showSeconds(compiled) + 4)
       if (mode === 'show' && t > showSeconds(compiled)) mode = 'glow'                   // a breath of glow between plays
     } else {
-      const sunDown = useTimeOfDay.getState().getLightingPhase().sunAltitude < 0
-      ;({ mode, t, up } = liveState(display, compiled, townClockOf(instant), calendar, sunDown, where)); now = instant.getTime() / 1000
+      ;({ mode, t, up } = liveState(display, compiled, townClockOf(instant), calendar, nightAt(instant), where)); now = instant.getTime() / 1000
     }
     const show = mode === 'show' ? showAt(F, compiled, drawer.byId, t, now) : null
     if (pinRef.current) pinRef.current.visible = !!show
@@ -175,10 +176,8 @@ export default function LightShow({ display, extent, calendar, contentRoot, dim,
       const kp = show ? show.pin : 0, L = lo.map(v => nl ? v / nl / 255 * kp : 0), Hc = hi.map(v => nh ? v / nh / 255 * kp : 0)
       const col = face.g.attributes.color, pos = face.g.attributes.position, H = extent.pinnacle.toM - extent.pinnacle.fromM
       for (let i = 0; i < pos.count; i++) {
-        const up = pos.getY(i) / H + 0.5                                                  // 0 at the strip, 1 at the top
-        const m = up < 0.35 ? 0.95 + (0.55 - 0.95) * up / 0.35 : 0.55 + (0.18 - 0.55) * (up - 0.35) / 0.65
-        const mix = Math.min(1, up / 0.35) * 0.5 + Math.max(0, up - 0.35) / 0.65 * 0.5
-        col.setXYZ(i, (L[0] + (Hc[0] - L[0]) * mix) * m * 1.6, (L[1] + (Hc[1] - L[1]) * mix) * m * 1.6, (L[2] + (Hc[2] - L[2]) * mix) * m * 1.6)
+        const w = pinnacleWash(L, Hc, pos.getY(i) / H + 0.5, tmp.w)                     // up: 0 at the strip, 1 at the top
+        col.setXYZ(i, w[0], w[1], w[2])
       }
       col.needsUpdate = true
       avg[0] += L[0] * 255 * 40; avg[1] += L[1] * 255 * 40; avg[2] += L[2] * 255 * 40; n += show ? 40 : 0
