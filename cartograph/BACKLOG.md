@@ -24,7 +24,9 @@ NO ROUTINE PURGE: content names give a changed file a fresh name, and our reader
   turns ANY throw into null after 7 retries, so a refusal VANISHES silently and never reaches the Ward (Zob, read in source).
   A refusal must be told from a transient, never retried, and surfaced with its reason. No refusal type exists: ~206
   `[tag] ⛔` throws in 53 files; one sink with `src/displays/failures.js`, not two. ② **Ward (in dispatch, co-signed):** a
-  boundary for throws outside those layers. ③ **Ward:** Scene.jsx passes the published calendar.
+  boundary for throws outside those layers. ③ **Ward:** Scene.jsx passes the published calendar, with the values of the kit's
+  `useTownCalendar.js#readTownCalendar` (null unread · rows · {absent} · {error}; on tinsel/displays 5725b7c7, not yet on
+  integration), from its own read (`content.js#loadContent`), no second reader. Today that read turns absent AND failed into [].
   Event card: Ward briefs it (registry `r-an-event-has-a-host-and-a-venue-and-opens-at-the-venue`); the kit validator goes to Tinsel.
 - **Displays (Tinsel):** the Light Show is on integration through 2e408e9a; the ground-ring radius stands as is (Jacob, 2026-10-31,
   "fine for now"). 65f8438f + 7d242849 await Zob. Owed: brief §2a. Jacob's revision list → Tinsel, coordinated through Boz.
