@@ -34,7 +34,9 @@ NO ROUTINE PURGE: content names give a changed file a fresh name, and our reader
   `[tag] ⛔` throws in 53 files; one sink with `src/displays/failures.js`, not two. ② **Ward (in dispatch, co-signed):** a
   boundary for throws outside those layers. Building: Fuse, `BRIEF-a-refusal-is-never-swallowed` (every ⛔ throw typed Refusal or
   Transient). ⚠️ Gap for a follow-up brief (Fuse, read): `reloadTerrain` is called with no await/catch (TownPlace.jsx,
-  CartographApp), so a terrain refusal leaves the town on its splash with the reason in the console only. ③ **Ward:** Scene.jsx passes the published calendar, with the values of the kit's
+  CartographApp), so a terrain refusal leaves the town on its splash with the reason in the console only; useFrame throws too.
+  And refusals that never throw: ⛔ console.error/warn then render nothing (Fuse's grep: 154 lines in 45 files, 28 in Town's
+  wrapped layers, e.g. InstancedTrees/BakedLamps anchors → no trees/lamps). Follow-up brief: classify each, route to the sink. ③ **Ward:** Scene.jsx passes the published calendar, with the values of the kit's
   `useTownCalendar.js#readTownCalendar` (null unread · rows · {absent} · {error}; on tinsel/displays 5725b7c7, not yet on
   integration), from its own read (`content.js#loadContent`), no second reader. Today that read turns absent AND failed into [].
   Event card: Ward briefs it (registry `r-an-event-has-a-host-and-a-venue-and-opens-at-the-venue`); the kit validator goes to Tinsel.
