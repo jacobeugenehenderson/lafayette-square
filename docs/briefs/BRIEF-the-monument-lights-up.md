@@ -35,8 +35,8 @@ Provincetown is first to use, never a Provincetown patch.
   delete them; Provincetown expects 20+ with transitions (`r-a-displays-setups-belong-to-its-town`).
 - **A show is what a display MAY do, not what it is.** The Light Show glows all season and plays timed shows; arches play
   none (`r-a-show-is-what-a-display-may-do-not-what-it-is`).
-- ⚠️ **Open, not ruled:** setups compose the plugin's motions only (Tinsel's recommendation), or motion can also be drawn
-  by hand.
+- **A setup only combines the plugin's built-in motions** (and its transitions); no hand-drawn motion
+  (`r-a-setup-composes-its-plugins-motions`).
 
 ## 2. What the code says (checked 2026-10-30; confirm again at build, by symbol)
 

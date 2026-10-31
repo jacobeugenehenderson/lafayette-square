@@ -5266,7 +5266,8 @@
       "findings": [
         "r-displays-is-a-stage-section-of-plugins",
         "r-a-displays-setups-belong-to-its-town",
-        "r-a-show-is-what-a-display-may-do-not-what-it-is"
+        "r-a-show-is-what-a-display-may-do-not-what-it-is",
+        "r-a-setup-composes-its-plugins-motions"
       ]
     }
   ],
@@ -8966,8 +8967,7 @@
       "by": "Jacob",
       "date": "2026-10-30",
       "quote": "\"I think there needs to be a helper surface where the user can see/edit/create/delete patterns\" · \"We want to do like 20+light setups with transitions\" · on 'presets: your 20+ setups, saved and reusable on any town': \"No makes no sense\"",
-      "canon": "docs/briefs/BRIEF-the-monument-lights-up.md (ROADMAP H-36)",
-      "notes": "OPEN, not ruled: whether a setup only composes the plugin's motions (Tinsel's recommendation, the After Effects model) or the operator may also hand-draw motion."
+      "canon": "docs/briefs/BRIEF-the-monument-lights-up.md (ROADMAP H-36)"
     },
     {
       "id": "r-a-show-is-what-a-display-may-do-not-what-it-is",
@@ -8982,6 +8982,20 @@
       "quote": "\"What about lighted holiday arches over streets... those aren't shows\"",
       "canon": "docs/briefs/BRIEF-the-monument-lights-up.md (ROADMAP H-36)",
       "notes": "The consequence is Tinsel's reading under CLAUDE.md Layer 0 (a constant right for town #1), not Jacob's words."
+    },
+    {
+      "id": "r-a-setup-composes-its-plugins-motions",
+      "question": "q-how-a-town-authors-a-display",
+      "kind": "ruling",
+      "value": {
+        "rule": "a setup is made ONLY by combining the plugin's built-in motions (and its transitions); no hand-drawn motion",
+        "consequence": "a new kind of motion is new plugin code, every town gets it; never authored per town"
+      },
+      "by": "Jacob",
+      "date": "2026-10-30",
+      "quote": "\"setups only made by combining the plugin's built-in motions\"",
+      "canon": "docs/briefs/BRIEF-the-monument-lights-up.md (ROADMAP H-36)",
+      "notes": "The consequence is Tinsel's reading, not Jacob's words."
     }
   ]
 }
