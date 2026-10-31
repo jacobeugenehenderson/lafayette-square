@@ -9128,7 +9128,7 @@
       "kind": "ruling",
       "value": {
         "start": "November 11 (the Mayflower anniversary)",
-        "end": "not ruled",
+        "end": "January 1 (New Year's Day; Jacob, 2026-10-31: \"New Year's Day is fine\"); the season is its OWN town-event row in the town's events.json (its own id, NO listing_id): the Monument keeps its own hours and its own ticker entry (Jacob, 2026-10-31: \"The monument is its own thing with its own schedule\"; supersedes the same day's listing-keyed reading). NO links_to: a display's ticker entry has nowhere to click through to and carries all its information itself (Jacob, 2026-10-31: \"for a Display in the ticker, there's no place to click thru to and all the information is already in the listing\")",
         "status": "AUTHORED by the operator, not sourced: the sources disagree (Nov 11 in some years; Thanksgiving eve, 2026-11-25, in one listing; off through New Year's Day, into January, or about five weeks), and the show will not be live"
       },
       "by": "Jacob",
