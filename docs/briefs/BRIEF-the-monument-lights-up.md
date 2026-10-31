@@ -90,6 +90,9 @@ Provincetown is first to use, never a Provincetown patch.
   and the colouring loop runs. Hide the root when nothing hangs; skip colouring while the display is off.
 - **The contact sheet** (scratch, but where Jacob judges looks): its Transformation card still fades the glow; match the
   product's overtake when the sheet is next touched.
+- **No render instrument (2026-10-31):** `display:light-show` never mounts in headless Preview; gate not identified (the
+  preview store, the drawer and the lazy chunk all check out). Until it does, the bleed-through and the pinnacle are
+  judged by Jacob's eye in Stage. The probe, `scratch/displays-bleed/probe.mjs`, is uncommitted.
 
 ## 3. Standup before code
 
