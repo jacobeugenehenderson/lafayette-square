@@ -34,6 +34,8 @@ NO ROUTINE PURGE: content names give a changed file a fresh name, and our reader
   nothing (Tinsel, measured). Next for Tinsel: the bake publishes the drawer · then the pinnacle cap under the tone curve
   (ACES desaturates the red) · then point framing. The calendar route (5725b7c7, Zob PASS) waits on Huron's 16 event rows.
   Arborist: PTown trees near the Monument are drawn 37–40 m tall (an upper bound), and they truly occlude the strands.
+  Intake: Huron building msbf-209 is named "The Huron Historical Society" (address "CENTER HURON"), but OSM way 346992145
+  (amenity=library) puts Huron Public Library inside it. Ten events stand in with a {name, point} spot until intake names it (Tinsel 08eff53d).
 - Older OPEN: hours (56/447) · the preview-photo licence (parked) · the dock object + tide ride (unbuilt).
 
 ### ⭐ HANDOFF — 2026-10-28 (the sprint closed; Swash for Boz). Read this block first; everything below is detail.
