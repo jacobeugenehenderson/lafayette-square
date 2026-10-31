@@ -11,12 +11,14 @@
  *   intensity — the wash at `reach` metres (0 = off; the default, so an unauthored Look is dark)
  *   color · cone° (the beam's half-angle) · reach (m)
  * Candela = intensity × reach², so with physical falloff the face `reach` metres up the beam gets `intensity`.
+ * While one of the set-piece's displays is lit, the floods are scaled down by its `dimUplights` (`dim`, from <SetPiece>).
  */
 import { useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import { resolveGroupAtMinute, getTodSlotMinutes } from '../cartograph/animatedParam.js'
+import { uplightScale } from '../displays/dim.js'
 import { ARCHLIGHT_FIELD_KEYS, ARCHLIGHT_FLAT_DEFAULTS, kitDayChannel } from '../cartograph/skyLightChannels.js'
 
 const DEG = Math.PI / 180
@@ -27,7 +29,7 @@ const DEFAULT_CHANNEL = Object.freeze(kitDayChannel('setPieceLight'))   // the k
  * @param topM        the set-piece's height above its base, metres (the renderer's declared top)
  * @param halfWidthM  half its base width, metres
  */
-export default function SetPieceUplights({ channel, topM, halfWidthM }) {
+export default function SetPieceUplights({ channel, topM, halfWidthM, dim }) {
   if (!(topM > 0) || !(halfWidthM > 0)) throw new Error(`[SetPieceUplights] ⛔ a set-piece renderer must declare topM and halfWidthM (got ${topM}, ${halfWidthM})`)
   const L = useRef(), R = useRef()
   // Floods stand off the front corners; each aims across the face at 60% of the height.
@@ -42,6 +44,7 @@ export default function SetPieceUplights({ channel, topM, halfWidthM }) {
   }, [topM, halfWidthM])
 
   useFrame(() => {
+    const k = uplightScale(dim)   // a lit display's dim (src/displays): 1, as authored, whenever none is lit
     const tod = useTimeOfDay.getState()
     const ch = channel ?? DEFAULT_CHANNEL
     const v = resolveGroupAtMinute(ch, tod.getMinuteOfDay(), ch.animated ? getTodSlotMinutes(tod.currentTime) : null,
@@ -49,7 +52,7 @@ export default function SetPieceUplights({ channel, topM, halfWidthM }) {
     for (const [ref, s] of [[L, 'L'], [R, 'R']]) {
       const l = ref.current; if (!l) continue
       const reach = v[`uplight${s}_reach`]
-      l.intensity = v[`uplight${s}_intensity`] * reach * reach
+      l.intensity = v[`uplight${s}_intensity`] * reach * reach * k
       l.color.set(v[`uplight${s}_color`])
       l.angle = v[`uplight${s}_cone`] * DEG
     }

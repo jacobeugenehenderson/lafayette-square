@@ -77,6 +77,7 @@ export default {
     drawer: 'displays/monument-lights/looks.json',            // under the town's contentRoot: its content, not the kit's
     season: 'monument-lighting',
     strands: { glow: 20, show: 60, ringRadiusM: 31, footHeightM: 6.1 },   // 6.1 m = 20 ft
+    dimUplights: 0.15,                  // while lit (glow or show), the monument's floods fade to 15% of what the Look authors
     shows: { every: 'hour', from: '17:00', to: '23:00' },
     run: [
       { look: 'classic-tree', seconds: 10 }, { transition: 'cascade' }, { look: 'santa', seconds: 8 },

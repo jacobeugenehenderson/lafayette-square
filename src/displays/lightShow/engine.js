@@ -13,6 +13,7 @@
  * ⛔ An unknown look, motion or transition THROWS by name. Nothing here falls back.
  */
 import { TRANSITIONS } from './transitions.js'
+export { uplightTarget } from '../dim.js'
 
 export const MOTIONS = ['still', 'fall', 'rise', 'spin', 'spiral', 'twinkle', 'pulse', 'strobe', 'fade']
 export const OPEN_SECONDS = 3.8                     // the Transformation, and its reverse at the close
@@ -41,6 +42,7 @@ export function validateDrawer(drawer, where) {
  */
 export function validateDisplay(display, drawer, where) {
   validateDrawer(drawer, where)
+  if (display.dimUplights !== undefined && !(display.dimUplights >= 0 && display.dimUplights <= 1)) throw new Error(`[lightShow] ⛔ ${where}: dimUplights (${display.dimUplights}) is a fraction of the uplights, 0 … 1`)
   const st = display.strands
   if (!(st?.glow > 0 && st?.show > 0 && st?.ringRadiusM > 0)) throw new Error(`[lightShow] ⛔ ${where}: strands needs glow, show and ringRadiusM`)
   if (!(st.footHeightM >= 0)) throw new Error(`[lightShow] ⛔ ${where}: strands.footHeightM, the ring's height above the set-piece's base, is not authored`)

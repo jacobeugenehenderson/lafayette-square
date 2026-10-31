@@ -82,6 +82,11 @@ Provincetown is first to use, never a Provincetown patch.
 - **Arches attach across a street:** their span reads the street's authored width at that spot, never a constant
   (Layer 0).
 
+## 2a. Owed (Zob's review, 2026-10-31)
+
+- **Before Stage writes the record:** `placed` is a one-shot boolean. Key the bulb placement on the strand ends and
+  counts, so a changed record lays the bulbs again (today a new instancedMesh would sit every bulb at the origin).
+
 ## 3. Standup before code
 
 Held 2026-10-30 (the plan to Boz; the rulings above are its outcome). Before the tree: the looks as a contact sheet for
