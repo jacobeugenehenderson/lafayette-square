@@ -15,6 +15,7 @@
 
 import { WindSwitch } from '../components/WindSheetCard.jsx'
 import { useRef, useEffect, useMemo, useState, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { useThree, useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 
@@ -139,20 +140,27 @@ function Uplights() {
 const ALERT_STYLE = { background: 'var(--error-container, #5c1a1a)', color: 'var(--on-error-container, #ffdad6)' }
 
 // What the kit took out of this town, and why (src/lib/failures.js, the one sink): a layer's refusal, a layer a
-// boundary gave up retrying, a display that failed. At the top of the panel, so a missing piece is never silent; a
-// reload clears it. Renders nothing when nothing failed.
+// boundary gave up retrying, a display that failed. Renders nothing when nothing failed; an entry goes when its layer
+// draws again, or on reload.
+// ⭐ ABOVE THE SPLASH: a refused layer the reveal waits on holds the town on its emblem (Town.jsx#RevealGate), and the
+// splash (Town.jsx#CanvasOverlay, zIndex 300) covers the canvas's host and Stage's panel with it. So the banner is
+// portalled to the page, fixed under the toolbar, over the overlay: the operator reads why the town is held. Stage's
+// alone: the public player's splash is the Ward's to style (it reads the sink through Town.jsx's useFailures).
+const FAILURES_Z = 400
 function FailuresBanner() {
   const lookId = useCartographStore(s => s.activeLookId)
   const list = failuresFor(useFailures(s => s.failed), lookId)
   if (!list.length) return null
-  return (
-    <div className="glass-panel rounded-xl p-3 pointer-events-auto">
+  return createPortal(
+    <div className="glass-panel rounded-xl p-3 pointer-events-auto"
+      style={{ position: 'fixed', top: 72, left: 16, maxWidth: 560, zIndex: FAILURES_Z }}>
       {list.map(f => (
         <div key={`${f.lookId}/${f.layer}`} role="alert" className="text-caption rounded px-2 py-1 my-1" style={ALERT_STYLE}>
           {f.layer} {f.kind === 'refusal' ? 'refused' : 'failed'}: {f.reason}
         </div>
       ))}
-    </div>
+    </div>,
+    document.body,
   )
 }
 
@@ -1212,7 +1220,7 @@ export function StagePanel({ shot, setShot, keyframes, setKeyframes, heroMotion,
           the cartograph chunk (store-bound); standalone /stage passes none. */}
       {lookForkSlot}
 
-      {/* What failed in this town, and why (the one sink). Nothing when nothing failed. */}
+      {/* What failed in this town, and why (the one sink), portalled above the splash. Nothing when nothing failed. */}
       <FailuresBanner />
 
       {/* Time of Day — top slot for Preview parity. The weather row is Stage's own. */}

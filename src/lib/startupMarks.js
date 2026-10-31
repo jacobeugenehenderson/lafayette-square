@@ -82,6 +82,18 @@ export function markFailed(id, reason) {
   console.error(`[reveal] ⛔ "${id}" will not arrive: ${reason}. The town stays hidden rather than revealed with a hole.`)
   performance.mark(MARK_PREFIX + 'failed:' + id, { detail: String(reason) })
 }
+/**
+ * The class's layer mounted again cleanly (src/components/R3FErrorBoundary.jsx, a remount is a fresh attempt): its old
+ * failure no longer holds the town. ⛔ The caller clears only a failure it wrote: the mark is keyed by class, and a class
+ * has other producers (OverheadTrees, HeroImpostorTrees, treesReveal.js). ⭐ Clearing writes a mark of its own (`ward:cleared:<id>`) because the gate hears only
+ * NEW `ward:` entries (subscribeStartup); a class prepared before it failed writes no new `prepared`, so without this the
+ * gate would never look again and hold the town after the fix (Zob, 2026-10-31).
+ */
+export function clearFailed(id) {
+  if (!hasPerf || !isMarked('failed:' + id)) return
+  performance.clearMarks(MARK_PREFIX + 'failed:' + id)
+  performance.mark(MARK_PREFIX + 'cleared:' + id)
+}
 export function failureOf(id) {
   if (!hasPerf) return null
   return performance.getEntriesByName(MARK_PREFIX + 'failed:' + id, 'mark')[0]?.detail ?? null
