@@ -69,7 +69,7 @@ import { drawerDir, frameRel } from '../src/displays/drawerPath.js'
   } finally { rmSync(root, { recursive: true, force: true }) }
 }
 
-async function verdict({ step, names, sweep, url, show, files = {}, mirror } = {}) {
+async function verdict({ step, names, sweep, url, show, files = {}, mirror, rule } = {}) {
   const fails = [], F = (c, m) => { if (!c) fails.push(m) }
   // 1. the bake's step
   const ok = await runStep(step)
@@ -85,9 +85,10 @@ async function verdict({ step, names, sweep, url, show, files = {}, mirror } = {
   const esc = await runStep(step, 'escaping-frame')
   F(esc.exited === 2 && !esc.leaked, `a frame escaping the drawer's folder is not refused (exit ${esc.exited}${esc.leaked ? ', and a file from outside the town was published' : ''})`)
   // the same rule in the engine, so Stage refuses it too
-  const E = await importSource('src/displays/lightShow/engine.js')
+  const E = await importSource('src/displays/lightShow/engine.js', rule ? { redirect: { 'src/displays/drawerPath.js': { transform: rule } } } : {})
   const fr = { w: 4, h: 3, pinH: 1, faces: 4 }
   F(!!(() => { try { E.validateDrawer({ frame: fr, looks: [{ id: 'a', layers: [{ motion: { kind: 'still' }, frames: ['../../x.svg'] }] }] }, 'w') } catch (e) { return /inside the drawer/.test(e.message) } })(), 'the engine (Stage) accepts a frame escaping the drawer')
+  F(!!(() => { try { E.validateDrawer({ frame: fr, looks: [{ id: 'a', layers: [{ motion: { kind: 'still' }, frames: ['%2e%2e/x.svg'] }] }] }, 'w') } catch (e) { return /inside the drawer/.test(e.message) } })(), 'the engine (Stage) accepts a percent-encoded escape')
   const bm = code(sourceOf('cartograph/bake-manifest.mjs'))
   F((bm.match(/publishBeside\(/g) || []).length >= 3 && /photos\[url\] = publishBeside\(/.test(bm), 'photos and drawers do not share one copier (publishBeside)')
   F(/^\s*displays,$/m.test(bm), 'the manifest does not carry `displays`')
@@ -135,6 +136,7 @@ if (process.argv.includes('--mutants')) {
     ['a stale frame left published', { step: (s) => s.replace('rmSync(resolve(contentOut, dir), { recursive: true, force: true })', 'void 0') }],
     ['a drawer at the content root accepted', { step: (s) => s.replace('try { dir = drawerDir(d.drawer, where) } catch (e) { console.error(e.message); process.exit(2) }', 'dir = dirname(d.drawer)') }],
     ['a frame escaping its folder accepted', { step: (s) => s.replace('try { frameRel(frame, `${where} look "${L.id}"`) } catch (e) { console.error(e.message); process.exit(2) }', '') }],
+    ['a percent-encoded escape accepted', { rule: (s) => s.replace(" && !s.includes('%')", '') }],
     ['a missing frame accepted', { step: (s) => s.replace("is not on disk`); process.exit(2) }\n    if (!files", "is not on disk`); continue }\n    if (!files") }],
     ['the resolver blind to drawers', { names: (s) => s.replace('for (const d of Object.values(manifest?.displays || {})) if (d?.files?.[rel]) return d.files[rel].sha256', '') }],
     ['the sweep blind to drawers', { sweep: (s) => s.replace("for (const d of Object.values(manifest.displays || {})) for (const [rel, f] of Object.entries(d?.files || {})) out.add(base + contentName(rel, f.sha256))", '') }],

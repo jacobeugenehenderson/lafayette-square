@@ -7,7 +7,8 @@
  *   frameRel(frame)     a frame looks.json names: relative, inside the drawer's dir (no '..', not absolute, no '\').
  * Each throws by name. Pure; no fs.
  */
-const SEG_OK = (s) => s && s !== '.' && s !== '..'
+// No '%' in a segment: an encoded '..' is a literal folder on disk, but the dev server may DECODE the authoring URL (Zob).
+const SEG_OK = (s) => s && s !== '.' && s !== '..' && !s.includes('%')
 
 export function drawerDir(drawer, where = 'a display') {
   if (typeof drawer !== 'string' || !/^displays\/[^/]+\/(?:[^/]+\/)*[^/]+\.json$/.test(drawer) || !drawer.split('/').every(SEG_OK) || drawer.includes('\\'))
