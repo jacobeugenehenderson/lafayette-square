@@ -24,6 +24,7 @@ import { SHOTS_FLAT_DEFAULTS } from '../cartograph/skyLightChannels.js'
 import { getSceneStencil } from './sceneStencilState.js'
 import { applyRegime } from '../lib/cameraRegimes.js'
 import RegimeControls from './RegimeControls.jsx'
+import useTownCalendar from '../hooks/useTownCalendar.js'
 
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -637,6 +638,7 @@ const QUALITY = authoringQuality()
 const townCanvas = townCanvasProps(QUALITY, { composer: !IS_GROUND })
 
 function Scene({ sheeted = false, ground = 'plate' } = {}) {
+  const calendar = useTownCalendar(INSTANCE.lookId)   // the town's published calendar, for its displays
   const viewMode = useCamera((s) => s.viewMode)
   const shot = SHOT_OF_MODE[viewMode]
   if (!shot) throw new Error(`[Scene] ⛔ camera mode '${viewMode}' draws no shot`)
@@ -685,7 +687,7 @@ function Scene({ sheeted = false, ground = 'plate' } = {}) {
     >
       <SheetGround active={sheeted} ground={ground} />
       <Town town={INSTANCE} lookId={INSTANCE.lookId} quality={QUALITY} shot={shot} flight={false} paused={paused} idle={idle}
-        selectedId={selectedId} onSelectBuilding={onSelectBuilding} listings={listings} movie={movieHooks}
+        selectedId={selectedId} onSelectBuilding={onSelectBuilding} listings={listings} movie={movieHooks} calendar={calendar}
         layers={IS_GROUND ? GROUND_ONLY : undefined}>
         {/* The old player's overlays: the user's dot, the couriers, the map pins. */}
         {!IS_GROUND && <UserDot />}

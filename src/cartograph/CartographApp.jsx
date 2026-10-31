@@ -68,6 +68,7 @@ import useTimeOfDay from '../hooks/useTimeOfDay'
 import useCamera from '../hooks/useCamera'
 import useListings from '../hooks/useListings'
 import useSelectedBuilding from '../hooks/useSelectedBuilding'
+import useTownCalendar from '../hooks/useTownCalendar.js'
 
 const CAM_KEY = 'cartograph-camera'
 
@@ -736,6 +737,7 @@ export default function CartographApp() {
   const corridorByIdx = useCartographStore(s => s.corridorByIdx)
   const selectedStreet = useCartographStore(s => s.selectedStreet)
   const activeLookId = useCartographStore(s => s.activeLookId)
+  const calendar = useTownCalendar(activeLookId)   // the town's published calendar, for its displays
   const bakeLastMs = useCartographStore(s => s.bakeLastMs)
   const storeKeyframes = useCartographStore(s => s.heroKeyframes)
   const setStoreKeyframes = useCartographStore(s => s.setHeroKeyframes)
@@ -1047,7 +1049,7 @@ export default function CartographApp() {
               included since SlabBuildings recolours the palette live (BRIEF-live-building-palette).
               ▶ node checks/claims-every-app-mounts-the-town.mjs */}
           {!inDesigner && activeTown && (
-            <Town lookId={activeLookId} town={activeTown} quality={QUALITY} shot={TOWN_SHOT[shot]} flight={false} bakeLastMs={bakeLastMs} movie={stageMovie}
+            <Town lookId={activeLookId} town={activeTown} quality={QUALITY} shot={TOWN_SHOT[shot]} flight={false} bakeLastMs={bakeLastMs} movie={stageMovie} calendar={calendar}
               selectedId={selectedId} onSelectBuilding={onSelectBuilding} listings={listings}
               overrides={townOverrides} weatherMode={weatherMode} holdScrubbedTime
               layers={{

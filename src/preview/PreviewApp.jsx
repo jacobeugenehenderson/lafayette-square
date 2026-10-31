@@ -43,6 +43,7 @@ import {
   GpuMonitorTicker, GpuPanel, noteEvent, measureToggle,
   getLayerCost, layerCostSubscribe,
 } from './GpuMonitor'
+import useTownCalendar from '../hooks/useTownCalendar.js'
 
 function BasicLights() {
   return (
@@ -1242,6 +1243,7 @@ function CanvasContents({ town, layers, shot, quality }) {
   useEffect(() => { span.current = `camera:${shot}:${performance.now()}`; phoneBusStartSpan(span.current, 'camera', `→${shot}`, '#7dd3fc') }, [shot])
   const onFlightEnd = useMemo(() => () => { if (span.current) { phoneBusEndSpan(span.current); span.current = null; phoneBusStop() } }, [])
   const lookId = resolvePreviewLookId()
+  const calendar = useTownCalendar(lookId)   // the town's published calendar, for its displays
   // Preview takes no clicks (interactive={false}); it draws the listings the page loaded, as production does.
   const listings = useListings((s) => s.listings)
   listingsRef.current = listings
@@ -1256,7 +1258,7 @@ function CanvasContents({ town, layers, shot, quality }) {
   // BasicLights — an inspection fallback lit only while the sky layer is off.
   return (
     <>
-      <Town town={town} lookId={lookId} quality={quality} listings={listings} shot={TOWN_SHOT[shot]} interactive={false}
+      <Town town={town} lookId={lookId} quality={quality} listings={listings} shot={TOWN_SHOT[shot]} interactive={false} calendar={calendar}
         flightRef={flightRef} onFlightEnd={onFlightEnd} streetAt={streetAt} viewInset={PREVIEW_INSET} controls
         frameKey={frameKey} planHeading={planHeading} bearingRef={bearingRef} litIds={litIds ?? undefined} paused={probePaused}
         towerLight={towerLight} onTowerLight={(state) => { window.__towerLight = { state, at: performance.now() } }}

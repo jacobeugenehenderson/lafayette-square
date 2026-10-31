@@ -199,10 +199,11 @@ function buildTickerEntries(allListings, allEvents, clockTime) {
   // arbitrary, because the tie-break is `(e.start_time || '') > (existing._startTime
   // || '')` and `'' > ''` is false, so first-in won by accident.
   //
-  // ⭐ `links_to` IS WHERE THE EVENT SENDS YOU, NOT WHAT IT IS ABOUT — the sponsor,
-  // the venue, whoever the operator chose (Jacob, 2026-09-22: "point it at a place;
-  // the sponsor or whatever … what it links to"). It is authored per event and is
-  // NEVER the key: two festivals sponsored by one marina are still two festivals.
+  // ⭐ AN EVENT OPENS AT ITS VENUE (r-an-event-has-a-host-and-a-venue-and-opens-at-the-venue; Jacob, 2026-10-31: "It's
+  // always the venue"). A place's own event (listing_id) is at the place; otherwise `venue` says where: { listing } or
+  // { building } opens it; a { scene: true } show over the whole town has nowhere to fly, and a { name, point } spot
+  // waits for <Town> to frame a point: neither is a button (no pointer, not focusable as an action). `links_to` is
+  // retired, refused at the bake, and never read here. ▶ node checks/claims-an-event-names-its-venue.mjs
   //
   // ⛔ A town event with no `id` cannot be keyed and is DROPPED LOUDLY here rather
   // than silently colliding. The real gate is `bake-content.js`, which refuses the
@@ -215,7 +216,7 @@ function buildTickerEntries(allListings, allEvents, clockTime) {
       return
     }
     const key = isTown ? `event:${e.id}` : e.listing_id
-    const linkId = e.listing_id || e.links_to || null
+    const linkId = e.listing_id || e.venue?.listing || null
     const listing = linkId ? useListings.getState().getById(linkId) : null
     const existing = entries.get(key)
 
@@ -226,7 +227,8 @@ function buildTickerEntries(allListings, allEvents, clockTime) {
       // A town event is its own headline; a guardian event is the venue's.
       _venueName: isTown ? e.title : (listing?.name || ''),
       _time: isTown ? _dateRangeLabel(e) : undefined,
-      _buildingId: listing?.building_id || e._buildingId,
+      _buildingId: listing?.building_id || e.venue?.building || e._buildingId,
+      _opens: linkId ? 'listing' : e.venue?.building ? 'building' : null,
       _source: 'event',
       _startTime: e.start_time || '',
     }
@@ -245,6 +247,12 @@ function buildTickerEntries(allListings, allEvents, clockTime) {
   })
 
   return Array.from(entries.values())
+}
+
+/** The ticker's entry: a button when it opens somewhere, else plain text (no pointer, no role, not focusable). */
+function TickerEntry({ opens, empty, onClick, className, children }) {
+  if (opens) return <button onClick={onClick} className={className}>{children}</button>
+  return <div className={className} aria-label={empty ? 'Nothing open right now' : undefined}>{children}</div>
 }
 
 export default function EventTicker() {
@@ -302,6 +310,7 @@ export default function EventTicker() {
   }, [tickerItems.length])
 
   const openEvent = useCallback((item) => {
+    if (item._opens === 'building') { useSelectedBuilding.getState().select(item._buildingId, null, 'ticker'); return }
     if (!item.listing_id) return
     const listing = useListings.getState().getById(item.listing_id)
     const buildingId = listing?.building_id || item._buildingId
@@ -362,10 +371,10 @@ export default function EventTicker() {
               : 'rgba(0,0,0,0.45)',
           }}
         >
-          <button
+          {/* An entry with somewhere to open is a button; one without (a scene show, a spot not yet framable) is text. */}
+          <TickerEntry opens={!!current && (current._opens ?? (current.listing_id ? 'listing' : null)) !== null}
             onClick={() => current && openEvent(current)}
-            disabled={!current}
-            aria-label={current ? undefined : 'Nothing open right now'}
+            empty={!current}
             className="flex-1 min-w-0 flex items-center text-left h-full"
           >
             {current && <div
@@ -386,7 +395,7 @@ export default function EventTicker() {
                 </p>
               )}
             </div>}
-          </button>
+          </TickerEntry>
         </div>
         {/* Right zone — button area (light glass, sky visible) */}
         <div

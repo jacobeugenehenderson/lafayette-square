@@ -40,6 +40,7 @@ import { browseSquareAltitude } from '../../camera/browseFrame.js'
 import { slabFetch } from '../../lib/slabUrl.js'
 import { INSTANCE, townForLook } from '../../instance.js'
 import { reloadTerrain } from '../../utils/terrainShader.js'
+import useTownCalendar from '../../hooks/useTownCalendar.js'
 
 // Chrome pauses rAF in a hidden tab (a headless run is one): run the REAL frame anyway (the surface lab's cure).
 
@@ -185,6 +186,7 @@ function FitCamera({ stencil, litIds, onFramed }) {
 }
 
 function App() {
+  const calendar = useTownCalendar(LOOK)
   const [stencil, setStencil] = useState(null)
   const [lit, setLit] = useState(null)
   const [err, setErr] = useState(TIME_ERR)
@@ -239,7 +241,7 @@ function App() {
           const ctx = gl.getContext(), dbg = ctx.getExtension('WEBGL_debug_renderer_info')
           glInfo.current = dbg ? ctx.getParameter(dbg.UNMASKED_RENDERER_WEBGL) : ctx.getParameter(ctx.RENDERER)
         }}>
-        <Town town={townForLook(LOOK, 'the legibility harness')} lookId={LOOK} quality={QUALITY_PROFILE} shot="plan" flight={false} time={time} listings={lit.rows}
+        <Town town={townForLook(LOOK, 'the legibility harness')} lookId={LOOK} quality={QUALITY_PROFILE} shot="plan" flight={false} time={time} listings={lit.rows} calendar={calendar}
           weatherMode="clear" interactive={false} layers={layers} litIds={step[1].lit ? lit.ids : undefined}>
           <FitCamera stencil={stencil} litIds={lit.ids} onFramed={(c) => { framed.current = c; if (!ready) setReady(true) }} />
           {ready && <Recorder step={step[0]} onFrame={onFrame} />}

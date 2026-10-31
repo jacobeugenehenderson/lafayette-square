@@ -1,0 +1,9 @@
+[
+  {
+    "id": "monument-lighting",
+    "title": "Pilgrim Monument lighting",
+    "start_date": "2026-11-11",
+    "end_date": "2027-01-01",
+    "venue": { "scene": true }
+  }
+]

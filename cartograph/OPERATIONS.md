@@ -578,22 +578,19 @@ intake and no panel.** Edit the file, re-bake the scene, reload.
 it carries the ticker at 3am, when every business in town is shut. Supplying `start_time` *and*
 `end_time` makes it clock-dependent again, so omit both unless you mean it.
 
-**The one distinction that matters — what the event is ABOUT, not where it points:**
+**Every event names where it happens** (r-an-event-has-a-host-and-a-venue-and-opens-at-the-venue):
 
-| | key | behaviour |
+| field | form | |
 |---|---|---|
-| `listing_id` set | the listing | the event is **about that place** and **replaces** its open-now ticker entry |
-| `listing_id` absent | its own `id` | a **town event**; stands beside the places rather than displacing one |
+| `listing_id` | a listing | the place's **own** event: it replaces the place's open-now entry, and the place is its venue |
+| `venue` | `{ listing }` · `{ building }` · `{ name, point: { lat, lon } }` · `{ scene: true }` | **required** on every other event; the ticker opens it (a scene show, over the whole town, opens nothing) |
+| `host` | `{ listing }` · `{ name }` | optional: who puts it on (a name opens nothing) |
 
-⛔ **A town event needs a unique `id`** — the bake refuses the scene without one, because every
-listing-less event would otherwise collide on a single key and they would overwrite each other.
-
-⭐ **`links_to` is where the event SENDS you** — the sponsor, the venue, whoever you chose. Optional,
-authored per event, and never the key: two festivals sponsored by one marina are still two festivals.
-
-⛔ **Every `listing_id`/`links_to` must resolve to a listing in that scene or the bake refuses.**
-A listing id is permanent, but a listing can still leave the base; a dead reference
-would be a ticker headline that clicks through to nothing.
+⛔ **The bake refuses, by name:** a town event (no `listing_id`) without a unique `id` or without a `venue`; a venue or
+host that resolves to nothing; a `{ building }` with no name and no address; a `point` outside the town's radius
+(Jacob: "Only inside the radius"; written `{ lat, lon }`, the town's frame converts it); a `listing_id` row naming a
+different venue (write `host` + `venue`); and **`links_to`, retired** (sort it into host or venue). A display's season
+(e.g. the Light Show's) is a `{ scene: true }` row whose `id` the display names. ▶ `node checks/claims-an-event-names-its-venue.mjs`
 
 ▶ The file carries its own `_schema` and `_example`. Any `_`-prefixed key is provenance and never
 ships. ▶ `node cartograph/bake-content.js --scene=<id>` prints the count, and

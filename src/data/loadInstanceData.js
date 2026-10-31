@@ -26,8 +26,9 @@
  *
  * ── The manifest ────────────────────────────────────────────────────
  * `MANIFESTS[lookId][name]` is a lazy loader thunk (a dynamic import) at
- * the file's CURRENT location. Only the reader-private files (menus,
- * seedEvents) physically live under `./<lookId>/`; the rest load
+ * the file's CURRENT location. Only the reader-private files (menus) physically
+ * live under `./<lookId>/`; a town's calendar (`seedEvents`) is its own
+ * content/events.json, found by path (TOWN_CALENDARS below); the rest load
  * IN-PLACE from their existing paths because they are SHARED source (the
  * authoring app `src/cartograph/*`, render libs, and the bake pipeline
  * import the same files). Physically relocating that shared set into the
@@ -41,7 +42,6 @@ const MANIFESTS = {
   'lafayettesquare': {
     // Relocated into the look dir (reader-private).
     menus:            () => import('../../cartograph/data/lafayettesquare/content/menus.json'),
-    seedEvents:       () => import('./lafayettesquare/seedEvents.json'),
     // In-place: shared with authoring + bake pipeline; moves belong to the
     // producer-emit arc. Loaded by lookId here regardless of physical path.
     buildings:        () => import('./buildings.json'),
@@ -98,13 +98,6 @@ const MANIFESTS = {
   huron: {
     landmarks: () => import('../../cartograph/data/huron/content/listings.json'),
     buildings: () => import('../../cartograph/data/huron/content/roster.json'),
-    // ⭐ THE SAME SEAM, A DIFFERENT HOME — and that is what MANIFESTS is for.
-    // LS's seed set is reader-private (`src/data/lafayettesquare/seedEvents.json`);
-    // a POURED town's calendar lives with the rest of its content, beside
-    // listings.json, so one town's content is in one place (Jacob, 2026-09-22).
-    // ⛔ Validated at bake time by `bake-content.js#validateEvents` — every
-    // `listing_id`/`links_to` must resolve or the scene refuses to bake.
-    seedEvents: () => import('../../cartograph/data/huron/content/events.json'),
   },
   altadena: {
     landmarks: () => import('../../cartograph/data/altadena/content/listings.json'),
@@ -131,9 +124,9 @@ function normalizeEnvelope(name, raw) {
   if (name === 'landmarks') return raw.landmarks ? raw : { landmarks: raw.listings ?? [] }
   if (name === 'menus') return raw.menus ?? raw
   // ⭐ TWO HOMES SHIP TWO SHAPES, AND THAT IS THE ENVELOPE'S JOB, NOT THE STORE'S.
-  // LS's reader-private seed set is a bare array; a poured town's calendar lives in
-  // the content dir and wears the `{ _comment, _schema, events }` envelope its
-  // neighbours listings.json/roster.json wear. ⛔ Unwrapped HERE so `useEvents`
+  // Every town's calendar lives in its content dir; some are a bare array (LS's,
+  // moved there 2026-10-31), some wear the `{ _comment, _schema, events }` envelope
+  // their neighbours listings.json/roster.json wear. ⛔ Unwrapped HERE so `useEvents`
   // keeps one shape to reason about — a store that accepts two is a store that
   // silently accepts a third.
   if (name === 'seedEvents') {
@@ -148,6 +141,18 @@ function normalizeEnvelope(name, raw) {
   return raw
 }
 
+// ⭐ A TOWN'S CALENDAR IS ITS OWN `content/events.json`, found by its path, never by a per-town row (CLAUDE.md Layer 0:
+// town #2 needs no code edit). Validated at bake time by bake-content.js#validateEvents. A town without one has none.
+// (A built page carries every town's events.json as a lazy chunk, loaded only when its town asks: as the per-town
+// imports did before.) ▶ node checks/claims-a-towns-calendar-reaches-its-displays.mjs
+// `import.meta.glob` is Vite's, rewritten at build: in plain node (a check that imports this module) it does not exist,
+// so the module still loads there, and asking it for a calendar throws by name rather than answering "none".
+const TOWN_CALENDARS = (() => { try { return import.meta.glob('../../cartograph/data/*/content/events.json') } catch { return null } })()
+const calendarOf = (lookId) => {
+  if (!TOWN_CALENDARS) throw new Error(`[loadInstanceData] ⛔ "${lookId}"'s calendar is found by Vite's import.meta.glob, which this runtime does not have`)
+  return TOWN_CALENDARS[`../../cartograph/data/${lookId}/content/events.json`]
+}
+
 const _cache = new Map() // `${lookId}/${name}` → { value, ready }
 
 export function loadInstanceData(lookId, name) {
@@ -156,8 +161,13 @@ export function loadInstanceData(lookId, name) {
   if (cached) return cached
 
   const record = { value: null, ready: null }
-  const thunk = MANIFESTS[lookId]?.[name]
+  const thunk = name === 'seedEvents' ? calendarOf(lookId) : MANIFESTS[lookId]?.[name]
 
+  if (!thunk && name === 'seedEvents') {   // the town keeps no calendar: none, not a missing registry row
+    record.ready = Promise.resolve(null)
+    _cache.set(key, record)
+    return record
+  }
   if (!thunk) {
     console.warn(`[loadInstanceData] no manifest entry for ${key}`)
     record.ready = Promise.resolve(null)

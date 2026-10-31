@@ -55,6 +55,7 @@ import { INSTANCE } from '../../instance.js'
 // no slab fails loudly at its stage, never silently.
 import looksIndex from '../../../public/looks/index.json' with { type: 'json' }
 import { listStages, resolveStage } from './stage.js'
+import useTownCalendar from '../../hooks/useTownCalendar.js'
 
 // ⛔ HARNESS ONLY — the boulder harness's measured nuisance, same cure in R3F's own
 // terms: Chrome pauses rAF in a HIDDEN tab, so the canvas holds a stale or black frame
@@ -146,6 +147,7 @@ function CameraDriver({ spot, cam }) {
 }
 
 function App() {
+  const calendar = useTownCalendar(LOOK)   // the town's published calendar, for its set-piece's displays
   const scene = useSceneJson(LOOK)
   const bakeLastMs = scene?.bakedAt ?? null
   const [stages, setStages] = useState(null)
@@ -252,7 +254,7 @@ function App() {
           <group visible={layers.revetment}><R3FErrorBoundary name="SlabRevetment"><SlabRevetment lookId={LOOK} bakeLastMs={bakeLastMs} /></R3FErrorBoundary></group>
           <group visible={layers.lamps}><R3FErrorBoundary name="BakedLamps"><BakedLamps lookId={LOOK} bakeLastMs={bakeLastMs} /></R3FErrorBoundary></group>
           <group visible={layers.buildings}><R3FErrorBoundary name="SlabBuildings"><SlabBuildings lookId={LOOK} interactive={false} /></R3FErrorBoundary></group>
-          <R3FErrorBoundary name="SetPiece"><SetPiece town={INSTANCE} lookId={LOOK} graniteOverride={GRANITE_PREVIEW} /></R3FErrorBoundary>
+          <R3FErrorBoundary name="SetPiece"><SetPiece town={INSTANCE} lookId={LOOK} graniteOverride={GRANITE_PREVIEW} calendar={calendar} /></R3FErrorBoundary>
           <group visible={layers.trees}><R3FErrorBoundary name="InstancedTrees"><InstancedTrees lookId={LOOK} bakeLastMs={bakeLastMs} /></R3FErrorBoundary></group>
         </Suspense>
         {layers.post && <PostProcessing lookId={LOOK} bakeLastMs={bakeLastMs} />}

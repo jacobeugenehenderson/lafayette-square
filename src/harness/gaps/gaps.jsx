@@ -36,6 +36,7 @@ import { discOf, makeRing } from '../../../cartograph/boundaryRecords.mjs'
 import { waterRuns, clipTraceToDisc } from '../../../cartograph/shoreRuns.mjs'
 import { drawnWaterTest } from '../../../cartograph/shore-armour.mjs'
 import { waterFace } from '../../../cartograph/coastFile.mjs'
+import useTownCalendar from '../../hooks/useTownCalendar.js'
 
 const params = new URLSearchParams(location.search)
 const LOOK = INSTANCE.lookId
@@ -184,6 +185,7 @@ function Walker({ stencil, groups }) {
 }
 
 function App() {
+  const calendar = useTownCalendar(LOOK)
   const [ctx, setCtx] = useState(null), [err, setErr] = useState(null)
   useEffect(() => {
     slabFetch(LOOK, 'ground.json').then(r => r.json()).then(g => g.stencil ? setCtx({ stencil: g.stencil, groups: g.groups }) : setErr('no disc in ground.json'))
@@ -196,7 +198,7 @@ function App() {
   return (
     <div style={{ width: W, height: H }}>
       <Canvas frameloop="always" {...tcp} dpr={1} camera={{ fov: FOV, near: 0.3, far: 2e5 }} gl={{ ...tcp.gl, preserveDrawingBuffer: true }}>
-        <Town town={townForLook(LOOK, 'the shore gap-finder')} lookId={LOOK} quality={QP} shot="movie" flight={false} listings={[]}
+        <Town town={townForLook(LOOK, 'the shore gap-finder')} lookId={LOOK} quality={QP} shot="movie" flight={false} listings={[]} calendar={calendar}
           weatherMode="clear" interactive={false} layers={LAYERS} movie={{ hold: () => true, playing: false }}>
           <Walker stencil={ctx.stencil} groups={ctx.groups} />
         </Town>

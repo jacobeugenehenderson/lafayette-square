@@ -1,10 +1,10 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 543,
+  "total": 545,
   "counts": {
     "safe": 375,
-    "local-effect": 31,
-    "live": 137
+    "local-effect": 32,
+    "live": 138
   },
   "checks": [
     {
@@ -1069,6 +1069,15 @@
       ]
     },
     {
+      "file": "checks/claims-a-towns-calendar-reaches-its-displays.mjs",
+      "tier": "live",
+      "reasonClass": "outbound",
+      "why": [
+        "importSource of src/hooks/useTownCalendar.js, which can: imports src/lib/slabUrl.js, which can: calls fetch()",
+        "importSource of src/hooks/useTownCalendar.js redirects src/lib/slabUrl.js — read, safe"
+      ]
+    },
+    {
       "file": "checks/claims-a-towns-colours-are-its-own.mjs",
       "tier": "safe",
       "why": [
@@ -1220,6 +1229,13 @@
       "tier": "safe",
       "why": [
         "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-an-event-names-its-venue.mjs",
+      "tier": "local-effect",
+      "why": [
+        "importSource of cartograph/bake-content.js, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync"
       ]
     },
     {

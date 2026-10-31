@@ -73,6 +73,9 @@
  *   onSelectBuilding (id) => void — a click on a building (absent: clicks select nothing)
  *   listings         REQUIRED — the town's content listings (the listings.json shape a town manifest carries):
  *                    neon reads each place's category and opening hours from them
+ *   calendar         the town's PUBLISHED calendar for its displays (src/hooks/useTownCalendar.js): null while unread,
+ *                    the rows, { absent } or { error }. ⛔ An app that passes none leaves it undefined, and a display that
+ *                    needs a season refuses by name (src/displays/Displays.jsx). Every app mounting <Town> passes it.
  *   litIds           Set of building ids — a chosen category, a search: their ROOFS take the town's lit
  *                    tint day and night (SlabBuildings), and only they carry neon
  *   interactive      buildings take the pointer (default true)
@@ -618,7 +621,7 @@ export default function Town({
   town, lookId, quality, shot, paused = false, idle = false, selectedId = null, onSelectBuilding, litIds, liveIds, listings,
   interactive = true, bakeLastMs, layers, postFx, overrides = {}, weatherMode = 'live',
   holdScrubbedTime = false, time, movie, flight = true, streetAt, viewInset, flightRef, onFlightEnd, frameKey, frameIds, frameMode = 'densest', frameMover = null, onFramed, planHeading = 'town', bearingRef,
-  controls = false, movers, onMovers, children, towerLight = false, onTowerLight,
+  controls = false, movers, onMovers, children, towerLight = false, onTowerLight, calendar,
 }) {
   if (time !== undefined && holdScrubbedTime) throw new Error('[Town] ⛔ `time` and `holdScrubbedTime` both drive the clock — pass one (the app owns its time, or Stage holds a scrub)')
   if (time != null && !(time instanceof Date && Number.isFinite(time.getTime()))) throw new Error(`[Town] ⛔ \`time\` is a Date or null (live); got ${time}`)
@@ -780,7 +783,7 @@ export default function Town({
         </group>
         <group name="town:setPieces" visible={on('setPieces')}>
           {heavy && <R3FErrorBoundary name="GatewayArch"><GatewayArch lookId={lookId} bakeLastMs={bake} archOverride={o.arch} archLightOverride={o.archLight} /></R3FErrorBoundary>}
-          <R3FErrorBoundary name="SetPiece"><SetPiece town={town} lookId={lookId} lightOverride={o.setPieceLight} /></R3FErrorBoundary>
+          <R3FErrorBoundary name="SetPiece"><SetPiece town={town} lookId={lookId} lightOverride={o.setPieceLight} calendar={calendar} /></R3FErrorBoundary>
         </group>
         {/* The ground past the rim, out to the horizon — the movie and the street only. In PLAN the town is one closed
             circle ending at its soft rim (Jacob, 2026-09-28; ▶ claims-the-plan-shot-ends-at-the-rim). */}

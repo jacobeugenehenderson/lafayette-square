@@ -47,6 +47,8 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync } from 
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { writeIfChanged } from './io.js'
+import { splitBoundary, discOf } from './boundaryRecords.mjs'
+import { projectorOf } from '../src/lib/townPlace.js'
 import { requireExplicitMap } from './scene.js'
 import { readSources, readHistorySources, undeclaredMessage, PARCEL_FIELDS, WITHHELD_PARCEL_FIELDS } from './sources.js'
 import { classifyUseFromText } from './parcel-landuse.mjs'
@@ -1674,8 +1676,8 @@ export function bakeContent({ scene, force = false, dryRun = false } = {}) {
   }
   // ⛔ Validated BEFORE anything is written: a scene with a dead event reference
   // must not leave a half-updated content dir behind.
-  const ev = validateEvents(scene, listings)
-  if (ev.present) console.log(`  events.json: ${ev.count} authored (${ev.town} town-wide, ${ev.linked} pointing at a place) — every reference resolves ✓`)
+  const ev = validateEvents(scene, listings, roster)
+  if (ev.present) console.log(`  events.json: ${ev.count} authored (venues: ${Object.entries(ev.venues).map(([k, n]) => `${n} ${k}`).join(', ')}) — every reference resolves ✓`)
 
   writeIfChanged(join(cdir, 'roster.json'), JSON.stringify(rosterOut, null, 1) + '\n')
   if (!skipListings) {
@@ -1689,65 +1691,103 @@ export function bakeContent({ scene, force = false, dryRun = false } = {}) {
 }
 
 // ──────────────────────────────────────────────────────────────────────────
-// ⭐ THE TOWN CALENDAR — `content/events.json`, fully AUTHORED (Layer 0), and this
-// step VALIDATES it rather than producing it. Ruled 2026-09-22 (Jacob): it lives
-// beside listings.json, where a poured town's content already lives, and each
-// event says for itself what it links to.
+// ⭐ THE TOWN CALENDAR — `content/events.json`, fully AUTHORED (Layer 0): OPERATOR content, and this step VALIDATES it
+// rather than producing it. It lives beside listings.json (Jacob, 2026-09-22).
 //
-// ⭐ TWO KINDS, distinguished by what the event is ABOUT, never by where it points:
-//   · `listing_id` — the event is ABOUT that place; it replaces that place's
-//     open-now ticker entry. This is the guardian channel's existing shape.
-//   · no `listing_id` — a TOWN event. It keys by its own `id` and stands beside
-//     the places. ⛔ `id` is therefore REQUIRED and UNIQUE: without one every town
-//     event collides on a single undefined key and they overwrite each other
-//     (measured 2026-09-22 — three in, one out, survivor arbitrary).
-//   · `links_to` — OPTIONAL, and it is where the event SENDS you: the sponsor, the
-//     venue, whoever the operator chose. ⛔ Never the key. Two festivals sponsored
-//     by one marina are still two festivals.
-//
-// ⛔⛔ EVERY REFERENCE MUST RESOLVE, AND THIS IS THE WHOLE POINT OF VALIDATING HERE.
-// A `links_to` pointing at a listing that no longer exists is a ticker headline
-// that clicks through to nothing — a plausible-looking success, and invisible until
-// someone taps it. The bake refuses the scene instead. ⭐ And because listing ids
-// are re-derived every pour, this is exactly the reference that rots on its own.
+// ⭐ AN EVENT NAMES A HOST AND A VENUE (r-an-event-has-a-host-and-a-venue-and-opens-at-the-venue; Jacob, 2026-10-31):
+//   · `listing_id` — the place's OWN event, shown in place of its hours; its venue IS that listing (implicit).
+//   · `host` (optional) — who puts it on: { listing: id } (must resolve) | { name: text } (shown, opens nothing).
+//   · `venue` — where it happens, and EVERY HAPPENING HAS ONE: one switch, one case per form —
+//       { listing: id } · { building: buildingId } (a building that is not a listing, e.g. a home; a home named only by
+//       its resident is the guardian path's rule, not this file's) · { name, point: { lat, lon } } (a spot; INSIDE the
+//       town's radius: the disc of neighborhood_boundary.json, Jacob: "Only inside the radius") · { scene: true } (a show
+//       over the whole town; operator content only, which this file is).
+//   · a town event (no `listing_id`) keys by its own `id`, REQUIRED; every `id` is UNIQUE across all rows.
+//   · `links_to` is RETIRED (it conflated sponsor and venue): refused by name, sorted into host or venue by a human.
+// ⛔⛔ EVERY REFERENCE MUST RESOLVE, OR THE SCENE REFUSES: a venue that resolves to nothing is a ticker headline that
+// flies to nowhere, a plausible success invisible until tapped. Listing ids are re-derived every pour: this is the
+// reference that rots. ▶ node checks/claims-an-event-names-its-venue.mjs
 // ──────────────────────────────────────────────────────────────────────────
-function validateEvents(scene, listings) {
+const VENUE_FORMS = ['listing', 'building', 'name', 'scene']   // `name` is the spot form: { name, point }
+const HOST_FORMS = ['listing', 'name']
+const formOf = (o, forms) => forms.filter(k => o && typeof o === 'object' && k in o)
+export function townRadius(scene) {   // (lat, lon) → inside the town's radius? The disc record, in the scene's own frame.
+  const nb = JSON.parse(readFileSync(join(mapDir(scene), 'neighborhood_boundary.json'), 'utf8'))
+  const disc = discOf(splitBoundary(nb, `${scene}/neighborhood_boundary.json`).disc, `events:${scene}`)
+  const toLocal = projectorOf(JSON.parse(readFileSync(join(mapDir(scene), 'geography.json'), 'utf8')))
+  return (lat, lon) => { const [x, z] = toLocal(lon, lat); return disc.inDisc(x, z) }
+}
+export function validateEvents(scene, listings, roster) {
   const p = join(contentDir(scene), 'events.json')
   if (!existsSync(p)) return { count: 0, present: false }
   const raw = JSON.parse(readFileSync(p, 'utf8'))
   const events = Array.isArray(raw) ? raw : (raw.events || [])
-  const ids = new Set(listings.map(l => l.id))
-  const seen = new Set()
-  const errs = []
-  const where = (e, i) => `events[${i}]${e.title ? ` "${e.title}"` : ''}`
-
-  events.forEach((e, i) => {
-    if (!e.title) errs.push(`${where(e, i)}: no \`title\``)
-    if (!e.start_date) errs.push(`${where(e, i)}: no \`start_date\``)
-    if (e.end_date && e.start_date && e.end_date < e.start_date) {
-      errs.push(`${where(e, i)}: \`end_date\` ${e.end_date} is before \`start_date\` ${e.start_date}`)
-    }
-    if (!e.listing_id) {
-      if (!e.id) errs.push(`${where(e, i)}: a TOWN event (no \`listing_id\`) needs a unique \`id\` — without one it collides with every other town event`)
-      else if (seen.has(e.id)) errs.push(`${where(e, i)}: duplicate \`id\` "${e.id}" — the later event silently replaces the earlier`)
-      else seen.add(e.id)
-    }
-    for (const field of ['listing_id', 'links_to']) {
-      if (e[field] && !ids.has(e[field])) {
-        errs.push(`${where(e, i)}: \`${field}\` "${e[field]}" resolves to no listing in this scene — the headline would click through to nothing`)
-      }
-    }
-  })
-
+  const { errs, venues } = eventProblems(events, { listings, roster, inRadius: () => townRadius(scene) })
   if (errs.length) {
     throw new Error(
       `content/events.json is invalid for scene "${scene}" — ${errs.length} problem(s):\n` +
       errs.map(m => `   ⛔ ${m}`).join('\n') +
-      `\n   ▶ An event that references a missing listing is a dead link in the ticker, and\n` +
-      `     listing ids are re-derived on every pour, so this is the reference that rots.`)
+      `\n   ▶ An event whose venue resolves to nothing is a headline that flies nowhere, and listing ids are\n` +
+      `     re-derived on every pour, so this is the reference that rots.`)
   }
-  const town = events.filter(e => !e.listing_id).length
-  return { count: events.length, town, linked: events.filter(e => e.links_to).length, present: true }
+  return { count: events.length, venues, present: true }
+}
+/** The rules, pure: every problem with a calendar's rows, by name. `inRadius()` gives (lat, lon) → inside the town's
+ *  radius, asked only when a spot venue needs it. */
+export function eventProblems(events, { listings, roster, inRadius: radiusOf }) {
+  const listingIds = new Set(listings.map(l => l.id)), buildings = new Map(roster.map(b => [b.id, b]))
+  let inRadius = null
+  const seen = new Set(), errs = [], venues = { listing: 0, building: 0, name: 0, scene: 0 }
+  const where = (e, i) => `events[${i}]${e.title ? ` "${e.title}"` : ''}`
+  const VENUE = {
+    listing: (v) => (listingIds.has(v.listing) ? null : `venue.listing "${v.listing}" resolves to no listing in this scene`),
+    building: (v) => {
+      const b = buildings.get(v.building)
+      if (!b) return `venue.building "${v.building}" resolves to no building in this scene`
+      // the Ward draws a building's card from its name or its address; with neither it draws none (Ward, 2026-10-31)
+      if (!b.name && !b.address) return `venue.building "${v.building}" has no name and no address in the roster, so no card can be drawn for it`
+      return null
+    },
+    name: (v) => {
+      if (Object.keys(v).sort().join() !== 'name,point') return 'a spot venue is exactly { name, point }'
+      if (typeof v.name !== 'string' || !v.name.trim()) return 'venue.name is empty'
+      const pt = v.point
+      if (!pt || Object.keys(pt).sort().join() !== 'lat,lon' || !(Math.abs(pt.lat) <= 90) || !(Math.abs(pt.lon) <= 180)) return `venue.point ${JSON.stringify(pt)} is not { lat, lon } in range`
+      if (!(inRadius ??= radiusOf())(pt.lat, pt.lon)) return `venue.point ${JSON.stringify(pt)} lies outside the town's radius (Jacob: "Only inside the radius"); the map could not fly to it`
+      return null
+    },
+    scene: (v) => (v.scene === true ? null : 'venue.scene is `true` or absent'),
+  }
+
+  events.forEach((e, i) => {
+    const err = (m) => errs.push(`${where(e, i)}: ${m}`)
+    if (!e.title) err('no `title`')
+    if (!e.start_date) err('no `start_date`')
+    if (e.end_date && e.start_date && e.end_date < e.start_date) err(`\`end_date\` ${e.end_date} is before \`start_date\` ${e.start_date}`)
+    if ('links_to' in e) err('`links_to` is retired: it conflated sponsor and venue; sort it into `host` or `venue`')
+    if (e.id) { if (seen.has(e.id)) err(`duplicate \`id\` "${e.id}": the later event silently replaces the earlier`); else seen.add(e.id) }
+    if (e.listing_id) {
+      if (!listingIds.has(e.listing_id)) err(`\`listing_id\` "${e.listing_id}" resolves to no listing in this scene`)
+      if (e.venue && !(formOf(e.venue, VENUE_FORMS).join() === 'listing' && e.venue.listing === e.listing_id)) err('a place\'s own event (listing_id) happens at the place: write `host` + `venue` instead of naming another venue')
+      venues.listing++
+    } else {
+      if (!e.id) err('a TOWN event (no `listing_id`) needs a unique `id`')
+      if (!e.venue) err('no `venue`: every happening has one (a listing, a building, a { name, point } spot, or the scene)')
+    }
+    if (e.venue && !e.listing_id) {
+      const f = formOf(e.venue, VENUE_FORMS)
+      if (f.length !== 1 || (f[0] !== 'name' && Object.keys(e.venue).length !== 1)) err(`venue ${JSON.stringify(e.venue)} is not exactly one of ${VENUE_FORMS.map(k => k === 'name' ? '{ name, point }' : `{ ${k} }`).join(' | ')}`)
+      else { const m = VENUE[f[0]](e.venue); if (m) err(m); else venues[f[0]]++ }
+    }
+    if (e.host !== undefined) {
+      const f = formOf(e.host, HOST_FORMS)
+      if (f.length !== 1 || Object.keys(e.host).length !== 1) err(`host ${JSON.stringify(e.host)} is not exactly one of { listing } | { name }`)
+      else if (f[0] === 'listing' && !listingIds.has(e.host.listing)) err(`host.listing "${e.host.listing}" resolves to no listing in this scene`)
+      else if (f[0] === 'name' && !(typeof e.host.name === 'string' && e.host.name.trim())) err('host.name is empty')
+    }
+  })
+
+  return { errs, venues }
 }
 
 // ── CLI ──
