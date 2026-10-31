@@ -9137,7 +9137,7 @@
       "kind": "ruling",
       "value": {
         "start": "November 11 (the Mayflower anniversary)",
-        "end": "January 1 (New Year's Day; Jacob, 2026-10-31: \"New Year's Day is fine\"); the season is its OWN town-event row in the town's events.json (its own id, NO listing_id): the Monument keeps its own hours and its own ticker entry (Jacob, 2026-10-31: \"The monument is its own thing with its own schedule\"; supersedes the same day's listing-keyed reading). NO links_to: a display's ticker entry has nowhere to click through to and carries all its information itself (Jacob, 2026-10-31: \"for a Display in the ticker, there's no place to click thru to and all the information is already in the listing\")",
+        "end": "January 1 (New Year's Day; Jacob, 2026-10-31: \"New Year's Day is fine\"); the season is its OWN town-event row in the town's events.json (its own id, NO listing_id; its venue is THE SCENE, per r-an-event-has-a-host-and-a-venue-and-opens-at-the-venue): the Monument keeps its own hours and its own ticker entry (Jacob, 2026-10-31: \"The monument is its own thing with its own schedule\"; supersedes the same day's listing-keyed reading). NO links_to: a display's ticker entry has nowhere to click through to and carries all its information itself (Jacob, 2026-10-31: \"for a Display in the ticker, there's no place to click thru to and all the information is already in the listing\")",
         "status": "AUTHORED by the operator, not sourced: the sources disagree (Nov 11 in some years; Thanksgiving eve, 2026-11-25, in one listing; off through New Year's Day, into January, or about five weeks), and the show will not be live"
       },
       "by": "Jacob",
@@ -9198,15 +9198,17 @@
       "kind": "ruling",
       "value": {
         "host": "who puts the event on: a place in the town (optional). The Chamber may host an event that is not at the Chamber",
-        "venue": "where it happens (optional; a town-wide event such as a display has none): a place in the town OR a named spot that is not a listing (a park, a street), with its point",
+        "venue": "where it happens, and EVERY HAPPENING HAS ONE (the Ward's rule stands): a listing · a named spot that is not a listing ({name, point}: a park, a street, 'NYE by Chase over the Hudson': host Chase, venue the river) · or THE SCENE ITSELF, for a digital show the Ward draws over the whole town (PTown's Light Show)",
         "opens": "ALWAYS THE VENUE: the camera move, the clickable building and the card. The event's own card sits in the venue's place card and carries the event's action (the invite, the RSVP), the way a menu item links to the menu. No host fallback",
-        "noVenue": "an event with no venue is not clickable (r-provincetown-light-season-is-authored: a display's ticker entry)",
         "retires": "links_to, which conflated sponsor and venue; each existing row is sorted into host or venue by someone who knows the event",
-        "unchanged": "listing_id (the place's own event, shown in place of its hours)"
+        "unchanged": "listing_id (the place's own event, shown in place of its hours)",
+        "sceneVenue": "a scene-venue event is shown in the ticker and is not clickable (nowhere to fly). It is OPERATOR-AUTHORED ONLY: a host's or guardian's event, from a place card or an event card, may name a listing or a spot, never the scene; the bake allows it only in operator content and the guardian API cannot write one",
+        "refused": "any other event with no venue is refused at the bake, by name (Huron's 12 venue-less rows are a DATA fix: ten library programs take the library's listing; garlic-fest and christkindlmarkt take their venues)",
+        "aspiration": "UNBUILT, not in any brief: sponsor-bought scene shows ('worth selling to sponsors')"
       },
       "by": "Jacob",
       "date": "2026-10-31",
-      "quote": "\"we should introduce a new area on the event card: there's the host but there's also the location. Maybe the Chamber is hosting an event; it wouldn't be at the chamber\" · \"Cover\" (non-listing locations) · \"What should *actually open is the invite or the RSVP or When a menu item comes up we link to the menu. Maybe we link it to the event card in a place card; and as far as the camera move and the clickable building I think the venue.\" · \"It's always the venue\"",
+      "quote": "\"we should introduce a new area on the event card: there's the host but there's also the location. Maybe the Chamber is hosting an event; it wouldn't be at the chamber\" · \"Cover\" (non-listing locations) · \"What should *actually open is the invite or the RSVP or When a menu item comes up we link to the menu. Maybe we link it to the event card in a place card; and as far as the camera move and the clickable building I think the venue.\" · \"It's always the venue\" · (d), in Ward's window: \"yes, that's plausibly the rule\" · \"the only thing to clarify for ourselves is that a user, via their place card or an event card, can't add to the scene. I *DO* think this would be a thing which would be worth 'selling' to sponsors; but the point is what I am doing currently is not the same thing as what users will be doing in the future.\"",
       "canon": "cartograph/OPERATIONS.md (The town calendar)",
       "notes": "UNBUILT. Not yet read in code: whether a visitor-facing event card exists in the place card (Zob 2026-10-31: PlaceCard.jsx#EventsTab mounts only under the guardians tab), and how a venue that is not a listing opens a card. Zob's premise pass precedes any brief."
     }
