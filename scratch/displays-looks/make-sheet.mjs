@@ -23,7 +23,7 @@ const M = JSON.parse(readFileSync(join(HERE, 'looks.json'), 'utf8'))
 const uri = (file) => 'data:image/svg+xml;base64,' + readFileSync(join(HERE, file)).toString('base64')
 const TRANSITIONS_SRC = readFileSync(join(HERE, 'transitions.js'), 'utf8').replace(/if \(typeof module[^\n]*\n?/, '')
 // Each transition is shown between two looks that suit it: from → to.
-const PAIRS = { cascade: ['santa', 'santas-hat'], 'rising-spiral': ['candy-cane', 'classic-tree'], iris: ['holly', 'stars'], curtain: ['gift-red', 'gift-pride'], sparkle: ['snowfall', 'snowflakes'], melt: ['frosty', 'snowfall'], twirl: ['peppermint', 'candy-cane'], 'blackout-bloom': ['menorah', 'dreidel'], shatter: ['ornaments', 'white-bulbs'], 'rising-stripes': ['kwanzaa-bands', 'kinara'], 'expanding-stripes': ['plaid', 'gingerbread'], 'rise-into-place': ['gift-pride', 'progress-pride'], chevron: ['bear', 'progress-pride'] }
+const PAIRS = { cascade: ['santa', 'santas-hat'], 'rising-spiral': ['candy-cane', 'classic-tree'], iris: ['holly', 'stars'], curtain: ['gift-red', 'gift-pride'], sparkle: ['snowfall', 'snowflakes'], melt: ['frosty', 'snowfall'], twirl: ['peppermint', 'candy-cane'], 'blackout-bloom': ['menorah', 'dreidel'], shatter: ['ornaments', 'white-bulbs'], 'rising-stripes': ['kwanzaa-bands', 'kinara'], 'expanding-stripes': ['plaid', 'gingerbread'], chevron: ['progress-pride', 'bear'] }
 const looks = M.looks.map(L => ({ ...L, layers: L.layers.map(l => ({ ...l, frames: l.frames.map(uri) })) }))
 
 const TRANSITIONS_LIST_LEN = (TRANSITIONS_SRC.match(/\bid: '/g) || []).length
@@ -120,7 +120,7 @@ function sample(look, c, row, t, top = look.layers.length - 1, enter = 1) {
     let cc = c, rr = row;
     let lo = row < P ? 0 : P, n = row < P ? P : CONE;
     if (m.rows && row >= P) { lo = P + m.rows[0]; n = m.rows[1] - m.rows[0]; if (row < lo || row >= lo + n) continue; }   // a motion kept to part of the tree
-    if (L.enter && enter < 1) { rr = row - Math.round((1 - enter) * (CONE + 4)); if (rr < P) continue; }   // a motion object on its way in, rising from below the ground
+    if (L.enter && enter !== 1) { rr = row - Math.round((1 - enter) * (CONE + 4)); if (rr < P || rr >= FH) continue; }   // a motion object below the ground (enter < 1), rising, or past its place and rising on (> 1)
     if (m.kind === 'fall') rr = wrapIn(row - Math.floor(t * sp), lo, n);
     if (m.kind === 'rise') rr = wrapIn(row + Math.floor(t * sp), lo, n);
     if (m.kind === 'spin' || m.kind === 'spiral') cc = ((c - Math.floor(t * sp)) % FW + FW) % FW;
@@ -292,7 +292,7 @@ function transitionSource(tr, from, to) {
   const hold = 1.6, dur = tr.seconds, period = 2 * (hold + dur), E = { FW, FH, P, CONE, FACES, hash };
   return { sample(c, row, now) {
     const u = now % period, Af = (cc, rr, k = 1) => sample(from, cc, rr, now, undefined, k), Bf = (cc, rr, k = 1) => sample(to, cc, rr, now, undefined, k);
-    if (u < hold) return Af(c, row);
+    if (u < hold) return Af(c, row, tr.fromEnter ?? 1);
     if (u < hold + dur) return tr.mix(Af, Bf, c, row, (u - hold) / dur, now, E);
     if (u < 2 * hold + dur) return Bf(c, row);
     const back = (u - 2 * hold - dur) / dur;

@@ -258,7 +258,7 @@ look('doves', 'Doves', 'A white dove with an olive sprig on every face, among go
 ])
 // ═══ PRIDE ═══════════════════════════════════════════════════════════════════════════════════════════════════════════
 const RAINBOW = ['#e40303', '#ff8c00', '#ffed00', '#008026', '#004dff', '#750787']
-look('progress-pride', 'Progress Pride', 'Two flags on opposite sides, turned upright: the rainbow in vertical stripes, and the Progress chevron rising from the ground, white at its heart, through pink, light blue and brown to black. The chevron is a motion object: it can rise into place as the look arrives.', [
+look('progress-pride', 'Progress Pride', 'Two flags on opposite sides, turned upright: the rainbow in vertical stripes, and the Progress chevron rising from the ground, white at its heart, through pink, light blue and brown to black. The chevron is a motion object: in the Chevron transition it rises into place, pauses, and rises on to reveal the next look.', [
   L({ kind: 'still' }, () => halves((cx) => RAINBOW.map((c, i) => rect(cx - 48 + i * 16, 0, 16.2, CONE_H, c)).join('')), bands(['#5bcefa', '#f5a9b8', C.white], 0, PIN_H)),
   L({ kind: 'still' }, () => halves((cx) => ['#000', '#784f17', '#5bcefa', '#f5a9b8', C.white].map((c, i) => { const w = 46 - i * 8; return poly([[cx - w, 97], [cx, 26 + i * 10], [cx + w, 97]], c) }).join('')), '', { enter: 'rise' }),
 ])

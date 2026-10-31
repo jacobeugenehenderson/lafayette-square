@@ -364,7 +364,7 @@
     {
       "id": "progress-pride",
       "name": "Progress Pride",
-      "notes": "Two flags on opposite sides, turned upright: the rainbow in vertical stripes, and the Progress chevron rising from the ground, white at its heart, through pink, light blue and brown to black. The chevron is a motion object: it can rise into place as the look arrives.",
+      "notes": "Two flags on opposite sides, turned upright: the rainbow in vertical stripes, and the Progress chevron rising from the ground, white at its heart, through pink, light blue and brown to black. The chevron is a motion object: in the Chevron transition it rises into place, pauses, and rises on to reveal the next look.",
       "layers": [
         {
           "motion": {

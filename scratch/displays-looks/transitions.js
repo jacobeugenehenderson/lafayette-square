@@ -5,7 +5,8 @@
  * Each transition is a PURE function of (from, to, c, row, t, now, env) → [r, g, b]:
  *   from, to   samplers (c, row, enter = 1) → colour: the two looks, still running their own motions; `enter` (0 … 1)
  *              places a look's MOTION OBJECTS (layers marked `enter`) on their way in: 0 below the ground, 1 in place
- * `mirror: true` plays the way back as the way in, reversed (an object that rose in sinks away first).
+ * `mirror: true` plays the way back as the way in, reversed. `fromEnter` is where the outgoing look's motion objects
+ * stand before the transition (0: still below the ground, so the card opens on the look without them).
  *   c, row     the bulb's place in the frame (row < env.P is the pinnacle; the cone is below it)
  *   t          the transition's progress, 0 … 1
  *   now        the show clock in seconds: only the strobe accents read it, so they flicker at a steady rate
@@ -121,22 +122,15 @@ const TRANSITIONS = (() => {
         return Math.abs(local - 6) < ease(t) * 6.6 ? B(c, row) : A(c, row)
       } },
 
-    { id: 'rise-into-place', name: 'Rise into Place', seconds: 3.4, accent: false, mirror: true,
-      notes: 'The new look comes on whole and smoothly; then its motion object (the Progress chevron) rises from the ground into its place. Going back, the object sinks away first, then the look fades.',
+    { id: 'chevron', name: 'Chevron', seconds: 6, accent: true, mirror: true, fromEnter: 0,
+      notes: 'The stripes are there. The look’s motion object, the Progress flag’s own chevron, rises from the ground into place: now it is the Progress flag. It pauses. Then it keeps rising, up and out of the top, revealing the next look beneath it, its base edge sparkling. The way back is the same, reversed.',
       mix(A, B, c, row, t, now, E) {
-        if (t < 0.4) return lerp(A(c, row), B(c, row, 0), ease(t / 0.4))   // the look, with its motion object still below ground
-        return B(c, row, ease((t - 0.4) / 0.6))                              // the object rising into place
-      } },
-    { id: 'chevron', name: 'Chevron', seconds: 3.2, accent: true,
-      notes: 'A great glowing chevron rises onto the tree from the ground, sweeps up through it and out of the top, revealing the new look whole beneath it. Its edges sparkle.',
-      mix(A, B, c, row, t, now, E) {
-        const fw = E.FW / E.FACES, dx = Math.abs((c % fw) - fw / 2) / (fw / 2)          // 0 at a face's middle, 1 at its corner
-        const d = (E.FH - row) - dx * 26 - (ease(t) * (E.FH + 60) - 30), W = 7           // distance above the rising chevron
-        if (Math.abs(d) < W) {
-          const sp = sparkle(c, row, Math.abs(d) - W, now, E, 2.5); if (sp) return sp
-          return lerp([255, 214, 120], [255, 246, 228], 1 - Math.abs(d) / W)              // the chevron: warm white-gold
-        }
-        return d < 0 ? B(c, row) : A(c, row)                                              // beneath it, the new look, whole
+        const run = E.CONE + 4
+        if (t < 0.32) return A(c, row, ease(t / 0.32))                                   // rising into place
+        if (t < 0.52) return A(c, row, 1)                                                 // the pause: the flag, whole
+        const k = ease((t - 0.52) / 0.48), base = E.FH - k * (run + 4)                   // rising on; its base edge climbs
+        const sp = k > 0 && k < 1 && sparkle(c, row, row - base, now, E, 2.5); if (sp) return sp
+        return row > base ? B(c, row) : A(c, row, 1 + k)                                  // beneath it, the next look
       } },
   ]
 })()
