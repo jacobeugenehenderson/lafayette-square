@@ -135,8 +135,8 @@ function Uplights() {
 }
 
 // Displays — every town has the section; its contents are the town's displays (Jacob, 2026-10-30: "Displays", no
-// extra text). Each plays LIVE (its season and schedule, on the town's clock) unless previewed here: Glow or Show, from
-// the moment pressed. The preview is Stage's alone (src/displays/preview.js).
+// extra text). Each plays LIVE (its season and schedule, on the town's clock) unless previewed here: Off (hung, unlit),
+// Glow or Show, from the moment pressed. The preview is Stage's alone (src/displays/preview.js).
 function DisplaysSection() {
   const lookId = useCartographStore(s => s.activeLookId)
   const list = (lookId && townForLook(lookId)?.displays) || []
@@ -154,7 +154,7 @@ function DisplaysSection() {
           <div className="flex items-center justify-between gap-2 py-1">
             <span className="text-caption" style={{ color: 'var(--on-surface-variant)' }}>{d.name || DISPLAY_PLUGINS[d.kind]?.label || d.kind}</span>
             <div className="flex gap-1">
-              {['live', 'glow', 'show'].map(m => (
+              {['live', 'off', 'glow', 'show'].map(m => (
                 <button key={m} onClick={() => setMode(d.id, m)}
                   className="px-2 py-0.5 rounded text-caption cursor-pointer capitalize"
                   style={{ background: cur === m ? 'var(--surface-container-high)' : 'transparent', color: cur === m ? 'var(--on-surface)' : 'var(--on-surface-variant)', border: '1px solid var(--outline-variant)' }}>{m}</button>

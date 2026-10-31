@@ -36,6 +36,10 @@ async function verdict({ engine, view } = {}) {
   // The show OVERTAKES the glow: a bulb is the show's where the show has reached it, else (a real strand, lit) the glow's.
   if (!/const rgb = r === 'spark' \? \[255, 246, 228\] : r === 'on' \? show\.colour\(c, row\)[^:]*: real && mode !== 'off' \? glowColour\(/.test(ls)) fails.push('LightShow: the show does not overtake the glow bulb by bulb (the show\'s colour where its front has passed, the glow\'s ahead of it)')
   if (!/\{ mode, t, up \} = liveState\(/.test(ls)) fails.push('LightShow: the live path does not take `up` from liveState')
+  // Stage can preview each state, the strands hung unlit included (Jacob: "Live, Off, Glow, Show").
+  const stage = code(sourceOf('src/stage/StageApp.jsx'))
+  if (!/\['live', 'off', 'glow', 'show'\]\.map/.test(stage)) fails.push("Stage's Displays section does not offer Live, Off, Glow and Show")
+  if (!/let mode, t, now, up = true/.test(ls)) fails.push("LightShow: Stage's preview does not hang the strands (Off must show them, unlit)")
   return fails
 }
 
