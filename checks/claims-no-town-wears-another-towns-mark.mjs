@@ -108,7 +108,9 @@ if (!m1 || !m2) bad('MUTATIONS NOT PLANTED — fewer than two baked towns wear a
 else {
   // (a) an AUTHORED shared mark must NOT be flagged;
   const sharedAuthored = inherited([m1, { maps: m2.maps, mark: m1.mark, authored: true }]).length === 0
-  // (b) an INHERITED copy (same mark, not authored) must be flagged.
+  // (b) an INHERITED copy (same mark, not authored) must be flagged. ⛔ NOT DEAD: today resolveIdentity maps an
+  // unauthored mark to null, but Looks are SEEDED (Extent's pour seeds from kit-default, 86ed044e), and a seed that
+  // copies a mark with markAuthored false is exactly this; judging the published result is what catches it (Zob).
   const copyCaught = inherited([m1, { maps: m2.maps, mark: m1.mark, authored: false }]).length > 0
   if (sharedAuthored) console.log(`  mutation (${m2.maps[0]} AUTHORS ${m1.maps[0]}'s ${m1.mark}) passes ✓ — authoring is the product`)
   else bad(`MUTATION: ${m2.maps[0]} authoring ${m1.maps[0]}'s mark was flagged — the check calls authoring a defect`)
