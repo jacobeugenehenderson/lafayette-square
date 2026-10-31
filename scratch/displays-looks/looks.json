@@ -135,16 +135,31 @@
       ]
     },
     {
-      "id": "gifts",
-      "name": "Gifts",
-      "notes": "Two parcels on opposite sides, wrapped in diagonal stripes and no bows: red and gold on one, the Pride flag on the other.",
+      "id": "gift-red",
+      "name": "Red Gift",
+      "notes": "The whole tree wrapped like a present: wide diagonal stripes of red and gold.",
       "layers": [
         {
           "motion": {
             "kind": "still"
           },
           "frames": [
-            "looks/gifts/0.svg"
+            "looks/gift-red/0.svg"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "gift-pride",
+      "name": "Pride Gift",
+      "notes": "The whole tree wrapped like a present in the Pride flag: wide diagonal stripes, red through violet.",
+      "layers": [
+        {
+          "motion": {
+            "kind": "still"
+          },
+          "frames": [
+            "looks/gift-pride/0.svg"
           ]
         }
       ]
@@ -246,7 +261,7 @@
     {
       "id": "stars",
       "name": "Stars",
-      "notes": "Gold and white stars on night blue, a big star on every face of the pinnacle; they twinkle.",
+      "notes": "Gold and white stars spread evenly over night blue, never clumped; they twinkle; the pinnacle washes gold.",
       "layers": [
         {
           "motion": {
@@ -277,7 +292,7 @@
     {
       "id": "dreidel",
       "name": "Dreidel",
-      "notes": "The whole tree is one dreidel: a silver handle at the pinnacle, a blue body with silver corners, one great gold letter on each face (nun, gimel, hey, shin), tapering to its point; the tree turns, so it spins its letters past you.",
+      "notes": "The whole tree is one dreidel: a silver handle at the pinnacle, a blue body, one great gold letter on each face (nun, gimel, hey, shin), tapering to its point; the tree turns, so it spins its letters past you.",
       "layers": [
         {
           "motion": {
@@ -325,7 +340,7 @@
     {
       "id": "doves",
       "name": "Doves",
-      "notes": "White doves with olive sprigs flying an ascending spiral round the wide part of the tree, through gold rays that shimmer; white pinnacle.",
+      "notes": "A white dove with an olive sprig on every face, among gold rays that shimmer; white pinnacle.",
       "layers": [
         {
           "motion": {
@@ -338,32 +353,10 @@
         },
         {
           "motion": {
-            "kind": "spiral",
-            "speed": 8,
-            "rise": 3,
-            "rows": [
-              24,
-              94
-            ]
+            "kind": "still"
           },
           "frames": [
             "looks/doves/1.svg"
-          ]
-        }
-      ]
-    },
-    {
-      "id": "pride",
-      "name": "Pride",
-      "notes": "The rainbow flag, ridge to ground, rising slowly; white pinnacle.",
-      "layers": [
-        {
-          "motion": {
-            "kind": "rise",
-            "speed": 3
-          },
-          "frames": [
-            "looks/pride/0.svg"
           ]
         }
       ]
@@ -401,7 +394,7 @@
     {
       "id": "trans",
       "name": "Trans",
-      "notes": "Light blue, pink, white, pink, light blue, sparkling, with their average, a soft lavender, washing in over them and back out again.",
+      "notes": "Light blue, pink, white, pink, light blue, sparkling, with their average, a bright lilac, washing in over them and back out again.",
       "layers": [
         {
           "motion": {
@@ -425,7 +418,7 @@
     {
       "id": "red-ribbon",
       "name": "Red Ribbon",
-      "notes": "Two red stripes on opposite sides, slanting opposite ways like the crossing of the ribbon, on black; after a moment, concentric opposing chevrons of red and black fill the whole tree, then draw back to the ribbon.",
+      "notes": "Two red stripes on opposite sides, slanting opposite ways like the crossing of the ribbon, on black; then concentric opposing chevrons of red and black are added one by one, from the ground up, as if the tree were being wrapped; then back to the ribbon.",
       "layers": [
         {
           "motion": {
@@ -437,11 +430,51 @@
         },
         {
           "motion": {
-            "kind": "fade",
-            "period": 14
+            "kind": "still"
           },
+          "turn": "build",
+          "fps": 5,
           "frames": [
-            "looks/red-ribbon/1.svg"
+            "looks/red-ribbon/1-0.svg",
+            "looks/red-ribbon/1-1.svg",
+            "looks/red-ribbon/1-2.svg",
+            "looks/red-ribbon/1-3.svg",
+            "looks/red-ribbon/1-4.svg",
+            "looks/red-ribbon/1-5.svg",
+            "looks/red-ribbon/1-6.svg",
+            "looks/red-ribbon/1-7.svg",
+            "looks/red-ribbon/1-8.svg",
+            "looks/red-ribbon/1-9.svg",
+            "looks/red-ribbon/1-10.svg",
+            "looks/red-ribbon/1-11.svg",
+            "looks/red-ribbon/1-12.svg",
+            "looks/red-ribbon/1-13.svg",
+            "looks/red-ribbon/1-14.svg",
+            "looks/red-ribbon/1-15.svg",
+            "looks/red-ribbon/1-16.svg",
+            "looks/red-ribbon/1-17.svg",
+            "looks/red-ribbon/1-18.svg",
+            "looks/red-ribbon/1-19.svg",
+            "looks/red-ribbon/1-20.svg",
+            "looks/red-ribbon/1-21.svg",
+            "looks/red-ribbon/1-22.svg",
+            "looks/red-ribbon/1-23.svg",
+            "looks/red-ribbon/1-24.svg",
+            "looks/red-ribbon/1-25.svg",
+            "looks/red-ribbon/1-26.svg",
+            "looks/red-ribbon/1-27.svg",
+            "looks/red-ribbon/1-28.svg",
+            "looks/red-ribbon/1-29.svg",
+            "looks/red-ribbon/1-30.svg",
+            "looks/red-ribbon/1-31.svg",
+            "looks/red-ribbon/1-32.svg",
+            "looks/red-ribbon/1-33.svg",
+            "looks/red-ribbon/1-34.svg",
+            "looks/red-ribbon/1-35.svg",
+            "looks/red-ribbon/1-36.svg",
+            "looks/red-ribbon/1-37.svg",
+            "looks/red-ribbon/1-38.svg",
+            "looks/red-ribbon/1-39.svg"
           ]
         }
       ]
@@ -525,30 +558,6 @@
           },
           "frames": [
             "looks/white-bulbs/0.svg"
-          ]
-        }
-      ]
-    },
-    {
-      "id": "joy",
-      "name": "Joy",
-      "notes": "JOY on two sides, big block letters with clear gaps, low on the tree where it is widest, white on red between gold bands, with snow falling over it.",
-      "layers": [
-        {
-          "motion": {
-            "kind": "still"
-          },
-          "frames": [
-            "looks/joy/0.svg"
-          ]
-        },
-        {
-          "motion": {
-            "kind": "fall",
-            "speed": 5
-          },
-          "frames": [
-            "looks/joy/1.svg"
           ]
         }
       ]
