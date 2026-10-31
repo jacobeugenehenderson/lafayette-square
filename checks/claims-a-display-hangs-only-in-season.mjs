@@ -11,7 +11,8 @@
  *
  * Usage: node checks/claims-a-display-hangs-only-in-season.mjs [--mutants]
  *   --mutants: strands up out of season → (1) red; strands hung regardless of the season, the glow faded out under a show
- *   instead of overtaken, the bulbs' light no longer additive (an unlit bulb drawn black) → (2) red.
+ *   instead of overtaken, the bulbs' light no longer additive (an unlit bulb drawn black), Stage without the Off preview,
+ *   the preview not hanging the strands → (2) red.
  */
 import { importSource, sourceOf } from './_importSource.mjs'
 
@@ -20,7 +21,7 @@ const D = { season: 'lights', shows: { every: 'hour', from: '17:00', to: '23:00'
 const CAL = [{ id: 'lights', start_date: '2026-11-11', end_date: '2027-01-01' }]
 const at = (date, hours) => ({ date, hours, minutes: 30, seconds: 0 })
 
-async function verdict({ engine, view } = {}) {
+async function verdict({ engine, view, stageMut } = {}) {
   const fails = []
   const E = await importSource('src/displays/lightShow/engine.js', engine ? { transform: engine } : {})
   const ask = (cal, clock, sunDown) => E.liveState(D, C, clock, cal, sunDown, 'check')
@@ -37,7 +38,7 @@ async function verdict({ engine, view } = {}) {
   if (!/const rgb = r === 'spark' \? \[255, 246, 228\] : r === 'on' \? show\.colour\(c, row\)[^:]*: real && mode !== 'off' \? glowColour\(/.test(ls)) fails.push('LightShow: the show does not overtake the glow bulb by bulb (the show\'s colour where its front has passed, the glow\'s ahead of it)')
   if (!/\{ mode, t, up \} = liveState\(/.test(ls)) fails.push('LightShow: the live path does not take `up` from liveState')
   // Stage can preview each state, the strands hung unlit included (Jacob: "Live, Off, Glow, Show").
-  const stage = code(sourceOf('src/stage/StageApp.jsx'))
+  const stage = code(stageMut ? stageMut(sourceOf('src/stage/StageApp.jsx')) : sourceOf('src/stage/StageApp.jsx'))
   if (!/\['live', 'off', 'glow', 'show'\]\.map/.test(stage)) fails.push("Stage's Displays section does not offer Live, Off, Glow and Show")
   if (!/let mode, t, now, up = true/.test(ls)) fails.push("LightShow: Stage's preview does not hang the strands (Off must show them, unlit)")
   return fails
@@ -52,6 +53,8 @@ if (process.argv.includes('--mutants')) {
     ['strands up out of season', { engine: (s) => s.replace('  const up = inSeason(calendar, display.season, clock.date, where)\n', '  const up = calendar == null || inSeason(calendar, display.season, clock.date, where) || true\n') }],
     ['strands hung regardless of the season', { view: (s) => s.replace("const hang = !up ? 'none' : show ? 'all' : 'glow'", "const hang = show ? 'all' : 'glow'") }],
     ['the glow faded out under the show, not overtaken', { view: (s) => s.replace(": real && mode !== 'off' ? glowColour(", ": real && mode === 'glow' ? glowColour(") }],
+    ['Stage without the Off preview', { stageMut: (s) => s.replace("['live', 'off', 'glow', 'show'].map", "['live', 'glow', 'show'].map") }],
+    ['the preview not hanging the strands', { view: (s) => s.replace('let mode, t, now, up = true', 'let mode, t, now, up = false') }],
     ['an unlit bulb drawn black, not clear', { view: (s) => s.replace('blending: THREE.AdditiveBlending, depthWrite: false }), [])\n  const dark', 'depthWrite: false }), [])\n  const dark') }],
   ]
   let bad = 0
