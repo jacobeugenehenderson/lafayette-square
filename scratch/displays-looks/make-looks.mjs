@@ -145,17 +145,19 @@ look('snowflakes', 'Snowflakes', 'Six-armed flakes tumbling as they fall, on bri
 ])
 
 // ═══ GIFTS: two parcels, opposite sides; a ribbon wrapping each diagonally, a big bow in the middle of the top. ═════
-/** Diagonal stripes clipped to columns x0…x0+w: a parcel's wrapping. dir ±1 slants them either way. */
+/** Diagonal stripes clipped to columns x0…x0+w: a parcel's wrapping. dir ±1 slants them either way.
+ *  ⭐ Seamless round the tree only if the repeat (sw × colours) divides FRAME_W: 16 × 2 = 32, 16 × 6 = 96. Refused otherwise. */
 function wrapPaper(id, x0, w, cols, sw, dir) {
+  if (w === FRAME_W && FRAME_W % (sw * cols.length)) throw new Error(`wrapPaper: a repeat of ${sw * cols.length} does not divide ${FRAME_W}, so the stripes would break at the seam`)
   let s = `<defs><clipPath id="${id}"><rect x="${x0}" y="0" width="${w}" height="${CONE_H}"/></clipPath></defs><g clip-path="url(#${id})">`
   for (let i = -24; i < 40; i++) { const x = x0 + i * sw; s += poly([[x, 0], [x + sw + 0.2, 0], [x + sw + 0.2 + dir * 60, CONE_H], [x + dir * 60, CONE_H]], cols[((i % cols.length) + cols.length) % cols.length]) }
   return s + '</g>'
 }
 look('gift-red', 'Red Gift', 'The whole tree wrapped like a present: wide diagonal stripes of red and gold.', [
-  L({ kind: 'still' }, () => wrapPaper('gA', 0, FRAME_W, [C.red, C.gold], 14, 1), band(0, PIN_H, C.gold)),
+  L({ kind: 'still' }, () => wrapPaper('gA', 0, FRAME_W, [C.red, C.gold], 16, 1), band(0, PIN_H, C.gold)),
 ])
 look('gift-pride', 'Pride Gift', 'The whole tree wrapped like a present in the Pride flag: wide diagonal stripes, red through violet.', [
-  L({ kind: 'still' }, () => wrapPaper('gB', 0, FRAME_W, RAINBOW, 14, -1), band(0, PIN_H, C.white)),
+  L({ kind: 'still' }, () => wrapPaper('gB', 0, FRAME_W, RAINBOW, 16, -1), band(0, PIN_H, C.white)),
 ])
 // ═══ CANDY ═══════════════════════════════════════════════════════════════════════════════════════════════════════════
 look('candy-cane', 'Candy Cane', 'Red and white spiralling from the ridge to the ground, turning.', [

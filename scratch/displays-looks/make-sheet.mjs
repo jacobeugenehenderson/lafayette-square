@@ -23,7 +23,7 @@ const M = JSON.parse(readFileSync(join(HERE, 'looks.json'), 'utf8'))
 const uri = (file) => 'data:image/svg+xml;base64,' + readFileSync(join(HERE, file)).toString('base64')
 const TRANSITIONS_SRC = readFileSync(join(HERE, 'transitions.js'), 'utf8').replace(/if \(typeof module[^\n]*\n?/, '')
 // Each transition is shown between two looks that suit it: from → to.
-const PAIRS = { cascade: ['santa', 'santas-hat'], 'rising-spiral': ['candy-cane', 'classic-tree'], iris: ['holly', 'stars'], curtain: ['gift-red', 'gift-pride'], sparkle: ['snowfall', 'snowflakes'], melt: ['frosty', 'snowfall'], twirl: ['peppermint', 'candy-cane'], 'blackout-bloom': ['menorah', 'dreidel'], shatter: ['ornaments', 'white-bulbs'], 'rising-stripes': ['kwanzaa-bands', 'kinara'], 'expanding-stripes': ['plaid', 'gingerbread'], 'rise-into-place': ['gift-pride', 'progress-pride'] }
+const PAIRS = { cascade: ['santa', 'santas-hat'], 'rising-spiral': ['candy-cane', 'classic-tree'], iris: ['holly', 'stars'], curtain: ['gift-red', 'gift-pride'], sparkle: ['snowfall', 'snowflakes'], melt: ['frosty', 'snowfall'], twirl: ['peppermint', 'candy-cane'], 'blackout-bloom': ['menorah', 'dreidel'], shatter: ['ornaments', 'white-bulbs'], 'rising-stripes': ['kwanzaa-bands', 'kinara'], 'expanding-stripes': ['plaid', 'gingerbread'], 'rise-into-place': ['gift-pride', 'progress-pride'], chevron: ['bear', 'progress-pride'] }
 const looks = M.looks.map(L => ({ ...L, layers: L.layers.map(l => ({ ...l, frames: l.frames.map(uri) })) }))
 
 const TRANSITIONS_LIST_LEN = (TRANSITIONS_SRC.match(/\bid: '/g) || []).length

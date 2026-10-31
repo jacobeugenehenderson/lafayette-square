@@ -127,6 +127,17 @@ const TRANSITIONS = (() => {
         if (t < 0.4) return lerp(A(c, row), B(c, row, 0), ease(t / 0.4))   // the look, with its motion object still below ground
         return B(c, row, ease((t - 0.4) / 0.6))                              // the object rising into place
       } },
+    { id: 'chevron', name: 'Chevron', seconds: 3.2, accent: true,
+      notes: 'A great glowing chevron rises onto the tree from the ground, sweeps up through it and out of the top, revealing the new look whole beneath it. Its edges sparkle.',
+      mix(A, B, c, row, t, now, E) {
+        const fw = E.FW / E.FACES, dx = Math.abs((c % fw) - fw / 2) / (fw / 2)          // 0 at a face's middle, 1 at its corner
+        const d = (E.FH - row) - dx * 26 - (ease(t) * (E.FH + 60) - 30), W = 7           // distance above the rising chevron
+        if (Math.abs(d) < W) {
+          const sp = sparkle(c, row, Math.abs(d) - W, now, E, 2.5); if (sp) return sp
+          return lerp([255, 214, 120], [255, 246, 228], 1 - Math.abs(d) / W)              // the chevron: warm white-gold
+        }
+        return d < 0 ? B(c, row) : A(c, row)                                              // beneath it, the new look, whole
+      } },
   ]
 })()
 if (typeof module !== 'undefined') module.exports = { TRANSITIONS }
