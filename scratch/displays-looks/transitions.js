@@ -3,7 +3,9 @@
  * kit code; the operator picks them, never draws them).
  *
  * Each transition is a PURE function of (from, to, c, row, t, now, env) → [r, g, b]:
- *   from, to   samplers (c, row) → colour: the two looks, still running their own motions
+ *   from, to   samplers (c, row, enter = 1) → colour: the two looks, still running their own motions; `enter` (0 … 1)
+ *              places a look's MOTION OBJECTS (layers marked `enter`) on their way in: 0 below the ground, 1 in place
+ * `mirror: true` plays the way back as the way in, reversed (an object that rose in sinks away first).
  *   c, row     the bulb's place in the frame (row < env.P is the pinnacle; the cone is below it)
  *   t          the transition's progress, 0 … 1
  *   now        the show clock in seconds: only the strobe accents read it, so they flicker at a steady rate
@@ -119,20 +121,11 @@ const TRANSITIONS = (() => {
         return Math.abs(local - 6) < ease(t) * 6.6 ? B(c, row) : A(c, row)
       } },
 
-    { id: 'chevron', name: 'Chevron', seconds: 3.4, accent: true,
-      notes: 'Stripes of the new look come on across the old; then a great glowing chevron rises onto the tree from the ground, sweeps up through it and out of the top, leaving the new look whole behind it. Its edges sparkle.',
+    { id: 'rise-into-place', name: 'Rise into Place', seconds: 3.4, accent: false, mirror: true,
+      notes: 'The new look comes on whole and smoothly; then its motion object (the Progress chevron) rises from the ground into its place. Going back, the object sinks away first, then the look fades.',
       mix(A, B, c, row, t, now, E) {
-        const fw = E.FW / E.FACES, dx = Math.abs((c % fw) - fw / 2) / (fw / 2)          // 0 at a face's middle, 1 at its corner
-        const y = (E.FH - row) - dx * 26                                                  // height above the chevron's point line
-        const pos = ease(clamp((t - 0.3) / 0.7)) * (E.FH + 60) - 30                       // the chevron's place, rising
-        const d = y - pos, W = 7
-        if (Math.abs(d) < W) {
-          const sp = sparkle(c, row, Math.abs(d) - W, now, E, 2.5); if (sp) return sp
-          return lerp([255, 214, 120], [255, 246, 228], 1 - Math.abs(d) / W)              // the chevron: warm white-gold
-        }
-        if (d < 0) return B(c, row)                                                       // below it: the new look, whole
-        const stripes = Math.abs((((row % 12) + 12) % 12 + 0.5) - 6) < ease(t / 0.3) * 2.2   // above: the stripes have come on
-        return stripes ? B(c, row) : A(c, row)
+        if (t < 0.4) return lerp(A(c, row), B(c, row, 0), ease(t / 0.4))   // the look, with its motion object still below ground
+        return B(c, row, ease((t - 0.4) / 0.6))                              // the object rising into place
       } },
   ]
 })()

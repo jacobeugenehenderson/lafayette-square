@@ -256,13 +256,9 @@ look('doves', 'Doves', 'A white dove with an olive sprig on every face, among go
 ])
 // ═══ PRIDE ═══════════════════════════════════════════════════════════════════════════════════════════════════════════
 const RAINBOW = ['#e40303', '#ff8c00', '#ffed00', '#008026', '#004dff', '#750787']
-look('progress-pride', 'Progress Pride', 'Two flags on opposite sides, turned upright: the rainbow in vertical stripes, and the Progress chevron rising from the ground, white at its heart, through pink, light blue and brown to black.', [
-  L({ kind: 'still' }, () => halves((cx) => {
-    const x0 = cx - 48; let s = ''
-    RAINBOW.forEach((c, i) => { s += rect(x0 + i * 16, 0, 16.2, CONE_H, c) })
-    ;['#000', '#784f17', '#5bcefa', '#f5a9b8', C.white].forEach((c, i) => { const w = 46 - i * 8; s += poly([[cx - w, 97], [cx, 26 + i * 10], [cx + w, 97]], c) })
-    return s
-  }), bands(['#5bcefa', '#f5a9b8', C.white], 0, PIN_H)),
+look('progress-pride', 'Progress Pride', 'Two flags on opposite sides, turned upright: the rainbow in vertical stripes, and the Progress chevron rising from the ground, white at its heart, through pink, light blue and brown to black. The chevron is a motion object: it can rise into place as the look arrives.', [
+  L({ kind: 'still' }, () => halves((cx) => RAINBOW.map((c, i) => rect(cx - 48 + i * 16, 0, 16.2, CONE_H, c)).join('')), bands(['#5bcefa', '#f5a9b8', C.white], 0, PIN_H)),
+  L({ kind: 'still' }, () => halves((cx) => ['#000', '#784f17', '#5bcefa', '#f5a9b8', C.white].map((c, i) => { const w = 46 - i * 8; return poly([[cx - w, 97], [cx, 26 + i * 10], [cx + w, 97]], c) }).join('')), '', { enter: 'rise' }),
 ])
 const BEAR = ['#623804', '#d56300', '#fedd63', '#fee6b8', '#ffffff', '#555555', '#000000']
 look('bear', 'Bear', 'A plaid woven from the bear pride colours: dark brown and rust crossed with gold, tan, white and grey threads.', [
@@ -352,7 +348,7 @@ for (const look of LOOKS) {
       const file = `looks/${look.id}/${li}${n > 1 ? `-${k}` : ''}.svg`
       writeFileSync(join(HERE, file), frameSvg(layer, k / n)); files.push(file)
     }
-    return { motion: layer.motion, ...(n > 1 ? { turn: layer.turn, fps: layer.fps } : {}), frames: files }
+    return { motion: layer.motion, ...(n > 1 ? { turn: layer.turn, fps: layer.fps } : {}), ...(layer.enter ? { enter: layer.enter } : {}), frames: files }
   })
   manifest.push({ id: look.id, name: look.name, notes: look.notes, layers })
 }

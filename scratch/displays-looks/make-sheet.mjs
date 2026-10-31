@@ -23,7 +23,7 @@ const M = JSON.parse(readFileSync(join(HERE, 'looks.json'), 'utf8'))
 const uri = (file) => 'data:image/svg+xml;base64,' + readFileSync(join(HERE, file)).toString('base64')
 const TRANSITIONS_SRC = readFileSync(join(HERE, 'transitions.js'), 'utf8').replace(/if \(typeof module[^\n]*\n?/, '')
 // Each transition is shown between two looks that suit it: from → to.
-const PAIRS = { cascade: ['santa', 'santas-hat'], 'rising-spiral': ['candy-cane', 'classic-tree'], iris: ['holly', 'stars'], curtain: ['gift-red', 'gift-pride'], sparkle: ['snowfall', 'snowflakes'], melt: ['frosty', 'snowfall'], twirl: ['peppermint', 'candy-cane'], 'blackout-bloom': ['menorah', 'dreidel'], shatter: ['ornaments', 'white-bulbs'], 'rising-stripes': ['kwanzaa-bands', 'kinara'], 'expanding-stripes': ['plaid', 'gingerbread'], chevron: ['bear', 'progress-pride'] }
+const PAIRS = { cascade: ['santa', 'santas-hat'], 'rising-spiral': ['candy-cane', 'classic-tree'], iris: ['holly', 'stars'], curtain: ['gift-red', 'gift-pride'], sparkle: ['snowfall', 'snowflakes'], melt: ['frosty', 'snowfall'], twirl: ['peppermint', 'candy-cane'], 'blackout-bloom': ['menorah', 'dreidel'], shatter: ['ornaments', 'white-bulbs'], 'rising-stripes': ['kwanzaa-bands', 'kinara'], 'expanding-stripes': ['plaid', 'gingerbread'], 'rise-into-place': ['gift-pride', 'progress-pride'] }
 const looks = M.looks.map(L => ({ ...L, layers: L.layers.map(l => ({ ...l, frames: l.frames.map(uri) })) }))
 
 const TRANSITIONS_LIST_LEN = (TRANSITIONS_SRC.match(/\bid: '/g) || []).length
@@ -114,12 +114,13 @@ function hexRGB(h) { return [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5)
 const wrapIn = (v, lo, n) => lo + (((v - lo) % n) + n) % n;
 
 // What a bulb shows at time t: the top layer that has paint there, moved by that layer's motion. Pure.
-function sample(look, c, row, t, top = look.layers.length - 1) {
+function sample(look, c, row, t, top = look.layers.length - 1, enter = 1) {
   for (let li = top; li >= 0; li--) {
     const L = look.layers[li], m = L.motion, px = L.px[L.px.length > 1 ? Math.floor(t * L.fps) % L.px.length : 0], sp = m.speed ?? 6;
     let cc = c, rr = row;
     let lo = row < P ? 0 : P, n = row < P ? P : CONE;
     if (m.rows && row >= P) { lo = P + m.rows[0]; n = m.rows[1] - m.rows[0]; if (row < lo || row >= lo + n) continue; }   // a motion kept to part of the tree
+    if (L.enter && enter < 1) { rr = row - Math.round((1 - enter) * (CONE + 4)); if (rr < P) continue; }   // a motion object on its way in, rising from below the ground
     if (m.kind === 'fall') rr = wrapIn(row - Math.floor(t * sp), lo, n);
     if (m.kind === 'rise') rr = wrapIn(row + Math.floor(t * sp), lo, n);
     if (m.kind === 'spin' || m.kind === 'spiral') cc = ((c - Math.floor(t * sp)) % FW + FW) % FW;
@@ -129,7 +130,7 @@ function sample(look, c, row, t, top = look.layers.length - 1) {
     if (alpha < 0.02) continue;
     let r = px[o], g = px[o + 1], b = px[o + 2];
     if (alpha < 0.98 && li > 0) {                               // a layer part-way faded in blends over what is beneath it
-      const u = sample(look, c, row, t, li - 1); r = u[0] + (r - u[0]) * alpha; g = u[1] + (g - u[1]) * alpha; b = u[2] + (b - u[2]) * alpha;
+      const u = sample(look, c, row, t, li - 1, enter); r = u[0] + (r - u[0]) * alpha; g = u[1] + (g - u[1]) * alpha; b = u[2] + (b - u[2]) * alpha;
     }
     let k = 1;
     const scoped = !m.only || (Math.abs(r - m._only[0]) + Math.abs(g - m._only[1]) + Math.abs(b - m._only[2]) < 90);
@@ -140,7 +141,7 @@ function sample(look, c, row, t, top = look.layers.length - 1) {
     }
     if (m.kind === 'fade') {                                    // the layer washes in over what is beneath it, and back out
       const a = fadeAlpha(t, m.period ?? 6);
-      if (a < 1) { const u = sample(look, c, row, t, li - 1); return [u[0] + (r - u[0]) * a, u[1] + (g - u[1]) * a, u[2] + (b - u[2]) * a]; }
+      if (a < 1) { const u = sample(look, c, row, t, li - 1, enter); return [u[0] + (r - u[0]) * a, u[1] + (g - u[1]) * a, u[2] + (b - u[2]) * a]; }
     }
     return [r * k, g * k, b * k];
   }
@@ -290,11 +291,12 @@ const byId = Object.fromEntries(LOOKS.map(L => [L.id, L]));
 function transitionSource(tr, from, to) {
   const hold = 1.6, dur = tr.seconds, period = 2 * (hold + dur), E = { FW, FH, P, CONE, FACES, hash };
   return { sample(c, row, now) {
-    const u = now % period, Af = (cc, rr) => sample(from, cc, rr, now), Bf = (cc, rr) => sample(to, cc, rr, now);
+    const u = now % period, Af = (cc, rr, k = 1) => sample(from, cc, rr, now, undefined, k), Bf = (cc, rr, k = 1) => sample(to, cc, rr, now, undefined, k);
     if (u < hold) return Af(c, row);
     if (u < hold + dur) return tr.mix(Af, Bf, c, row, (u - hold) / dur, now, E);
     if (u < 2 * hold + dur) return Bf(c, row);
-    return tr.mix(Bf, Af, c, row, (u - 2 * hold - dur) / dur, now, E);
+    const back = (u - 2 * hold - dur) / dur;
+    return tr.mirror ? tr.mix(Af, Bf, c, row, 1 - back, now, E) : tr.mix(Bf, Af, c, row, back, now, E);
   } };
 }
 function tcard(name, chip, notes, num, flat) {
