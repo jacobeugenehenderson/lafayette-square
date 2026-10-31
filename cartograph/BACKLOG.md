@@ -18,21 +18,22 @@ NO ROUTINE PURGE: content names give a changed file a fresh name, and our reader
   displays (dea49735; PTown's manifest step ran clean, Jacob, nothing uploaded) · a refusal is never swallowed (249d7658, Fuse) ·
   a town has one icon, the arch gone (24b23a73, Sigil).
 - **IN FLIGHT** (each: Zob PASS → Boz dry-runs the merge in a throwaway worktree, re-tiers, merges; ⛔ never merge-test in the live worktree):
-  · **Fuse** `fuse/refusal` 60f0f786 (Zob PASS): a reveal-layer refusal marks the reveal gate, Stage's banner above the splash. Then
-    Fuse validates `?refuse=InstancedTrees` on :5173 and removes the DEV flag.
   · **Tinsel** `tinsel/displays`: the calendar route + Huron's 16 event rows + PTown season start 2026-10-31 → one Zob pass, then merge.
     Then: brightness (Edison glow, ratio to the town's lamp level; SHOW_GAIN deleted) → back dim (facing falloff, 0.3) → cone matte
     (interiorMatte, 0 default) → point framing for spot venues. All ruled; plans approved.
   · **Ward**: Usher (scene error screen) and Herald (event card) building; Ward holds the heavy slot for their checks.
   · **Sigil** idle: the operator tabs' Ward-logo favicon waits on Jacob naming where the Ward logo file lives.
-- **NEXT WARD PIN (the calendar pin), preconditions:** ① kit refusal fix — MERGED, follow-up in flight · ② the Ward's boundary for
+- **NEXT WARD PIN (the calendar pin), preconditions:** ① kit refusal fix — DONE (249d7658 · 51c2211e · 57aac5fb; brief retired to `cartograph/_archive/`) · ② the Ward's boundary for
   unwrapped throws — Usher · ③ Scene.jsx passes the published calendar with readTownCalendar's four values from its own read
-  (today `content.js#loadContent` flattens absent and failed to []). Then staging → Promote, Jacob's presses. Season is ON from 10-31.
+  (today `content.js#loadContent` flattens absent and failed to []). ② is built (Herald 96097ea); ③ is briefed as the whole pin,
+  `docs/briefs/BRIEF-ward-the-calendar-pin.md` (Ward commits it on Zob's co-sign; dispatches when tinsel/displays merges). Then staging → Promote, Jacob's presses.
+  Season is ON from 10-31.
 - **JACOB'S PRESSES, owed:** the favicon release (staging publish → re-Promote each production town → deploy both Workers) · Huron's
   bake after the calendar route merges · the backend sittings (`scratch/backend-deploy-runbook.md`; sitting 2 waits on patch eight's
   tally `date` → `weekday`, ruled).
 - **FOLLOW-UP BRIEFS OWED (named, not written):** terrain's floated `reloadTerrain` promise + useFrame throws (silent) · ⛔ console-only
-  refusals (154 lines, 28 in Town's wrapped layers) to classify and route · `/stage/lafayette-square/hero` blank (useTownPlace throws
+  refusals (154 lines, 28 in Town's wrapped layers) to classify and route · R3FErrorBoundary's retryCount never resets ·
+  LightShow's two Stage-only mislabels (a malformed drawer / a 404 frame read "failed") · `/stage/lafayette-square/hero` blank (useTownPlace throws
   outside any boundary) · the "legacy" player acceptance is dead wiring (remove after an R2 read of the records) · the 130 safe-tier
   reds have no baseline (Zob's triage: two stale towns abort 34 checks; a ribbonScenes refusal + a checks/BOARD.json are proposed).
 - **FINDINGS FOR OTHER BANDS:** Arborist — PTown trees near the Monument drawn 37–40 m (upper bound), truly occluding the strands ·

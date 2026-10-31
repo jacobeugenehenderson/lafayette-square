@@ -1,7 +1,7 @@
 # BRIEF: a refusal is never swallowed (the kit)
 
 <!-- BRIEF-STATE
-status: OPEN
+status: LANDED
 dispatched: no
 written: 2026-10-31
 evict-when: node checks/claims-a-refusal-is-never-swallowed.mjs --mutants
