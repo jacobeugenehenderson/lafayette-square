@@ -19,7 +19,7 @@ import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import useTimeOfDay from '../../hooks/useTimeOfDay'
 import { townClockOf } from '../../lib/townClock.js'
-import { validateDrawer, compileRun, showAt, showSeconds, glowColour, liveState } from './engine.js'
+import { validateDrawer, compileRun, showAt, showSeconds, glowColour, liveState, uplightTarget } from './engine.js'
 import { checkFaces, strandEnds, pinnacleFace, bulbRadius, avgGlow } from './geometry.js'
 import useDisplayPreview from '../preview.js'
 
@@ -60,7 +60,7 @@ function Bulbs({ name, ends, rows, meshRef }) {
   return <instancedMesh name={name} ref={meshRef} args={[geo, mat, count]} frustumCulled={false} />
 }
 
-export default function LightShow({ display, extent, calendar, contentRoot, where }) {
+export default function LightShow({ display, extent, calendar, contentRoot, dim, where }) {
   if (!extent?.ridge || !extent?.pinnacle) throw new Error(`[LightShow] ⛔ ${where}: the set-piece declares no ridge and pinnacle in its extent, so the strands have nowhere to hang`)
   const st = display.strands
   if (!(st?.glow > 0 && st?.show > 0 && st?.ringRadiusM > 0)) throw new Error(`[LightShow] ⛔ ${where}: strands needs glow, show and ringRadiusM`)
@@ -89,13 +89,15 @@ export default function LightShow({ display, extent, calendar, contentRoot, wher
   }, [F, extent])
   const pinMat = useMemo(() => new THREE.MeshBasicMaterial({ vertexColors: true, toneMapped: false, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }), [])
 
-  const tmp = useMemo(() => ({ m: new THREE.Matrix4(), v: new THREE.Vector3(), c: new THREE.Color(), w: new THREE.Vector3() }), [])
+  const tmp = useMemo(() => ({ m: new THREE.Matrix4(), c: new THREE.Color() }), [])
+  // While lit, the set-piece's uplights ease down to dimUplights; off, back to as authored. Gone when this unmounts.
+  useEffect(() => () => { if (dim) delete dim.byDisplay[display.id] }, [dim, display.id])
 
   // ⭐ A throw in the frame loop never reaches React (R3F calls useFrame in a bare loop), so it would freeze the whole
   // town's canvas every frame (Zob, 2026-10-31). Catch it, stop the frame work, and rethrow it at render: the display's
   // own DisplayBoundary then names and contains it.
   const [frameErr, setFrameErr] = useState(null), frameDead = useRef(false)
-  useFrame(() => {
+  useFrame((_, delta) => {
     if (frameDead.current) return
     try {
     if (!F || !compiled || !root.current || !glowRef.current || !showRef.current) return
@@ -127,6 +129,7 @@ export default function LightShow({ display, extent, calendar, contentRoot, wher
       ;({ mode, t } = liveState(display, compiled, townClockOf(instant), calendar, sunDown, where)); now = instant.getTime() / 1000
     }
     const show = mode === 'show' ? showAt(F, compiled, drawer.byId, t, now) : null
+    if (dim) { const cur = dim.byDisplay[display.id] ?? 1, to = uplightTarget(mode, display); dim.byDisplay[display.id] = cur + (to - cur) * Math.min(1, delta * 1.5) }
     // ── what: colour every bulb ───────────────────────────────────────────────────────────────────────────────────
     const avg = [0, 0, 0]; let n = 0
     const glowK = mode === 'glow' ? 1 : show ? show.glow : 0

@@ -84,7 +84,6 @@ Provincetown is first to use, never a Provincetown patch.
 
 ## 2a. Owed (Zob's review, 2026-10-31)
 
-- **In the next LightShow commit:** `tmp.v` and `tmp.w` are left over from the removed terrain re-seat; delete them.
 - **Before Stage writes the record:** `placed` is a one-shot boolean. Key the bulb placement on the strand ends and
   counts, so a changed record lays the bulbs again (today a new instancedMesh would sit every bulb at the origin).
 

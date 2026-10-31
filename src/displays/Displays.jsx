@@ -17,7 +17,7 @@ export const PLUGINS = {
   'light-show': { label: 'Light Show', attaches: ['setPiece'], Renderer: lazy(() => import('./lightShow/LightShow.jsx')) },
 }
 
-export default function Displays({ town, lookId, attach, extent, calendar = null }) {
+export default function Displays({ town, lookId, attach, extent, dim, calendar = null }) {
   const list = (town?.displays || []).filter(d => d.attach === attach)
   if (!list.length) return null
   return list.map(d => {
@@ -28,7 +28,7 @@ export default function Displays({ town, lookId, attach, extent, calendar = null
       : !P.attaches.includes(attach) ? `${where}: a ${P.label} cannot attach to a ${attach} (it attaches to: ${P.attaches.join(', ')})` : null
     return (
       <DisplayBoundary key={d.id} lookId={lookId} id={d.id}>
-        {refusal ? <Refuse reason={refusal} /> : <Suspense fallback={null}><P.Renderer display={d} extent={extent} calendar={calendar} contentRoot={town.contentRoot} where={where} /></Suspense>}
+        {refusal ? <Refuse reason={refusal} /> : <Suspense fallback={null}><P.Renderer display={d} extent={extent} calendar={calendar} contentRoot={town.contentRoot} dim={dim} where={where} /></Suspense>}
       </DisplayBoundary>
     )
   })

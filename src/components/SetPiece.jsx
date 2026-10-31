@@ -29,6 +29,7 @@
  * GEO-ANCHORED, not building-bound — its real feet projected through the town's place (src/setpieces/gatewayArch.js),
  * mounted by GatewayArch.jsx for a Look that carries an `arch` block (2026-10-28).
  */
+import { useMemo } from 'react'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import PilgrimMonument from './PilgrimMonument.jsx'
 import SetPieceUplights from './SetPieceUplights.jsx'
@@ -48,6 +49,8 @@ export default function SetPiece({ town, lookId, lightOverride, ...props }) {
   const index = useSlabBuildingIndex(s => s.index)
   // A click reports to the app (<Town onSelectBuilding>), as a click on any building does.
   const townSelect = useTownContext().select
+  // The set-piece's uplight dim, shared: its displays write how far they want the floods down while lit, the uplights read it.
+  const dim = useMemo(() => ({ byDisplay: {} }), [])
   const select = (id) => townSelect?.(id)
   const sp = town?.setPiece
   if (!sp) return null
@@ -66,9 +69,9 @@ export default function SetPiece({ town, lookId, lightOverride, ...props }) {
       {/* `focusName`: the renderer names its ROOT with it, the root sitting at the set-piece's base centre, and carries
           its `extent` there — so depth of field can focus on it by its building's id (src/lib/focusObject.js). */}
       <R town={town} lookId={lookId} footprint={b.footprint} focusName={`focus:${id}`} {...props}>
-        <SetPieceUplights channel={lightOverride ?? scene?.setPieceLight ?? null} topM={R.extent?.topM} halfWidthM={R.extent?.halfWidthM} />
+        <SetPieceUplights channel={lightOverride ?? scene?.setPieceLight ?? null} topM={R.extent?.topM} halfWidthM={R.extent?.halfWidthM} dim={dim} />
         {/* The town's displays that hang on its set-piece (src/displays): nothing, for a town that declares none. */}
-        <Displays town={town} lookId={lookId} attach="setPiece" extent={R.extent} />
+        <Displays town={town} lookId={lookId} attach="setPiece" extent={R.extent} dim={dim} />
       </R>
     </group>
   )
