@@ -11,8 +11,12 @@
 import { readFileSync, writeFileSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { DOSSIER, FT } from '../../src/setpieces/pilgrimMonument.js'   // the monument's documented dimensions, never retyped
 
 const HERE = dirname(fileURLToPath(import.meta.url))
+// The strands hang from the BALCONY's edge (the ridge, 204 ft 4 in, 29 ft 6 in square); the pinnacle is the upper stage
+// (21 ft 4 in square) standing on it, to the top (252 ft 7.5 in). Dossier §1/§5 via pilgrimMonument.js.
+const MON = { top: DOSSIER.topZ * FT, deck: DOSSIER.balcony.z * FT, pinHalf: DOSSIER.belfryTopSq * FT / 2, ridgeHalf: DOSSIER.balcony.sq * FT / 2, shaftHalf: DOSSIER.wash3.sq * FT / 2 }
 const M = JSON.parse(readFileSync(join(HERE, 'looks.json'), 'utf8'))
 const uri = (file) => 'data:image/svg+xml;base64,' + readFileSync(join(HERE, file)).toString('base64')
 const looks = M.looks.map(L => ({ ...L, layers: L.layers.map(l => ({ ...l, frames: l.frames.map(uri) })) }))
@@ -57,7 +61,7 @@ footer { max-width: 1240px; margin: 0 auto; padding: 0 24px 48px; color: var(--m
 <body>
 <header>
   <h1>The Pilgrim Monument's looks · <span>draft 2</span></h1>
-  <p class="lede">Thirty looks, now at the real tree's proportions and with the pinnacle lit too: the tower's upper stage carries the show on all four faces, above the cone of strands that runs from the top of the tower to the ground. Each look is drawn as SVG layers at the show's frame and lit here exactly as the monument would light it, one pixel per bulb. Above each card, the monument from the harbour side, motion running, at the number of colour strands chosen below; under it, the full drawing, the pinnacle's band at the top. The real tree has 5 strands a side; switch between 2×, 3× and 192 to see what each resolution can carry.</p>
+  <p class="lede">Thirty looks, now at the real tree's proportions and with the pinnacle lit too: the tower's upper stage carries the show on all four faces, above the cone of strands that hangs from the balcony ridge beneath it to the ground. Each look is drawn as SVG layers at the show's frame and lit here exactly as the monument would light it, one pixel per bulb. Above each card, the monument from the harbour side, motion running, at the number of colour strands chosen below; under it, the full drawing, the pinnacle's band at the top. The real tree has 5 strands a side; switch between 2×, 3× and 192 to see what each resolution can carry.</p>
   <ul class="facts"><li>the real tree: 5 strands a side, 20 in all, ~3,000 bulbs</li><li>pinnacle: 4 faces × 48 × 18</li><li>black = bulbs off</li><li>ring radius illustrative</li></ul>
   <div class="switch" role="group" aria-label="Colour strands for the show"><span>Show strands</span><button type="button" data-n="40">40 · 2×</button><button type="button" data-n="60" aria-pressed="true">60 · 3×</button><button type="button" data-n="192">192</button></div>
 </header>
@@ -68,17 +72,17 @@ const LOOKS = ${JSON.stringify(looks)};
 const FW = ${M.frame.w}, FH = ${M.frame.h}, P = ${M.frame.pinH}, FACES = ${M.frame.faces}, CONE = FH - P;
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-// ── The monument. Tower top 77 m; the pinnacle (upper stage, 21 ft 4 in square) from the balcony deck at 62.3 m. ──
-const TOP = 77, DECK = 62.3, A = 3.25, SHAFT = 3.5, R = 31, CW = 270, CH = 340, S = 3.2, GX = CW / 2, GY = CH - 24, ELEV = 0.22, VY = 0.42;
+// ── The monument, from its dossier (MON, injected): strands from the balcony ridge; the pinnacle above it, to the top. ──
+const TOP = ${MON.top}, DECK = ${MON.deck}, A = ${MON.pinHalf}, RIDGE = ${MON.ridgeHalf}, SHAFT = ${MON.shaftHalf}, R = 31, CW = 270, CH = 340, S = 3.2, GX = CW / 2, GY = CH - 24, ELEV = 0.22, VY = 0.42;
 const view = (x, y, z) => { const xr = x * Math.cos(VY) - z * Math.sin(VY), zr = x * Math.sin(VY) + z * Math.cos(VY); return { sx: GX + xr * S, sy: GY - y * S + zr * S * ELEV, z: zr }; };
 const onFace = (k, u, d) => { const rot = -k * Math.PI / 2, x0 = u * d, z0 = d; return [x0 * Math.cos(rot) - z0 * Math.sin(rot), x0 * Math.sin(rot) + z0 * Math.cos(rot)]; };
 function geometry(strands) {
   const back = [], front = [], per = strands / FACES;
   for (let c = 0; c < strands; c++) {
-    const k = Math.floor(c / per), u = ((c % per) + 0.5) / per * 2 - 1, [tx, tz] = onFace(k, u, A);
+    const k = Math.floor(c / per), u = ((c % per) + 0.5) / per * 2 - 1, [tx, tz] = onFace(k, u, RIDGE);   // from the ridge
     const th = ((c + 0.5) / strands - 0.5 / FACES) * 2 * Math.PI, bx = R * Math.sin(th), bz = R * Math.cos(th);
     for (let j = 0; j < CONE; j++) {
-      const t = (j + 0.5) / CONE, p = view(tx + (bx - tx) * t, TOP * (1 - t) + 0.6, tz + (bz - tz) * t);
+      const t = (j + 0.5) / CONE, p = view(tx + (bx - tx) * t, DECK * (1 - t) + 0.6, tz + (bz - tz) * t);
       (p.z < 0 ? back : front).push({ c: Math.floor(c * FW / strands), row: P + j, sx: p.sx | 0, sy: p.sy | 0, lit: p.z < 0 ? 0.32 : 1 });
     }
   }
@@ -150,6 +154,7 @@ function drawMonument(ctx, bufs, look, t, strands, glow) {
   const half = Math.abs(view(SHAFT, 0, SHAFT).sx - view(-SHAFT, 0, -SHAFT).sx) / 2, base = view(0, 0, 0).sy, deck = view(0, DECK, 0).sy, top = view(0, TOP, 0).sy;
   ctx.fillRect(GX - half, deck, half * 2, base - deck);
   ctx.fillRect(GX - half * A / SHAFT, top, half * 2 * A / SHAFT, deck - top);
+  ctx.fillStyle = '#23273a'; ctx.fillRect(GX - half * RIDGE / SHAFT, deck - 2, half * 2 * RIDGE / SHAFT, 4);   // the ridge
   ctx.drawImage(bufs.front.c, 0, 0);
   ctx.globalCompositeOperation = 'lighter';
   for (const [blur, a] of [[2, 0.45], [8, 0.3]]) { ctx.filter = 'blur(' + blur + 'px)'; ctx.globalAlpha = a; ctx.drawImage(bufs.back.c, 0, 0); ctx.drawImage(bufs.front.c, 0, 0); }
@@ -189,7 +194,7 @@ const loadPx = (src) => new Promise(res => { const im = new Image(); im.onload =
   x.drawImage(im, 0, 0, FW, FH); res(x.getImageData(0, 0, FW, FH).data); }; im.src = src; });
 
 const items = [];
-const glowCard = card({ name: 'The Glow', glow: true, notes: 'The real tree, all season after dark: 20 warm-white strands, five a side, from the top of the tower to the ground; the pinnacle stays dark. A show opens by turning this into the colour strands and the lit pinnacle.' }, 0);
+const glowCard = card({ name: 'The Glow', glow: true, notes: 'The real tree, all season after dark: 20 warm-white strands, five a side, from the balcony ridge to the ground; the pinnacle stays dark. A show opens by turning this into the colour strands and the lit pinnacle.' }, 0);
 items.push({ el: glowCard, glow: true, ctx: glowCard.querySelector('.cone').getContext('2d') });
 Promise.all(LOOKS.map(async (L, i) => {
   for (const l of L.layers) { l.px = await Promise.all(l.frames.map(loadPx)); if (l.motion.only) l.motion._only = hexRGB(l.motion.only); }

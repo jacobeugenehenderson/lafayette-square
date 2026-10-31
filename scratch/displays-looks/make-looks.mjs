@@ -75,7 +75,7 @@ look('santa', 'Santa', 'White at the pinnacle and down to the coat · red coat �
     band(0, PIN_H, C.white)),
 ])
 
-look('santas-hat', "Santa's Hat", 'The whole tree is the hat: red to the top of the tower, a fluffy white brim at the ground ring, and the pinnacle is the white puff. The fur sparkles.', [
+look('santas-hat', "Santa's Hat", 'The whole tree is the hat: red up to the balcony ridge, a fluffy white brim at the ground ring, and the pinnacle is the white puff. The fur sparkles.', [
   L({ kind: 'twinkle', only: C.white }, () => {
     const r = rng(101); let brim = `M-2,96 L-2,78`
     for (let x = 0; x <= FRAME_W + 2; x += 3) brim += ` L${x},${78 + (r() - 0.5) * 3}`
@@ -161,7 +161,7 @@ look('gifts', 'Gifts', 'Two big parcels on opposite sides, red with gold ribbon 
 ])
 
 // ═══ CANDY ═══════════════════════════════════════════════════════════════════════════════════════════════════════════
-look('candy-cane', 'Candy Cane', 'Red and white spiralling from the top of the tower to the ground, turning.', [
+look('candy-cane', 'Candy Cane', 'Red and white spiralling from the ridge to the ground, turning.', [
   L({ kind: 'spin', speed: 10 }, () => {
     let s = band(0, CONE_H, C.white)
     for (let x0 = -FRAME_W; x0 < FRAME_W * 2; x0 += 24) s += poly([[x0, 0], [x0 + 12, 0], [x0 + 12 + 48, CONE_H], [x0 + 48, CONE_H]], C.red)
@@ -270,7 +270,7 @@ look('doves', 'Doves', 'Gold rays streaming down from a white pinnacle, and a wh
 
 // ═══ PRIDE ═══════════════════════════════════════════════════════════════════════════════════════════════════════════
 const RAINBOW = ['#e40303', '#ff8c00', '#ffed00', '#008026', '#004dff', '#750787']
-look('pride', 'Pride', 'The rainbow flag, top of the tower to the ground, rising slowly; white pinnacle.', [
+look('pride', 'Pride', 'The rainbow flag, ridge to ground, rising slowly; white pinnacle.', [
   L({ kind: 'rise', speed: 3 }, bands(RAINBOW), band(0, PIN_H, C.white)),
 ])
 look('progress-pride', 'Progress Pride', 'The rainbow with the Progress chevron (white, pink, light blue, brown, black) pointing round the tree from every face.', [

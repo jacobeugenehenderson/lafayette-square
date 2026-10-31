@@ -24,7 +24,7 @@
     {
       "id": "santas-hat",
       "name": "Santa's Hat",
-      "notes": "The whole tree is the hat: red to the top of the tower, a fluffy white brim at the ground ring, and the pinnacle is the white puff. The fur sparkles.",
+      "notes": "The whole tree is the hat: red up to the balcony ridge, a fluffy white brim at the ground ring, and the pinnacle is the white puff. The fur sparkles.",
       "layers": [
         {
           "motion": {
@@ -160,7 +160,7 @@
     {
       "id": "candy-cane",
       "name": "Candy Cane",
-      "notes": "Red and white spiralling from the top of the tower to the ground, turning.",
+      "notes": "Red and white spiralling from the ridge to the ground, turning.",
       "layers": [
         {
           "motion": {
@@ -358,7 +358,7 @@
     {
       "id": "pride",
       "name": "Pride",
-      "notes": "The rainbow flag, top of the tower to the ground, rising slowly; white pinnacle.",
+      "notes": "The rainbow flag, ridge to ground, rising slowly; white pinnacle.",
       "layers": [
         {
           "motion": {

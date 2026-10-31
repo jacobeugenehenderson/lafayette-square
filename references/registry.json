@@ -5271,7 +5271,8 @@
         "r-a-show-is-looks-separated-by-transitions",
         "r-looks-are-abstractions",
         "r-the-tree-glows-white-and-the-show-is-colour",
-        "r-a-look-carries-one-motion"
+        "r-a-look-carries-one-motion",
+        "r-the-strands-hang-from-the-ridge-and-the-pinnacle-carries-the-show"
       ]
     }
   ],
@@ -9042,7 +9043,7 @@
       "value": {
         "glow": "the tree is a Christmas tree: white lights",
         "show": "2-3x more strands in full colour, for resolution; the show may open by dramatically, magically changing from the white to the colour",
-        "start": "64 white strands, 192 colour strands, ~96 bulbs per strand: authored starting values on the display",
+        "start": "REOPENED 2026-10-31: the 64 / 192 / ~96 here were Tinsel's, not the monument's. The real tree is 20 strands (5 a side, ~3,000 bulbs); Jacob's '2-3x' means 40-60 colour strands. See r-the-strands-hang-from-the-ridge-and-the-pinnacle-carries-the-show.",
         "bulbs": "always bright, visible bulbs; where two are too close to distinguish, that is what makes the image smooth (no switch to a flat image at distance)",
         "brightness": "like ~120 W bulbs: very bright, visible from all around the town; what they light around them is one AVERAGE glow (the tree's mean colour), never a light per bulb"
       },
@@ -9064,6 +9065,22 @@
       "date": "2026-10-30",
       "quote": "\"We also discussed strobes.\" · \"add rising stripes, expanding stripes... drop-in stripes (with bounce effect)... mix strobes into the dynamic moments (the leading edge of a melt or drop)\" · \"yes motion per look\"",
       "canon": "docs/briefs/BRIEF-the-monument-lights-up.md (ROADMAP H-36)"
+    },
+    {
+      "id": "r-the-strands-hang-from-the-ridge-and-the-pinnacle-carries-the-show",
+      "question": "q-how-a-town-authors-a-display",
+      "kind": "ruling",
+      "value": {
+        "strands": "hang from the balcony RIDGE (dossier: deck 204 ft 4 in, 29 ft 6 in square) to the ground ring, never from the top",
+        "pinnacle": "the upper stage standing on the ridge carries the show too, on all four faces (a second region of the frame, above the cone)",
+        "star": "there is no star at the top (confirmed)",
+        "real": "the real tree is 5 strands a side; the show's colour strand count is reopened against that"
+      },
+      "by": "Jacob",
+      "date": "2026-10-31",
+      "quote": "\"can we add the pinnacle tower level with the \\\"light show\\\" up there, too? I think that will really rock it.\" · \"Once we get the top of the tower turned on we can make it the white puff on santa's hat and make it red to the top.\" · \"there is no star, confirmed\" · \"You should also attempt to create the real proportions because in real life the bands are very sparse; only 5 per side and our styling misrepresents it completely\" · \"Look at the plans for the monument. There is a ridge on top of which is the pinnacle; the lights come from that ridge.\"",
+      "canon": "docs/briefs/BRIEF-the-monument-lights-up.md (ROADMAP H-36); src/setpieces/pilgrimMonument.js DOSSIER.balcony",
+      "notes": "Kit consequence (Tinsel's reading): a set-piece renderer DECLARES where strands attach (a ring: height + half-width) and its display surfaces (the pinnacle: from, to, half-width), read from its own dimensions; the plugin never hardcodes them. The 64/192 starting counts in r-the-tree-glows-white-and-the-show-is-colour were Tinsel's, never measured; reopened here."
     }
   ]
 }
