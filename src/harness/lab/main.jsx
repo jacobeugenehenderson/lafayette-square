@@ -252,7 +252,7 @@ function App() {
           <group visible={layers.revetment}><R3FErrorBoundary name="SlabRevetment"><SlabRevetment lookId={LOOK} bakeLastMs={bakeLastMs} /></R3FErrorBoundary></group>
           <group visible={layers.lamps}><R3FErrorBoundary name="BakedLamps"><BakedLamps lookId={LOOK} bakeLastMs={bakeLastMs} /></R3FErrorBoundary></group>
           <group visible={layers.buildings}><R3FErrorBoundary name="SlabBuildings"><SlabBuildings lookId={LOOK} interactive={false} /></R3FErrorBoundary></group>
-          <R3FErrorBoundary name="SetPiece"><SetPiece town={INSTANCE} lookId={LOOK} graniteOverride={GRANITE_PREVIEW} /></R3FErrorBoundary>
+          <R3FErrorBoundary name="SetPiece"><SetPiece town={INSTANCE} lookId={LOOK} graniteOverride={GRANITE_PREVIEW} displaySource="authoring" /></R3FErrorBoundary>
           <group visible={layers.trees}><R3FErrorBoundary name="InstancedTrees"><InstancedTrees lookId={LOOK} bakeLastMs={bakeLastMs} /></R3FErrorBoundary></group>
         </Suspense>
         {layers.post && <PostProcessing lookId={LOOK} bakeLastMs={bakeLastMs} />}
