@@ -9206,7 +9206,7 @@
         "refused": "any other event with no venue is refused at the bake, by name (Huron's 12 venue-less rows are a DATA fix: ten library programs take the library's listing; garlic-fest and christkindlmarkt take their venues)",
         "aspiration": "UNBUILT, not in any brief: sponsor-bought scene shows ('worth selling to sponsors')",
         "home": "a home may be named as a venue ONLY by its own resident, and its address is hidden on the card unless the resident chooses to show it",
-        "inside": "a venue's point must lie INSIDE the town's radius (its outline, read from the town's own data); the bake refuses any point outside it, by name"
+        "inside": "a venue's point must lie INSIDE the town's radius: the DISC record of neighborhood_boundary.json (boundaryRecords.mjs#splitBoundary ①), not the stricter MEMBERSHIP outline; projected over the scene's own geography. The bake refuses any point outside it, by name"
       },
       "by": "Jacob",
       "date": "2026-10-31",
