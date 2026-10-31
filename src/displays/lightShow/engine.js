@@ -146,17 +146,19 @@ export const showSeconds = (compiled) => OPEN_SECONDS + compiled.seconds + OPEN_
  * LIVE: what the display is doing at a town instant, by its own schedule. `clock` is townClockOf(instant); `sunDown` is
  * the sun below the horizon at the town. Off out of season or by day; the glow after dark; a show from each showtime
  * (`shows: { every: 'hour', from: 'HH:MM', to: 'HH:MM' }`, town time) for as long as the show runs.
- * Returns { mode: 'off' | 'glow' | 'show', t } with t the seconds since the show began.
+ * Returns { mode: 'off' | 'glow' | 'show', t, up } with t the seconds since the show began and `up` whether the strands
+ * are hung at all: in season (by day they hang dark), never out of it (Jacob, 2026-10-31: "hide the strands out of season").
  */
 export function liveState(display, compiled, clock, calendar, sunDown, where) {
-  if (!inSeason(calendar, display.season, clock.date, where) || !sunDown) return { mode: 'off', t: 0 }
+  const up = inSeason(calendar, display.season, clock.date, where)
+  if (!up || !sunDown) return { mode: 'off', t: 0, up }
   const s = display.shows
   if (s?.every === 'hour') {
     const toMin = (hhmm) => { const [h, m] = hhmm.split(':').map(Number); return h * 60 + m }
     const startMin = clock.hours * 60, t = clock.minutes * 60 + clock.seconds
-    if (startMin >= toMin(s.from) && startMin <= toMin(s.to) && t < showSeconds(compiled)) return { mode: 'show', t }
+    if (startMin >= toMin(s.from) && startMin <= toMin(s.to) && t < showSeconds(compiled)) return { mode: 'show', t, up }
   } else if (s) throw new Error(`[lightShow] ⛔ ${where}: shows.every "${s.every}" is not a schedule the Light Show knows (have: hour)`)
-  return { mode: 'glow', t: 0 }
+  return { mode: 'glow', t: 0, up }
 }
 
 /** The white glow's colour for one bulb (warm white, a gentle shimmer). */
