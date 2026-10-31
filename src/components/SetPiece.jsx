@@ -32,6 +32,7 @@
 import { useSceneJson } from '../lib/useSceneJson.js'
 import PilgrimMonument from './PilgrimMonument.jsx'
 import SetPieceUplights from './SetPieceUplights.jsx'
+import Displays from '../displays/Displays.jsx'
 import useSlabBuildingIndex from '../hooks/useSlabBuildingIndex'
 import { useTownContext } from './townContext.js'
 
@@ -66,6 +67,8 @@ export default function SetPiece({ town, lookId, lightOverride, ...props }) {
           its `extent` there — so depth of field can focus on it by its building's id (src/lib/focusObject.js). */}
       <R town={town} lookId={lookId} footprint={b.footprint} focusName={`focus:${id}`} {...props}>
         <SetPieceUplights channel={lightOverride ?? scene?.setPieceLight ?? null} topM={R.extent?.topM} halfWidthM={R.extent?.halfWidthM} />
+        {/* The town's displays that hang on its set-piece (src/displays): nothing, for a town that declares none. */}
+        <Displays town={town} lookId={lookId} attach="setPiece" extent={R.extent} />
       </R>
     </group>
   )

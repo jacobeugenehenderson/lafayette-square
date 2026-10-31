@@ -19,9 +19,10 @@ const HERE = dirname(fileURLToPath(import.meta.url))
 // The tower itself: the SAME stacked prisms the town draws (placeholderStages), in metres, half-widths.
 const STAGES = placeholderStages().map(s => ({ name: s.name, h: s.sq * FT / 2, y0: Math.max(0, s.z0 * FT), y1: s.z1 * FT }))
 const MON = { top: DOSSIER.topZ * FT, deck: DOSSIER.balcony.z * FT, pinHalf: DOSSIER.belfryTopSq * FT / 2, ridgeHalf: DOSSIER.balcony.sq * FT / 2 }
-const M = JSON.parse(readFileSync(join(HERE, 'looks.json'), 'utf8'))
-const uri = (file) => 'data:image/svg+xml;base64,' + readFileSync(join(HERE, file)).toString('base64')
-const TRANSITIONS_SRC = readFileSync(join(HERE, 'transitions.js'), 'utf8').replace(/if \(typeof module[^\n]*\n?/, '')
+const DRAWER = join(HERE, '../../public/displays/provincetown/monument-lights')
+const M = JSON.parse(readFileSync(join(DRAWER, 'looks.json'), 'utf8'))
+const uri = (file) => 'data:image/svg+xml;base64,' + readFileSync(join(DRAWER, file)).toString('base64')
+const TRANSITIONS_SRC = readFileSync(join(HERE, '../../src/displays/lightShow/transitions.js'), 'utf8').replace(/^export /m, '')
 // Each transition is shown between two looks that suit it: from → to.
 const PAIRS = { cascade: ['santa', 'santas-hat'], 'rising-spiral': ['candy-cane', 'classic-tree'], iris: ['holly', 'stars'], curtain: ['gift-red', 'gift-pride'], sparkle: ['snowfall', 'snowflakes'], melt: ['frosty', 'snowfall'], twirl: ['peppermint', 'candy-cane'], 'blackout-bloom': ['menorah', 'dreidel'], shatter: ['ornaments', 'white-bulbs'], 'expanding-stripes': ['plaid', 'gingerbread'], chevron: ['progress-pride', 'bear'] }
 const looks = M.looks.map(L => ({ ...L, layers: L.layers.map(l => ({ ...l, frames: l.frames.map(uri) })) }))

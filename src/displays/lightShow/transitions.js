@@ -1,6 +1,6 @@
 /**
- * transitions.js: draft 1 of the Light Show's TRANSITIONS (BRIEF-the-monument-lights-up §1: "a drawer of transitions",
- * kit code; the operator picks them, never draws them).
+ * transitions.js: the Light Show's TRANSITIONS (BRIEF-the-monument-lights-up §1: "a drawer of transitions", kit code;
+ * the operator picks them, never draws them). The contact sheet (scratch/displays-looks/make-sheet.mjs) reads this file too.
  *
  * Each transition is a PURE function of (from, to, c, row, t, now, env) → [r, g, b]:
  *   from, to   samplers (c, row, enter = 1) → colour: the two looks, still running their own motions; `enter` (0 … 1)
@@ -13,9 +13,8 @@
  * `accent: true` marks a transition whose moving edge SPARKLES: bulbs near it glint white at random, each at its own
  * moment, thinning away from the edge. Never a hard line, never the whole tree flashing (Jacob, 2026-10-31).
  * Same inputs, same light, on every screen: nothing here reads a device clock.
- * ⚠️ Draft for Jacob's contact sheet; it moves into the plugin when he approves the set.
  */
-const TRANSITIONS = (() => {
+export const TRANSITIONS = (() => {
   const clamp = (x) => Math.min(1, Math.max(0, x))
   const ease = (x) => { const t = clamp(x); return t * t * (3 - 2 * t) }
   const easeIn = (x) => { const t = clamp(x); return t * t * t }
@@ -131,4 +130,3 @@ const TRANSITIONS = (() => {
       } },
   ]
 })()
-if (typeof module !== 'undefined') module.exports = { TRANSITIONS }

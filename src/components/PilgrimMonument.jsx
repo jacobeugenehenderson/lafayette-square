@@ -182,7 +182,13 @@ export default function PilgrimMonument({ town, lookId, footprint, graniteOverri
 }
 
 // The base extent the slot's lighting aims at (SetPiece.jsx): the documented top and the foundation's half-width.
-PilgrimMonument.extent = { topM: DOSSIER.topZ * FT, halfWidthM: DOSSIER.foundationTopSq * FT / 2 }
+// `ridge` and `pinnacle` are where a display hangs (src/displays): the balcony deck the strands hang from (dossier §5, the
+// ridge Jacob named, 2026-10-31) and the upper stage above it, strip-lit. Read from the dossier, never retyped.
+PilgrimMonument.extent = {
+  topM: DOSSIER.topZ * FT, halfWidthM: DOSSIER.foundationTopSq * FT / 2,
+  ridge: { yM: DOSSIER.balcony.z * FT, halfWidthM: DOSSIER.balcony.sq * FT / 2 },
+  pinnacle: { fromM: DOSSIER.balcony.z * FT, toM: DOSSIER.topZ * FT, halfWidthM: DOSSIER.belfryTopSq * FT / 2 },
+}
 // The set-piece's own plan outline for the 2D views, in its base frame. null: it has none of its own (no deck yet), so
 // the 2D outline is its building's footprint, drawn with every other building (OPERATIONS, "A town's set-piece").
 PilgrimMonument.plan = null

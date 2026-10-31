@@ -3,7 +3,7 @@
  * make-looks.mjs: draft 2 of the Light Show's starter looks (BRIEF-the-monument-lights-up §1), after Jacob's notes on
  * draft 1 (2026-10-31).
  *
- *   node scratch/displays-looks/make-looks.mjs   → scratch/displays-looks/looks/<id>/*.svg + looks.json
+ *   node scratch/displays-looks/make-looks.mjs   → public/displays/provincetown/monument-lights/{looks.json, looks/<id>/*.svg}
  *
  * THE FRAME is FRAME_W × FRAME_H, one pixel = one bulb, in two regions stacked:
  *   rows 0 … PIN_H-1      the PINNACLE: the tower's upper stage, its four faces unrolled (lit like the Empire State's top)
@@ -19,7 +19,8 @@ import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
-const OUT = join(HERE, 'looks')
+// The town's drawer: Provincetown's looks for its monument's Light Show (the town's data, not the plugin's).
+const DRAWER = join(HERE, '../../public/displays/provincetown/monument-lights'), OUT = join(DRAWER, 'looks')
 export const FRAME_W = 192, CONE_H = 96, PIN_H = 18, FRAME_H = PIN_H + CONE_H, FACES = 4, FACE_W = FRAME_W / FACES
 const faceCx = (k) => FACE_W * k + FACE_W / 2
 const perFace = (fn) => Array.from({ length: FACES }, (_, k) => fn(faceCx(k), k)).join('')
@@ -341,11 +342,11 @@ for (const look of LOOKS) {
     const n = layer.frames || 1, files = []
     for (let k = 0; k < n; k++) {
       const file = `looks/${look.id}/${li}${n > 1 ? `-${k}` : ''}.svg`
-      writeFileSync(join(HERE, file), frameSvg(layer, k / n)); files.push(file)
+      writeFileSync(join(DRAWER, file), frameSvg(layer, k / n)); files.push(file)
     }
     return { motion: layer.motion, ...(n > 1 ? { turn: layer.turn, fps: layer.fps } : {}), ...(layer.enter ? { enter: layer.enter } : {}), frames: files }
   })
   manifest.push({ id: look.id, name: look.name, notes: look.notes, layers })
 }
-writeFileSync(join(HERE, 'looks.json'), JSON.stringify({ frame: { w: FRAME_W, h: FRAME_H, pinH: PIN_H, faces: FACES }, looks: manifest }, null, 2) + '\n')
+writeFileSync(join(DRAWER, 'looks.json'), JSON.stringify({ frame: { w: FRAME_W, h: FRAME_H, pinH: PIN_H, faces: FACES }, looks: manifest }, null, 2) + '\n')
 console.log(`${manifest.length} looks → ${OUT}`)
