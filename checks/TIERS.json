@@ -1,10 +1,10 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 543,
+  "total": 544,
   "counts": {
     "safe": 375,
     "local-effect": 31,
-    "live": 137
+    "live": 138
   },
   "checks": [
     {
@@ -2933,6 +2933,23 @@
       "tier": "safe",
       "why": [
         "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-the-bake-carries-its-displays.mjs",
+      "tier": "live",
+      "reasonClass": "outbound",
+      "why": [
+        "writeFileSync",
+        "mkdirSync",
+        "deletes files",
+        "importSource of cartograph/bake-manifest.mjs (its span: /** Copy one file beside the content and index it → // ── board: the town), which can: writeFileSync, mkdirSync, deletes files",
+        "importSource of src/displays/lightShow/engine.js — read, safe",
+        "importSource of src/displays/lightShow/engine.js redirects src/displays/drawerPath.js — read, safe",
+        "importSource of src/lib/slabNames.js — read, safe",
+        "importSource of scripts/sweep-retired-slab-keys.mjs (its span: namesOf) — read, safe",
+        "importSource of src/displays/drawerUrl.js, which can: imports src/lib/slabUrl.js, which can: calls fetch()",
+        "importSource of src/displays/drawerUrl.js redirects src/lib/slabUrl.js — read, safe"
       ]
     },
     {
