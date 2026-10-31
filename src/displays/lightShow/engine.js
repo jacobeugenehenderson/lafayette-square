@@ -25,10 +25,10 @@ const wrapIn = (v, lo, n) => lo + (((v - lo) % n) + n) % n
 const clamp = (x) => Math.min(1, Math.max(0, x))
 export const smooth = (x) => { const t = clamp(x); return t * t * (3 - 2 * t) }
 const fadeAlpha = (t, period) => clamp(((0.5 + 0.5 * Math.sin(2 * Math.PI * t / period)) - 0.25) * 2)
-/** Which of a layer's frames shows at t: looped, or played ONCE from the look's start and held at either end. */
 /** A fade played OUT once: whole until the look's start, then each bulb turns at its own moment in the next `out`
  *  seconds, glinting white as it turns (Jacob, 2026-10-31: the lilac "fade/sparkles into the trans flag"). */
 const fadeOut = (t, out, h) => { const at = h * out; return t < at ? 1 : t < at + 0.12 ? -1 : 0 }
+/** Which of a layer's frames shows at t: looped, or played ONCE from the look's start and held at either end. */
 const frameAt = (L, t) => { const n = L.px.length; if (n === 1) return 0; const i = Math.floor(t * L.fps); return L.once ? Math.min(n - 1, Math.max(0, i)) : ((i % n) + n) % n }
 
 /** Checks a drawer (looks.json) against the engine: every motion known, every layer's frames present. Throws by name. */
@@ -38,6 +38,11 @@ export function validateDrawer(drawer, where) {
   for (const L of looks || []) for (const [i, layer] of L.layers.entries()) {
     if (!MOTIONS.includes(layer.motion?.kind)) throw new Error(`[lightShow] ⛔ ${where}: look "${L.id}" layer ${i} has motion "${layer.motion?.kind}", which the Light Show does not have (have: ${MOTIONS.join(', ')})`)
     if (!layer.frames?.length) throw new Error(`[lightShow] ⛔ ${where}: look "${L.id}" layer ${i} has no frames`)
+    // The layer's clock fields: refused unless meaningful, never read as something plausible (Zob, 2026-10-31).
+    if (layer.frames.length > 1 && !(typeof layer.fps === 'number' && layer.fps > 0)) throw new Error(`[lightShow] ⛔ ${where}: look "${L.id}" layer ${i} has ${layer.frames.length} frames and no fps (a number > 0), so it has no clock to play them on`)
+    if ('once' in layer && typeof layer.once !== 'boolean') throw new Error(`[lightShow] ⛔ ${where}: look "${L.id}" layer ${i} has once ${JSON.stringify(layer.once)}; once is true or false`)
+    const out = layer.motion.out
+    if (out !== undefined && !(layer.motion.kind === 'fade' && typeof out === 'number' && out > 0)) throw new Error(`[lightShow] ⛔ ${where}: look "${L.id}" layer ${i} has out ${JSON.stringify(out)} on a ${layer.motion.kind} layer; out is a fade's seconds to play out, a number > 0`)
   }
 }
 

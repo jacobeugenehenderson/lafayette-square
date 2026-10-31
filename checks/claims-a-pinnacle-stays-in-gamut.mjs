@@ -13,7 +13,7 @@
  * The renderer must draw the pinnacle through it, not beside it.
  *
  * Usage: node checks/claims-a-pinnacle-stays-in-gamut.mjs [--mutants]
- *   --mutants: no cap · a cap per channel · the renderer not using the wash, each red.
+ *   --mutants: no cap · a cap per channel · the renderer not using the wash · calling it and writing something else, each red.
  */
 import { importSource, sourceOf } from './_importSource.mjs'
 
@@ -38,7 +38,8 @@ async function verdict({ geometryMutant, rendererMutant } = {}) {
     }
   }
   let ls = sourceOf('src/displays/lightShow/LightShow.jsx'); if (rendererMutant) ls = rendererMutant(ls)
-  if (!/pinnacleWash\(/.test(ls.replace(/\/\/.*$/gm, ''))) fails.push('LightShow.jsx does not draw the pinnacle through pinnacleWash')
+  // Bound to the write (Zob, 2026-10-31): the wash's result is what the face's colour attribute receives, not merely called.
+  if (!/const w = pinnacleWash\([^\n]*\n\s*col\.setXYZ\(i, w\[0\], w\[1\], w\[2\]\)/.test(ls.replace(/\/\/.*$/gm, ''))) fails.push('LightShow.jsx does not write the pinnacle\'s colour from pinnacleWash')
   return fails
 }
 
@@ -50,6 +51,7 @@ if (process.argv.includes('--mutants')) {
   const mutants = [
     ['no cap', { geometryMutant: (s) => s.replace('if (k > 1) for (let i = 0; i < 3; i++) out[i] /= k', '') }],
     ['a cap per channel', { geometryMutant: (s) => s.replace('if (k > 1) for (let i = 0; i < 3; i++) out[i] /= k', 'for (let i = 0; i < 3; i++) out[i] = Math.min(1, out[i])') }],
+    ['calling the wash and writing something else', { rendererMutant: (s) => s.replace('col.setXYZ(i, w[0], w[1], w[2])', 'col.setXYZ(i, L[0] * 1.6, L[1] * 1.6, L[2] * 1.6)') }],
     ['the renderer not using the wash', { rendererMutant: (s) => s.replace('const w = pinnacleWash(L, Hc, pos.getY(i) / H + 0.5, tmp.w)', 'const w = [L[0] * 1.6, L[1] * 1.6, L[2] * 1.6]') }],
   ]
   let bad = 0
