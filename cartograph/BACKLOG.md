@@ -11,8 +11,17 @@ Active trunk `curb-offset-draw` (→ staging via `staging.yml`; the old `cartogr
 ### ✅ 2026-10-30 RELEASE DONE: PTown + HPDM live on Ward 4334c64 / kit 2a44e317 (compressed slabs, the phone water fix, place share cards,
 one place per building, the docks). The step list is in the Diary: `cartograph/_archive/BACKLOG-morning-release-2026-10-30-DONE.md`.
 NO ROUTINE PURGE: content names give a changed file a fresh name, and our readers bypass the edge (src/lib/freshUrl.js).
-NEXT: the LS cutover (runbook `scratch/ls-cutover-runbook.md`; Ward's code step ward/ls-cutover-domain with Zob). OPEN for Jacob: hours
-(56/447) · the preview-photo licence (parked) · the dock object + tide ride (unbuilt).
+### ⭐ STATE AT JACOB'S BEDTIME, 2026-10-31 (Boz). Read this first.
+- **LS cutover, mid-run** (`scratch/ls-cutover-runbook.md`): Operations domain set and proven (ward-domain = lafayettesquare.online) ·
+  LS baked + published to staging (gate ✅; Malt House merged to one card, 4f5fadd6). NEXT, Jacob: the backup (script fixed, 3017519a),
+  then Promote, then the .com redirect (§5).
+- **Backend: two sittings after the cutover, all built and Zob-PASSed, none deployed.** Sitting 1: hotfix + recovery B + fortify
+  (`scratch/backend-deploy-runbook.md`). Sitting 2 (§E): patches ④–⑫ as ONE set (theward plumb/fortify) + Ward's client
+  (ward/ladder-client) + Operations signers + kit plumb/ladder-docs (merge on deploy only). Deploy-day hands: predeploy-audit items 6–12.
+  The rulings: registry `r-the-host-verifies-eye-to-eye` (the four QRs, the Rep as a non-expiring mark, Host office hours, noListOfAPerson).
+- **OPEN for Jacob:** the place tally's date (weekday+hour recommended; patch eight holds the column) · the ground-ring radius (Tinsel).
+- **Displays (Tinsel):** the Light Show is on integration through 2e408e9a. 65f8438f (check-only) awaits Zob. Owed: brief §2a.
+- Older OPEN: hours (56/447) · the preview-photo licence (parked) · the dock object + tide ride (unbuilt).
 
 ### ⭐ HANDOFF — 2026-10-28 (the sprint closed; Swash for Boz). Read this block first; everything below is detail.
 The layered night notes of 10-25 → 10-28 are archived VERBATIM: `cartograph/_archive/HANDOFF-2026-10-28.md`. Live state only here.
