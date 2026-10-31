@@ -5278,6 +5278,15 @@
         "r-provincetown-light-season-is-authored",
         "r-the-lights-run-dusk-to-dawn-and-the-show-plays-on-the-hour"
       ]
+    },
+    {
+      "id": "q-what-an-event-names",
+      "ask": "What an event names besides itself (who hosts it, where it happens) and what clicking it opens",
+      "neededBy": "Boz, 2026-10-31: links_to conflated sponsor and venue; Huron's ticker had 12 of 16 events going nowhere",
+      "status": "answered",
+      "findings": [
+        "r-an-event-has-a-host-and-a-venue-and-opens-at-the-venue"
+      ]
     }
   ],
   "findings": [
@@ -9182,6 +9191,24 @@
       "quote": "\"Hourly on the hour, dusk until dawn is fine\"",
       "canon": "docs/briefs/BRIEF-the-monument-lights-up.md (ROADMAP H-36)",
       "notes": "Boz proposed it (hourly makes an appointment a visitor can keep, the ticker's next showtime; nightly is too rare; a loop is never must-see). The refusal is Boz's reading under CLAUDE.md Layer 0, not Jacob's words. UNBUILT: today Stage offers only the preview buttons."
+    },
+    {
+      "id": "r-an-event-has-a-host-and-a-venue-and-opens-at-the-venue",
+      "question": "q-what-an-event-names",
+      "kind": "ruling",
+      "value": {
+        "host": "who puts the event on: a place in the town (optional). The Chamber may host an event that is not at the Chamber",
+        "venue": "where it happens (optional; a town-wide event such as a display has none): a place in the town OR a named spot that is not a listing (a park, a street), with its point",
+        "opens": "ALWAYS THE VENUE: the camera move, the clickable building and the card. The event's own card sits in the venue's place card and carries the event's action (the invite, the RSVP), the way a menu item links to the menu. No host fallback",
+        "noVenue": "an event with no venue is not clickable (r-provincetown-light-season-is-authored: a display's ticker entry)",
+        "retires": "links_to, which conflated sponsor and venue; each existing row is sorted into host or venue by someone who knows the event",
+        "unchanged": "listing_id (the place's own event, shown in place of its hours)"
+      },
+      "by": "Jacob",
+      "date": "2026-10-31",
+      "quote": "\"we should introduce a new area on the event card: there's the host but there's also the location. Maybe the Chamber is hosting an event; it wouldn't be at the chamber\" · \"Cover\" (non-listing locations) · \"What should *actually open is the invite or the RSVP or When a menu item comes up we link to the menu. Maybe we link it to the event card in a place card; and as far as the camera move and the clickable building I think the venue.\" · \"It's always the venue\"",
+      "canon": "cartograph/OPERATIONS.md (The town calendar)",
+      "notes": "UNBUILT. Not yet read in code: whether a visitor-facing event card exists in the place card (Zob 2026-10-31: PlaceCard.jsx#EventsTab mounts only under the guardians tab), and how a venue that is not a listing opens a card. Zob's premise pass precedes any brief."
     }
   ]
 }
