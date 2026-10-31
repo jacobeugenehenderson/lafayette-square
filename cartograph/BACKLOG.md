@@ -23,6 +23,9 @@ NO ROUTINE PURGE: content names give a changed file a fresh name, and our reader
   (faviconUrl/markSvg/mark, 'UNTIL CUTOVER', now due) and townMark.js's reader; a check on every town's served tag. Then a
   staging publish; how towns.json reaches production hosts is not established. Jacob: "Get rid of the arch" (LS → ⚜️).
   Brief: `docs/briefs/BRIEF-a-town-has-one-icon.md`.
+  Dead wiring (Ward, measured 2026-10-31: every served host and staging town runs the Ward 4334c64): the "legacy" player
+  accepted by set-staging-player.mjs and both Workers. Remove once an R2 read of hosts/*.json + staging/ward/current.json
+  (Jacob's credentials) shows no record names it.
 - **Backend: two sittings after the cutover, all built and Zob-PASSed, none deployed.** Sitting 1: hotfix + recovery B + fortify
   (`scratch/backend-deploy-runbook.md`). Sitting 2 (§E): patches ④–⑫ as ONE set (theward plumb/fortify) + Ward's client
   (ward/ladder-client) + Operations signers + kit plumb/ladder-docs (merge on deploy only). Deploy-day hands: predeploy-audit items 6–12.
