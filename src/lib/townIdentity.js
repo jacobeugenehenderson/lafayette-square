@@ -102,12 +102,13 @@ export const initialOf = (title) => [...String(title ?? '').trim()][0]?.toUpperC
 
 /**
  * A town's icon from its BAKED Look: `look` is the manifest's `look` block (resolveIdentity of the baked scene's
- * identity, cartograph/bake-manifest.mjs), or null when the town has no baked manifest. → { icon, from }, where
- * `from` SAYS which rule drew it: 'look.mark', or 'initial: <why>'. ⛔ Never another town's mark, never a URL.
+ * identity, cartograph/bake-manifest.mjs). → { icon, from }: 'look.mark', or 'initial: its baked Look authors no mark'.
+ * ⛔ The initial means only that: a town with no bake or a stale one is its caller's to refuse (scripts/towns-record.mjs).
  */
-export function townIcon({ look, title, why = 'its baked Look authors no mark' }) {
-  if (look?.mark) return { icon: iconFor({ mark: look.mark }), from: 'look.mark' }
+export function townIcon({ look, title }) {
+  if (!look || typeof look !== 'object') throw new Error('townIcon: no baked look block — an unbaked or stale town has no icon to draw')
+  if (look.mark) return { icon: iconFor({ mark: look.mark }), from: 'look.mark' }
   const initial = initialOf(title)
-  if (!initial) throw new Error(`townIcon: no mark and no title to take an initial from (${why})`)
-  return { icon: iconFor({ initial }), from: `initial: ${why}` }
+  if (!initial) throw new Error('townIcon: no mark and no title to take an initial from')
+  return { icon: iconFor({ initial }), from: 'initial: its baked Look authors no mark' }
 }

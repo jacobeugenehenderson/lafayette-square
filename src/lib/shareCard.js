@@ -82,7 +82,7 @@ export const PREVIEW_LICENCES = ['Public domain', 'CC0', 'CC0 1.0']
  *   listings  — the town's published listings ([…], from content/listings.json) for a place path; null when not read
  *   listingsWhy — why `listings` is null for a place path (placeListings), said in the card's note
  *   when      — the instant the link is opened
- * → { title, description, image, url, icon, imageError, note }
+ * → { title, description, image, url, icon, iconWhy, imageError, note }
  */
 export function cardFor({ town, map, path, manifest, slabBase, pageUrl, listings = null, listingsWhy = null, when }) {
   let image = null, imageError = null
@@ -101,6 +101,9 @@ export function cardFor({ town, map, path, manifest, slabBase, pageUrl, listings
     // ⭐ The town's icon, a data: URI drawn from its baked Look at publish (scripts/towns-record.mjs). ⛔ Read from
     // nowhere else: an entry without one is a towns.json published before the icon came from the Look.
     icon: town?.icon || null,
+    iconWhy: town?.icon ? null : town ? (town.iconFrom ? `the town has no icon (${town.iconFrom})`
+      : "the town's towns.json entry has no icon (published before the icon came from the Look: publish the player, then Promote)")
+      : 'the town has no towns.json entry',
     note: null,
   }
   const at = placeIdOf(path)
@@ -164,7 +167,7 @@ export function cardHead(card) {
     html += `<meta ${t.attr}="${t.key}" content="${escAttr(v)}" />`
   }
   if (card.icon) html += `<link rel="icon"${card.icon.startsWith('data:image/svg') ? ' type="image/svg+xml"' : ''} href="${escAttr(card.icon)}" />`
-  else lack('icon', "the town's towns.json entry has no icon (published before the icon came from the Look: publish the player, then Promote)")
+  else lack('icon', card.iconWhy || 'no icon in the card')
   return { html, missing, why: missing.length ? `missing ${missing.join(' ')}; ${reasons.join('; ')}` : '' }
 }
 

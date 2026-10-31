@@ -56,7 +56,7 @@ for (const f of [...walk(path.join(ROOT, 'src')), path.join(ROOT, 'index.html')]
 
 // 2. The icon must fall back to the town's OWN initial, never to a town. Run, not regex'd.
 const { townIcon, iconFor } = await import(path.join(ROOT, 'src/lib/townIdentity.js'))
-const unmarked = townIcon({ look: null, title: 'Zanzibar Heights', why: 'check' })
+const unmarked = townIcon({ look: { mark: null }, title: 'Zanzibar Heights' })
 const marked = townIcon({ look: { mark: '🦞' }, title: 'Zanzibar Heights' })
 if (unmarked.icon !== iconFor({ initial: 'Z' }) || !unmarked.from.startsWith('initial')) {
   bad(`townIcon for a town with no mark draws ${JSON.stringify(unmarked.from)}, not its own initial — a town that authors nothing must draw its OWN placeholder, not inherit a mark`)

@@ -12,22 +12,25 @@
 //       instances' branding, a faviconUrl/markSvg, or the Look's design.json (authoring); towns-record reads the baked
 //       manifest's `look` and draws with townIcon.
 //   2 · THE RECORD — buildTownsRecord, RUN: every registered town's icon is a data:image/svg+xml URI (never a URL) equal
-//       to the icon of ITS OWN baked manifest's look.mark (read here from the manifest), or of its own initial when it
-//       has none, said in `iconFrom`; no entry carries faviconUrl/mark/markSvg. ⛔ Nothing baked here = nothing judged =
-//       a failure, never a pass.
-//   3 · THE CARD — cardFor takes `town.icon` and nothing else: an entry with only the old fields gets no icon.
+//       to the icon of ITS OWN baked manifest's look.mark (read here from the manifest), or of its own initial when its
+//       baked Look has none, said in `iconFrom`; a town with NO baked manifest has `icon: null` (never an initial); a
+//       manifest with no `look` block REFUSES (lookFromManifest throws, "re-bake"); no entry carries
+//       faviconUrl/mark/markSvg. ⛔ Nothing baked here = nothing judged = a failure, never a pass.
+//   3 · THE CARD — cardFor takes `town.icon` and nothing else: an entry with only the old fields gets no icon, and an
+//       unbaked town's card names why it has none (iconWhy → the ward-share-card header).
 //   4 · NO INSTANCE CARRIES BRANDING FOR AN ICON — no registered instance's branding names faviconUrl, markSvg or mark.
 // ⭐ MUTANTS (--mutants), each must go RED: (a) a URL back in one town's icon → 2 · (b) another town's mark in one town's
 // icon → 2 · (c) the instance branding restored as towns.json's source, in publish, instead of or (c2) over the record → 1 · (d) the same, in towns-record →
 // 1 · (e) towns-record reading the Look's design.json instead of the bake → 1 · (f) cardFor falling back to faviconUrl →
-// 3 · (g) a faviconUrl back in an instance's branding → 4.
+// 3 · (g) a faviconUrl back in an instance's branding → 4 · (h) a stale manifest drawn as unbaked instead of refused → 2
+// · (i) an unbaked town given an icon → 2 (Zob, 2026-10-31: the initial means one thing).
 //   node checks/claims-a-town-has-one-icon.mjs [--mutants]
 // Read-only. Exits 1 on any failing judge or any mutant left GREEN.
 import { readFileSync, existsSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { iconFor, initialOf } from '../src/lib/townIdentity.js'
-import { buildTownsRecord } from '../scripts/towns-record.mjs'
+import { buildTownsRecord, lookFromManifest } from '../scripts/towns-record.mjs'
 import { cardFor } from '../src/lib/shareCard.js'
 import { registeredMaps, instanceForMap } from '../src/instances/registry.js'
 
@@ -58,16 +61,24 @@ const bakedMark = (m) => {
   if (!existsSync(p)) return { baked: false }
   return { baked: true, mark: JSON.parse(readFileSync(p, 'utf8')).look?.mark ?? null }
 }
-function judgeRecord(towns) {
+function judgeRecord(towns, bakedMark, fromManifest) {
   const why = [], seen = []
   let judged = 0
+  let stale
+  try { stale = fromManifest('x', { files: {} }) } catch (e) { stale = /re-bake/.test(e.message) ? 'refused' : e.message }
+  if (stale !== 'refused') why.push(`a manifest with no look block is not refused by name (lookFromManifest gave ${JSON.stringify(stale)}) — a stale bake would wear the neutral initial`)
+  if (fromManifest('x', null)?.baked !== false) why.push('a town with no manifest is not reported as unbaked by lookFromManifest')
   for (const m of registeredMaps()) {
     const t = towns[m]
     if (!t) { why.push(`towns.json has no entry for registered town "${m}"`); continue }
     for (const k of ['faviconUrl', 'mark', 'markSvg']) if (k in t) why.push(`"${m}"'s entry carries ${k} — the old-player branding`)
-    if (typeof t.icon !== 'string' || !t.icon.startsWith('data:image/svg+xml,')) { why.push(`"${m}"'s icon is ${JSON.stringify(String(t.icon).slice(0, 60))}, not a data:image/svg+xml URI`); continue }
     const b = bakedMark(m)
-    if (!b.baked) { seen.push(`${m}: not baked here — ${t.iconFrom}`); if (!t.iconFrom?.startsWith('initial')) why.push(`"${m}" has no baked manifest but its icon says ${JSON.stringify(t.iconFrom)}`); continue }
+    if (!b.baked) {
+      if (t.icon != null || !t.iconFrom?.startsWith('not baked')) why.push(`"${m}" has no baked manifest but its entry draws an icon (${JSON.stringify(t.iconFrom)}) — an unbaked town has none; the initial means only "its Look authors no mark"`)
+      else seen.push(`${m}: no icon — ${t.iconFrom}`)
+      continue
+    }
+    if (typeof t.icon !== 'string' || !t.icon.startsWith('data:image/svg+xml,')) { why.push(`"${m}"'s icon is ${JSON.stringify(String(t.icon).slice(0, 60))}, not a data:image/svg+xml URI`); continue }
     judged++
     const want = b.mark ? iconFor({ mark: b.mark }) : iconFor({ initial: initialOf(t.title) })
     if (t.icon !== want) why.push(`"${m}"'s icon is not its own baked Look's ${b.mark ? `mark ${b.mark}` : 'initial'} (it draws ${JSON.stringify(decodeURIComponent(t.icon).replace(/^.*<text[^>]*>|<\/text>.*$/g, ''))})`)
@@ -85,6 +96,8 @@ function judgeCard(card) {
   if (card({ ...base, town: { title: 'T', icon } }).icon !== icon) why.push('cardFor does not take town.icon')
   const old = card({ ...base, town: { title: 'T', faviconUrl: 'https://lafayette-square.com/favicon.svg', mark: '⚜️', markSvg: 'arch' } }).icon
   if (old != null) why.push(`cardFor still draws an icon from the old fields (${String(old).slice(0, 60)})`)
+  const unbaked = card({ ...base, town: { title: 'T', icon: null, iconFrom: 'not baked: no public/baked/T/manifest.json' } })
+  if (unbaked.icon != null || !/not baked/.test(unbaked.iconWhy || '')) why.push(`an unbaked town's card does not name its missing icon (icon ${JSON.stringify(unbaked.icon)}, why ${JSON.stringify(unbaked.iconWhy)})`)
   return why
 }
 
@@ -97,14 +110,14 @@ function judgeInstances(instOf) {
 
 const texts = { publish: read(PUBLISH), record: read(RECORD) }
 const towns = await buildTownsRecord(ROOT)
-const run = (S) => ({ 1: judgeSource(S.publish, S.record), 2: judgeRecord(S.towns).why, 3: judgeCard(S.card), 4: judgeInstances(S.instOf) })
-const S0 = { ...texts, towns, card: cardFor, instOf: instanceForMap }
+const run = (S) => ({ 1: judgeSource(S.publish, S.record), 2: judgeRecord(S.towns, S.bakedMark, S.fromManifest).why, 3: judgeCard(S.card), 4: judgeInstances(S.instOf) })
+const S0 = { ...texts, towns, card: cardFor, instOf: instanceForMap, bakedMark, fromManifest: lookFromManifest }
 
 const res = run(S0)
 const NAMES = { 1: 'the source', 2: 'the record', 3: 'the card', 4: 'no instance branding' }
 let bad = 0
 console.log('\nA town has one icon')
-for (const s of judgeRecord(towns).seen) console.log(`   ${s}`)
+for (const s of judgeRecord(towns, bakedMark, lookFromManifest).seen) console.log(`   ${s}`)
 for (const [k, why] of Object.entries(res)) {
   if (why.length) { bad++; console.log(`  ⛔ ${k} · ${NAMES[k]}`); for (const w of why) console.log(`       ${w}`) }
   else console.log(`  ✅ ${k} · ${NAMES[k]}`)
@@ -122,11 +135,13 @@ if (process.argv.includes('--mutants')) {
       "const towns = {}\n  for (const m of registeredMaps()) { const b = instanceForMap(m).branding || {}; towns[m] = { faviconUrl: b.faviconUrl || null, mark: b.mark || null } }") }],
     ['c2 · instance branding laid over the record, in publish', 1, { publish: texts.publish.replace('const towns = await buildTownsRecord(REPO_ROOT)',
       'const towns = await buildTownsRecord(REPO_ROOT)\n  for (const m in towns) towns[m].faviconUrl = instanceForMap(m).branding.faviconUrl') }],
-    ['d · instance branding as the source, in towns-record', 1, { record: texts.record.replace('const { icon, from } = townIcon({ look, title, why })',
-      'const { icon, from } = townIcon({ look: { mark: t.branding.mark }, title, why })') }],
+    ['d · instance branding as the source, in towns-record', 1, { record: texts.record.replace('b.baked ? townIcon({ look: b.look, title })',
+      'b.baked ? townIcon({ look: { mark: t.branding.mark }, title })') }],
     ['e · the Look\'s design.json instead of the bake', 1, { record: texts.record.replace("join(repoRoot, 'public', 'baked', map, 'manifest.json')",
       "join(repoRoot, 'public', 'looks', map, 'design.json')") }],
     ['f · cardFor falls back to faviconUrl', 3, { card: (o) => { const c = cardFor(o); return { ...c, icon: c.icon || o.town?.faviconUrl || null } } }],
+    ['h · a stale manifest drawn as unbaked, not refused', 2, { fromManifest: (m, man) => (man && !man.look ? { baked: false } : lookFromManifest(m, man)) }],
+    ['i · an unbaked town given an icon', 2, { bakedMark: (m) => (m === a ? { baked: false } : bakedMark(m)) }],
     ['g · a faviconUrl back in an instance', 4, { instOf: (m) => (m === maps[0] ? { ...instanceForMap(m), branding: { ...instanceForMap(m).branding, faviconUrl: 'https://lafayette-square.com/favicon.svg' } } : instanceForMap(m)) }],
   ]
   console.log('\n  mutants:')
