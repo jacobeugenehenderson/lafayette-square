@@ -1,0 +1,258 @@
+{
+  "frame": {
+    "w": 192,
+    "h": 96,
+    "faces": 4
+  },
+  "looks": [
+    {
+      "id": "santa",
+      "name": "Santa",
+      "file": "looks/santa.svg",
+      "motion": {
+        "kind": "still"
+      },
+      "notes": "White to the crown · red coat · black belt with a gold buckle on every face · red coat · white trim · red pants · white boot tops."
+    },
+    {
+      "id": "santas-hat",
+      "name": "Santa's Hat",
+      "file": "looks/santas-hat.svg",
+      "motion": {
+        "kind": "twinkle",
+        "only": "#fff6e8"
+      },
+      "notes": "The whole tree is the hat: red, a fluffy white brim at the ground ring and a white pompom at the crown; the fur sparkles."
+    },
+    {
+      "id": "frosty",
+      "name": "Frosty",
+      "file": "looks/frosty.svg",
+      "motion": {
+        "kind": "still"
+      },
+      "notes": "Black hat with a red band at the crown · face with coal eyes and a carrot nose on every face · red scarf · coal buttons."
+    },
+    {
+      "id": "rudolph",
+      "name": "Rudolph",
+      "file": "looks/rudolph.svg",
+      "motion": {
+        "kind": "pulse",
+        "only": "#ff1f2d"
+      },
+      "notes": "Gold antlers branching at the crown · brown coat · tan band · a red nose on every face, the only thing that pulses."
+    },
+    {
+      "id": "snowfall",
+      "name": "Snowfall",
+      "file": "looks/snowfall.svg",
+      "motion": {
+        "kind": "fall",
+        "speed": 6
+      },
+      "notes": "White flakes on night blue, falling."
+    },
+    {
+      "id": "snowflakes",
+      "name": "Snowflakes",
+      "file": "looks/snowflakes.svg",
+      "motion": {
+        "kind": "twinkle"
+      },
+      "notes": "Six-armed flakes, three to a face, on bright blue; they twinkle."
+    },
+    {
+      "id": "gifts",
+      "name": "Gifts",
+      "file": "looks/gifts.svg",
+      "motion": {
+        "kind": "still"
+      },
+      "notes": "Four parcels, one to a face, in red, green, blue and gold; a ribbon cross and a bow on each."
+    },
+    {
+      "id": "candy-cane",
+      "name": "Candy Cane",
+      "file": "looks/candy-cane.svg",
+      "motion": {
+        "kind": "spin",
+        "speed": 10
+      },
+      "notes": "Red and white spiralling down the cone, turning."
+    },
+    {
+      "id": "peppermint",
+      "name": "Peppermint",
+      "file": "looks/peppermint.svg",
+      "motion": {
+        "kind": "spin",
+        "speed": -8
+      },
+      "notes": "A peppermint pinwheel on every face between green bands, turning the other way."
+    },
+    {
+      "id": "holly",
+      "name": "Holly",
+      "file": "looks/holly.svg",
+      "motion": {
+        "kind": "twinkle",
+        "only": "#ff1f2d"
+      },
+      "notes": "Holly sprigs, two to a face, with red berries that twinkle."
+    },
+    {
+      "id": "bells",
+      "name": "Bells",
+      "file": "looks/bells.svg",
+      "motion": {
+        "kind": "pulse",
+        "speed": 1.2
+      },
+      "notes": "A pair of gold bells under a red bow on every face, on green; they pulse like a ring."
+    },
+    {
+      "id": "stars",
+      "name": "Stars",
+      "file": "looks/stars.svg",
+      "motion": {
+        "kind": "twinkle"
+      },
+      "notes": "Gold and white stars on night blue, a big star at the crown on every face; they twinkle."
+    },
+    {
+      "id": "menorah",
+      "name": "Menorah",
+      "file": "looks/menorah.svg",
+      "motion": {
+        "kind": "twinkle",
+        "only": "#ffc23a"
+      },
+      "notes": "A nine-branched menorah on every face, white on blue, the shamash raised; only the flames flicker."
+    },
+    {
+      "id": "star-of-david",
+      "name": "Star of David",
+      "file": "looks/star-of-david.svg",
+      "motion": {
+        "kind": "pulse",
+        "speed": 0.5
+      },
+      "notes": "A blue Star of David on white on every face, between two blue bands, breathing slowly."
+    },
+    {
+      "id": "kinara",
+      "name": "Kinara",
+      "file": "looks/kinara.svg",
+      "motion": {
+        "kind": "twinkle",
+        "only": "#ffc23a"
+      },
+      "notes": "A kinara on every face: three red candles, the black one in the centre, three green; only the flames flicker."
+    },
+    {
+      "id": "kwanzaa-bands",
+      "name": "Kwanzaa Bands",
+      "file": "looks/kwanzaa-bands.svg",
+      "motion": {
+        "kind": "rise",
+        "speed": 4
+      },
+      "notes": "Red over black over green, rising slowly."
+    },
+    {
+      "id": "peace",
+      "name": "Peace",
+      "file": "looks/peace.svg",
+      "motion": {
+        "kind": "pulse",
+        "speed": 0.6
+      },
+      "notes": "A white peace sign on every face, on blue, breathing slowly."
+    },
+    {
+      "id": "plaid",
+      "name": "Plaid",
+      "file": "looks/plaid.svg",
+      "motion": {
+        "kind": "still"
+      },
+      "notes": "Red tartan with green bands, dark threads and a gold line."
+    },
+    {
+      "id": "bows",
+      "name": "Bows",
+      "file": "looks/bows.svg",
+      "motion": {
+        "kind": "still"
+      },
+      "notes": "A red ribbon around the tree, tied in a bow with a gold knot on every face."
+    },
+    {
+      "id": "gingerbread",
+      "name": "Gingerbread",
+      "file": "looks/gingerbread.svg",
+      "motion": {
+        "kind": "still"
+      },
+      "notes": "Brown with white icing zigzags and gumdrops in red and green."
+    },
+    {
+      "id": "ornaments",
+      "name": "Ornaments",
+      "file": "looks/ornaments.svg",
+      "motion": {
+        "kind": "twinkle"
+      },
+      "notes": "Baubles in red, gold, blue, silver and purple on deep green; they twinkle."
+    },
+    {
+      "id": "garland",
+      "name": "Garland",
+      "file": "looks/garland.svg",
+      "motion": {
+        "kind": "still"
+      },
+      "notes": "Gold swags in three tiers, a red bead where each swag meets the next."
+    },
+    {
+      "id": "classic-tree",
+      "name": "Classic Tree",
+      "file": "looks/classic-tree.svg",
+      "motion": {
+        "kind": "twinkle"
+      },
+      "notes": "Multicoloured lights on deep green, a gold star at the crown on every face; they twinkle."
+    },
+    {
+      "id": "joy",
+      "name": "Joy",
+      "file": "looks/joy.svg",
+      "motion": {
+        "kind": "pulse",
+        "speed": 0.8
+      },
+      "notes": "JOY in white on red on every face, between gold bands."
+    },
+    {
+      "id": "northern-lights",
+      "name": "Northern Lights",
+      "file": "looks/northern-lights.svg",
+      "motion": {
+        "kind": "spin",
+        "speed": 5
+      },
+      "notes": "Curtains of teal, green and violet in the upper tree, drifting around it."
+    },
+    {
+      "id": "yule-fire",
+      "name": "Yule Fire",
+      "file": "looks/yule-fire.svg",
+      "motion": {
+        "kind": "rise",
+        "speed": 9
+      },
+      "notes": "Flames climbing from the ground ring with gold sparks above, rising."
+    }
+  ]
+}

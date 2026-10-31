@@ -49,8 +49,8 @@ Provincetown is first to use, never a Provincetown patch.
 - **The tree glows WHITE; the show is COLOUR** (`r-the-tree-glows-white-and-the-show-is-colour`). The glow is a white
   Christmas tree; a show opens with a magical transformation into 2–3× as many full-colour strands, and reverses at
   the end. Starting values, authored on the display: 64 white, 192 colour, ~96 bulbs per strand. Bulbs are always bright
-  and visible from all around the town (Jacob: like 120 W bulbs), and their colour washes the tower and the
-  ground at its foot; where they are too close to tell apart, their glows merge into a smooth image. ⛔ No switch to a flat
+  and visible from all around the town (Jacob: like 120 W bulbs), and one average glow of their colour washes
+  everything around them; where they are too close to tell apart, their glows merge into a smooth image. ⛔ No switch to a flat
   image at distance; a far bulb keeps a minimum size and glow so it never drops out.
 - **A show is what a display MAY do, not what it is.** The Light Show glows all season and plays timed shows; arches play
   none (`r-a-show-is-what-a-display-may-do-not-what-it-is`).
