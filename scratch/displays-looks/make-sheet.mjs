@@ -68,7 +68,7 @@ footer { max-width: 1240px; margin: 0 auto; padding: 0 24px 48px; color: var(--m
   <div class="switch" role="group" aria-label="Colour strands for the show"><span>Show strands</span><button type="button" data-n="40">40 · 2×</button><button type="button" data-n="60" aria-pressed="true">60 · 3×</button><button type="button" data-n="192">192</button></div>
 </header>
 <main class="grid" id="grid"></main>
-<footer>Motions, one per layer: still · fall · rise · spin (round the tree) · spiral (round and up) · twinkle · pulse · strobe · fade (washing in over the layer beneath and back out), and three that move glyphs in place, drawn by the system: turn (the peppermints), swing (the bells), tumble (the snowflakes), build (the ribbon's lines wrapping on, one by one). "One colour" means the motion touches only that colour. Transitions are the next sheet.</footer>
+<footer>Motions, one per layer: still · fall · rise · spin (round the tree) · spiral (round and up) · twinkle · pulse · strobe · fade (washing in over the layer beneath and back out), and three that move glyphs in place, drawn by the system: turn (the peppermints), swing (the bells), tumble (the snowflakes), build (the ribbon's lines wrapping on into a lattice, one by one). "One colour" means the motion touches only that colour. Transitions are the next sheet.</footer>
 <script>
 const LOOKS = ${JSON.stringify(looks)};
 const FW = ${M.frame.w}, FH = ${M.frame.h}, P = ${M.frame.pinH}, FACES = ${M.frame.faces}, CONE = FH - P;

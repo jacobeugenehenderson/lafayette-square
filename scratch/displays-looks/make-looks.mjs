@@ -277,20 +277,16 @@ look('trans', 'Trans', 'Light blue, pink, white, pink, light blue, sparkling, wi
   L({ kind: 'twinkle' }, bands(['#5bcefa', '#f5a9b8', '#ffffff', '#f5a9b8', '#5bcefa']), band(0, PIN_H, C.white)),
   L({ kind: 'fade', period: 6 }, band(0, CONE_H, '#b46cff'), band(0, PIN_H, '#b46cff')),
 ])
-const RIBBON_FRAMES = 16                                    // 8 lines wrapping on, a hold, then the V alone again
-/** One leg of the ribbon's V in half k (0 slants one way, 1 the other), shifted sideways by `off` columns. */
-const ribbonLeg = (k, off) => {
-  const cx = FRAME_W / 4 + k * FRAME_W / 2 + off, d = k ? -1 : 1, id = `rl${k}_${off}`
-  return `<defs><clipPath id="${id}"><rect x="${k * FRAME_W / 2}" y="0" width="${FRAME_W / 2}" height="${CONE_H}"/></clipPath></defs>` +
-    `<g clip-path="url(#${id})">` + poly([[cx - 9 - d * 24, 0], [cx + 9 - d * 24, 0], [cx + 9 + d * 24, CONE_H], [cx - 9 + d * 24, CONE_H]], C.red) + '</g>'
-}
-look('red-ribbon', 'Red Ribbon', 'The ribbon: two red stripes on opposite sides, slanting opposite ways, a V on black. Then more diagonal lines, parallel to each leg, are added one by one, spreading outward on both sides as if the tree were being wrapped; then back to the V.', [
-  L({ kind: 'still' }, ribbonLeg(0, 0) + ribbonLeg(1, 0), band(0, PIN_H, C.red)),
+const RIBBON_FRAMES = 12                                    // 6 lines wrapping on into a lattice, a hold, then the V alone again
+/** One diagonal line of the ribbon: its top centred at column xt, slanting s = ±1 (48 columns across the cone's height),
+ *  drawn again a frame-width over each way so it wraps round the tree. */
+const ribbonLine = (s, xt) => [-FRAME_W, 0, FRAME_W].map(o => poly([[xt + o - 9, 0], [xt + o + 9, 0], [xt + o + 9 + s * 48, CONE_H], [xt + o - 9 + s * 48, CONE_H]], C.red)).join('')
+look('red-ribbon', 'Red Ribbon', 'The ribbon: two red stripes on opposite sides, slanting opposite ways, a V on black. Then more diagonal lines are added one by one, in both directions, crossing into a lattice that wraps the whole tree; then back to the V.', [
+  L({ kind: 'still' }, ribbonLine(1, 24) + ribbonLine(-1, 168), band(0, PIN_H, C.red)),
   L({ kind: 'still' }, (ph) => {
-    const order = []                                            // outward from the V, alternating sides
-    for (const n of [1, 2]) order.push([0, 36 * n], [1, -36 * n], [0, -36 * n], [1, 36 * n])
+    const order = [[1, 72], [-1, 120], [1, 120], [-1, 72], [1, 168], [-1, 24]]   // alternating directions: a lattice, never a chevron
     const shown = Math.min(order.length, Math.round(ph * RIBBON_FRAMES) - 1)
-    return order.slice(0, Math.max(0, shown)).map(([k, off]) => ribbonLeg(k, off)).join('')
+    return order.slice(0, Math.max(0, shown)).map(([sl, xt]) => ribbonLine(sl, xt)).join('')
   }, '', { frames: RIBBON_FRAMES, fps: 2, turn: 'build' }),
 ])
 // ═══ TREES & TRIMMINGS ═══════════════════════════════════════════════════════════════════════════════════════════════

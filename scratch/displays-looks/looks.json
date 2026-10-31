@@ -418,7 +418,7 @@
     {
       "id": "red-ribbon",
       "name": "Red Ribbon",
-      "notes": "The ribbon: two red stripes on opposite sides, slanting opposite ways, a V on black. Then more diagonal lines, parallel to each leg, are added one by one, spreading outward on both sides as if the tree were being wrapped; then back to the V.",
+      "notes": "The ribbon: two red stripes on opposite sides, slanting opposite ways, a V on black. Then more diagonal lines are added one by one, in both directions, crossing into a lattice that wraps the whole tree; then back to the V.",
       "layers": [
         {
           "motion": {
@@ -446,11 +446,7 @@
             "looks/red-ribbon/1-8.svg",
             "looks/red-ribbon/1-9.svg",
             "looks/red-ribbon/1-10.svg",
-            "looks/red-ribbon/1-11.svg",
-            "looks/red-ribbon/1-12.svg",
-            "looks/red-ribbon/1-13.svg",
-            "looks/red-ribbon/1-14.svg",
-            "looks/red-ribbon/1-15.svg"
+            "looks/red-ribbon/1-11.svg"
           ]
         }
       ]
