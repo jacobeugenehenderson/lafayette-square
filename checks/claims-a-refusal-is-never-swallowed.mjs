@@ -14,7 +14,7 @@
  *      fails, reported as given up with its reason.
  *   6. THE REVEAL HEARS IT: a boundary around a layer the reveal waits on (Town.jsx's PHYSICAL, read from source) marks
  *      that class failed on a Refusal and on giving up, so the gate says why the town is held; a clean remount clears
- *      it with a mark of its own (the gate hears only new marks); every class has exactly one such boundary. Stage's
+ *      a failure it wrote (never another producer's) with a mark of its own (the gate hears only new marks); every class has exactly one such boundary. Stage's
  *      banner is portalled above the splash (its zIndex over CanvasOverlay's, read from Town.jsx).
  *   5. THE DEV FLAG (`?refuse=<layer>`, for seeing the banner in Stage) is gone from a production build.
  *   4. ONE SINK: exactly one store of failures under src/ (src/lib/failures.js); both boundaries report to it; Stage
@@ -24,7 +24,7 @@
  *   --mutants: the boundary retries a Refusal · the boundary drops the report · it never reports giving up · an untyped
  *   `⛔` throw returns · a ⛔ message held in a const returns untyped · httpFailure calls a 503 a Refusal · a second sink
  *   returns · the dev flag loses its gate · Stage drops the banner · a reveal refusal or give-up
- *   unmarked · a clear the gate never hears · a reveal class with no boundary · the banner back under the splash
+ *   unmarked · a clear the gate never hears · a clean remount clears a foreign failure · a reveal class with no boundary · the banner back under the splash
  *   → each must go red.
  */
 import { readFileSync } from 'node:fs'
@@ -155,6 +155,11 @@ async function boundary(transform, marksT) {
     await new Promise((r) => was.st(r, 50)); off()
     if (M.failureOf(cls3)) fails.push('a reveal layer that mounts again cleanly leaves its class failed: the town stays held after the fix')
     else if (!heard) fails.push('a reveal failure cleared on a clean remount writes no mark: the gate never hears it, and a class prepared before it failed stays held')
+    // …but never a failure another producer wrote (the class is shared: a tree page that did not arrive)
+    const cls4 = `trees-${Math.random().toString(36).slice(2)}`
+    M.markFailed(cls4, 'a hero card page did not arrive')
+    const other = new B({ name: 'InstancedTrees', reveal: cls4, children: 'CHILD' }); other.context = { lookId: 'a-town' }; other.componentDidMount()
+    if (M.failureOf(cls4) !== 'a hero card page did not arrive') fails.push("a clean remount clears a reveal failure another producer wrote: the town would reveal with the hole the gate exists to prevent")
   } finally { globalThis.setTimeout = was.st; console.error = was.err }
   return fails
 }
@@ -230,6 +235,7 @@ if (process.argv.includes('--mutants')) {
     ['a reveal refusal left unmarked', { boundary: must("if (this.props.reveal) markFailed(this.props.reveal, `${layer} refused: ${reasonOf(error)}`)", '') }],
     ['a reveal give-up left unmarked', { boundary: must("if (this.props.reveal) markFailed(this.props.reveal, `${layer} ${reason}`)", '') }],
     ['a clear the gate never hears', { marks: must("  performance.mark(MARK_PREFIX + 'cleared:' + id)\n", '') }],
+    ['a clean remount clears a foreign failure', { boundary: must("if (this.props.reveal && String(failureOf(this.props.reveal) ?? '').startsWith(`${layer} `)) clearFailed(this.props.reveal)", 'if (this.props.reveal) clearFailed(this.props.reveal)') }],
     ['a reveal class with no boundary', { files: swap('src/components/Town.jsx', '<R3FErrorBoundary name="InstancedTrees" reveal="trees">', '<R3FErrorBoundary name="InstancedTrees">') }],
     ['the banner back under the splash', { files: swap('src/stage/StageApp.jsx', 'const FAILURES_Z = 400', 'const FAILURES_Z = 10') }],
     ['the banner back in the panel', { files: swap('src/stage/StageApp.jsx', 'return createPortal(', 'return ((el) => el)(') }],

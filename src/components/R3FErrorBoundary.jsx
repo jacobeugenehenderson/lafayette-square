@@ -2,7 +2,7 @@ import { Component, createElement } from 'react'
 import { Refusal } from '../lib/refusal.js'
 import useFailures, { reasonOf } from '../lib/failures.js'
 import { TownContext } from './townContext.js'
-import { markFailed, clearFailed } from '../lib/startupMarks.js'
+import { markFailed, clearFailed, failureOf } from '../lib/startupMarks.js'
 
 /**
  * The boundary around one layer of the town (`name` is the layer). It tells a refusal from a transient
@@ -64,7 +64,10 @@ export default class R3FErrorBoundary extends Component {
     // already holds hasError here, and keeps the report its componentDidCatch writes.)
     if (!this.state.hasError) {
       useFailures.getState().clear(this.context?.lookId ?? null, this.props.name || 'component')
-      if (this.props.reveal) clearFailed(this.props.reveal)
+      // Only a failure THIS boundary wrote (its detail starts with the layer's name): the class has other producers (a
+      // tree page that did not arrive, treesReveal's verdict), and clearing theirs would reveal the town with a hole.
+      const layer = this.props.name || 'component'
+      if (this.props.reveal && String(failureOf(this.props.reveal) ?? '').startsWith(`${layer} `)) clearFailed(this.props.reveal)
     }
   }
 
