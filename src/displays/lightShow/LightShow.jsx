@@ -193,8 +193,11 @@ export default function LightShow({ display, extent, calendar, contentRoot, dim,
 
   if (frameErr) throw new Error(`[LightShow] ⛔ ${where}: ${frameErr.message}`)
   if (!F) return null
+  // ⭐ Its reach, for depth of field (r-the-focus-object-is-everything-hung-on-it): the strands hang out to the ring, well
+  // past the set-piece's own extent, so the focus box must grow to them (focusObject.js#focusBox reads this).
+  const bulbR = bulbRadius(Math.hypot(st.ringRadiusM, extent.ridge.yM - st.footHeightM), rows)
   return (
-    <group ref={root} name="display:light-show">
+    <group ref={root} name="display:light-show" userData={{ focusReach: { radiusM: st.ringRadiusM + bulbR, fromM: Math.max(0, st.footHeightM - bulbR), toM: extent.pinnacle.toM } }}>
       <Strands count={ends.length * rows} strands={ends.length} glassRef={glassRef} coreRef={coreRef} socketRef={socketRef} cordRef={cordRef} />
       <group ref={pinRef} name="light-show:pinnacle">
         {pinFaces.map((f, k) => <mesh key={k} geometry={f.g} material={pinMat} position={f.position} rotation={f.rotation} />)}

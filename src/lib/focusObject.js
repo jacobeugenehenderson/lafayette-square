@@ -120,9 +120,16 @@ export function hasFocusObject(keyframes) {
   return (keyframes || []).some(k => typeof k?.focus === 'string' && k.focus)
 }
 
-const _b = new THREE.Box3(), _p = new THREE.Vector3()
+const _b = new THREE.Box3(), _p = new THREE.Vector3(), _q = new THREE.Vector3()
 /**
- * The world box `[x0, y0, z0, x1, y1, z1]` of the object a (resolved) focus id names, or null — said once.
+ * The boxes `[x0, y0, z0, x1, y1, z1]` of the object a (resolved) focus id names, or null — said once:
+ *   `extent` the object's OWN box: its focal distance and what stands in front of it are judged from this;
+ *   `reach`  the extent and EVERYTHING HUNG ON IT (r-the-focus-object-is-everything-hung-on-it; Jacob, 2026-10-31): the
+ *            hero mask is drawn and scissored to this. Anything under a focus node that draws outside the extent declares
+ *            `userData.focusReach = { radiusM, fromM, toM }` on its root, a cylinder about its own vertical axis in its own
+ *            frame (a display's strands). ⛔ Collected by walking the subtree on EVERY call, never cached: a plugin mounts
+ *            lazily (Displays' Suspense), and a cache taken before it resolved would hold the extent alone (Zob, 2026-10-31).
+ *            ▶ node checks/claims-the-focus-object-is-everything-hung-on-it.mjs
  * @param ctx { scene: the three scene, index: the slab building index (useSlabBuildingIndex), exag: the live terrain
  *            exaggeration (terrainShader#terrainExag) }
  */
@@ -133,12 +140,20 @@ export function focusBox(id, { scene, index, exag }) {
     const ext = node.userData?.extent
     if (ext) {   // a set-piece: its root sits at its base centre; its own extent (SetPiece.jsx's renderer contract)
       node.getWorldPosition(_p)
-      return [_p.x - ext.halfWidthM, _p.y, _p.z - ext.halfWidthM, _p.x + ext.halfWidthM, _p.y + ext.topM, _p.z + ext.halfWidthM]
+      const extent = [_p.x - ext.halfWidthM, _p.y, _p.z - ext.halfWidthM, _p.x + ext.halfWidthM, _p.y + ext.topM, _p.z + ext.halfWidthM], reach = [...extent]
+      node.traverse(o => {
+        const r = o.userData?.focusReach; if (!r) return
+        o.getWorldPosition(_q)
+        reach[0] = Math.min(reach[0], _q.x - r.radiusM); reach[1] = Math.min(reach[1], _q.y + r.fromM); reach[2] = Math.min(reach[2], _q.z - r.radiusM)
+        reach[3] = Math.max(reach[3], _q.x + r.radiusM); reach[4] = Math.max(reach[4], _q.y + r.toM); reach[5] = Math.max(reach[5], _q.z + r.radiusM)
+      })
+      return { extent, reach }
     }
     if (node.geometry) {
       if (!node.geometry.boundingBox) node.geometry.computeBoundingBox()
       _b.copy(node.geometry.boundingBox).applyMatrix4(node.matrixWorld)
-      return [_b.min.x, _b.min.y, _b.min.z, _b.max.x, _b.max.y, _b.max.z]
+      const extent = [_b.min.x, _b.min.y, _b.min.z, _b.max.x, _b.max.y, _b.max.z]
+      return { extent, reach: extent }
     }
   }
   const e = index?.byId?.get(id)
@@ -149,7 +164,8 @@ export function focusBox(id, { scene, index, exag }) {
     // the higher of the eave and the roof's peak.
     const g = e.groundY ?? 0, c = e.centroidY ?? 0
     const top = Math.max(e.baseY ?? 0, e.roofTopY ?? 0)
-    return [x0, buildingLiftY(0, c, exag, 0, false, g), z0, x1, buildingLiftY(top, c, exag, 0, false, g), z1]
+    const extent = [x0, buildingLiftY(0, c, exag, 0, false, g), z0, x1, buildingLiftY(top, c, exag, 0, false, g), z1]
+    return { extent, reach: extent }
   }
   if (index) sayOnce(`id:${id}`, `[focus] ⛔ "${id}" names no object in this town (no set-piece, no slab building) — that end of the focus has no plane: the town's blur takes it`)
   return null

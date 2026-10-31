@@ -71,6 +71,24 @@ export const DOF_BLUR_GLSL = /* glsl */`
   }
 `
 
+// ⭐ THE FOCUS OBJECT IS EVERYTHING HUNG ON IT, AT ITS OWN DISTANCE (r-the-focus-object-is-everything-hung-on-it; Jacob,
+// 2026-10-31: "the bulbs and strands don't have depth AND they're not attached to the hero object"). Where the focus object
+// covers the pixel (HeroLadder.jsx's mask, valid only when the ladder ran: uHeroOn) inside its reach on screen, and
+// nothing nearer than its own EXTENT stands in front, the blur is the object's own law at its distance, whatever the depth
+// buffer holds: a display's bulbs write no depth and would read the background's blur behind them. Not gated on being
+// in focus: out of focus, its own law blurs it at its distance, all of it alike. Shared by this pass and the debug paint
+// (DofDebug.jsx), so the paint never lies about it. Needs DOF_BLUR_GLSL's objectLaw and uHeroOn, uMask, uHeroRect,
+// uHeroNear, uHeroGround, uFocusOn in scope. ▶ node checks/claims-the-focus-object-is-everything-hung-on-it.mjs
+export const DOF_FOCUS_OBJECT_GLSL = /* glsl */`
+  float focusObjectAmount(float amt, float dist, vec2 uv) {
+    if (uHeroOn > 0.5 && all(greaterThanEqual(uv, uHeroRect.xy)) && all(lessThanEqual(uv, uHeroRect.zw))) {
+      float m = texture2D(uMask, uv).a * step(uHeroNear, dist) * uFocusOn;
+      amt = mix(amt, clamp(objectLaw(uHeroGround), 0.0, 1.0), m);
+    }
+    return amt;
+  }
+`
+
 const fragment = /* glsl */`
   #ifdef FRAMEBUFFER_PRECISION_HIGH
     uniform mediump sampler2D uLevel0;
@@ -117,9 +135,12 @@ const fragment = /* glsl */`
   }
 
   // The hero ladder's first HERO_LEVELS rungs (HeroLadder.jsx). Four: the day's Amounts reach no deeper, and a shader
-  // reads at most ~16 textures (8 shared rungs + these + the image + depth).
+  // reads at most ~16 textures: 8 shared rungs + these + the image + depth + the hero mask = 15, at the edge.
   uniform sampler2D uHero0; uniform sampler2D uHero1; uniform sampler2D uHero2; uniform sampler2D uHero3;
   uniform float uHeroOn;       // 1 when the hero ladder was built this frame (HeroLadder.jsx)
+  uniform sampler2D uMask;     // the focus object drawn alone (HeroLadder.jsx#_drawMask): alpha = its coverage
+  uniform vec4 uHeroRect;      // its reach on screen, uv (x0, y0, x1, y1): the mask is valid only inside
+  uniform float uHeroNear, uHeroGround;   // m: its own extent's nearest corner (what is nearer stands in front); its distance
   vec4 heroLevel(int idx, vec2 uv) {
     if (idx <= 0) return texture2D(uHero0, uv);
     if (idx == 1) return texture2D(uHero1, uv);
@@ -149,10 +170,11 @@ const fragment = /* glsl */`
     return k2 >= 0.5 ? mix(b2, b1, smoothstep(0.2, 0.5, k1)) : sampleLevel(idx + 2, uv);
   }
   ${DOF_BLUR_GLSL}
+  ${DOF_FOCUS_OBJECT_GLSL}
 
   void mainImage(const in vec4 inputColor, const in vec2 uv, const in float depth, out vec4 outputColor) {
     float dist = depthToDistance(depth);
-    float amt  = clamp(blurAmount(dist, uv), 0.0, 1.0);
+    float amt  = focusObjectAmount(clamp(blurAmount(dist, uv), 0.0, 1.0), dist, uv);   // the focus object at its distance
 
     // ⛔ The sky is NOT held sharp. Held at infinity focus while the far ground below it melted, it drew a hard
     // straight line across the frame at the horizon, through anything standing against it (Jacob, 2026-09-27:
@@ -176,7 +198,7 @@ const fragment = /* glsl */`
 
 // Module-level refs the per-frame driver (dofDriver.js) writes — same pattern as the other PostProcessing effects.
 export const HERO_LEVELS = 4
-export const _heroLadderRefs = { levels: { current: [] }, on: { current: false } }
+export const _heroLadderRefs = { levels: { current: [] }, on: { current: false }, mask: { current: null } }
 export const _dofRefs = {
   near:       { current: 1 },
   far:        { current: 60000 },
@@ -227,6 +249,10 @@ class RomanceDoFEffect extends Effect {
         ['uDiscR',      new THREE.Uniform(0)],
         ['uHeroOn',     new THREE.Uniform(0)],
         ...[0, 1, 2, 3].map(i => ['uHero' + i, new THREE.Uniform(null)]),
+        ['uMask',       new THREE.Uniform(null)],
+        ['uHeroRect',   new THREE.Uniform(new THREE.Vector4(0, 0, 0, 0))],
+        ['uHeroNear',   new THREE.Uniform(0)],
+        ['uHeroGround', new THREE.Uniform(0)],
       ]),
     })
   }
@@ -243,6 +269,10 @@ class RomanceDoFEffect extends Effect {
     const heroOn = _heroLadderRefs.on.current && hero.length > 0
     u.get('uHeroOn').value = heroOn ? 1 : 0
     for (let i = 0; i < HERO_LEVELS; i++) u.get('uHero' + i).value = (heroOn ? hero[i] : null) ?? levels[i] ?? levels[levels.length - 1] ?? null
+    // The mask is this frame's only when the ladder ran (uHeroOn gates its read); a sampler is never left null.
+    u.get('uMask').value = (heroOn ? _heroLadderRefs.mask.current : null) ?? levels[0] ?? null
+    const r = _dofRefs.heroRect.current; if (r) u.get('uHeroRect').value.set(r[0], r[1], r[2], r[3]); else u.get('uHeroRect').value.set(0, 0, 0, 0)
+    u.get('uHeroNear').value = _dofRefs.heroNear.current; u.get('uHeroGround').value = _dofRefs.heroGround.current
     u.get('uFocusDist').value  = _dofRefs.focusDist.current
     u.get('uTanHalf').value.copy(_dofRefs.tanHalf.current)
     u.get('uUpView').value.copy(_dofRefs.upView.current)
