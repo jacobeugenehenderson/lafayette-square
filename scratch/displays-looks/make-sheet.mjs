@@ -103,7 +103,7 @@ function geometry(strands) {
     const th = ((c + 0.5) / strands - 0.5 / FACES) * 2 * Math.PI, bx = R * Math.sin(th), bz = R * Math.cos(th);
     for (let j = 0; j < CONE; j++) {
       const t = (j + 0.5) / CONE, p = view(tx + (bx - tx) * t, DECK + (FOOT - DECK) * t, tz + (bz - tz) * t);
-      (p.z < 0 ? back : front).push({ c: Math.floor(c * FW / strands), row: P + j, sx: p.sx | 0, sy: p.sy | 0, lit: p.z < 0 ? 0.32 : 1 });
+      (p.z < 0 ? back : front).push({ s: c, c: Math.floor(c * FW / strands), row: P + j, sx: p.sx | 0, sy: p.sy | 0, lit: p.z < 0 ? 0.32 : 1 });
     }
   }
   return { back, front };
@@ -190,21 +190,22 @@ function drawMonument(ctx, bufs, src, t, strands, glow) {
   const fn = glow ? (p) => glowColour(p, t) : (p) => S_(src, p.c, p.row, t);
   drawSets(ctx, bufs, [[GEO[strands], fn]], glow ? null : (avg) => pinnacleColours(src, t, avg));
 }
-// THE TRANSFORMATION, the show's opening: the 20 white strands fade as the colour strands spiral down from the ridge,
-// their front strobing; the pinnacle's strips come up last. Then the reverse.
+// THE TRANSFORMATION, the show's opening, as the product draws it (LightShow.jsx): ONE set of strands, the glow's every
+// (SHOW ÷ 20)-th among them. The show's front spirals down from the ridge and OVERTAKES the glow: a glow strand's bulb
+// stays lit white until the front reaches it, then takes the show's colour; never a fade-out (Jacob, 2026-10-31). The
+// pinnacle's strips come up last. Then the reverse: the white takes the strands back the same way.
 const smooth = (x) => { const t = Math.min(1, Math.max(0, x)); return t * t * (3 - 2 * t); };
 function drawTransformation(ctx, bufs, look, now) {
   const hold = 1.6, dur = 3.8, period = 2 * (hold + dur), u = now % period;
   const t = u < hold ? 0 : u < hold + dur ? (u - hold) / dur : u < 2 * hold + dur ? 1 : 1 - (u - 2 * hold - dur) / dur;
-  const front = t * 3.1, kg = 1 - smooth((t - 0.15) / 0.6), kp = smooth((t - 0.7) / 0.3);
-  const glowFn = (p) => glowColour(p, now).map(v => v * kg);
+  const front = t * 3.1, kp = smooth((t - 0.7) / 0.3), every = SHOW / 20, isGlow = (s) => s % every === Math.floor(every / 2);
   const showFn = (p) => {
     const key = (p.row - P) / CONE * 2 + p.c / FW;
     const dd = Math.abs(key - front) * 14;                     // the front sparkles: random glints, thinning away from it
     if (t > 0 && t < 1 && dd < 4 && hash((p.row * FW + p.c) * 31 + Math.floor(now * 12 + hash(p.row * 977 + p.c) * 12)) < 0.5 * (1 - dd / 4)) return [255, 246, 228];
-    return key < front ? sample(look, p.c, p.row, now) : [0, 0, 0];
+    return key < front ? sample(look, p.c, p.row, now) : isGlow(p.s) ? glowColour(p, now) : [0, 0, 0];
   };
-  drawSets(ctx, bufs, [[GEO[20], glowFn], [GEO[SHOW], showFn]], (avg) => pinnacleColours(look, now, avg).map(f => ({ k: f.k, L: f.L.map(v => v * kp), H: f.H.map(v => v * kp) })));
+  drawSets(ctx, bufs, [[GEO[SHOW], showFn]], (avg) => pinnacleColours(look, now, avg).map(f => ({ k: f.k, L: f.L.map(v => v * kp), H: f.H.map(v => v * kp) })));
 }
 // The pinnacle is STRIP-LIT: a strip at the foot of each face, on the ridge, washing up the stone and fading toward the
 // top. Its colour per face is that face's pinnacle region of the frame (lower half → the strip, upper half → the fade).
@@ -329,7 +330,7 @@ Promise.all(LOOKS.map(async (L, i) => {
   const el = card(L, i + 1);
   items[i + 1] = { el, look: L, ctx: el.querySelector('.cone').getContext('2d'), flat: el.querySelector('.flat').getContext('2d') };
 })).then(() => {
-  const tf = byId['classic-tree'], tfEl = tcard('The Transformation', 'opening · sparkle accent', 'The show opens: the 20 white strands fade as the colour strands spiral down from the ridge, their front sparkling, and the pinnacle’s strips come up last. It reverses at the end.', 'the glow → Classic Tree', false);
+  const tf = byId['classic-tree'], tfEl = tcard('The Transformation', 'opening · sparkle accent', 'The show opens: its front spirals down from the ridge, sparkling, and overtakes the 20 white strands; each glow bulb stays white until the front reaches it, then takes the show’s colour. The pinnacle’s strips come up last. It reverses at the end.', 'the glow → Classic Tree', false);
   titems.push({ el: tfEl, ctx: tfEl.querySelector('.cone').getContext('2d'), transformation: tf });
   for (const tr of TRANSITIONS) {
     const [a, b] = PAIRS[tr.id], el = tcard(tr.name, tr.seconds + ' s' + (tr.accent ? ' · sparkle accent' : ''), tr.notes, byId[a].name + ' → ' + byId[b].name, true);
