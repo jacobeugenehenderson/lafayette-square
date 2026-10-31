@@ -179,9 +179,10 @@ function looksIndexFresh() {
 
 function mirrorInstallationContent() {
   let outDir = 'dist'
-  const copyDir = (src, dest) => {
+  const copyDir = (src, dest, skip = new Set()) => {
     fs.mkdirSync(dest, { recursive: true })
     for (const entry of fs.readdirSync(src, { withFileTypes: true })) {
+      if (skip.has(entry.name)) continue
       const s = path.join(src, entry.name), d = path.join(dest, entry.name)
       if (entry.isDirectory()) copyDir(s, d)
       else if (entry.isFile()) fs.copyFileSync(s, d)
@@ -198,7 +199,9 @@ function mirrorInstallationContent() {
         if (!look.isDirectory()) continue
         const contentDir = path.join(dataRoot, look.name, 'content')
         if (!fs.existsSync(contentDir)) continue
-        copyDir(contentDir, path.resolve(outDir, 'content', look.name))
+        // ⛔ Not `displays/`: Preview and the player read a display's drawer from the slab the bake published
+        // (src/displays/drawerUrl.js 'published'), and Stage, which reads the authoring drawer, never ships in this build.
+        copyDir(contentDir, path.resolve(outDir, 'content', look.name), new Set(['displays']))
         console.log(`[mirror-content] content/${look.name}/ → ${outDir}/content/${look.name}/`)
       }
     },

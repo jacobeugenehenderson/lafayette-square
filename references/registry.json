@@ -5287,6 +5287,15 @@
       "findings": [
         "r-an-event-has-a-host-and-a-venue-and-opens-at-the-venue"
       ]
+    },
+    {
+      "id": "q-may-two-towns-share-a-mark",
+      "ask": "May two towns author the same emoji mark (their icon)?",
+      "neededBy": "Zob, 2026-10-31: claims-no-town-wears-another-towns-mark is red on HPDM's authored ⚜️ (the same as LS's)",
+      "status": "answered",
+      "findings": [
+        "r-a-town-may-choose-any-mark"
+      ]
     }
   ],
   "findings": [
@@ -9136,13 +9145,13 @@
       "question": "q-how-a-town-authors-a-display",
       "kind": "ruling",
       "value": {
-        "start": "November 11 (the Mayflower anniversary)",
+        "start": "October 31, 2026 (moved from November 11 the same day: Jacob, 2026-10-31, \"we may want to just change the 'on' date to today or sometime soon since this is totally a sales tool\")",
         "end": "January 1 (New Year's Day; Jacob, 2026-10-31: \"New Year's Day is fine\"); the season is its OWN town-event row in the town's events.json (its own id, NO listing_id; its venue is THE SCENE, per r-an-event-has-a-host-and-a-venue-and-opens-at-the-venue): the Monument keeps its own hours and its own ticker entry (Jacob, 2026-10-31: \"The monument is its own thing with its own schedule\"; supersedes the same day's listing-keyed reading). NO links_to: a display's ticker entry has nowhere to click through to and carries all its information itself (Jacob, 2026-10-31: \"for a Display in the ticker, there's no place to click thru to and all the information is already in the listing\")",
         "status": "AUTHORED by the operator, not sourced: the sources disagree (Nov 11 in some years; Thanksgiving eve, 2026-11-25, in one listing; off through New Year's Day, into January, or about five weeks), and the show will not be live"
       },
       "by": "Jacob",
       "date": "2026-10-31",
-      "quote": "\"dates not important, we won't be live. Say the 11th.\"",
+      "quote": "\"dates not important, we won't be live. Say the 11th.\" · (start moved): \"We may want to just change the \\\"on\\\" date to today or sometime soon since this is totally a sales tool\"",
       "canon": "docs/briefs/BRIEF-the-monument-lights-up.md (ROADMAP H-36)",
       "notes": "Labelled as authored, per H-31 (a season with no settled source is the operator's)."
     },
@@ -9213,6 +9222,20 @@
       "quote": "\"we should introduce a new area on the event card: there's the host but there's also the location. Maybe the Chamber is hosting an event; it wouldn't be at the chamber\" · \"Cover\" (non-listing locations) · \"What should *actually open is the invite or the RSVP or When a menu item comes up we link to the menu. Maybe we link it to the event card in a place card; and as far as the camera move and the clickable building I think the venue.\" · \"It's always the venue\" · (d), in Ward's window: \"yes, that's plausibly the rule\" · \"the only thing to clarify for ourselves is that a user, via their place card or an event card, can't add to the scene. I *DO* think this would be a thing which would be worth 'selling' to sponsors; but the point is what I am doing currently is not the same thing as what users will be doing in the future.\" · (host, in Ward's window): \"It can just be a name but theoretically everything is associated with buildings; that's how they're 'in the neighborhood' in the first place. Same even for a local homeowner who buys fireworks for their kid's graduation ... it would be either hosted at their house or a church or something\" · (pending items, in Ward's window): \"2 yes 3. Yes 4. yes\" · (boundary, in Ward's window): \"Only inside the radius\" · (rule 4): \"re: hiding address, agree. Card already shows.\"",
       "canon": "cartograph/OPERATIONS.md (The town calendar)",
       "notes": "UNBUILT: host, the spot venue, the action, the scene case. Already built in the Ward (Zob, read in source 2026-10-31): the visitor event card (theward src/place/Happening.jsx#Featured via ?event=) and opening at the venue (src/content/happening.js#targetOf); the kit's PlaceCard EventsTab is the kit app's guardian-only card. Keys agreed by Ward and Tinsel 2026-10-31: host {listing} | {name} · venue {listing} | {name, point: {lat, lon}} | {scene: true}. Venue keys gain {building} (ruled 2026-10-31)."
+    },
+    {
+      "id": "r-a-town-may-choose-any-mark",
+      "question": "q-may-two-towns-share-a-mark",
+      "kind": "ruling",
+      "value": {
+        "rule": "a town's mark is the operator's free choice of any emoji; two towns MAY author the same one (LS and HPDM both author ⚜️)",
+        "consequence": "a check may fail a mark that is INHERITED or defaulted from another town (a copy no one authored), never an AUTHORED mark because another town also chose it"
+      },
+      "by": "Jacob",
+      "date": "2026-10-31",
+      "quote": "\"HPDM and LS both use the fleur de lis as their emoji icons; they're free to choose any emoji\"",
+      "canon": "docs/briefs/BRIEF-a-town-has-one-icon.md",
+      "notes": "Layer 0 question 3: the red was the instrument calling authoring a defect. claims-no-town-wears-another-towns-mark is corrected under BRIEF-a-town-has-one-icon (Sigil)."
     }
   ]
 }

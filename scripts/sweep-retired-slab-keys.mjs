@@ -45,18 +45,20 @@ const PUBLIC_BASE = (process.env.ASSET_BASE || 'https://assets.theward.online/')
 // ⛔ Keep in step with upload-baked-to-r2.mjs#ENV_PREFIX (checks/claims-the-slab-envs-do-not-collide.mjs).
 const ENV_PREFIX = { prod: '', staging: 'staging/' }
 
-/** Every content name a manifest uses (files, content, photos), relative to `base`. */
+/** Every content name a manifest uses (files, content, photos, displays' drawers), relative to `base`. */
 function namesOf(manifest, base) {
   const out = new Set()
   for (const [rel, f] of Object.entries(manifest.files || {})) if (f) out.add(base + contentName(rel, f.sha256))
   for (const [name, c] of Object.entries(manifest.content || {})) if (c) out.add(base + contentName('content/' + name, c.sha256))
   for (const p of Object.values(manifest.photos || {})) if (p) out.add(base + contentName(p.path, p.sha256))
+  for (const d of Object.values(manifest.displays || {})) for (const [rel, f] of Object.entries(d?.files || {})) out.add(base + contentName(rel, f.sha256))
   return out
 }
 const plainOf = (manifest, base) => new Set([
   ...Object.keys(manifest.files || {}).map((r) => base + r),
   ...Object.entries(manifest.content || {}).filter(([, c]) => c).map(([n]) => base + 'content/' + n),
   ...Object.values(manifest.photos || {}).filter(Boolean).map((p) => base + p.path),
+  ...Object.values(manifest.displays || {}).flatMap((d) => Object.keys(d?.files || {}).map((r) => base + r)),
 ])
 
 /**
