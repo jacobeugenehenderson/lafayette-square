@@ -15,7 +15,7 @@ gated without anyone remembering to gate it, which is what makes this work on to
 
 A non-zero exit is a **finding for the board**, not a runner fault. The suite reports; it does not fix.
 
-## ⛔ live — 138. Never in a default run.
+## ⛔ live — 139. Never in a default run.
 
 Two reason classes, and they are not the same thing. **outbound** — a demonstrated call out.
 **unreadable** — runs code the parser cannot read, so it *may* contact nothing but cannot be shown
@@ -104,6 +104,7 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `checks/claims-stage-preview-parity.mjs` | unreadable | writeFileSync · mkdirSync · computed import() of a path an argument or the environment can supply — arbitrary · computed import() of a path an argument or the environment can supply — arbitrary |
 | `checks/claims-startup-marks-fire-in-order.mjs` | outbound | calls fetch() · opens a WebSocket · deletes files — only under its own temp dir · runs `/Applications/Google Chrome.app/Contents` — not a known-local command · runs `pkill -9 -f 'user-data-dir=${profile}'` — not a known-local command |
 | `checks/claims-the-aimer-turns-in-place.mjs` | outbound | calls fetch() · opens a WebSocket · deletes files · runs `/Applications/Google Chrome.app/Contents` — not a known-local command · imports package(s) three, three-stdlib — not read from source |
+| `checks/claims-the-bake-carries-its-displays.mjs` | outbound | writeFileSync · mkdirSync · deletes files · importSource of cartograph/bake-manifest.mjs (its span: /** Copy one file beside the content and index it → // ── board: the town), which can: writeFileSync, mkdirSync, deletes files · importSource of src/lib/slabNames.js — read, safe · importSource of scripts/sweep-retired-slab-keys.mjs (its span: namesOf) — read, safe · importSource of src/displays/drawerUrl.js, which can: imports src/lib/slabUrl.js, which can: calls fetch() · importSource of src/displays/drawerUrl.js redirects src/lib/slabUrl.js — read, safe |
 | `checks/claims-the-bake-re-skeletons-a-stale-town.mjs` | unreadable | writeFileSync · mkdirSync · deletes files · computed import of a temp-dir module, and not every write is shown to stay in its temp dir · child_process with a non-literal command — cannot be read · imports cartograph/pourSteps.mjs, which can: writeFileSync, imports cartograph/pour-code.mjs, which can: runs `git` — not a known-local command, runs `git` — not a known-local command |
 | `checks/claims-the-bake-watches-its-code.mjs` | unreadable | writeFileSync · deletes files · computed import() of a path an argument or the environment can supply — arbitrary · computed import of cartograph/coastFile.mjs — read, safe · computed import of cartograph/geography.mjs — read, safe · computed import of src/cartograph/streetProfiles.js — read, safe · runs `git` — not a known-local command · runs `git` — not a known-local command |
 | `checks/claims-the-beach-band-is-the-towns-own.mjs` | unreadable | computed import() of a path an argument or the environment can supply — arbitrary |

@@ -1049,7 +1049,7 @@ export default function CartographApp() {
               included since SlabBuildings recolours the palette live (BRIEF-live-building-palette).
               ▶ node checks/claims-every-app-mounts-the-town.mjs */}
           {!inDesigner && activeTown && (
-            <Town lookId={activeLookId} town={activeTown} quality={QUALITY} shot={TOWN_SHOT[shot]} flight={false} bakeLastMs={bakeLastMs} movie={stageMovie} calendar={calendar}
+            <Town lookId={activeLookId} town={activeTown} quality={QUALITY} shot={TOWN_SHOT[shot]} flight={false} bakeLastMs={bakeLastMs} movie={stageMovie} calendar={calendar} displaySource="authoring"
               selectedId={selectedId} onSelectBuilding={onSelectBuilding} listings={listings}
               overrides={townOverrides} weatherMode={weatherMode} holdScrubbedTime
               layers={{

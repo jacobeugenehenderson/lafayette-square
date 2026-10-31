@@ -23,7 +23,7 @@ export const PLUGINS = {
  * town that publishes none while a display names a season, and a calendar that could not be read are each REFUSED by
  * name, inside the display's boundary, so a display that could never go live cannot ship silently.
  */
-export default function Displays({ town, lookId, attach, extent, dim, calendar }) {
+export default function Displays({ town, lookId, attach, extent, dim, calendar, drawerSource }) {
   const list = (town?.displays || []).filter(d => d.attach === attach)
   if (!list.length) return null
   return list.map(d => {
@@ -33,12 +33,13 @@ export default function Displays({ town, lookId, attach, extent, dim, calendar }
     const refusal = !P ? `${where} is of kind "${d.kind}", and no plugin exists for it (have: ${Object.keys(PLUGINS).join(', ')})`
       : !P.attaches.includes(attach) ? `${where}: a ${P.label} cannot attach to a ${attach} (it attaches to: ${P.attaches.join(', ')})`
       : calendar === undefined ? `${where}: the app passes no calendar to <Town>, so the display's season can never be read`
+      : drawerSource !== 'authoring' && drawerSource !== 'published' ? `${where}: the app names no drawer source to <Town> (displaySource: 'authoring' in Stage, 'published' in Preview and the player)`
       : calendar?.error ? `${where}: the town's calendar could not be read: ${calendar.error}`
       : calendar?.absent && d.season ? `${where}: the town publishes no calendar (content/events.json), so its season "${d.season}" can never start`
       : null
     return (
       <DisplayBoundary key={d.id} lookId={lookId} id={d.id}>
-        {refusal ? <Refuse reason={refusal} /> : <Suspense fallback={null}><P.Renderer display={d} extent={extent} calendar={Array.isArray(calendar) ? calendar : null} contentRoot={town.contentRoot} dim={dim} where={where} /></Suspense>}
+        {refusal ? <Refuse reason={refusal} /> : <Suspense fallback={null}><P.Renderer display={d} extent={extent} calendar={Array.isArray(calendar) ? calendar : null} contentRoot={town.contentRoot} lookId={lookId} drawerSource={drawerSource} dim={dim} where={where} /></Suspense>}
       </DisplayBoundary>
     )
   })

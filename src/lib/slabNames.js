@@ -47,6 +47,7 @@ export function shaOf(manifest, rel) {
     const c = manifest?.content?.[rel.slice('content/'.length)]
     if (c) return c.sha256
     for (const p of Object.values(manifest?.photos || {})) if (p && p.path === rel) return p.sha256
+    for (const d of Object.values(manifest?.displays || {})) if (d?.files?.[rel]) return d.files[rel].sha256   // a display's drawer
   }
   throw new Error(`[slabNames] "${manifest?.town}" manifest names no "${rel}" — re-run `
     + `node cartograph/bake-manifest.mjs --town=${manifest?.town ?? '<town>'}`)

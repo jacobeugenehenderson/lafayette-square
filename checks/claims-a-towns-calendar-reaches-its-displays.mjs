@@ -60,7 +60,7 @@ async function verdict({ hook, files = {}, loader } = {}) {
   F(/<SetPiece [^>]*calendar=\{calendar\}/.test(town), 'Town does not hand `calendar` to <SetPiece>')
   F(/<Displays [^>]*calendar=\{calendar\}/.test(sp), 'SetPiece does not hand `calendar` to <Displays>')
   // 3. the refusals, and no default
-  F(/export default function Displays\(\{[^}]*\bcalendar \}\)/.test(dsp), 'Displays defaults `calendar` (it must be required)')
+  F(/export default function Displays\(\{[^}]*\bcalendar[,\s}]/.test(dsp) && !/\bcalendar = /.test(dsp.slice(dsp.indexOf('export default function Displays'), dsp.indexOf('{', dsp.indexOf(') {', dsp.indexOf('export default function Displays'))))), 'Displays defaults `calendar` (it must be required)')
   F(/calendar === undefined \?/.test(dsp), 'Displays does not refuse an app that passes no calendar')
   F(/calendar\?\.error \?/.test(dsp), 'Displays does not refuse a calendar that could not be read')
   F(/calendar\?\.absent && d\.season \?/.test(dsp), 'Displays does not refuse a town that publishes no calendar while its display names a season')
@@ -79,9 +79,9 @@ else console.log("✅ a town's calendar reaches its displays: read from the mani
 if (process.argv.includes('--mutants')) {
   const mutants = [
     ['a 404 read as absence', { hook: (s) => s.replace("if (!res.ok) return { error:", "if (!res.ok) return { absent: true, was:") }],
-    ['SetPiece dropping the calendar', { files: { 'src/components/SetPiece.jsx': (s) => s.replace(' dim={dim} calendar={calendar} />', ' dim={dim} />') } }],
+    ['SetPiece dropping the calendar', { files: { 'src/components/SetPiece.jsx': (s) => s.replace(' dim={dim} calendar={calendar} drawerSource', ' dim={dim} drawerSource') } }],
     ['Preview not passing it', { files: { 'src/preview/PreviewApp.jsx': (s) => s.replace(' interactive={false} calendar={calendar}', ' interactive={false}') } }],
-    ['the default restored', { files: { 'src/displays/Displays.jsx': (s) => s.replace('dim, calendar }) {', 'dim, calendar = null }) {') } }],
+    ['the default restored', { files: { 'src/displays/Displays.jsx': (s) => s.replace('dim, calendar, drawerSource }) {', 'dim, calendar = null, drawerSource }) {') } }],
     ['the absent refusal dropped', { files: { 'src/displays/Displays.jsx': (s) => s.replace('calendar?.absent && d.season ?', 'false ?') } }],
     ["Huron's row back", { loader: (s) => s.replace("    landmarks: () => import('../../cartograph/data/huron/content/listings.json'),", "    landmarks: () => import('../../cartograph/data/huron/content/listings.json'),\n    seedEvents: () => import('../../cartograph/data/huron/content/events.json'),") }],
   ]
