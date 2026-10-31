@@ -19,12 +19,13 @@ NO ROUTINE PURGE: content names give a changed file a fresh name, and our reader
   (ward/ladder-client) + Operations signers + kit plumb/ladder-docs (merge on deploy only). Deploy-day hands: predeploy-audit items 6–12.
   The rulings: registry `r-the-host-verifies-eye-to-eye` (the four QRs, the Rep as a non-expiring mark, Host office hours, noListOfAPerson).
 - **OWED before sitting 2:** patch eight's tally column `date` → `weekday` (ruled 2026-10-31, registry `noListOfAPerson`).
-- **⛔ NEXT WARD PIN, two preconditions (Ward's):** Scene.jsx passes the published calendar (Tinsel's route makes it required);
-  and an error boundary around the Scene. Displays' refusal THROWS, and today only `<Body>` has a boundary, so a refusal is
-  a blank page (Ward, read in source, to be confirmed on the dev server). ⚠️ Kit, the same class (Zob, read): `R3FErrorBoundary`
-  wraps 15 of Town's layers and turns ANY throw into null after 7 retries, so a refusal VANISHES silently. Owed, fresh builder:
-  a refusal is a typed error, never retried, surfaced with its reason. Event card: Ward briefs it (registry
-  `r-an-event-has-a-host-and-a-venue-and-opens-at-the-venue`); the kit validator goes to Tinsel.
+- **⛔ NEXT WARD PIN (the one taking Tinsel's calendar route), three preconditions:**
+  ① **Kit (Boz's, owed, fresh builder):** `R3FErrorBoundary` wraps 15 of Town's layers (SetPiece, so Displays, included) and
+  turns ANY throw into null after 7 retries, so a refusal VANISHES silently and never reaches the Ward (Zob, read in source).
+  A refusal must be told from a transient, never retried, and surfaced with its reason. No refusal type exists: ~206
+  `[tag] ⛔` throws in 53 files; one sink with `src/displays/failures.js`, not two. ② **Ward (in dispatch, co-signed):** a
+  boundary for throws outside those layers. ③ **Ward:** Scene.jsx passes the published calendar.
+  Event card: Ward briefs it (registry `r-an-event-has-a-host-and-a-venue-and-opens-at-the-venue`); the kit validator goes to Tinsel.
 - **Displays (Tinsel):** the Light Show is on integration through 2e408e9a; the ground-ring radius stands as is (Jacob, 2026-10-31,
   "fine for now"). 65f8438f + 7d242849 await Zob. Owed: brief §2a. Jacob's revision list → Tinsel, coordinated through Boz.
 - Older OPEN: hours (56/447) · the preview-photo licence (parked) · the dock object + tide ride (unbuilt).
