@@ -277,17 +277,18 @@ look('trans', 'Trans', 'Light blue, pink, white, pink, light blue, sparkling, wi
   L({ kind: 'twinkle' }, bands(['#5bcefa', '#f5a9b8', '#ffffff', '#f5a9b8', '#5bcefa']), band(0, PIN_H, C.white)),
   L({ kind: 'fade', period: 6 }, band(0, CONE_H, '#b46cff'), band(0, PIN_H, '#b46cff')),
 ])
-const RIBBON_FRAMES = 12                                    // 6 lines wrapping on into a lattice, a hold, then the V alone again
+const RIBBON_FRAMES = 150, RIBBON_FPS = 6                   // 25 s: calm and reverent, never abrupt
 /** One diagonal line of the ribbon: its top centred at column xt, slanting s = ±1 (48 columns across the cone's height),
  *  drawn again a frame-width over each way so it wraps round the tree. */
-const ribbonLine = (s, xt) => [-FRAME_W, 0, FRAME_W].map(o => poly([[xt + o - 9, 0], [xt + o + 9, 0], [xt + o + 9 + s * 48, CONE_H], [xt + o - 9 + s * 48, CONE_H]], C.red)).join('')
-look('red-ribbon', 'Red Ribbon', 'The ribbon: two red stripes on opposite sides, slanting opposite ways, a V on black. Then more diagonal lines are added one by one, in both directions, crossing into a lattice that wraps the whole tree; then back to the V.', [
+const ribbonLine = (s, xt, op = 1) => [-FRAME_W, 0, FRAME_W].map(o => poly([[xt + o - 9, 0], [xt + o + 9, 0], [xt + o + 9 + s * 48, CONE_H], [xt + o - 9 + s * 48, CONE_H]], C.red, op < 1 ? ` opacity="${f(op)}"` : '')).join('')
+const ease = (x) => { const t = Math.min(1, Math.max(0, x)); return t * t * (3 - 2 * t) }
+look('red-ribbon', 'Red Ribbon', 'The ribbon: two red stripes on opposite sides, slanting opposite ways, a V on black. Then, slowly, more diagonal lines rise into being one after another, in both directions, crossing into a lattice that wraps the whole tree; it holds, and dims gently back to the V. Calm and reverent: one cycle is about 25 seconds.', [
   L({ kind: 'still' }, ribbonLine(1, 24) + ribbonLine(-1, 168), band(0, PIN_H, C.red)),
   L({ kind: 'still' }, (ph) => {
+    const T = ph * RIBBON_FRAMES / RIBBON_FPS, out = 1 - ease((T - 20.5) / 4)   // build 1.5–15 s, hold, dim 20.5–24.5 s
     const order = [[1, 72], [-1, 120], [1, 120], [-1, 72], [1, 168], [-1, 24]]   // alternating directions: a lattice, never a chevron
-    const shown = Math.min(order.length, Math.round(ph * RIBBON_FRAMES) - 1)
-    return order.slice(0, Math.max(0, shown)).map(([sl, xt]) => ribbonLine(sl, xt)).join('')
-  }, '', { frames: RIBBON_FRAMES, fps: 2, turn: 'build' }),
+    return order.map(([sl, xt], i) => { const op = ease((T - 1.5 - i * 2.2) / 2.6) * out; return op > 0.01 ? ribbonLine(sl, xt, op) : '' }).join('')
+  }, '', { frames: RIBBON_FRAMES, fps: RIBBON_FPS, turn: 'build' }),
 ])
 // ═══ TREES & TRIMMINGS ═══════════════════════════════════════════════════════════════════════════════════════════════
 look('plaid', 'Plaid', 'Red tartan with green bands, dark threads and a gold line; green pinnacle.', [

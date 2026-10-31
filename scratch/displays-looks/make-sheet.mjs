@@ -110,8 +110,12 @@ function sample(look, c, row, t, top = look.layers.length - 1) {
     if (m.kind === 'spin' || m.kind === 'spiral') cc = ((c - Math.floor(t * sp)) % FW + FW) % FW;
     if (m.kind === 'spiral') rr = wrapIn(row + Math.floor(t * (m.rise ?? 3)), lo, n);
     const o = (rr * FW + cc) * 4;
-    if (px[o + 3] < 110) continue;
-    const r = px[o], g = px[o + 1], b = px[o + 2];
+    const alpha = px[o + 3] / 255;
+    if (alpha < 0.02) continue;
+    let r = px[o], g = px[o + 1], b = px[o + 2];
+    if (alpha < 0.98 && li > 0) {                               // a layer part-way faded in blends over what is beneath it
+      const u = sample(look, c, row, t, li - 1); r = u[0] + (r - u[0]) * alpha; g = u[1] + (g - u[1]) * alpha; b = u[2] + (b - u[2]) * alpha;
+    }
     let k = 1;
     const scoped = !m.only || (Math.abs(r - m._only[0]) + Math.abs(g - m._only[1]) + Math.abs(b - m._only[2]) < 90);
     if (scoped) {
