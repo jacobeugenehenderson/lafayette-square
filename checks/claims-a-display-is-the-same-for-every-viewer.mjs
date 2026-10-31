@@ -75,7 +75,7 @@ else console.log('✅ every viewer sees the same light: the engine is a pure fun
 if (process.argv.includes('--mutants')) {
   const mutants = [
     ['the engine reads Date.now()', { engineMutant: (s) => s.replace('export function sampleLook(F, look, c, row, t,', 'export function sampleLook(F, look, c, row, t_,').replace('  const { w: FW, h: FH, pinH: P } = F, CONE = FH - P\n  for (let li', '  const t = t_ + (Date.now() % 1000) / 37\n  const { w: FW, h: FH, pinH: P } = F, CONE = FH - P\n  for (let li') }],
-    ['the live path reads performance.now()', { liveMutant: (s) => s.replace('calendar, sunDown, where)); now = instant.getTime() / 1000', 'calendar, sunDown, where)); now = performance.now() / 1000') }],
+    ['the live path reads performance.now()', { liveMutant: (s) => s.replace('calendar, nightAt(instant), where)); now = instant.getTime() / 1000', 'calendar, nightAt(instant), where)); now = performance.now() / 1000') }],
   ]
   let bad = 0
   for (const [name, m] of mutants) { const f = await verdict(m); console.log(`${f.length ? '🔴' : '⚪ SURVIVED'} mutant: ${name}${f.length ? ` (${f.length})` : ''}`); if (!f.length) bad++ }

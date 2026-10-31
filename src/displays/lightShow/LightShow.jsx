@@ -14,7 +14,8 @@
  *   · one AVERAGE GLOW: a light tinted by the tree's mean colour, washing everything round it
  * The strands end at a ring `strands.footHeightM` above the set-piece's base (the display's authored value: on the
  * Pilgrim Monument, about 20 ft up, Jacob 2026-10-31), never on the terrain.
- * The clock: LIVE reads the town's one clock (useTimeOfDay.currentTime) and the display's schedule; Stage's preview
+ * The clock: LIVE reads the town's one clock (useTimeOfDay.currentTime) and the plugin's schedule (dusk to dawn, a show
+ * on every hour: engine.js#liveState, the night from ../night.js); Stage's preview
  * (./preview.js) plays the glow or the show from the moment it is pressed, on the page's own time, Stage only.
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -25,6 +26,7 @@ import { townClockOf } from '../../lib/townClock.js'
 import { validateDrawer, compileRun, showAt, showSeconds, glowColour, liveState, uplightTarget } from './engine.js'
 import { checkFaces, strandEnds, pinnacleFace, pinnacleWash, bulbRadius, cordRadius, SOCKET_OF_BULB, avgGlow } from './geometry.js'
 import useDisplayPreview from '../preview.js'
+import { nightAt } from '../night.js'
 
 const SHOW_GAIN = 2.4, GLOW_GAIN = 1.7                         // HDR, so the bulbs bloom like high-wattage lamps
 const CORD = '#3a3a3c'                                          // the cords: dark gray (Jacob, 2026-10-31)
@@ -123,8 +125,7 @@ export default function LightShow({ display, extent, calendar, contentRoot, dim,
       mode = preview.mode; now = instant.getTime() / 1000 + since; t = since % (showSeconds(compiled) + 4)
       if (mode === 'show' && t > showSeconds(compiled)) mode = 'glow'                   // a breath of glow between plays
     } else {
-      const sunDown = useTimeOfDay.getState().getLightingPhase().sunAltitude < 0
-      ;({ mode, t, up } = liveState(display, compiled, townClockOf(instant), calendar, sunDown, where)); now = instant.getTime() / 1000
+      ;({ mode, t, up } = liveState(display, compiled, townClockOf(instant), calendar, nightAt(instant), where)); now = instant.getTime() / 1000
     }
     const show = mode === 'show' ? showAt(F, compiled, drawer.byId, t, now) : null
     if (pinRef.current) pinRef.current.visible = !!show

@@ -17,19 +17,19 @@
 import { importSource, sourceOf } from './_importSource.mjs'
 
 const code = (src) => src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '')
-const D = { season: 'lights', shows: { every: 'hour', from: '17:00', to: '23:00' } }, C = { segs: [], seconds: 60 }
+const D = { season: 'lights' }, C = { segs: [], seconds: 60 }, NIGHT = { dusk: 17 * 60, dawn: 6 * 60 }
 const CAL = [{ id: 'lights', start_date: '2026-11-11', end_date: '2027-01-01' }]
 const at = (date, hours) => ({ date, hours, minutes: 30, seconds: 0 })
 
 async function verdict({ engine, view, stageMut } = {}) {
   const fails = []
   const E = await importSource('src/displays/lightShow/engine.js', engine ? { transform: engine } : {})
-  const ask = (cal, clock, sunDown) => E.liveState(D, C, clock, cal, sunDown, 'check')
-  if (ask(null, at('2026-11-20', 18), true).up !== false) fails.push('with no calendar read, the strands are up: they must not be')
-  if (ask(CAL, at('2026-10-31', 18), true).up !== false) fails.push('out of season (Oct 31), the strands are up')
-  const day = ask(CAL, at('2026-11-20', 12), false)
+  const ask = (cal, clock) => E.liveState(D, C, clock, cal, NIGHT, 'check')
+  if (ask(null, at('2026-11-20', 18)).up !== false) fails.push('with no calendar read, the strands are up: they must not be')
+  if (ask(CAL, at('2026-10-31', 18)).up !== false) fails.push('out of season (Oct 31), the strands are up')
+  const day = ask(CAL, at('2026-11-20', 12))
   if (day.up !== true || day.mode !== 'off') fails.push(`in season by day the strands should hang dark (up, off); got up=${day.up}, mode=${day.mode}`)
-  if (ask(CAL, at('2026-11-20', 18), true).up !== true) fails.push('in season after dark, the strands are not up')
+  if (ask(CAL, at('2026-11-20', 18)).up !== true) fails.push('in season after dark, the strands are not up')
   const ls = code(view ? view(sourceOf('src/displays/lightShow/LightShow.jsx')) : sourceOf('src/displays/lightShow/LightShow.jsx'))
   if (!/const hang = !up \? 'none' : show \? 'all' : 'glow'/.test(ls)) fails.push("LightShow: what hangs is not 'none' when not up, 'all' in a show, the glow's strands otherwise")
   if (!/pinRef\.current\.visible = !!show/.test(ls)) fails.push('LightShow: the pinnacle strips are visible outside a show')
@@ -50,7 +50,7 @@ else console.log('✅ the strands hang only in season (dark by day, lit after da
 
 if (process.argv.includes('--mutants')) {
   const mutants = [
-    ['strands up out of season', { engine: (s) => s.replace('  const up = inSeason(calendar, display.season, clock.date, where)\n', '  const up = calendar == null || inSeason(calendar, display.season, clock.date, where) || true\n') }],
+    ['strands up out of season', { engine: (s) => s.replace('const up = inSeason(calendar, display.season, clock.date, where), span', 'const up = true, span') }],
     ['strands hung regardless of the season', { view: (s) => s.replace("const hang = !up ? 'none' : show ? 'all' : 'glow'", "const hang = show ? 'all' : 'glow'") }],
     ['the glow faded out under the show, not overtaken', { view: (s) => s.replace(": real && mode !== 'off' ? glowColour(", ": real && mode === 'glow' ? glowColour(") }],
     ['Stage without the Off preview', { stageMut: (s) => s.replace("['live', 'off', 'glow', 'show'].map", "['live', 'glow', 'show'].map") }],

@@ -78,7 +78,6 @@ export default {
     season: 'monument-lighting',
     strands: { glow: 20, show: 60, ringRadiusM: 31, footHeightM: 6.1 },   // 6.1 m = 20 ft
     dimUplights: 0.15,                  // while lit (glow or show), the monument's floods fade to 15% of what the Look authors
-    shows: { every: 'hour', from: '17:00', to: '23:00' },
     // All 26 looks, spread so each tradition recurs and no two neighbours share a main colour; Progress Pride → Chevron →
     // Trans (vertical stripes, the chevron, horizontal stripes); Doves → Red Ribbon → White Bulbs close (Jacob, 2026-10-31).
     run: [
