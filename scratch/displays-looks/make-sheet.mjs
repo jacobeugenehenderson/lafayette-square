@@ -23,7 +23,7 @@ const M = JSON.parse(readFileSync(join(HERE, 'looks.json'), 'utf8'))
 const uri = (file) => 'data:image/svg+xml;base64,' + readFileSync(join(HERE, file)).toString('base64')
 const TRANSITIONS_SRC = readFileSync(join(HERE, 'transitions.js'), 'utf8').replace(/if \(typeof module[^\n]*\n?/, '')
 // Each transition is shown between two looks that suit it: from → to.
-const PAIRS = { cascade: ['santa', 'santas-hat'], 'rising-spiral': ['candy-cane', 'classic-tree'], iris: ['holly', 'stars'], curtain: ['gift-red', 'gift-pride'], sparkle: ['snowfall', 'snowflakes'], melt: ['frosty', 'snowfall'], twirl: ['peppermint', 'candy-cane'], 'strobe-flash': ['rudolph', 'santa'], 'blackout-bloom': ['menorah', 'dreidel'], shatter: ['ornaments', 'white-bulbs'], 'rising-stripes': ['kwanzaa-bands', 'kinara'], 'expanding-stripes': ['plaid', 'gingerbread'], 'drop-in': ['bear', 'progress-pride'] }
+const PAIRS = { cascade: ['santa', 'santas-hat'], 'rising-spiral': ['candy-cane', 'classic-tree'], iris: ['holly', 'stars'], curtain: ['gift-red', 'gift-pride'], sparkle: ['snowfall', 'snowflakes'], melt: ['frosty', 'snowfall'], twirl: ['peppermint', 'candy-cane'], 'blackout-bloom': ['menorah', 'dreidel'], shatter: ['ornaments', 'white-bulbs'], 'rising-stripes': ['kwanzaa-bands', 'kinara'], 'expanding-stripes': ['plaid', 'gingerbread'], chevron: ['bear', 'progress-pride'] }
 const looks = M.looks.map(L => ({ ...L, layers: L.layers.map(l => ({ ...l, frames: l.frames.map(uri) })) }))
 
 const TRANSITIONS_LIST_LEN = (TRANSITIONS_SRC.match(/\bid: '/g) || []).length
@@ -79,7 +79,7 @@ footer { max-width: 1240px; margin: 0 auto; padding: 0 24px 48px; color: var(--m
   <div class="switch" role="group" aria-label="Colour strands for the show"><span>Show strands</span><button type="button" data-n="40">40 · 2×</button><button type="button" data-n="60" aria-pressed="true">60 · 3×</button><button type="button" data-n="192">192</button></div>
 </header>
 <main class="grid" id="grid" data-sheet="looks"></main>
-<section class="intro" data-sheet="transitions"><p class="lede">${TRANSITIONS_LIST_LEN} transitions and the opening Transformation. Each card plays a pair of looks: the first look, the transition, the second, and the same transition back. Transitions marked <b>strobe accent</b> flash hard white at their moving edge, the dynamic moment. They are kit code: the operator picks them in the show strip, never draws them.</p></section>
+<section class="intro" data-sheet="transitions"><p class="lede">${TRANSITIONS_LIST_LEN} transitions and the opening Transformation. Each card plays a pair of looks: the first look, the transition, the second, and the same transition back. Transitions marked <b>sparkle accent</b> glint at their moving edge, the dynamic moment: random bulbs, each on its own beat, never a hard line and never the whole tree. They are kit code: the operator picks them in the show strip, never draws them.</p></section>
 <main class="grid" id="tgrid" data-sheet="transitions"></main>
 <footer>Motions, one per layer: still · fall · rise · spin (round the tree) · spiral (round and up) · twinkle · pulse · strobe · fade (washing in over the layer beneath and back out), and three that move glyphs in place, drawn by the system: turn (the peppermints), swing (the bells), tumble (the snowflakes), build (the ribbon's lines wrapping on into a lattice, one by one). "One colour" means the motion touches only that colour. </footer>
 <script>
@@ -194,7 +194,8 @@ function drawTransformation(ctx, bufs, look, now) {
   const glowFn = (p) => glowColour(p, now).map(v => v * kg);
   const showFn = (p) => {
     const key = (p.row - P) / CONE * 2 + p.c / FW;
-    if (t > 0 && t < 1 && Math.abs(key - front) * 14 < 1.4 && Math.floor(now * 16) % 2 === 0) return [255, 255, 255];
+    const dd = Math.abs(key - front) * 14;                     // the front sparkles: random glints, thinning away from it
+    if (t > 0 && t < 1 && dd < 4 && hash((p.row * FW + p.c) * 31 + Math.floor(now * 12 + hash(p.row * 977 + p.c) * 12)) < 0.5 * (1 - dd / 4)) return [255, 246, 228];
     return key < front ? sample(look, p.c, p.row, now) : [0, 0, 0];
   };
   drawSets(ctx, bufs, [[GEO[20], glowFn], [GEO[SHOW], showFn]], (avg) => pinnacleColours(look, now, avg).map(f => ({ k: f.k, L: f.L.map(v => v * kp), H: f.H.map(v => v * kp) })));
@@ -312,10 +313,10 @@ Promise.all(LOOKS.map(async (L, i) => {
   const el = card(L, i + 1);
   items[i + 1] = { el, look: L, ctx: el.querySelector('.cone').getContext('2d'), flat: el.querySelector('.flat').getContext('2d') };
 })).then(() => {
-  const tf = byId['classic-tree'], tfEl = tcard('The Transformation', 'opening · strobe accent', 'The show opens: the 20 white strands fade as the colour strands spiral down from the ridge, their front strobing, and the pinnacle’s strips come up last. It reverses at the end.', 'the glow → Classic Tree', false);
+  const tf = byId['classic-tree'], tfEl = tcard('The Transformation', 'opening · sparkle accent', 'The show opens: the 20 white strands fade as the colour strands spiral down from the ridge, their front sparkling, and the pinnacle’s strips come up last. It reverses at the end.', 'the glow → Classic Tree', false);
   titems.push({ el: tfEl, ctx: tfEl.querySelector('.cone').getContext('2d'), transformation: tf });
   for (const tr of TRANSITIONS) {
-    const [a, b] = PAIRS[tr.id], el = tcard(tr.name, tr.seconds + ' s' + (tr.accent ? ' · strobe accent' : ''), tr.notes, byId[a].name + ' → ' + byId[b].name, true);
+    const [a, b] = PAIRS[tr.id], el = tcard(tr.name, tr.seconds + ' s' + (tr.accent ? ' · sparkle accent' : ''), tr.notes, byId[a].name + ' → ' + byId[b].name, true);
     titems.push({ el, src: transitionSource(tr, byId[a], byId[b]), ctx: el.querySelector('.cone').getContext('2d'), flat: el.querySelector('.flat').getContext('2d') });
   }
   start();

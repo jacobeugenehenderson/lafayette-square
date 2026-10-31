@@ -7,7 +7,8 @@
  *   c, row     the bulb's place in the frame (row < env.P is the pinnacle; the cone is below it)
  *   t          the transition's progress, 0 … 1
  *   now        the show clock in seconds: only the strobe accents read it, so they flicker at a steady rate
- * `accent: true` marks a transition that strobes hard white at its moving edge, the dynamic moment.
+ * `accent: true` marks a transition whose moving edge SPARKLES: bulbs near it glint white at random, each at its own
+ * moment, thinning away from the edge. Never a hard line, never the whole tree flashing (Jacob, 2026-10-31).
  * Same inputs, same light, on every screen: nothing here reads a device clock.
  * ⚠️ Draft for Jacob's contact sheet; it moves into the plugin when he approves the set.
  */
@@ -18,30 +19,31 @@ const TRANSITIONS = (() => {
   const lerp = (a, b, k) => [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k]
   const scale = (a, k) => [a[0] * k, a[1] * k, a[2] * k]
   const WHITE = [255, 255, 255], BLACK = [0, 0, 0]
-  const flick = (now) => Math.floor(now * 16) % 2 === 0                       // a strobe: ~8 flashes a second
-  const edge = (d, now, w = 1.6) => Math.abs(d) < w && flick(now)            // on the moving edge, and flashing
-  function bounceOut(x) {                                                     // lands, bounces twice, settles
-    const n = 7.5625, d = 2.75, t = clamp(x)
-    if (t < 1 / d) return n * t * t
-    if (t < 2 / d) { const u = t - 1.5 / d; return n * u * u + 0.75 }
-    if (t < 2.5 / d) { const u = t - 2.25 / d; return n * u * u + 0.9375 }
-    const u = t - 2.625 / d; return n * u * u + 0.984375
+  /** A glint on the moving edge: d is the bulb's distance from it; the nearer, the likelier, each bulb on its own beat. */
+  const sparkle = (c, row, d, now, E, w = 4) => {
+    const a = Math.abs(d); if (a > w) return null
+    const beat = Math.floor(now * 12 + E.hash(row * 977 + c) * 12), h = E.hash((row * E.FW + c) * 31 + beat)
+    if (h > 0.5 * (1 - a / w)) return null
+    const k = 0.75 + 0.25 * E.hash(beat * 7 + c)
+    return [255 * k, 246 * k, 228 * k]
   }
+  /** A slow wave, so a front is never ruler-straight. */
+  const wob = (x) => (Math.sin(x * 0.21) + Math.sin(x * 0.077 + 1.3)) * 1.6
 
   return [
     { id: 'cascade', name: 'Cascade from the Crown', seconds: 2.4, accent: true,
-      notes: 'The new look pours down from the pinnacle to the ground; its leading edge strobes as it falls.',
+      notes: 'The new look pours down from the pinnacle to the ground, its uneven leading edge sparkling as it falls.',
       mix(A, B, c, row, t, now, E) {
-        const front = t * (E.FH + 6) - 3
-        if (edge(row - front, now)) return WHITE
+        const front = ease(t) * (E.FH + 12) - 6 + wob(c)
+        const sp = t > 0 && t < 1 && sparkle(c, row, row - front, now, E); if (sp) return sp
         return row < front - 2 ? B(c, row) : row > front + 2 ? A(c, row) : lerp(B(c, row), A(c, row), (row - front + 2) / 4)
       } },
 
     { id: 'rising-spiral', name: 'Rising Spiral', seconds: 3, accent: true,
-      notes: 'The new look winds up the tree from the ground in a two-turn spiral; its edge strobes as it climbs.',
+      notes: 'The new look winds up the tree from the ground in a two-turn spiral, its edge sparkling as it climbs.',
       mix(A, B, c, row, t, now, E) {
-        const turns = 2, h = (E.FH - row) / E.FH, key = h * turns + c / E.FW, front = t * (turns + 1.05)
-        if (edge((key - front) * 12, now, 1.4)) return WHITE
+        const turns = 2, h = (E.FH - row) / E.FH, key = h * turns + c / E.FW, front = ease(t) * (turns + 1.1) - 0.05
+        const sp = t > 0 && t < 1 && sparkle(c, row, (key - front) * 14, now, E); if (sp) return sp
         return key < front ? B(c, row) : A(c, row)
       } },
 
@@ -55,10 +57,10 @@ const TRANSITIONS = (() => {
       } },
 
     { id: 'curtain', name: 'Curtain Sweep', seconds: 2.6, accent: true,
-      notes: 'The new look is drawn round the tree like a curtain, its edge strobing as it passes you.',
+      notes: 'The new look is drawn round the tree like a curtain, its softly waving edge sparkling as it passes you.',
       mix(A, B, c, row, t, now, E) {
-        const front = ease(t) * (E.FW + 4) - 2
-        if (edge(c - front, now, 1.2)) return WHITE
+        const front = ease(t) * (E.FW + 12) - 6 + wob(row * 1.7)
+        const sp = t > 0 && t < 1 && sparkle(c, row, c - front, now, E); if (sp) return sp
         return c < front ? B(c, row) : A(c, row)
       } },
 
@@ -71,11 +73,11 @@ const TRANSITIONS = (() => {
       } },
 
     { id: 'melt', name: 'Melt', seconds: 2.8, accent: true,
-      notes: 'The old look slides down off the tree, strand by strand at its own pace, revealing the new; the falling edge strobes.',
+      notes: 'The old look slides down off the tree, strand by strand at its own pace, revealing the new; its falling edge sparkles.',
       mix(A, B, c, row, t, now, E) {
         const drop = easeIn(t) * (E.FH + 24) * (0.7 + 0.6 * E.hash(c * 7919)), src = row - drop
-        if (src >= 0) return edge(src - 1, now, 1.4) ? WHITE : A(c, Math.floor(src))
-        return B(c, row)
+        const sp = t > 0 && t < 1 && sparkle(c, row, src - 1, now, E, 3); if (sp) return sp
+        return src >= 0 ? A(c, Math.floor(src)) : B(c, row)
       } },
 
     { id: 'twirl', name: 'Twirl', seconds: 2.6, accent: false,
@@ -83,14 +85,6 @@ const TRANSITIONS = (() => {
       mix(A, B, c, row, t, now, E) {
         const k = ease(t), wrap = (x) => ((Math.round(x) % E.FW) + E.FW) % E.FW
         return lerp(A(wrap(c + t * t * E.FW * 1.2), row), B(wrap(c - (1 - k) * (1 - k) * E.FW * 1.2), row), k)
-      } },
-
-    { id: 'strobe-flash', name: 'Strobe Flash', seconds: 1.4, accent: true,
-      notes: 'A burst of hard white strobes, the look switching underneath it.',
-      mix(A, B, c, row, t, now, E) {
-        if (t < 0.15) return A(c, row)
-        if (t > 0.85) return B(c, row)
-        return flick(now) ? WHITE : scale(t < 0.5 ? A(c, row) : B(c, row), 0.25)
       } },
 
     { id: 'blackout-bloom', name: 'Blackout and Bloom', seconds: 3, accent: false,
@@ -111,10 +105,10 @@ const TRANSITIONS = (() => {
       } },
 
     { id: 'rising-stripes', name: 'Rising Stripes', seconds: 2.6, accent: true,
-      notes: 'Bands of the new look climb from the ground, every other band a beat behind; their tops strobe as they rise.',
+      notes: 'Bands of the new look climb from the ground, every other band a beat behind; their tops sparkle as they rise.',
       mix(A, B, c, row, t, now, E) {
-        const band = Math.floor((E.FH - row) / 8), tt = clamp((t - (band % 2) * 0.22) / 0.78), front = ease(tt) * (E.FH + 4)
-        if (edge((E.FH - row) - front, now, 1.4)) return WHITE
+        const band = Math.floor((E.FH - row) / 8), tt = clamp((t - (band % 2) * 0.22) / 0.78), front = ease(tt) * (E.FH + 10) - 4 + wob(c)
+        const sp = tt > 0 && tt < 1 && sparkle(c, row, (E.FH - row) - front, now, E, 3); if (sp) return sp
         return (E.FH - row) < front ? B(c, row) : A(c, row)
       } },
 
@@ -125,21 +119,20 @@ const TRANSITIONS = (() => {
         return Math.abs(local - 6) < ease(t) * 6.6 ? B(c, row) : A(c, row)
       } },
 
-    { id: 'drop-in', name: 'Drop-in Stripes', seconds: 3.2, accent: true,
-      notes: 'Bands of the new look drop from the pinnacle one by one, land with a bounce and stack up from the ground; each landing strobes.',
+    { id: 'chevron', name: 'Chevron', seconds: 3.4, accent: true,
+      notes: 'Stripes of the new look come on across the old; then a great glowing chevron rises onto the tree from the ground, sweeps up through it and out of the top, leaving the new look whole behind it. Its edges sparkle.',
       mix(A, B, c, row, t, now, E) {
-        const H = 12, nb = Math.ceil(E.FH / H)
-        for (let k = 0; k < nb; k++) {
-          const u = clamp((t - (k / nb) * 0.62) / 0.38)
-          if (u <= 0) continue
-          const bottom = E.FH - k * H, top = bottom - H, d = (1 - bounceOut(u)) * bottom
-          if (row >= top - d && row < bottom - d) {
-            const landing = [0.36, 0.73, 0.91].some(x => Math.abs(u - x) < 0.035)
-            if (landing && row >= bottom - d - 1.5) return WHITE
-            return B(c, Math.min(E.FH - 1, Math.round(row + d)))
-          }
+        const fw = E.FW / E.FACES, dx = Math.abs((c % fw) - fw / 2) / (fw / 2)          // 0 at a face's middle, 1 at its corner
+        const y = (E.FH - row) - dx * 26                                                  // height above the chevron's point line
+        const pos = ease(clamp((t - 0.3) / 0.7)) * (E.FH + 60) - 30                       // the chevron's place, rising
+        const d = y - pos, W = 7
+        if (Math.abs(d) < W) {
+          const sp = sparkle(c, row, Math.abs(d) - W, now, E, 2.5); if (sp) return sp
+          return lerp([255, 214, 120], [255, 246, 228], 1 - Math.abs(d) / W)              // the chevron: warm white-gold
         }
-        return A(c, row)
+        if (d < 0) return B(c, row)                                                       // below it: the new look, whole
+        const stripes = Math.abs((((row % 12) + 12) % 12 + 0.5) - 6) < ease(t / 0.3) * 2.2   // above: the stripes have come on
+        return stripes ? B(c, row) : A(c, row)
       } },
   ]
 })()
