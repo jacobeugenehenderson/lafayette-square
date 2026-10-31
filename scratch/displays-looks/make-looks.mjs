@@ -275,8 +275,8 @@ look('bear', 'Bear', 'A plaid woven from the bear pride colours, each kept disti
     return s
   }, band(0, PIN_H, '#e05200')),
 ])
-look('trans', 'Trans', 'Light blue, pink, white, pink, light blue, sparkling, with their average, a bright lilac, washing in over them and back out again. The look arrives on the lilac, and the lilac sparkles away, bulb by bulb, into the flag (Jacob, 2026-10-31: after the Progress flag\u2019s chevron rises off to the lilac).', [
-  L({ kind: 'twinkle' }, bands(['#5bcefa', '#f5a9b8', '#ffffff', '#f5a9b8', '#5bcefa']), band(0, PIN_H, C.white)),
+look('trans', 'Trans', 'Light blue, pink, white, pink, light blue, held still: the flag, shown plainly. It arrives as their average, a solid bright lilac, and the lilac sparkles away, bulb by bulb, revealing the flag (Jacob, 2026-10-31: after the Progress flag\u2019s chevron rises off to the lilac).', [
+  L({ kind: 'still' }, bands(['#5bcefa', '#f5a9b8', '#ffffff', '#f5a9b8', '#5bcefa']), band(0, PIN_H, C.white)),
   L({ kind: 'fade', out: 2.5 }, band(0, CONE_H, '#b46cff'), band(0, PIN_H, '#b46cff')),
 ])
 const RIBBON_FRAMES = 300, RIBBON_FPS = 12                  // 25 s, played ONCE from the look's start, holding its last frame

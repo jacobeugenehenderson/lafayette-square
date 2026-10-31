@@ -299,8 +299,13 @@ function transitionSource(tr, from, to) {
   // animation to complete").
   const settle = Math.max(0, ...to.layers.map(L => L.motion.out ? L.motion.out + 0.2 : L.once ? L.frames.length / L.fps : 0));
   const hold = 1.6, holdB = Math.max(hold, settle + 1), dur = tr.seconds, period = hold + holdB + 2 * dur, E = { FW, FH, P, CONE, FACES, hash };
+  // A mirrored transition's card plays the WHOLE sequence, then the whole of it in reverse (Jacob, 2026-10-31: for
+  // Progress Pride → Trans, "stripes, chevron, solid lilac, sparkle reveal trans flag. Maybe the whole thing in reverse").
+  const half = hold + dur + holdB
   return { sample(c, row, now) {
-    const u = now % period, Af = (cc, rr, k = 1) => sample(from, cc, rr, now, undefined, k), Bf = (cc, rr, k = 1) => sample(to, cc, rr, u - hold - dur, undefined, k);   // the incoming look on its own clock, 0 as it lands
+    let u = now % period
+    if (tr.mirror) { u = now % (2 * half); if (u > half) u = 2 * half - u }
+    const Af = (cc, rr, k = 1) => sample(from, cc, rr, now, undefined, k), Bf = (cc, rr, k = 1) => sample(to, cc, rr, u - hold - dur, undefined, k);   // the incoming look on its own clock, 0 as it lands
     if (u < hold) return Af(c, row, tr.fromEnter ?? 1);
     if (u < hold + dur) return tr.mix(Af, Bf, c, row, (u - hold) / dur, now, E);
     if (u < hold + holdB + dur) return Bf(c, row);

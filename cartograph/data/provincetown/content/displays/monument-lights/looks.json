@@ -405,11 +405,11 @@
     {
       "id": "trans",
       "name": "Trans",
-      "notes": "Light blue, pink, white, pink, light blue, sparkling, with their average, a bright lilac, washing in over them and back out again. The look arrives on the lilac, and the lilac sparkles away, bulb by bulb, into the flag (Jacob, 2026-10-31: after the Progress flag’s chevron rises off to the lilac).",
+      "notes": "Light blue, pink, white, pink, light blue, held still: the flag, shown plainly. It arrives as their average, a solid bright lilac, and the lilac sparkles away, bulb by bulb, revealing the flag (Jacob, 2026-10-31: after the Progress flag’s chevron rises off to the lilac).",
       "layers": [
         {
           "motion": {
-            "kind": "twinkle"
+            "kind": "still"
           },
           "frames": [
             "looks/trans/0.svg"
