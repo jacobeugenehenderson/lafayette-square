@@ -306,22 +306,6 @@
       ]
     },
     {
-      "id": "kinara",
-      "name": "Kinara",
-      "notes": "A kinara on every face, its holder in gold and brown: three red candles, the black one in the centre, three green; behind it, warm bands of gold and brown. Only the flames flicker.",
-      "layers": [
-        {
-          "motion": {
-            "kind": "twinkle",
-            "only": "#ffc23a"
-          },
-          "frames": [
-            "looks/kinara/0.svg"
-          ]
-        }
-      ]
-    },
-    {
       "id": "kwanzaa-bands",
       "name": "Kwanzaa Bands",
       "notes": "Red over black over green, rising slowly; red pinnacle.",

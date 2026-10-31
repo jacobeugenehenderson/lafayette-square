@@ -107,14 +107,6 @@ const TRANSITIONS = (() => {
         return h2 < (t - 0.5) * 2 ? scale(B(c, row), 0.6 + 0.4 * tw) : (tw > 0.95 ? WHITE : BLACK)
       } },
 
-    { id: 'rising-stripes', name: 'Rising Stripes', seconds: 2.6, accent: true,
-      notes: 'Bands of the new look climb from the ground, every other band a beat behind; their tops sparkle as they rise.',
-      mix(A, B, c, row, t, now, E) {
-        const band = Math.floor((E.FH - row) / 8), tt = clamp((t - (band % 2) * 0.22) / 0.78), front = ease(tt) * (E.FH + 10) - 4 + wob(c)
-        const sp = tt > 0 && tt < 1 && sparkle(c, row, (E.FH - row) - front, now, E, 3); if (sp) return sp
-        return (E.FH - row) < front ? B(c, row) : A(c, row)
-      } },
-
     { id: 'expanding-stripes', name: 'Expanding Stripes', seconds: 2.2, accent: false,
       notes: 'Thin bands of the new look appear across the old and widen until they meet.',
       mix(A, B, c, row, t, now, E) {
@@ -123,14 +115,19 @@ const TRANSITIONS = (() => {
       } },
 
     { id: 'chevron', name: 'Chevron', seconds: 6, accent: true, mirror: true, fromEnter: 0,
-      notes: 'The stripes are there. The look’s motion object, the Progress flag’s own chevron, rises from the ground into place: now it is the Progress flag. It pauses. Then it keeps rising, up and out of the top, revealing the next look beneath it, its base edge sparkling. The way back is the same, reversed.',
+      notes: 'The stripes are there. The look’s motion object, the Progress flag’s own chevron, rises from the ground into place: now it is the Progress flag. It pauses. Then it keeps rising, up and out of the top: its colours fade away as it goes, only the black climbing on, and the next look shows through beneath it, its base edge sparkling. The way back is the same, reversed.',
       mix(A, B, c, row, t, now, E) {
         const run = E.CONE + 4
         if (t < 0.32) return A(c, row, ease(t / 0.32))                                   // rising into place
         if (t < 0.52) return A(c, row, 1)                                                 // the pause: the flag, whole
         const k = ease((t - 0.52) / 0.48), base = E.FH - k * (run + 4)                   // rising on; its base edge climbs
         const sp = k > 0 && k < 1 && sparkle(c, row, row - base, now, E, 2.5); if (sp) return sp
-        return row > base ? B(c, row) : A(c, row, 1 + k)                                  // beneath it, the next look
+        if (row > base) return B(c, row)                                                  // beneath it, the next look
+        // Its colours fade on the way up, the black alone climbing on: where the object covers, the next look shows through.
+        const on = A(c, row, 1 + k), bare = A(c, row, 0)
+        const isObject = Math.abs(on[0] - bare[0]) + Math.abs(on[1] - bare[1]) + Math.abs(on[2] - bare[2]) > 24
+        if (!isObject || on[0] + on[1] + on[2] < 40) return on
+        return lerp(on, B(c, row), ease(k * 2.5))
       } },
   ]
 })()

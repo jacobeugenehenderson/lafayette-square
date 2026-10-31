@@ -235,14 +235,6 @@ look('dreidel', 'Dreidel', 'The whole tree is one dreidel: a silver handle at th
   }), band(0, PIN_H, C.silver)),
 ])
 // ═══ KWANZAA ═════════════════════════════════════════════════════════════════════════════════════════════════════════
-look('kinara', 'Kinara', 'A kinara on every face, its holder in gold and brown: three red candles, the black one in the centre, three green; behind it, warm bands of gold and brown. Only the flames flicker.', [
-  L({ kind: 'twinkle', only: C.gold }, bands(['#2e1e05', '#5c3f0a', '#8f6216', '#5c3f0a', '#2e1e05']) + perFace((cx) => {
-    let s = rect(cx - 18, 70, 36, 5, '#b07a2a') + rect(cx - 13, 75, 26, 5, '#7a4e16')
-    const col = [C.red, C.red, C.red, '#000', C.green, C.green, C.green]
-    for (let i = 0; i < 7; i++) { const x = cx + (i - 3) * 4.6; s += rect(x - 1.4, 46, 2.8, 24, col[i]) + `<ellipse cx="${x}" cy="43" rx="1.4" ry="2.6" fill="${C.gold}"/>` }
-    return s
-  }), band(0, PIN_H, '#b07a2a')),
-])
 look('kwanzaa-bands', 'Kwanzaa Bands', 'Red over black over green, rising slowly; red pinnacle.', [
   L({ kind: 'rise', speed: 4 }, bands([C.red, '#000', C.green]), band(0, PIN_H, C.red)),
 ])
@@ -260,7 +252,8 @@ look('doves', 'Doves', 'A white dove with an olive sprig on every face, among go
 const RAINBOW = ['#e40303', '#ff8c00', '#ffed00', '#008026', '#004dff', '#750787']
 look('progress-pride', 'Progress Pride', 'Two flags on opposite sides, turned upright: the rainbow in vertical stripes, and the Progress chevron rising from the ground, white at its heart, through pink, light blue and brown to black. The chevron is a motion object: in the Chevron transition it rises into place, pauses, and rises on to reveal the next look.', [
   L({ kind: 'still' }, () => halves((cx) => RAINBOW.map((c, i) => rect(cx - 48 + i * 16, 0, 16.2, CONE_H, c)).join('')), bands(['#5bcefa', '#f5a9b8', C.white], 0, PIN_H)),
-  L({ kind: 'still' }, () => halves((cx) => ['#000', '#784f17', '#5bcefa', '#f5a9b8', C.white].map((c, i) => { const w = 46 - i * 8; return poly([[cx - w, 97], [cx, 26 + i * 10], [cx + w, 97]], c) }).join('')), '', { enter: 'rise' }),
+  L({ kind: 'still' }, () => halves((cx) => ['#000', '#784f17', '#5bcefa', '#f5a9b8', C.white].map((c, i) => { const w = i ? 46 - i * 8 : 49;   // the black legs reach the seam, so neighbouring flags' chevrons meet at the ground
+    return poly([[cx - w, 97], [cx, 26 + i * 10], [cx + w, 97]], c) }).join('')), '', { enter: 'rise' }),
 ])
 const BEAR = ['#623804', '#d56300', '#fedd63', '#fee6b8', '#ffffff', '#555555', '#000000']
 look('bear', 'Bear', 'A plaid woven from the bear pride colours: dark brown and rust crossed with gold, tan, white and grey threads.', [
