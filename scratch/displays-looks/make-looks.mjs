@@ -259,10 +259,13 @@ look('doves', 'Doves', 'A white dove with an olive sprig on every face, among go
   L({ kind: 'still' }, perFace((cx, k) => g(cx + (k % 2 ? 6 : -6), [44, 60, 76, 52][k], 0, dove(C.white), 1.1))),
 ])
 // ═══ PRIDE ═══════════════════════════════════════════════════════════════════════════════════════════════════════════
+// The flag's pink (#f5a9b8) is so pale that, lit, it reads as white beside the white stripe: deepened so the flag
+// reads blue, pink and white (Jacob, 2026-10-31). Used wherever the trans colours appear (Progress chevron, Trans).
+const TRANS_PINK = '#ff5c9a'
 const RAINBOW = ['#e40303', '#ff8c00', '#ffed00', '#008026', '#004dff', '#750787']
 look('progress-pride', 'Progress Pride', 'Two flags on opposite sides, turned upright: the rainbow in vertical stripes, and the Progress chevron rising from the ground, white at its heart, through pink, light blue and brown to black. The chevron is a motion object: in the Chevron transition it rises into place, pauses, and rises on to reveal the next look.', [
-  L({ kind: 'still' }, () => halves((cx) => RAINBOW.map((c, i) => rect(cx - 48 + i * 16, 0, 16.2, CONE_H, c)).join('')), bands(['#5bcefa', '#f5a9b8', C.white], 0, PIN_H)),
-  L({ kind: 'still' }, () => halves((cx) => ['#000', '#784f17', '#5bcefa', '#f5a9b8', C.white].map((c, i) => { const w = i ? 46 - i * 8 : 49;   // the black legs reach the seam, so neighbouring flags' chevrons meet at the ground
+  L({ kind: 'still' }, () => halves((cx) => RAINBOW.map((c, i) => rect(cx - 48 + i * 16, 0, 16.2, CONE_H, c)).join('')), bands(['#5bcefa', TRANS_PINK, C.white], 0, PIN_H)),
+  L({ kind: 'still' }, () => halves((cx) => ['#000', '#784f17', '#5bcefa', TRANS_PINK, C.white].map((c, i) => { const w = i ? 46 - i * 8 : 49;   // the black legs reach the seam, so neighbouring flags' chevrons meet at the ground
     return poly([[cx - w, 97], [cx, 26 + i * 10], [cx + w, 97]], c) }).join('')), '', { enter: 'rise' }),
 ])
 const BEAR = ['#623804', '#d56300', '#fedd63', '#fee6b8', '#ffffff', '#555555', '#000000']
@@ -276,7 +279,7 @@ look('bear', 'Bear', 'A plaid woven from the bear pride colours, each kept disti
   }, band(0, PIN_H, '#e05200')),
 ])
 look('trans', 'Trans', 'Light blue, pink, white, pink, light blue, held still: the flag, shown plainly. It arrives as their average, a solid bright lilac, and the lilac sparkles away, bulb by bulb, revealing the flag (Jacob, 2026-10-31: after the Progress flag\u2019s chevron rises off to the lilac).', [
-  L({ kind: 'still' }, bands(['#5bcefa', '#f5a9b8', '#ffffff', '#f5a9b8', '#5bcefa']), band(0, PIN_H, C.white)),
+  L({ kind: 'still' }, bands(['#5bcefa', TRANS_PINK, '#ffffff', TRANS_PINK, '#5bcefa']), band(0, PIN_H, C.white)),
   L({ kind: 'fade', out: 2.5 }, band(0, CONE_H, '#b46cff'), band(0, PIN_H, '#b46cff')),
 ])
 const RIBBON_FRAMES = 300, RIBBON_FPS = 12                  // 25 s, played ONCE from the look's start, holding its last frame
