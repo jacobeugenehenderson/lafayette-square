@@ -163,7 +163,7 @@ look('gift-red', 'Red Gift', 'The whole tree wrapped like a present: stripes of 
   L({ kind: 'still' }, () => wrapPaper([C.red, C.gold], 8, 1), band(0, PIN_H, C.gold)),
 ])
 look('gift-pride', 'Pride Gift', 'The whole tree wrapped like a present in the Pride flag: stripes red through violet, spiralling the long way round it.', [
-  L({ kind: 'still' }, () => wrapPaper(RAINBOW, 8, -1), band(0, PIN_H, C.white)),
+  L({ kind: 'still' }, () => wrapPaper(RAINBOW, 8, 1), band(0, PIN_H, C.white)),
 ])
 // ═══ CANDY ═══════════════════════════════════════════════════════════════════════════════════════════════════════════
 look('candy-cane', 'Candy Cane', 'Red and white spiralling from the ridge to the ground, turning.', [
@@ -275,9 +275,9 @@ look('bear', 'Bear', 'A plaid woven from the bear pride colours, each kept disti
     return s
   }, band(0, PIN_H, '#e05200')),
 ])
-look('trans', 'Trans', 'Light blue, pink, white, pink, light blue, sparkling, with their average, a bright lilac, washing in over them and back out again. The look arrives on the lilac and resolves into the stripes (Jacob, 2026-10-31: after the Progress flag\u2019s chevron).', [
+look('trans', 'Trans', 'Light blue, pink, white, pink, light blue, sparkling, with their average, a bright lilac, washing in over them and back out again. The look arrives on the lilac, and the lilac sparkles away, bulb by bulb, into the flag (Jacob, 2026-10-31: after the Progress flag\u2019s chevron rises off to the lilac).', [
   L({ kind: 'twinkle' }, bands(['#5bcefa', '#f5a9b8', '#ffffff', '#f5a9b8', '#5bcefa']), band(0, PIN_H, C.white)),
-  L({ kind: 'fade', period: 6, phase: 0.25 }, band(0, CONE_H, '#b46cff'), band(0, PIN_H, '#b46cff')),
+  L({ kind: 'fade', out: 2.5 }, band(0, CONE_H, '#b46cff'), band(0, PIN_H, '#b46cff')),
 ])
 const RIBBON_FRAMES = 300, RIBBON_FPS = 12                  // 25 s, played ONCE from the look's start, holding its last frame
 /** One diagonal line of the ribbon, drawn from the ridge down to row `d`: its top centred at column xt, slanting s = ±1

@@ -26,6 +26,9 @@ const clamp = (x) => Math.min(1, Math.max(0, x))
 export const smooth = (x) => { const t = clamp(x); return t * t * (3 - 2 * t) }
 const fadeAlpha = (t, period) => clamp(((0.5 + 0.5 * Math.sin(2 * Math.PI * t / period)) - 0.25) * 2)
 /** Which of a layer's frames shows at t: looped, or played ONCE from the look's start and held at either end. */
+/** A fade played OUT once: whole until the look's start, then each bulb turns at its own moment in the next `out`
+ *  seconds, glinting white as it turns (Jacob, 2026-10-31: the lilac "fade/sparkles into the trans flag"). */
+const fadeOut = (t, out, h) => { const at = h * out; return t < at ? 1 : t < at + 0.12 ? -1 : 0 }
 const frameAt = (L, t) => { const n = L.px.length; if (n === 1) return 0; const i = Math.floor(t * L.fps); return L.once ? Math.min(n - 1, Math.max(0, i)) : ((i % n) + n) % n }
 
 /** Checks a drawer (looks.json) against the engine: every motion known, every layer's frames present. Throws by name. */
@@ -57,7 +60,7 @@ export function validateDisplay(display, drawer, where) {
 /**
  * What one bulb of a look shows at time t: seconds on the LOOK's own clock, 0 when its segment begins (negative while a
  * transition brings it in), so a motion's phase is the look's, the same at every showing. `look.layers[i].px` are the
- * layer's frames; a fade's `phase` (0 … 1 of its period) is where it stands at t = 0.
+ * layer's frames; a fade with `out` is whole until t = 0 and sparkles away over `out` seconds, never returning.
  * `enter` places the look's motion objects: 0 below the ground, 1 in place, past 1 rising on.
  */
 export function sampleLook(F, look, c, row, t, top = look.layers.length - 1, enter = 1) {
@@ -83,7 +86,8 @@ export function sampleLook(F, look, c, row, t, top = look.layers.length - 1, ent
       if (m.kind === 'pulse') k = 0.4 + 0.6 * (0.5 + 0.5 * Math.sin(t * 2 * Math.PI * (m.speed ?? 1)))
       if (m.kind === 'strobe') k = (t % 1.2) < 0.06 || ((t % 1.2) > 0.14 && (t % 1.2) < 0.2) ? 3 : 1
     }
-    if (m.kind === 'fade') { const a = fadeAlpha(t + (m.phase ?? 0) * (m.period ?? 6), m.period ?? 6); if (a < 1) { const u = sampleLook(F, look, c, row, t, li - 1, enter); return [u[0] + (r - u[0]) * a, u[1] + (g - u[1]) * a, u[2] + (b - u[2]) * a] } }
+    if (m.kind === 'fade' && m.out) { const a = fadeOut(t, m.out, hash(row * FW + c + 7919)); if (a < 0) return [255, 246, 228]; if (a === 0) { if (li === 0) return [0, 0, 0]; return sampleLook(F, look, c, row, t, li - 1, enter) } return [r, g, b] }
+    if (m.kind === 'fade') { const a = fadeAlpha(t, m.period ?? 6); if (a < 1) { const u = sampleLook(F, look, c, row, t, li - 1, enter); return [u[0] + (r - u[0]) * a, u[1] + (g - u[1]) * a, u[2] + (b - u[2]) * a] } }
     return [r * k, g * k, b * k]
   }
   return [0, 0, 0]

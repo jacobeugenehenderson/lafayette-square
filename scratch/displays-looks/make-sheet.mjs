@@ -142,7 +142,8 @@ function sample(look, c, row, t, top = look.layers.length - 1, enter = 1) {
       if (m.kind === 'strobe') k = (t % 1.2) < 0.06 || ((t % 1.2) > 0.14 && (t % 1.2) < 0.2) ? 3 : 1;
     }
     if (m.kind === 'fade') {                                    // the layer washes in over what is beneath it, and back out
-      const a = fadeAlpha(t + (m.phase ?? 0) * (m.period ?? 6), m.period ?? 6);
+      if (m.out) { const at = hash(row * FW + c + 7919) * m.out; if (t < at) return [r * k, g * k, b * k]; if (t < at + 0.12) return [255, 246, 228]; return li ? sample(look, c, row, t, li - 1, enter) : [0, 0, 0]; }
+      const a = fadeAlpha(t, m.period ?? 6);
       if (a < 1) { const u = sample(look, c, row, t, li - 1, enter); return [u[0] + (r - u[0]) * a, u[1] + (g - u[1]) * a, u[2] + (b - u[2]) * a]; }
     }
     return [r * k, g * k, b * k];

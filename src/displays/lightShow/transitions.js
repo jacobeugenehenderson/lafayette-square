@@ -113,14 +113,13 @@ export const TRANSITIONS = (() => {
         return Math.abs(local - 6) < ease(t) * 6.6 ? B(c, row) : A(c, row)
       } },
 
-    { id: 'chevron', name: 'Chevron', seconds: 6, accent: true, mirror: true, fromEnter: 0,
-      notes: 'The stripes are there. The look’s motion object, the Progress flag’s own chevron, rises from the ground into place: now it is the Progress flag. It pauses. Then it keeps rising, up and out of the top: its colours fade away as it goes, only the black climbing on, and the next look shows through beneath it, its base edge sparkling. The way back is the same, reversed.',
+    { id: 'chevron', name: 'Chevron', seconds: 6, accent: false, mirror: true, fromEnter: 0,
+      notes: 'The stripes are there. The look’s motion object, the Progress flag’s own chevron, rises from the ground into place: now it is the Progress flag. It pauses. Then it keeps rising like a curtain, up and out of the top: its colours fade away as it goes, only the black climbing on, and the next look shows through beneath it. No sparkle: each phase is its own (Jacob, 2026-10-31). The way back is the same, reversed.',
       mix(A, B, c, row, t, now, E) {
         const run = E.CONE + 4
         if (t < 0.32) return A(c, row, ease(t / 0.32))                                   // rising into place
         if (t < 0.52) return A(c, row, 1)                                                 // the pause: the flag, whole
         const k = ease((t - 0.52) / 0.48), base = E.FH - k * (run + 4)                   // rising on; its base edge climbs
-        const sp = k > 0 && k < 1 && sparkle(c, row, row - base, now, E, 2.5); if (sp) return sp
         if (row > base) return B(c, row)                                                  // beneath it, the next look
         // Its colours fade on the way up, the black alone climbing on: where the object covers, the next look shows through.
         const on = A(c, row, 1 + k), bare = A(c, row, 0)

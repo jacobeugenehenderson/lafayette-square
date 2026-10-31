@@ -405,7 +405,7 @@
     {
       "id": "trans",
       "name": "Trans",
-      "notes": "Light blue, pink, white, pink, light blue, sparkling, with their average, a bright lilac, washing in over them and back out again. The look arrives on the lilac and resolves into the stripes (Jacob, 2026-10-31: after the Progress flag’s chevron).",
+      "notes": "Light blue, pink, white, pink, light blue, sparkling, with their average, a bright lilac, washing in over them and back out again. The look arrives on the lilac, and the lilac sparkles away, bulb by bulb, into the flag (Jacob, 2026-10-31: after the Progress flag’s chevron rises off to the lilac).",
       "layers": [
         {
           "motion": {
@@ -418,8 +418,7 @@
         {
           "motion": {
             "kind": "fade",
-            "period": 6,
-            "phase": 0.25
+            "out": 2.5
           },
           "frames": [
             "looks/trans/1.svg"

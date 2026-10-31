@@ -8,11 +8,11 @@
  * (src/displays/lightShow/engine.js):
  *   1. a layer played ONCE shows its first frame as its look begins and on through the transition that brings it in,
  *      its later frames at their own seconds, and its last frame held after; whatever the town's instant;
- *   2. a fade's `phase` places it at the look's start: a fade with phase 0.25 is fully over the look as it lands.
+ *   2. a fade played OUT (`out` seconds) is whole as its look lands, and gone (each bulb turned) once `out` has passed.
  * The drawer is synthetic (flat pixels): what is under test is the engine's clock, not the art.
  *
  * Usage: node checks/claims-a-look-runs-on-its-own-clock.mjs [--mutants]
- *   --mutants: looks sampled on the instant · once played as a loop · a fade's phase ignored, each red.
+ *   --mutants: looks sampled on the instant · once played as a loop · a fade's `out` ignored, each red.
  */
 import { importSource } from './_importSource.mjs'
 
@@ -22,7 +22,7 @@ const BLACK = [0, 0, 0], RED = [200, 0, 0], GREEN = [0, 200, 0], BLUE = [0, 0, 2
 const looks = [
   { id: 'x', layers: [{ motion: { kind: 'still' }, frames: ['x'], px: [flat(GREY)] }] },
   { id: 'build', layers: [{ motion: { kind: 'still' }, frames: ['0', '1', '2'], fps: 1, once: true, px: [flat(BLACK), flat(RED), flat(GREEN)] }] },
-  { id: 'lands', layers: [{ motion: { kind: 'still' }, frames: ['x'], px: [flat(BLUE)] }, { motion: { kind: 'fade', period: 4, phase: 0.25 }, frames: ['x'], px: [flat(LILAC)] }] },
+  { id: 'lands', layers: [{ motion: { kind: 'still' }, frames: ['x'], px: [flat(BLUE)] }, { motion: { kind: 'fade', out: 2 }, frames: ['x'], px: [flat(LILAC)] }] },
 ]
 const byId = Object.fromEntries(looks.map(L => [L.id, L]))
 const RUN = [{ look: 'x', seconds: 5 }, { transition: 'iris' }, { look: 'build', seconds: 5 }, { transition: 'iris' }, { look: 'lands', seconds: 3 }, { transition: 'iris' }, { look: 'x', seconds: 2 }]
@@ -43,20 +43,21 @@ async function verdict(mutate) {
     const got = E.showAt(F, C, byId, midIris, instant).colour(F.w / F.faces / 2, F.pinH + Math.floor((F.h - F.pinH) * 0.55)).map(Math.round).join(',')
     if (got !== BLACK.join(',')) { fails.push(`the build while the transition brings it in: ${got} at town instant ${instant}, not black`); break }
   }
-  // 2. a fade with phase 0.25 is fully over its look as it lands.
-  is(at(4) + 0.05, LILAC, 'the fade (phase 0.25) as its look lands')
+  // 2. a fade played out: whole as its look lands, gone once its `out` has passed.
+  is(at(4) + 0.001, LILAC, 'the fade played out, as its look lands')
+  is(at(4) + 2.2, BLUE, 'the fade played out, after its out')
   return fails
 }
 
 const fails = await verdict()
 if (fails.length) { console.log('⛔ a look does not run on its own clock:\n  · ' + fails.join('\n  · ')); process.exitCode = 1 }
-else console.log('✅ every look runs on its own clock: a once-played build starts black and holds its end, whatever the instant; a fade lands where its phase puts it')
+else console.log('✅ every look runs on its own clock: a once-played build starts black and holds its end, whatever the instant; a fade played out is whole as its look lands and gone after')
 
 if (process.argv.includes('--mutants')) {
   const mutants = [
     ['looks sampled on the town\'s instant', (s) => s.replace('sampleLook(F, looksById[seg.look], c, row, runT - seg.at,', 'sampleLook(F, looksById[seg.look], c, row, now,').replace('tB = runT - nextLook.at', 'tB = now')],
     ['once played as a loop', (s) => s.replace('return L.once ? Math.min(n - 1, Math.max(0, i)) :', 'return false ? 0 :')],
-    ['a fade\'s phase ignored', (s) => s.replace('fadeAlpha(t + (m.phase ?? 0) * (m.period ?? 6),', 'fadeAlpha(t,')],
+    ['a fade\'s out ignored', (s) => s.replace("if (m.kind === 'fade' && m.out)", "if (false && m.out)")],
   ]
   let bad = 0
   for (const [name, m] of mutants) { const f = await verdict(m); console.log(`${f.length ? '🔴' : '⚪ SURVIVED'} mutant: ${name}${f.length ? ` (${f.length})` : ''}`); if (!f.length) bad++ }
