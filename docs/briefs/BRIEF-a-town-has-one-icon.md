@@ -20,7 +20,7 @@ evict-when: node checks/claims-a-town-has-one-icon.mjs --mutants
 carries `<link rel="icon" href="https://lafayette-square.com/favicon.svg">`. Since LS's cutover, that 301s to
 `lafayettesquare.online/favicon.svg`, which is a **404**. provincetown.online's tag is a `data:` SVG (🦞) and works.
 
-**Ruling (Jacob, 2026-10-31): "Get rid of the arch."** A town's icon is its Look's `identity.mark` (the 10-07 ruling: "the
+**Ruling (Jacob, 2026-10-31): "Get rid of the arch" · "All kit now" · "There is no Arch because that departs from the kit convention."** A town's icon is its Look's `identity.mark` (the 10-07 ruling: "the
 identity emoji is the favicon"). LS's becomes ⚜️, which the Ward already shows after boot.
 
 ## 1. What the code says (Ward, read in source; ⛔ confirm each by symbol before you plan, and stop if it's wrong)
