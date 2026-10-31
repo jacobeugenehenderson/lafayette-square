@@ -29,8 +29,10 @@
  */
 import { mkdtempSync, writeFileSync, readFileSync, rmSync, readdirSync, statSync, chmodSync, mkdirSync, existsSync } from 'node:fs'
 import { spawn } from 'node:child_process'
-import { join, dirname, basename } from 'node:path'
+import { join } from 'node:path'
 import { tmpdir } from 'node:os'
+import { importSource } from './_importSource.mjs'
+import { sourceFile } from './_sourceFile.mjs'
 import { createServer } from 'node:http'
 import { createHash } from 'node:crypto'
 import { fileURLToPath, pathToFileURL } from 'node:url'
@@ -49,9 +51,26 @@ const md5 = (b) => createHash('md5').update(b).digest('hex')
 let seq = 0
 const load = (p) => import(pathToFileURL(p).href + `?v=${++seq}`)
 
+// What each leg reads: the repo files, or — under a mutant { which, from, to } — that one with its rule changed, in memory
+// (checks/_importSource.mjs; a script that must be SPAWNED, as a temp file by checks/_sourceFile.mjs; never beside the
+// source). A mutated freshUrl reaches the uploader and the player copy through a redirect of their import of it.
+function sources(mut = null) {
+  const edit = mut ? (s) => s.replace(mut.from, mut.to) : null, is = (k) => mut?.which === k
+  return {
+    text: (file) => { const s = readFileSync(file, 'utf8'); return mut && file === P[mut.which] ? edit(s) : s },
+    fresh: () => (is('fresh') ? importSource('src/lib/freshUrl.js', { transform: edit }) : load(P.fresh)),
+    upload: () => (is('upload') ? importSource('scripts/upload-baked-to-r2.mjs', { transform: edit })
+      : is('fresh') ? importSource('scripts/upload-baked-to-r2.mjs', { redirect: { 'src/lib/freshUrl.js': { transform: edit } } })
+      : load(P.upload)),
+    promote: () => (is('promote') ? sourceFile('scripts/promote-player-to-prod.mjs', { transform: edit })
+      : is('fresh') ? sourceFile('scripts/promote-player-to-prod.mjs', { redirect: { 'src/lib/freshUrl.js': { transform: edit } } })
+      : P.promote),
+  }
+}
+
 // ── ① ─────────────────────────────────────────────────────────────────────────────────────────────────────────
-async function legHelper(paths, fails) {
-  const { freshUrl } = await load(paths.fresh)
+async function legHelper(S, fails) {
+  const { freshUrl } = await S.fresh()
   const a = freshUrl('https://h/x.bin'), b = freshUrl('https://h/x.bin')
   if (a === b) fails.push('① freshUrl gave the same URL twice — the second read is the edge\'s copy of the first')
   if (!a.startsWith('https://h/x.bin?')) fails.push(`① freshUrl changed the URL itself: ${a}`)
@@ -78,14 +97,14 @@ async function fakeEdge(bucket) {
 }
 
 // ── ② ─────────────────────────────────────────────────────────────────────────────────────────────────────────
-async function legUploader(paths, fails) {
+async function legUploader(S, fails) {
   const tmp = mkdtempSync(join(tmpdir(), 'reads-bypass-'))
   const bucket = {}   // key → Buffer: what R2 holds
   const edge = await fakeEdge(bucket), base = edge.base
   const was = process.env.ASSET_BASE
   process.env.ASSET_BASE = base
   try {
-    const U = await load(paths.upload)
+    const U = await S.upload()
     const plainRead = async (key) => { await fetch(base + key); await fetch(base + key, { method: 'HEAD' }) }   // a visitor's, warming the edge
 
     // probe: local bytes unchanged; the bucket's object changed after the edge cached it.
@@ -111,7 +130,7 @@ async function legUploader(paths, fails) {
 }
 
 // ── ③ ─────────────────────────────────────────────────────────────────────────────────────────────────────────
-async function legPlayerCopy(paths, fails) {
+async function legPlayerCopy(S, fails) {
   const tmp = mkdtempSync(join(tmpdir(), 'reads-bypass-promote-'))
   const bucket = {}
   const edge = await fakeEdge(bucket)
@@ -132,7 +151,7 @@ async function legPlayerCopy(paths, fails) {
   chmodSync(join(bin, 'npx'), 0o755)
   try {
     const code = await new Promise((ok) => {
-      const p = spawn(process.execPath, [paths.promote, '--map=fx', '--look=fx'], {
+      const p = spawn(process.execPath, [S.promote(), '--map=fx', '--look=fx'], {
         env: { ...process.env, PATH: `${bin}:${process.env.PATH}`, ASSET_BASE: edge.base, R2_BUCKET: 'b' }, stdio: 'ignore' })
       p.on('close', ok)
     })
@@ -147,21 +166,20 @@ async function legPlayerCopy(paths, fails) {
 // ── ④ ─────────────────────────────────────────────────────────────────────────────────────────────────────────
 const SOURCE_ROOTS = ['scripts', 'cartograph', 'scratch/promote-rollback']
 const OURS = /theward|\.online\b|lafayette-square\.com|127\.0\.0\.1|localhost/
-function sourceFiles(paths) {
-  const out = new Set([paths.gate, paths.verify, paths.backup, paths.promote, paths.serve])
+function sourceFiles() {
+  const out = new Set([P.gate, P.verify, P.backup, P.promote, P.serve])
   const walk = (d) => { for (const n of readdirSync(d)) {
     if (n === 'node_modules' || n === 'data' || n === '_archive' || n.startsWith('.')) continue
     const p = join(d, n); if (statSync(p).isDirectory()) walk(p); else if (/\.(mjs|js)$/.test(n)) out.add(p)
   } }
   for (const r of SOURCE_ROOTS) walk(join(ROOT, r))
-  // a mutant stands in for its original
-  for (const k of Object.keys(P)) if (paths[k] !== P[k]) { out.delete(P[k]); out.add(paths[k]) }
+  // a mutant stands in for its original: S.text reads its edited text at the original's path
   return [...out]
 }
-function legSource(paths, fails) {
+function legSource(S, fails) {
   let importers = 0
-  for (const file of sourceFiles(paths)) {
-    const src = readFileSync(file, 'utf8'), at = file.slice(ROOT.length)
+  for (const file of sourceFiles()) {
+    const src = S.text(file), at = file.slice(ROOT.length)
     const code = src.replace(/^\s*(\/\/|\*).*$/gm, '')
     if (/cache:\s*'no-store'/.test(code)) fails.push(`④ ${at}: a read leans on fetch's cache: 'no-store', which the edge ignores — freshUrl`)
     if (/[?&]\w+=\$\{Date\.now\(\)\}/.test(code)) fails.push(`④ ${at}: a read busts the edge with Date.now(), which two reads in one millisecond reuse — freshUrl`)
@@ -198,13 +216,13 @@ async function legZone(fails) {
   else console.log(`   ⑤ the zone: ${rel} cached (HIT on a repeated query), a fresh query ${fresh}`)
 }
 
-async function run(paths) {
+async function run(S) {
   const fails = []
-  await legHelper(paths, fails); await legUploader(paths, fails); await legPlayerCopy(paths, fails); legSource(paths, fails)
+  await legHelper(S, fails); await legUploader(S, fails); await legPlayerCopy(S, fails); legSource(S, fails)
   return fails
 }
 
-// ── mutants: each a copy beside its original, the paths pointed at it ──────────────────────────────────────────
+// ── mutants: each one rule changed, in memory (sources(mut)); nothing is written beside a source ────────────────────
 const MUTANTS = [
   ['freshUrl returns the URL unchanged', 'fresh', "export const freshUrl = (url) => `${url}${url.includes('?') ? '&' : '?'}fresh=${crypto.randomUUID()}`", 'export const freshUrl = (url) => url'],
   ['freshUrl a fixed query (fresh once, the edge\'s copy after)', 'fresh', 'fresh=${crypto.randomUUID()}', 'fresh=1'],
@@ -221,30 +239,24 @@ const MUTANTS = [
   ['Operations reads the production page plain', 'serve', 'fetch(freshUrl(`https://${domain}/`))', 'fetch(`https://${domain}/`)'],
 ]
 
-const fails = await run(P)
+const fails = await run(sources())
 if (!process.argv.includes('--mutants')) await legZone(fails)
 if (fails.length) { console.error(`⛔ a read of the bucket can get the edge's copy:\n   ${fails.join('\n   ')}`); process.exit(1) }
 console.log('✅ our reads bypass the edge: freshUrl is new every call; probe, writeIndex and the player copy see a changed object; every read of ours goes through it')
 
 if (process.argv.includes('--mutants')) {
   let alive = 0
+  // ⛔ the controls: a no-op edit through each in-memory path must read GREEN, else every mutant's "RED" is the loader's
+  for (const which of ['fresh', 'upload', 'promote']) {
+    const f = await run(sources({ which, from: '\u0000no such text', to: '' }))
+    if (f.length) { console.error(`⛔ the in-memory ${which} fails unmutated — the mutants prove nothing:\n   ${f.join('\n   ')}`); process.exit(1) }
+  }
   for (const [name, which, from, to] of MUTANTS) {
     const src = readFileSync(P[which], 'utf8')
     if (!src.includes(from)) { console.error(`⛔ mutant "${name}": its target text is gone from ${P[which]} — re-aim it`); alive++; continue }
-    const copy = join(dirname(P[which]), `.mutant-${basename(P[which])}`)
-    writeFileSync(copy, src.replace(from, to))
-    const paths = { ...P, [which]: copy }, extra = []
-    let red
-    try {
-      if (which === 'fresh') {   // the uploader and the player copy must reach the mutant helper (a query per mutant: one path, one module, else)
-        for (const dep of ['upload', 'promote']) {
-          const d = join(dirname(P[dep]), `.mutant-${basename(P[dep])}`)
-          writeFileSync(d, readFileSync(P[dep], 'utf8').replace("from '../src/lib/freshUrl.js'", `from '../src/lib/.mutant-freshUrl.js?m=${++seq}'`)); paths[dep] = d; extra.push(d)
-        }
-      }
-      red = (await run(paths)).length > 0
-    } finally { for (const d of [copy, ...extra]) rmSync(d, { force: true }) }
-    console.log(`   ${red ? 'RED  ' : 'ALIVE'} ${name}`)
+    let red, threw = ''
+    try { red = (await run(sources({ which, from, to }))).length > 0 } catch (e) { red = true; threw = ` (by throwing: ${e.message.slice(0, 80)})` }   // as its crashed copy was
+    console.log(`   ${red ? 'RED  ' : 'ALIVE'} ${name}${threw}`)
     if (!red) alive++
   }
   if (alive) { console.error(`⛔ ${alive} mutant(s) survived — the check cannot see that edit`); process.exit(1) }

@@ -221,6 +221,14 @@ export function execSelfTest() {
     ['a literal path to a file that calls fetch()', via("await importSource('src/lib/planted.js')", 'export const go = (u) => fetch(u)'), 'live'],
     ['a path that is not a literal', via('await importSource(process.argv[2])'), 'live'],
     ['a transform that adds a fetch() call', via("await importSource('src/lib/planted.js', { transform: (t) => t + 'fetch(u)' })"), 'live'],
+    ['a redirect to a planted repo file that calls fetch()', classifyVirtual({ 'checks/claims-planted.mjs': "import { importSource } from './_importSource.mjs'\nawait importSource('src/lib/planted.js', { redirect: { 'src/lib/fetcher.js': { transform: (t) => t } } })",
+      [IMPORT_SOURCE]: helperSrc, 'src/lib/planted.js': "export { go } from './fetcher.js'", 'src/lib/fetcher.js': 'export const go = (u) => fetch(u)' }, 'checks/claims-planted.mjs').tier, 'live'],
+    ['a redirect to a safe repo file', classifyVirtual({ 'checks/claims-planted.mjs': "import { importSource } from './_importSource.mjs'\nawait importSource('src/lib/planted.js', { redirect: { 'src/lib/other.js': { transform: (t) => t } } })",
+      [IMPORT_SOURCE]: helperSrc, 'src/lib/planted.js': "export { y } from './other.js'", 'src/lib/other.js': 'export const y = 2' }, 'checks/claims-planted.mjs').tier, 'safe'],
+    ['a redirect whose key is not a literal', via("await importSource('src/lib/planted.js', { redirect: { [which]: {} } })"), 'live'],
+    ['a redirect that is not an object literal', via("await importSource('src/lib/planted.js', { redirect: R })"), 'live'],
+    ['sourceFile of a literal path to a file that calls fetch()', classifyVirtual({ 'checks/claims-planted.mjs': "import { sourceFile } from './_sourceFile.mjs'\nsourceFile('src/lib/planted.js')",
+      [IMPORT_SOURCE]: helperSrc, [SOURCE_FILE]: readFileSync(join(ROOT, SOURCE_FILE), 'utf8'), 'src/lib/planted.js': 'export const go = (u) => fetch(u)' }, 'checks/claims-planted.mjs').tier, 'live'],
     ['a prefix that imports a planted repo file that calls fetch()', classifyVirtual({ 'checks/claims-planted.mjs': "import { importSource } from './_importSource.mjs'\nawait importSource('src/lib/planted.js', { prefix: \"import { go } from './fetcher.js'\" })",
       [IMPORT_SOURCE]: helperSrc, 'src/lib/planted.js': 'export const x = 1', 'src/lib/fetcher.js': 'export const go = (u) => fetch(u)' }, 'checks/claims-planted.mjs').tier, 'live'],
     ['a loader hook registered from node:module', classifyVirtual({ 'checks/claims-planted.mjs': "import { register } from 'node:module'\nregister('./hooks.mjs', import.meta.url)" }, 'checks/claims-planted.mjs').tier, 'live'],
@@ -654,6 +662,7 @@ let _virtual = null
 const onDisk = (rel) => (_virtual ? _virtual.has(rel) : existsSync(join(ROOT, rel)))
 /** Classify `entry` against planted sources { relPath: source } — the same classify, reading nothing from disk. */
 const IMPORT_SOURCE = 'checks/_importSource.mjs'
+const SOURCE_FILE = 'checks/_sourceFile.mjs'   // importSource's text as a temp file (the one-loader ruling): its calls read the same
 /** The `span: {…}` in an importSource call's options, as a value — only when it is a literal (strings, arrays, the keys
  *  functions/from/to). → { span, text } · { span: null } when absent · { bad } when it is anything else. */
 function spanLiteral(opts) {
@@ -757,9 +766,13 @@ export function classify(file, seen = new Set(), depth = 0, spanText = null) {
   // ⭐ importSource(rel, { slice, transform, prefix, suffix }) — checks/_importSource.mjs (Boz's ruling, 2026-10-26):
   //   a LITERAL repo path is a static import of that file (classified); a non-literal path is LIVE; the call's other
   //   arguments are code that runs inside the imported text, so they are scanned UNBLANKED for the live signals.
-  for (const m of code.matchAll(/\bimportSource\s*\(/g)) {
-    if (blank.slice(m.index, m.index + 12) !== 'importSource') continue
+  // sourceText / sourceFile (the same helper: the text importSource would import, or that text in a temp file) read the same
+  for (const m of code.matchAll(/\b(?:importSource|sourceText|sourceFile)\s*\(/g)) {
+    const fn = m[0].replace(/\s*\($/, '')
+    if (blank.slice(m.index, m.index + fn.length) !== fn) continue
     if (/function\s+$|export\s+(async\s+)?function\s+$/.test(code.slice(Math.max(0, m.index - 30), m.index))) continue   // its definition
+    if (file === IMPORT_SOURCE || file === SOURCE_FILE) continue   // the helpers' own calls are their machinery: read at each call site
+    if (fn !== 'importSource' && !new RegExp(`\\bimport\\s*\\{[^}]*\\b${fn}\\b[^}]*\\}\\s*from\\s*['"][^'"]*_(?:importSource|sourceFile)\\.mjs['"]`).test(code)) continue   // another module's same-named function
     const args = balancedArg(code, m.index + m[0].length - 1) ?? ''
     const first = (args.match(/^\s*(['"])([^'"]+)\1\s*(?:,|$)/) || [])[2]
     if (!first) { bump('live'); why.push('importSource of a path that is not a literal — cannot be read'); continue }
@@ -774,6 +787,38 @@ export function classify(file, seen = new Set(), depth = 0, spanText = null) {
     const what = sp.span ? `${first} (its span: ${sp.span.functions ? sp.span.functions.join(', ') : `${sp.span.from ?? 'start'} → ${sp.span.to ?? 'end'}`})` : first
     if (sub.tier !== 'safe') { bump(sub.tier); why.push(`importSource of ${what}, which can: ${sub.why.join(', ')}`) }
     else why.push(`importSource of ${what} — read, safe`)
+    // redirect (Boz's one-loader ruling, 2026-10-30): each KEY is a repo file whose text runs in place of its import — a
+    // LITERAL object of literal string keys, each classified; anything else cannot be read ⇒ live
+    const rd = rest.search(/\bredirect\s*:/)
+    if (rd >= 0) {
+      const after = rest.slice(rd).replace(/^redirect\s*:\s*/, '')
+      const body = after.startsWith('{') ? (() => { let d = 0, q = null; for (let i = 0; i < after.length; i++) { const c = after[i]
+        if (q) { if (c === '\\') i++; else if (c === q) q = null; continue } if (c === "'" || c === '"' || c === '`') q = c
+        else if (c === '{') d++; else if (c === '}' && --d === 0) return after.slice(1, i) } return null })() : null
+      if (body == null) { bump('live'); why.push(`${fn} of ${first} with a redirect that is not an object literal — cannot be read`) }
+      else {
+        // the top-level keys of the object: each must be a quoted repo path
+        let d = 0, q = null, keyStart = 0, keys = [], bad = false
+        const seg = []
+        for (let i = 0; i <= body.length; i++) { const c = body[i]
+          if (q) { if (c === '\\') i++; else if (c === q) q = null; continue }
+          if (c === "'" || c === '"' || c === '`') { q = c; continue }
+          if (c === '{' || c === '[' || c === '(') d++; else if (c === '}' || c === ']' || c === ')') d--
+          else if ((c === ',' || i === body.length) && d === 0) { seg.push(body.slice(keyStart, i)); keyStart = i + 1 } }
+        for (const s of seg.map(x => x.trim()).filter(Boolean)) {
+          const k = s.match(/^(['"])([^'"]+)\1\s*:/)
+          if (!k) { bad = true; continue }
+          keys.push(k[2])
+        }
+        if (bad) { bump('live'); why.push(`${fn} of ${first} with a redirect key that is not a quoted repo path — cannot be read`) }
+        for (const k of keys) {
+          if (!onDisk(k)) { bump('live'); why.push(`${fn} of ${first} redirects ${k} — not a repo file`); continue }
+          const d2 = classify(k, seen, depth + 1)
+          if (d2.tier !== 'safe') { bump(d2.tier); why.push(`${fn} of ${first} redirects ${k}, which can: ${d2.why.join(', ')}`) }
+          else why.push(`${fn} of ${first} redirects ${k} — read, safe`)
+        }
+      }
+    }
     // transform / prefix / suffix run inside the import: scanned as written (strings included)
     const restNoSpan = sp.text ? rest.replace(sp.text, '') : rest
     for (const [re, label] of SIGNALS.live) if (re.test(restNoSpan)) { bump('live'); why.push(`importSource's arguments ${label}`) }

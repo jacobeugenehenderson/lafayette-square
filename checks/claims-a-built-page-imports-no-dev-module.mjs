@@ -13,12 +13,14 @@
  *   ② DEV STILL WORKS: Vite in middleware mode, on a throwaway localhost port, serves each operator page (/<input>)
  *     and Stage's /stage/<town>/<shot> through the config's own middleware. Each must carry plugin-react's preamble
  *     and the kit base declared exactly once.
- * `--mutants`: each edit below must turn this RED. ⛔ READ-ONLY (mutant copies beside their originals, removed).
+ * `--mutants`: each edit below must turn this RED. ⛔ READ-ONLY: a page's mutant is its text in memory; the config's, a temp
+ * file by checks/_sourceFile.mjs (Vite reads a config by path); never a copy beside the source (the one-loader ruling).
  *
  * Usage: node checks/claims-a-built-page-imports-no-dev-module.mjs [--mutants]
  */
-import { readFileSync, writeFileSync, rmSync } from 'node:fs'
-import { join, dirname, basename } from 'node:path'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
+import { sourceFile } from './_sourceFile.mjs'
 import { createServer as httpServer } from 'node:http'
 import { fileURLToPath } from 'node:url'
 
@@ -39,7 +41,7 @@ async function run(paths) {
   const input = await inputsOf(paths.config)
   // ── ① ──
   for (const [key, page] of Object.entries(input)) {
-    const src = readFileSync(paths.pages[page] || join(ROOT, page), 'utf8')
+    const src = paths.pages[page] ?? readFileSync(join(ROOT, page), 'utf8')   // a mutant's page is its text
     const m = src.match(DEV_ONLY)
     if (m) fails.push(`① ${page} (build input "${key}") names ${m[1]} — a dev-only module, which \`vite build\` bundles into the published player`)
   }
@@ -75,24 +77,28 @@ const MUTANTS = [
     "{ res.setHeader('Content-Type', 'text/html; charset=utf-8'); return res.end(fs.readFileSync(path.resolve('cartograph.html'), 'utf-8')) }"],
 ]
 
+// a mutant: a page's text edited in memory, or the config edited into a temp file Vite can read by path
+const mutated = (which, edit) => which === 'config'
+  ? { ...P, config: sourceFile('vite.config.js', { transform: edit }) }
+  : { ...P, pages: { [which]: edit(readFileSync(join(ROOT, which), 'utf8')) } }
+
 const fails = await run(P)
 if (fails.length) { console.error(`⛔ a built page names a dev-only module, or dev lost its preamble:\n   ${fails.join('\n   ')}`); process.exit(1) }
 console.log('✅ no built page names a dev-only module; every operator page and Stage get React Refresh from Vite in dev, kit base once')
 
 if (process.argv.includes('--mutants')) {
   let alive = 0
+  // ⛔ the controls: a no-op edit through each in-memory path (a page's text; the config as a temp file) must read GREEN
+  for (const which of ['index.html', 'config']) {
+    const f = await run(mutated(which, (s) => s))
+    if (f.length) { console.error(`⛔ the in-memory ${which} fails unmutated — the mutants prove nothing:\n   ${f.join('\n   ')}`); process.exit(1) }
+  }
   for (const [name, which, from, to] of MUTANTS) {
-    const orig = which === 'config' ? P.config : join(ROOT, which)
-    const src = readFileSync(orig, 'utf8')
-    if (!src.includes(from)) { console.error(`⛔ mutant "${name}": its target text is gone from ${orig} — re-aim it`); alive++; continue }
-    const copy = join(dirname(orig), `.mutant-${basename(orig)}`)
-    writeFileSync(copy, src.replace(from, to))
-    let red
-    try {
-      const paths = which === 'config' ? { ...P, config: copy } : { ...P, pages: { [which]: copy } }
-      red = (await run(paths)).length > 0
-    } finally { rmSync(copy, { force: true }) }
-    console.log(`   ${red ? 'RED  ' : 'ALIVE'} ${name}`)
+    const src = readFileSync(which === 'config' ? P.config : join(ROOT, which), 'utf8')
+    if (!src.includes(from)) { console.error(`⛔ mutant "${name}": its target text is gone from ${which} — re-aim it`); alive++; continue }
+    let red, threw = ''
+    try { red = (await run(mutated(which, (s) => s.replace(from, to)))).length > 0 } catch (e) { red = true; threw = ` (by throwing: ${e.message.slice(0, 80)})` }
+    console.log(`   ${red ? 'RED  ' : 'ALIVE'} ${name}${threw}`)
     if (!red) alive++
   }
   if (alive) { console.error(`⛔ ${alive} mutant(s) survived — the check cannot see that edit`); process.exit(1) }

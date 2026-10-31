@@ -42,11 +42,12 @@
  * Usage: node checks/claims-a-worker-deploy-darkens-no-town.mjs [--env=staging|prod]   (default: both)
  *        node checks/claims-a-worker-deploy-darkens-no-town.mjs --mutants   (both readings, on fixtures; no network)
  */
-import { execFileSync, spawnSync } from 'node:child_process'
-import { readFileSync, writeFileSync, rmSync } from 'node:fs'
+import { execFileSync } from 'node:child_process'
+import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
-import { join, dirname, basename } from 'node:path'
+import { join } from 'node:path'
 import { route, MAP_ID } from '../workers/production-sites/src/route.js'
+import { importSource, sourceOf } from './_importSource.mjs'
 
 const REPO_ROOT = fileURLToPath(new URL('..', import.meta.url))
 const ENVS = ['staging', 'prod']
@@ -324,7 +325,7 @@ async function selfTest() {
   return fails
 }
 
-// ── mutants: each a copy beside this file, run with --self-test, must fail ─────────────────────────────────
+// ── mutants: each this file's readings with one rule changed, imported in memory (checks/_importSource.mjs), must fail ──
 const MUTANTS = [
   ['the legacy key gates a Ward town again', 'need.push(r.key)', 'need.push(r.key, `player/${rec.map}/index.html`)'],
   ['the slab manifest not asked for', 'const need = [`baked/${rec.look}/manifest.json`]', 'const need = []'],
@@ -343,20 +344,25 @@ const MUTANTS = [
   ['staging: a stale ACCEPT_DARK passes', "if (out[t] !== 'accepted') {", 'if (false) {'],
 ]
 
-const SELF = fileURLToPath(import.meta.url)
 if (process.argv.includes('--self-test') || process.argv.includes('--mutants')) {
   const fails = await selfTest()
   if (fails.length) { console.error(`⛔ a Worker's reading is wrong:\n   ${fails.join('\n   ')}`); process.exit(1) }
   if (process.argv.includes('--self-test')) process.exit(0)
   console.log(`✅ both Workers' readings: ${CASES.length} production fixtures, ${STAGING_CASES.length} staging`)
   let alive = 0
-  const src = readFileSync(SELF, 'utf8')
-  for (const [name, from, to] of MUTANTS) {
+  const src = sourceOf('checks/claims-a-worker-deploy-darkens-no-town.mjs')
+  const readings = (edit) => importSource('checks/claims-a-worker-deploy-darkens-no-town.mjs', { span: { to: '// ── mutants: each this file' }, suffix: 'export { selfTest }',
+    transform: edit })
+  // ⛔ the control: the copy unchanged, imported the same way, must read GREEN — else every mutant's "RED" is the loader's
+  const control = await (await readings((t) => t)).selfTest()
+  if (control.length) { console.error(`⛔ the in-memory copy of the readings fails unmutated — the mutants prove nothing:\n   ${control.join('\n   ')}`); process.exit(1) }
+  for (let [name, from, to] of MUTANTS) {
     if (!src.includes(from)) { console.error(`⛔ mutant "${name}": its target text is gone — re-aim it`); alive++; continue }
-    const copy = join(dirname(SELF), `.mutant-${basename(SELF)}`)
-    writeFileSync(copy, src.replace(from, to))
+    // the readings only (the span stops before the mutants)
     let red
-    try { red = spawnSync(process.execPath, [copy, '--self-test'], { stdio: 'ignore' }).status !== 0 } finally { rmSync(copy, { force: true }) }
+    try {
+      red = (await (await readings((t) => t.replace(from, to))).selfTest()).length > 0
+    } catch (e) { red = true; name += ` (by throwing: ${e.message.slice(0, 80)})` }   // as the spawned copy's non-zero exit was
     console.log(`   ${red ? 'RED  ' : 'ALIVE'} ${name}`)
     if (!red) alive++
   }
