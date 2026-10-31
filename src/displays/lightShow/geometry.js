@@ -48,6 +48,11 @@ export function pinnacleFace(k, pin) {
 
 /** A bulb's radius on a strand of `length` metres carrying `rows` bulbs. */
 export const bulbRadius = (length, rows) => BULB_OF_SPACING * length / rows
+// The cord and each bulb's Edison socket, sized from the same spacing, so neither is a thickness tuned to one tower.
+export const CORD_OF_SPACING = 0.02
+export const SOCKET_OF_BULB = { radius: 0.42, height: 0.7 }
+/** A cord's radius on a strand of `length` metres carrying `rows` bulbs. */
+export const cordRadius = (length, rows) => CORD_OF_SPACING * length / rows
 
 /** The average glow: where it stands (its height) and its intensity for a mean brightness `lum` (0…1). */
 export function avgGlow(extent, lum) {

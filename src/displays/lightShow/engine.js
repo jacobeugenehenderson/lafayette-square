@@ -45,6 +45,7 @@ export function validateDisplay(display, drawer, where) {
   if (display.dimUplights !== undefined && !(display.dimUplights >= 0 && display.dimUplights <= 1)) throw new Error(`[lightShow] ⛔ ${where}: dimUplights (${display.dimUplights}) is a fraction of the uplights, 0 … 1`)
   const st = display.strands
   if (!(st?.glow > 0 && st?.show > 0 && st?.ringRadiusM > 0)) throw new Error(`[lightShow] ⛔ ${where}: strands needs glow, show and ringRadiusM`)
+  if (st.show % st.glow) throw new Error(`[lightShow] ⛔ ${where}: strands.show (${st.show}) must be a whole multiple of strands.glow (${st.glow}): the glow strands are show strands`)
   if (!(st.footHeightM >= 0)) throw new Error(`[lightShow] ⛔ ${where}: strands.footHeightM, the ring's height above the set-piece's base, is not authored`)
   if (typeof display.season !== 'string' || !display.season) throw new Error(`[lightShow] ⛔ ${where}: the display names no season`)
   if (display.shows && display.shows.every !== 'hour') throw new Error(`[lightShow] ⛔ ${where}: shows.every "${display.shows.every}" is not a schedule the Light Show knows (have: hour)`)
@@ -111,7 +112,9 @@ export function compileRun(run, looksById, where) {
 
 /**
  * The show at `t` seconds since it began (open → run → close). Returns
- *   { glow: 0…1 (the white strands), reveal: null | (c, row) → 'on' | 'off' | 'spark', pin: 0…1, colour: (c, row) → rgb }
+ *   { reveal: null | (c, row) → 'on' | 'off' | 'spark', pin: 0…1, colour: (c, row) → rgb }
+ * During the opening the show's front spirals down from the ridge: behind it 'on' (the show's colour), ahead of it 'off',
+ * where the glow strands stay lit white until the show overtakes them; at the close the same, reversed.
  * `now` is the clock the looks' own motions run on (the town's instant, in seconds).
  */
 export function showAt(F, compiled, looksById, t, now) {
@@ -129,16 +132,16 @@ export function showAt(F, compiled, looksById, t, now) {
     const B = (c, row, k = nextLook?.enter ?? 1) => sampleLook(F, looksById[seg.to], c, row, now, undefined, k)
     colour = (c, row) => seg.tr.mix(A, B, c, row, p, now, E)
   }
-  // The Transformation: the colour strands spiral down from the ridge as the glow fades; the pinnacle comes up last.
+  // The Transformation: the show overtakes the glow, spiralling down from the ridge; the pinnacle comes up last.
   const open = tt < OPEN_SECONDS ? tt / OPEN_SECONDS : tt > total - OPEN_SECONDS ? (total - tt) / OPEN_SECONDS : 1
-  if (open >= 1) return { glow: 0, reveal: null, pin: 1, colour }
+  if (open >= 1) return { reveal: null, pin: 1, colour }
   const front = open * 3.1
   const reveal = (c, row) => {
     const key = (row - E.P) / E.CONE * 2 + c / E.FW, d = Math.abs(key - front) * 14
     if (d < 4 && hash((row * E.FW + c) * 31 + Math.floor(now * 12 + hash(row * 977 + c) * 12)) < 0.5 * (1 - d / 4)) return 'spark'
     return key < front ? 'on' : 'off'
   }
-  return { glow: 1 - smooth((open - 0.15) / 0.6), reveal, pin: smooth((open - 0.7) / 0.3), colour }
+  return { reveal, pin: smooth((open - 0.7) / 0.3), colour }
 }
 export const showSeconds = (compiled) => OPEN_SECONDS + compiled.seconds + OPEN_SECONDS
 
