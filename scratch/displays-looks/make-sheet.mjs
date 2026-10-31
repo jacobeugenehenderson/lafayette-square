@@ -92,6 +92,7 @@ const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 // ── The monument, from its dossier (MON, injected): strands from the balcony ridge; the pinnacle above it, to the top. ──
 const STAGES = ${JSON.stringify(STAGES)};
+const FOOT = 6.1;   // the strands' foot ring, ~20 ft above the base (Provincetown's footHeightM)
 const TOP = ${MON.top}, DECK = ${MON.deck}, A = ${MON.pinHalf}, RIDGE = ${MON.ridgeHalf}, R = 31, CW = 270, CH = 340, S = 3.2, GX = CW / 2, GY = CH - 24, ELEV = 0.22, VY = 0.42;
 const view = (x, y, z) => { const xr = x * Math.cos(VY) - z * Math.sin(VY), zr = x * Math.sin(VY) + z * Math.cos(VY); return { sx: GX + xr * S, sy: GY - y * S + zr * S * ELEV, z: zr }; };
 const onFace = (k, u, d) => { const rot = -k * Math.PI / 2, x0 = u * d, z0 = d; return [x0 * Math.cos(rot) - z0 * Math.sin(rot), x0 * Math.sin(rot) + z0 * Math.cos(rot)]; };
@@ -101,7 +102,7 @@ function geometry(strands) {
     const k = Math.floor(c / per), u = ((c % per) + 0.5) / per * 2 - 1, [tx, tz] = onFace(k, u, RIDGE);   // from the ridge
     const th = ((c + 0.5) / strands - 0.5 / FACES) * 2 * Math.PI, bx = R * Math.sin(th), bz = R * Math.cos(th);
     for (let j = 0; j < CONE; j++) {
-      const t = (j + 0.5) / CONE, p = view(tx + (bx - tx) * t, DECK * (1 - t) + 0.6, tz + (bz - tz) * t);
+      const t = (j + 0.5) / CONE, p = view(tx + (bx - tx) * t, DECK + (FOOT - DECK) * t, tz + (bz - tz) * t);
       (p.z < 0 ? back : front).push({ c: Math.floor(c * FW / strands), row: P + j, sx: p.sx | 0, sy: p.sy | 0, lit: p.z < 0 ? 0.32 : 1 });
     }
   }

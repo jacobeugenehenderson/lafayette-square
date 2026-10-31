@@ -70,12 +70,13 @@ export default {
   // Displays (src/displays; BRIEF-the-monument-lights-up): the monument's Light Show. The record is the town's
   // authored data, here until Stage's Displays section writes it; the looks are the town's content (contentRoot).
   // `season` names the town's published calendar row (r-provincetown-light-season-is-authored: from November 11,
-  // authored); with no calendar read the display is off. `ringRadiusM` is a guess, open (the ground ring's radius).
+  // authored); with no calendar read the display is off. The strands end ~20 ft above the monument's base (Jacob,
+  // 2026-10-31); `ringRadiusM` is still a guess, open.
   displays: [{
     id: 'monument-lights', kind: 'light-show', name: 'Light Show', attach: 'setPiece',
     drawer: 'displays/monument-lights/looks.json',            // under the town's contentRoot: its content, not the kit's
     season: 'monument-lighting',
-    strands: { glow: 20, show: 60, ringRadiusM: 31 },
+    strands: { glow: 20, show: 60, ringRadiusM: 31, footHeightM: 6.1 },   // 6.1 m = 20 ft
     shows: { every: 'hour', from: '17:00', to: '23:00' },
     run: [
       { look: 'classic-tree', seconds: 10 }, { transition: 'cascade' }, { look: 'santa', seconds: 8 },

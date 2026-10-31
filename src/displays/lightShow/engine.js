@@ -43,6 +43,7 @@ export function validateDisplay(display, drawer, where) {
   validateDrawer(drawer, where)
   const st = display.strands
   if (!(st?.glow > 0 && st?.show > 0 && st?.ringRadiusM > 0)) throw new Error(`[lightShow] ⛔ ${where}: strands needs glow, show and ringRadiusM`)
+  if (!(st.footHeightM >= 0)) throw new Error(`[lightShow] ⛔ ${where}: strands.footHeightM, the ring's height above the set-piece's base, is not authored`)
   if (typeof display.season !== 'string' || !display.season) throw new Error(`[lightShow] ⛔ ${where}: the display names no season`)
   if (display.shows && display.shows.every !== 'hour') throw new Error(`[lightShow] ⛔ ${where}: shows.every "${display.shows.every}" is not a schedule the Light Show knows (have: hour)`)
   compileRun(display.run, Object.fromEntries(drawer.looks.map(L => [L.id, L])), where)
