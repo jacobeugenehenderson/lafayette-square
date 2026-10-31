@@ -11,8 +11,17 @@ Active trunk `curb-offset-draw` (→ staging via `staging.yml`; the old `cartogr
 ### ✅ 2026-10-30 RELEASE DONE: PTown + HPDM live on Ward 4334c64 / kit 2a44e317 (compressed slabs, the phone water fix, place share cards,
 one place per building, the docks). The step list is in the Diary: `cartograph/_archive/BACKLOG-morning-release-2026-10-30-DONE.md`.
 NO ROUTINE PURGE: content names give a changed file a fresh name, and our readers bypass the edge (src/lib/freshUrl.js).
-NEXT: the LS cutover (runbook `scratch/ls-cutover-runbook.md`; Ward's code step ward/ls-cutover-domain with Zob). OPEN for Jacob: hours
-(56/447) · the preview-photo licence (parked) · the dock object + tide ride (unbuilt).
+### ⭐ STATE AT JACOB'S BEDTIME, 2026-10-31 (Boz). Read this first.
+- **LS PROMOTED 2026-10-31** (`scratch/ls-cutover-runbook.md`): lafayettesquare.online + www serve LS on Ward 4334c64 / kit 2a44e317;
+  backup `scratch/promote-rollback/lafayettesquare-prod-20261031`. NEXT, Jacob: the .com → .online 301 (§5), then the gates (§6).
+- **Backend: two sittings after the cutover, all built and Zob-PASSed, none deployed.** Sitting 1: hotfix + recovery B + fortify
+  (`scratch/backend-deploy-runbook.md`). Sitting 2 (§E): patches ④–⑫ as ONE set (theward plumb/fortify) + Ward's client
+  (ward/ladder-client) + Operations signers + kit plumb/ladder-docs (merge on deploy only). Deploy-day hands: predeploy-audit items 6–12.
+  The rulings: registry `r-the-host-verifies-eye-to-eye` (the four QRs, the Rep as a non-expiring mark, Host office hours, noListOfAPerson).
+- **OWED before sitting 2:** patch eight's tally column `date` → `weekday` (ruled 2026-10-31, registry `noListOfAPerson`).
+- **Displays (Tinsel):** the Light Show is on integration through 2e408e9a; the ground-ring radius stands as is (Jacob, 2026-10-31,
+  "fine for now"). 65f8438f + 7d242849 await Zob. Owed: brief §2a. Jacob's revision list → Tinsel, coordinated through Boz.
+- Older OPEN: hours (56/447) · the preview-photo licence (parked) · the dock object + tide ride (unbuilt).
 
 ### ⭐ HANDOFF — 2026-10-28 (the sprint closed; Swash for Boz). Read this block first; everything below is detail.
 The layered night notes of 10-25 → 10-28 are archived VERBATIM: `cartograph/_archive/HANDOFF-2026-10-28.md`. Live state only here.

@@ -5165,7 +5165,8 @@
       "neededBy": "PTown golden.jpg (Monument blurred): off the path the focus fell to the orbit pivot by the code's design (Ferrule, 2026-10-28)",
       "status": "answered",
       "findings": [
-        "r-stage-focuses-the-object-and-captures-the-screen"
+        "r-stage-focuses-the-object-and-captures-the-screen",
+        "r-the-focus-object-is-everything-hung-on-it"
       ]
     },
     {
@@ -5274,7 +5275,8 @@
         "r-a-look-carries-one-motion",
         "r-the-strands-hang-from-the-ridge-and-the-pinnacle-carries-the-show",
         "r-a-look-is-layers-each-with-one-motion",
-        "r-provincetown-light-season-is-authored"
+        "r-provincetown-light-season-is-authored",
+        "r-the-lights-run-dusk-to-dawn-and-the-show-plays-on-the-hour"
       ]
     }
   ],
@@ -8753,6 +8755,21 @@
       "notes": "Today MovieCamera publishes movieFocus only while the movie plays or is held on the path; otherwise usePostFxDriver focuses the controls target and drops heroRect and the hero ladder. That fallback goes for Hero; Street keeps the aim by ruling. Capture refusing while the Hero shot plays is to be re-read against this ruling."
     },
     {
+      "id": "r-the-focus-object-is-everything-hung-on-it",
+      "question": "q-what-the-dof-focuses-in-stage",
+      "kind": "ruling",
+      "value": {
+        "rule": "the focus object is its whole subtree, everything hung on it (a display's strands, bulbs, glass, uplight cones), and every pixel of it is blurred at the focus object's distance, whatever the depth buffer holds",
+        "box": "the focus box covers the subtree's reach, never only the set-piece's own extent",
+        "kit": "kit-wide, any focus object and any display; no town in it"
+      },
+      "by": "Jacob",
+      "date": "2026-10-31",
+      "quote": "\"yes\" (to: the focus object includes everything hung on it, at its distance) · \"the bulbs and strands don't have depth AND they're not attached to the hero object for sharpness\"",
+      "canon": "cartograph/OPERATIONS.md (Focus (DoF))",
+      "notes": "Zob, read in source 2026-10-31: sharpness is per pixel from depth (RomanceDoF.jsx#mainImage); the clean-edge mask (HeroLadder.jsx, focusObject.js#focusMeshes) already holds the display's meshes but is scissored to focusBox, the set-piece's own ~4.3 m half-width, while the strands reach 31 m; the bulbs are depthWrite:false, so they read the depth behind them. UNBUILT. OPERATIONS' Focus line changes when it lands."
+    },
+    {
       "id": "r-the-arch-is-geo-anchored-with-an-authored-presence",
       "question": "q-how-the-arch-is-placed",
       "kind": "ruling",
@@ -8918,7 +8935,7 @@
         "soleResidentStays": "A RESIDENT WITH NO CO-RESIDENT DOES NOT LAPSE (Jacob, 2026-10-30: 'they just stay the owner until they're challenged'). The yearly renewal applies where co-residents exist to confirm it; a sole resident (e.g. a homeowner living alone, the Rep of a one-home building) stays until challenged. The expiry clock starts only when a co-resident exists: when a building goes from one verified resident to two, the first is restamped a year out (Zob, 2026-10-30). HOW a challenge is raised and decided is NOT YET RULED (Boz's proposal: the Host can end a residence; a resident may ask the Host).",
         "disputeNotClaim": "ONCE A HOME OR PLACE IS CLAIMED, ITS CARD NO LONGER OFFERS 'This is my home' / 'This is my place' (Jacob, 2026-10-30: it's rude to the person who lives there). New household members join by the existing resident's Place QR. A dispute is a quiet 'Dispute?' in the help or ID area: 'Moved into a home someone else has claimed? Meet {Host}' with their office hours. In person the Host can END the old residence (or guardianship) and make the newcomer the Rep (or Guardian), one recorded standing act from the Host's phone, reversible the same way. The removed person is not erased silently: their map shows 'Your residence at {address} was ended by your Host on {date}. If that's wrong, meet {Host}.'",
         "theCheckIsTheAddress": "WHAT THE HOST ESTABLISHES IS THAT THIS PHONE BELONGS AT THIS ADDRESS, NEVER WHO THE PERSON IS (Jacob, 2026-10-30). The Host's guide SUGGESTS, never requires: 'If unsure, ask to see something delivered to the address. They can cover their name.' The Host keeps nothing; the system never sees a name.",
-        "noListOfAPerson": "WE DON'T COLLECT DATA THAT COULD BE MADE INTO A LIST of where a person has been (Jacob, 2026-10-30: 'we don't collect data that could be made into a list'). So no passport, no check-in history. ⚠ The live backend VIOLATES this today: the Checkins tab keeps [device_hash, location_id, timestamp, date] for every check-in, forever, unpruned (live v71 Code.js TAB_HEADERS). What each reader actually needs (Townie status = distinct days within the window, with no place; a place's own count = how many, never who) is to be designed by Zob and Plumb. PLACES KEEP TALLIES (Jacob, 2026-10-30, 'yes'): ONE tally [place, date, hour, scans]: a check-in adds 1; no ride-along counts (no locals, no first-timers); never a device key, never a returning-visitor count. The hours matter most, and a quiet hour singling someone out is a non-risk: 'connecting it with that guy is as powerful as just remembering him' (Jacob, 2026-10-30, simplifying Zob's two-tally split). AUTHORED content is NOT a trail: a handle's own public contributions (reviews, posts, comments) MAY be listed on that handle, as a feature ('wards will have famous people… people will want to pay attention to their rumored handles'); anything posted anonymously never appears on it, and nothing passive ever does.",
+        "noListOfAPerson": "WE DON'T COLLECT DATA THAT COULD BE MADE INTO A LIST of where a person has been (Jacob, 2026-10-30: 'we don't collect data that could be made into a list'). So no passport, no check-in history. ⚠ The live backend VIOLATES this today: the Checkins tab keeps [device_hash, location_id, timestamp, date] for every check-in, forever, unpruned (live v71 Code.js TAB_HEADERS). What each reader actually needs (Townie status = distinct days within the window, with no place; a place's own count = how many, never who) is to be designed by Zob and Plumb. PLACES KEEP TALLIES (Jacob, 2026-10-30, 'yes'): ONE tally [place, weekday, hour, scans] (the WEEKDAY, never a calendar date: Jacob, 2026-10-31, 'Weekday + hour is fine'; patch eight's Tallies tab, theward e6140ea, still carries `date` and owes the change): a check-in adds 1; no ride-along counts (no locals, no first-timers); never a device key, never a returning-visitor count. The hours matter most, and a quiet hour singling someone out is a non-risk: 'connecting it with that guy is as powerful as just remembering him' (Jacob, 2026-10-30, simplifying Zob's two-tally split). AUTHORED content is NOT a trail: a handle's own public contributions (reviews, posts, comments) MAY be listed on that handle, as a feature ('wards will have famous people… people will want to pay attention to their rumored handles'); anything posted anonymously never appears on it, and nothing passive ever does.",
         "oneHostRecord": "THE HOST IS DEFINED ONCE (Zob, 2026-10-30): one Operations action ('make Host') writes both the Ward record's hostEmail (who authors office hours) and the backend's signed Host set (who verifies); a staff check compares them and a difference is RED.",
         "hostOfficeHours": "THE HOST KEEPS OFFICE HOURS (Jacob, 2026-10-30). The Host authors their own schedule, however they want, as a list of PLACES ON THE MAP each with its days and hours (e.g. 'Barrio, Mon-Wed 5-9pm' · 'the market, Sat 9-12'): 'on these days he's associated with these place cards; these days and times he's elsewhere in the map' (Jacob, 2026-10-30). Hours are associated with places, never free text, plus an optional off-hours line. The claim screen shows where they are now, else where they're next. The claim screen ('This is my place' / 'This is my home') reads it: 'Meet {Host}, your Host, at {place} · {hours}', and 'there now' is computed from the hours, never tapped. The Host is a paid role, so the place is only a pointer: no one at that place gains any power, and there are no cohosts. A Host's save is LIVE AT ONCE (Jacob, 2026-10-30: the Publish lag is friction he doesn't want): Operations writes live/<town>/host.json on save (no-store), the Ward's content load reads it as one more source with one named reader, and Operations' one hours validator stays the only one (Zob's option B). The hours reach the ticker THE SAME WAY the ticker is already informed (content; no second path), and appearing in the ticker is an OPERATOR toggle per town, on until the operator judges the place-card claim flow carries it (theoretically it drops to 0). No pings, no queue, no status button.",
         "cleanSlate": "NOTHING LEGACY IS CARRIED (Jacob, 2026-10-30: 'there are no existing residents'; 'nothing/nobody worth maintaining here. Only me.'): no resident-date migration; old links are logged out at deploy and the operator re-links.",
@@ -9148,6 +9165,23 @@
       "quote": "\"Ribbon build change: Starts black · Ribbons draw on in a swirl · Pinnacle goes to 50% · All ribbons but 1 disappear · Pinnacle goes to 100%\" · \"the central /; it's supposed to emulate an AIDS ribbon\" · \"the reveal lands on the lilac and resolve into stripes\" · \"Chevron doesn't need sparkles on the motion layer, and the 'curtain' is supposed to raise to lilac, which fade/sparkles into the trans flag. They're all distinct phases\"",
       "canon": "docs/briefs/BRIEF-the-monument-lights-up.md (ROADMAP H-36)",
       "notes": "Still pure: the look clock is the show time less the segment start. ▶ node checks/claims-a-look-runs-on-its-own-clock.mjs --mutants"
+    },
+    {
+      "id": "r-the-lights-run-dusk-to-dawn-and-the-show-plays-on-the-hour",
+      "question": "q-how-a-town-authors-a-display",
+      "kind": "ruling",
+      "value": {
+        "scope": "the Light Show display, in a town that has added it; NOT a rule for every town or every display (Jacob, 2026-10-31: \"This is not for every town!\"). Displays vary by town (r-displays-is-a-stage-section-of-plugins) and a show is what a display MAY do (r-a-show-is-what-a-display-may-do-not-what-it-is)",
+        "glow": "in season, the Light Show glows from the town's dusk to the town's dawn (dusk and dawn derived from the town's position, never typed)",
+        "show": "the show plays every hour on the hour while the display glows, opening from the white glow and settling back to it",
+        "refusal": "a show longer than the gap between showtimes refuses by name; it is never clipped",
+        "knobs": "NONE YET: the schedule is the Light Show plugin's for now, so in practice every town that adds a Light Show gets it. Immaterial until a second town has displays; per-town authoring (r-a-displays-setups-belong-to-its-town) is built then (Jacob, 2026-10-31: \"immaterial until other towns get displays and we'll build it out then\"). Stage shows the schedule read-only."
+      },
+      "by": "Jacob",
+      "date": "2026-10-31",
+      "quote": "\"Hourly on the hour, dusk until dawn is fine\"",
+      "canon": "docs/briefs/BRIEF-the-monument-lights-up.md (ROADMAP H-36)",
+      "notes": "Boz proposed it (hourly makes an appointment a visitor can keep, the ticker's next showtime; nightly is too rare; a loop is never must-see). The refusal is Boz's reading under CLAUDE.md Layer 0, not Jacob's words. UNBUILT: today Stage offers only the preview buttons."
     }
   ]
 }

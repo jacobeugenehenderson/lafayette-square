@@ -10,6 +10,8 @@ When Jacob calls you **"Zob"**, read **`docs/agents/ZOB.md`**: the code's first-
 
 When Jacob calls you **"Ward"**, read **`docs/agents/WARD.md`**: the player's product owner (*the Ward* is the product; *Ward* is the seat). (Named summon, like Boz and Zob.)
 
+When Jacob calls you **"Tinsel"**, read **`docs/agents/TINSEL.md`**: the Displays builder (the Stage section of plugins: the monument's Light Show first, then fireworks and arches). (Named summon, like Zob and Ward.)
+
 ---
 
 ## ⛔⛔ LAYER 0 — WHAT WE ARE BUILDING. Answer this before you route, every time.

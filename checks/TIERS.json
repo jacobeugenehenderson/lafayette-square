@@ -1,10 +1,10 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 531,
+  "total": 539,
   "counts": {
-    "safe": 365,
+    "safe": 372,
     "local-effect": 31,
-    "live": 135
+    "live": 136
   },
   "checks": [
     {
@@ -293,6 +293,35 @@
       ]
     },
     {
+      "file": "checks/claims-a-display-dims-its-set-piece-only-while-lit.mjs",
+      "tier": "safe",
+      "why": [
+        "importSource of src/displays/dim.js — read, safe"
+      ]
+    },
+    {
+      "file": "checks/claims-a-display-hangs-only-in-season.mjs",
+      "tier": "safe",
+      "why": [
+        "importSource of src/displays/lightShow/engine.js — read, safe"
+      ]
+    },
+    {
+      "file": "checks/claims-a-display-is-the-same-for-every-viewer.mjs",
+      "tier": "safe",
+      "why": [
+        "importSource of src/displays/lightShow/engine.js — read, safe"
+      ]
+    },
+    {
+      "file": "checks/claims-a-display-scales-with-its-set-piece.mjs",
+      "tier": "safe",
+      "why": [
+        "importSource of src/displays/lightShow/geometry.js — read, safe",
+        "importSource of src/setpieces/pilgrimMonument.js — read, safe"
+      ]
+    },
+    {
       "file": "checks/claims-a-district-is-the-towns-own.mjs",
       "tier": "safe",
       "why": [
@@ -349,6 +378,14 @@
       "tier": "safe",
       "why": [
         "importSource of src/components/treesReveal.js — read, safe"
+      ]
+    },
+    {
+      "file": "checks/claims-a-failing-display-is-named-and-contained.mjs",
+      "tier": "safe",
+      "why": [
+        "importSource of src/displays/DisplayBoundary.js — read, safe",
+        "computed import of src/displays/failures.js — read, safe"
       ]
     },
     {
@@ -1017,6 +1054,13 @@
       ]
     },
     {
+      "file": "checks/claims-a-towns-displays-are-its-own-content.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
       "file": "checks/claims-a-towns-identity-is-its-own.mjs",
       "tier": "safe",
       "why": [
@@ -1565,6 +1609,15 @@
       "tier": "safe",
       "why": [
         "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-every-declared-display-is-valid.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "importSource of src/displays/lightShow/engine.js — read, safe",
+        "computed import() with no readable target — runs arbitrary modules"
       ]
     },
     {
@@ -2200,6 +2253,13 @@
       "tier": "safe",
       "why": [
         "computed import of cartograph/lookDesign.mjs — read, safe"
+      ]
+    },
+    {
+      "file": "checks/claims-no-town-in-display-code.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
       ]
     },
     {
