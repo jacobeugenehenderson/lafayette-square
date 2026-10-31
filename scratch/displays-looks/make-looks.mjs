@@ -102,15 +102,16 @@ look('frosty', 'Frosty', 'His black hat with a red band is the pinnacle. Three s
   }, band(0, PIN_H, '#000') + band(11, 14, C.red)),
 ])
 
-look('rudolph', 'Rudolph', 'The pinnacle is his nose, glowing red to light the way, and it pulses; gold antlers, brown coat, a tan band, a small nose on every face too.', [
-  L({ kind: 'pulse', only: C.red, speed: 0.9 },
-    band(24, 96, C.brown) + band(56, 70, C.tan) + perFace((cx) =>
-      path(`M${cx - 6},24 L${cx - 12},8 L${cx - 18},1 M${cx - 12},8 L${cx - 20},10 M${cx - 9},16 L${cx - 4},6`, C.gold, 2.2) +
-      path(`M${cx + 6},24 L${cx + 12},8 L${cx + 18},1 M${cx + 12},8 L${cx + 20},10 M${cx + 9},16 L${cx + 4},6`, C.gold, 2.2) +
-      circle(cx - 5, 30, 1.5, C.white) + circle(cx + 5, 30, 1.5, C.white) + circle(cx, 38, 4.5, C.red)),
-    band(0, PIN_H, C.red)),
+look('rudolph', 'Rudolph', 'No antlers: brown, the tan stripe, and a scalloped hem low on the tree; where each pair of scallops meets, a red nose glows and pulses, two eyes above it. The pinnacle washes red.', [
+  L({ kind: 'pulse', only: C.red, speed: 0.9 }, () => {
+    const W = FRAME_W / 8, y = 70                               // eight scallops round the tree
+    let s = band(0, CONE_H, C.brown) + band(30, 42, C.tan), d = `M${-W},96 L${-W},${y}`
+    for (let i = -1; i <= 8; i++) d += ` Q${i * W + W / 2},${y + 16} ${(i + 1) * W},${y}`
+    s += fillPath(d + ` L${FRAME_W + W},96 Z`, '#f3d9b0')
+    for (let i = 0; i < 8; i++) s += wrapped(i * W, (x) => circle(x, y, 4.5, C.red) + circle(x - 5, y - 11, 1.8, C.white) + circle(x + 5, y - 11, 1.8, C.white) + circle(x - 5, y - 11, 0.9, '#000') + circle(x + 5, y - 11, 0.9, '#000'))
+    return s
+  }, band(0, PIN_H, C.red)),
 ])
-
 // ═══ SNOW ════════════════════════════════════════════════════════════════════════════════════════════════════════════
 function treeline(seed) {   // a ring of pines round the base, black = bulbs off, in front of the falling snow
   const r = rng(seed); let s = band(90, 96, '#000')
@@ -120,12 +121,11 @@ function treeline(seed) {   // a ring of pines round the base, black = bulbs off
   }
   return s
 }
-look('snowfall', 'Snowfall', 'Snow falling on night blue, behind a ring of dark pines around the base of the tree.', [
-  L({ kind: 'still' }, band(0, CONE_H, C.navy), band(0, PIN_H, C.navy)),
-  L({ kind: 'fall', speed: 6 }, scatter(4, 170, 0, 96, (x, y, r) => circle(x, y, 0.6 + r() * 0.7, C.white)), scatter(5, 30, 0, 18, (x, y, r) => circle(x, y, 0.7, C.white))),
+look('snowfall', 'Snowfall', 'Snow falling in front of a ring of dark pines, the night sky brightening to a glow just above the treetops.', [
+  L({ kind: 'still' }, `<defs><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#050f3d"/><stop offset="0.5" stop-color="#0d2a80"/><stop offset="0.78" stop-color="#3f7ad6"/><stop offset="0.9" stop-color="#a8d0ff"/></linearGradient></defs>` + band(0, CONE_H, 'url(#sky)'), band(0, PIN_H, '#050f3d')),
   L({ kind: 'still' }, treeline(7)),
+  L({ kind: 'fall', speed: 6 }, scatter(4, 170, 0, 96, (x, y, r) => circle(x, y, 0.6 + r() * 0.7, C.white)), scatter(5, 30, 0, 18, (x, y, r) => circle(x, y, 0.7, C.white))),
 ])
-
 function flake(R, c, w = 1.4) {
   let d = ''
   for (let i = 0; i < 6; i++) {
@@ -145,21 +145,15 @@ look('snowflakes', 'Snowflakes', 'Six-armed flakes tumbling as they fall, on bri
 ])
 
 // ═══ GIFTS: two parcels, opposite sides; a ribbon wrapping each diagonally, a big bow in the middle of the top. ═════
-look('gifts', 'Gifts', 'Two big parcels on opposite sides, red with gold ribbon and green with white, each ribbon wrapping round diagonally to a big bow; gold sparkles above.', [
-  L({ kind: 'still' }, () => halves((cx, k) => {
-    const paper = [C.red, C.green][k], rib = [C.gold, C.white][k], x0 = cx - 44, x1 = cx + 44, top = 34
-    return rect(x0, top, 88, 62, paper) + rect(x0, top, 88, 5, rib, ' opacity="0.55"') +
-      poly([[x0, top + 10], [x0 + 12, top], [x1, top + 52], [x1 - 12, top + 62]], rib) +            // diagonal wrap
-      poly([[x1 - 30, top], [x1 - 18, top], [x1, top + 16], [x1, top + 28]], rib) +
-      poly([[x0, top + 40], [x0, top + 52], [x0 + 10, top + 62], [x0 + 22, top + 62]], rib) +
-      `<ellipse cx="${cx - 11}" cy="${top - 9}" rx="12" ry="8" fill="none" stroke="${rib}" stroke-width="4"/>` +
-      `<ellipse cx="${cx + 11}" cy="${top - 9}" rx="12" ry="8" fill="none" stroke="${rib}" stroke-width="4"/>` +
-      poly([[cx - 2, top - 2], [cx - 12, top + 14], [cx - 6, top + 14], [cx, top + 2]], rib) + poly([[cx + 2, top - 2], [cx + 12, top + 14], [cx + 6, top + 14], [cx, top + 2]], rib) +
-      circle(cx, top - 3, 4, rib)
-  }) + band(0, 13, '#000'), band(0, PIN_H, C.gold)),
-  L({ kind: 'twinkle' }, scatter(66, 26, 0, 14, (x, y) => circle(x, y, 0.8, C.gold))),
+/** Diagonal stripes clipped to columns x0…x0+w: a parcel's wrapping. dir ±1 slants them either way. */
+function wrapPaper(id, x0, w, cols, sw, dir) {
+  let s = `<defs><clipPath id="${id}"><rect x="${x0}" y="0" width="${w}" height="${CONE_H}"/></clipPath></defs><g clip-path="url(#${id})">`
+  for (let i = -24; i < 40; i++) { const x = x0 + i * sw; s += poly([[x, 0], [x + sw + 0.2, 0], [x + sw + 0.2 + dir * 60, CONE_H], [x + dir * 60, CONE_H]], cols[((i % cols.length) + cols.length) % cols.length]) }
+  return s + '</g>'
+}
+look('gifts', 'Gifts', 'Two parcels on opposite sides, wrapped in diagonal stripes and no bows: red and gold on one, the Pride flag on the other.', [
+  L({ kind: 'still' }, () => wrapPaper('gA', 0, 96, [C.red, C.red, C.gold], 6, 1) + wrapPaper('gB', 96, 96, RAINBOW, 6, -1) + rect(-0.5, 0, 1.5, CONE_H, '#000') + rect(95.5, 0, 1.5, CONE_H, '#000'), band(0, PIN_H, C.gold)),
 ])
-
 // ═══ CANDY ═══════════════════════════════════════════════════════════════════════════════════════════════════════════
 look('candy-cane', 'Candy Cane', 'Red and white spiralling from the ridge to the ground, turning.', [
   L({ kind: 'spin', speed: 10 }, () => {
@@ -229,28 +223,23 @@ look('menorah', 'Menorah', 'A nine-branched menorah on every face, the shamash r
 ])
 
 const DREIDEL_LETTERS = ['נ', 'ג', 'ה', 'ש']
-look('dreidel', 'Dreidel', 'A dreidel on every face, each showing a different letter (nun, gimel, hey, shin), and the whole tree turns, so the dreidel spins its letters past you.', [
-  L({ kind: 'spin', speed: 14 }, band(0, CONE_H, '#08206e') + scatter(13, 40, 0, 96, (x, y) => circle(x, y, 0.6, C.silver)) + perFace((cx, k) => {
-    const body = [C.blue, C.silver, C.gold, '#6fa0ff'][k], ink = k === 1 || k === 2 ? '#08206e' : C.white
-    return rect(cx - 2, 14, 4, 12, C.silver) + rect(cx - 15, 26, 30, 34, body) + poly([[cx - 15, 60], [cx + 15, 60], [cx, 80]], body) +
-      `<text x="${cx}" y="52" text-anchor="middle" font-family="Arial Hebrew, David, Arial, sans-serif" font-weight="700" font-size="24" fill="${ink}">${DREIDEL_LETTERS[k]}</text>`
-  }), band(0, PIN_H, C.gold)),
+look('dreidel', 'Dreidel', 'The whole tree is one dreidel: a silver handle at the pinnacle, a blue body with silver corners, one great gold letter on each face (nun, gimel, hey, shin), tapering to its point; the tree turns, so it spins its letters past you.', [
+  L({ kind: 'spin', speed: 12 }, () => band(0, CONE_H, '#123a9e') + band(0, 5, C.silver) + perFace((cx, k) => {
+    const x0 = cx - FACE_W / 2
+    return rect(x0 - 1.2, 0, 2.4, CONE_H, C.silver) +
+      `<text x="${cx}" y="60" text-anchor="middle" font-family="Arial Hebrew, David, Arial, sans-serif" font-weight="700" font-size="46" fill="${C.gold}">${DREIDEL_LETTERS[k]}</text>` +
+      poly([[x0, 72], [cx, 95], [x0 + FACE_W, 72], [x0 + FACE_W, 97], [x0, 97]], '#06134a')
+  }), band(0, PIN_H, C.silver)),
 ])
-
 // ═══ KWANZAA ═════════════════════════════════════════════════════════════════════════════════════════════════════════
-const kente = (x, y, w, h) => { let s = ''; const cols = [C.gold, C.red, C.green, '#000', C.gold, C.green, C.red]; for (let i = 0; i * 3 < w; i++) s += rect(x + i * 3, y, 3, h, cols[i % cols.length]); return s }
-look('kinara', 'Kinara', 'A kinara on every face, its holder woven in kente colours: three red candles, the black one in the centre, three green; behind it, warm bands with a kente stripe; the pinnacle is red, black and green. Only the flames flicker.', [
-  L({ kind: 'twinkle', only: C.gold }, bands(['#5c3f0a', '#7a530c', '#9c6b10', '#7a530c', '#4a3208']) + kente(0, 22, FRAME_W, 4) + kente(0, 90, FRAME_W, 3) + perFace((cx) => {
-    let s = kente(cx - 18, 70, 36, 5) + rect(cx - 14, 75, 28, 4, C.amber) + kente(cx - 10, 79, 20, 3)
+look('kinara', 'Kinara', 'A kinara on every face, its holder in gold and brown: three red candles, the black one in the centre, three green; behind it, warm bands of gold and brown. Only the flames flicker.', [
+  L({ kind: 'twinkle', only: C.gold }, bands(['#2e1e05', '#5c3f0a', '#8f6216', '#5c3f0a', '#2e1e05']) + perFace((cx) => {
+    let s = rect(cx - 18, 70, 36, 5, '#b07a2a') + rect(cx - 13, 75, 26, 5, '#7a4e16')
     const col = [C.red, C.red, C.red, '#000', C.green, C.green, C.green]
-    for (let i = 0; i < 7; i++) {
-      const x = cx + (i - 3) * 4.6, top = 44 + Math.abs(i - 3) * 2
-      s += rect(x - 1.4, top, 2.8, 70 - top, col[i]) + `<ellipse cx="${x}" cy="${top - 3}" rx="1.4" ry="2.6" fill="${C.gold}"/>`
-    }
+    for (let i = 0; i < 7; i++) { const x = cx + (i - 3) * 4.6; s += rect(x - 1.4, 46, 2.8, 24, col[i]) + `<ellipse cx="${x}" cy="43" rx="1.4" ry="2.6" fill="${C.gold}"/>` }
     return s
-  }), bands([C.red, '#000', C.green], 0, PIN_H)),
+  }), band(0, PIN_H, '#b07a2a')),
 ])
-
 look('kwanzaa-bands', 'Kwanzaa Bands', 'Red over black over green, rising slowly; red pinnacle.', [
   L({ kind: 'rise', speed: 4 }, bands([C.red, '#000', C.green]), band(0, PIN_H, C.red)),
 ])
@@ -260,49 +249,45 @@ const dove = (c) =>
   fillPath('M-12,2 Q-4,-3 6,-1 Q10,-4 13,-2 L16,-1 L13,1 Q11,5 4,6 Q-6,8 -14,6 L-19,9 L-17,4 L-20,1 Z', c) +   // body, tail fan, head
   fillPath('M-4,-1 Q-10,-14 2,-20 Q0,-10 4,-2 Z', c) + fillPath('M0,-1 Q6,-12 16,-14 Q8,-6 4,0 Z', c) +   // two raised wings
   path('M14,0 Q20,4 22,10', C.green, 1.2) + `<ellipse cx="19" cy="4" rx="1.6" ry="0.8" fill="${C.green}"/><ellipse cx="21" cy="8" rx="1.6" ry="0.8" fill="${C.green}"/>`
-look('doves', 'Doves', 'Gold rays streaming down from a white pinnacle, and a white dove with an olive sprig on every face, rising; the rays shimmer.', [
-  L({ kind: 'twinkle', only: C.gold }, band(0, CONE_H, '#0c2470') + perFace((cx) => {
-    let s = ''; for (let i = -3; i <= 3; i++) s += path(`M${cx + i * 1.5},0 L${cx + i * 7},96`, C.gold, 1.1)
-    return s
-  }), band(0, PIN_H, C.white)),
-  L({ kind: 'rise', speed: 3 }, perFace((cx, k) => g(cx + (k % 2 ? 6 : -6), 50 + (k % 2 ? 14 : 0), 0, dove(C.white), 1.1))),
+look('doves', 'Doves', 'White doves with olive sprigs flying an ascending spiral round the wide part of the tree, through gold rays that shimmer; white pinnacle.', [
+  L({ kind: 'twinkle', only: C.gold }, band(0, CONE_H, '#0c2470') + perFace((cx) => { let s = ''; for (let i = -3; i <= 3; i++) s += path(`M${cx + i * 1.5},0 L${cx + i * 7},96`, C.gold, 1.1); return s }), band(0, PIN_H, C.white)),
+  L({ kind: 'spiral', speed: 8, rise: 3, rows: [24, 94] }, perFace((cx, k) => g(cx + (k % 2 ? 6 : -6), [44, 60, 76, 52][k], 0, dove(C.white), 1.1))),
 ])
-
 // ═══ PRIDE ═══════════════════════════════════════════════════════════════════════════════════════════════════════════
 const RAINBOW = ['#e40303', '#ff8c00', '#ffed00', '#008026', '#004dff', '#750787']
 look('pride', 'Pride', 'The rainbow flag, ridge to ground, rising slowly; white pinnacle.', [
   L({ kind: 'rise', speed: 3 }, bands(RAINBOW), band(0, PIN_H, C.white)),
 ])
-look('progress-pride', 'Progress Pride', 'The rainbow with the Progress chevron (white, pink, light blue, brown, black) pointing round the tree from every face.', [
-  L({ kind: 'still' }, bands(RAINBOW) + perFace((cx) => {
-    const x0 = cx - FACE_W / 2, tip = x0 + 30, cols = ['#000', '#784f17', '#5bcefa', '#f5a9b8', C.white]
-    return cols.map((c, i) => poly([[x0 - 1, -1], [tip - i * 5, 48], [x0 - 1, 97]], c)).join('')   // nested, black outermost
+look('progress-pride', 'Progress Pride', 'Two flags on opposite sides, turned upright: the rainbow in vertical stripes, and the Progress chevron rising from the ground, white at its heart, through pink, light blue and brown to black.', [
+  L({ kind: 'still' }, () => halves((cx) => {
+    const x0 = cx - 48; let s = ''
+    RAINBOW.forEach((c, i) => { s += rect(x0 + i * 16, 0, 16.2, CONE_H, c) })
+    ;['#000', '#784f17', '#5bcefa', '#f5a9b8', C.white].forEach((c, i) => { const w = 46 - i * 8; s += poly([[cx - w, 97], [cx, 26 + i * 10], [cx + w, 97]], c) })
+    return s
   }), bands(['#5bcefa', '#f5a9b8', C.white], 0, PIN_H)),
 ])
 const BEAR = ['#623804', '#d56300', '#fedd63', '#fee6b8', '#ffffff', '#555555', '#000000']
-const paw = (x, y) => `<ellipse cx="${x}" cy="${y + 5}" rx="7" ry="5.5" fill="#000"/>` + [[-7, -3], [-2.5, -6], [2.5, -6], [7, -3]].map(([dx, dy]) => `<ellipse cx="${x + dx}" cy="${y + dy}" rx="2.2" ry="2.8" fill="#000"/>`).join('')
-look('bear', 'Bear', 'The bear pride stripes, dark brown to black, with a black paw on every face; brown pinnacle.', [
-  L({ kind: 'still' }, bands(BEAR) + perFace((cx) => paw(cx - 12, 14)), band(0, PIN_H, '#623804')),
-])
-look('trans', 'Trans', 'Light blue, pink, white, pink, light blue, breathing slowly; white pinnacle.', [
-  L({ kind: 'pulse', speed: 0.35 }, bands(['#5bcefa', '#f5a9b8', '#ffffff', '#f5a9b8', '#5bcefa']), band(0, PIN_H, C.white)),
-])
-look('red-ribbon', 'Red Ribbon', 'A red ribbon on every face, breathing slowly, among small white lights like a vigil of candles; red pinnacle.', [
-  L({ kind: 'twinkle' }, scatter(31, 60, 0, 96, (x, y) => circle(x, y, 0.55, '#ffe9c0')), band(0, PIN_H, '#000')),
-  L({ kind: 'pulse', speed: 0.25 }, perFace((cx) =>
-    path(`M${cx - 10},84 L${cx + 3},44 Q${cx + 9},24 ${cx},20 Q${cx - 9},24 ${cx - 3},44 L${cx + 10},84`, C.red, 5)), band(0, PIN_H, C.red)),
-])
-const NEON = [C.pink, C.cyan, C.yellow, C.purple, C.lime, '#ff7a12']
-look('rainbow-explosion', 'Rainbow Explosion', 'Neon rays bursting from the pinnacle and turning, neon garlands swagged round in every colour, hearts and stars sprinkled over all of it.', [
-  L({ kind: 'spin', speed: 6 }, () => {
-    let s = band(0, CONE_H, '#14002a')
-    for (let i = 0; i < 24; i++) { const x = i * 8; s += poly([[x + 4, -2], [x + 4 + 2, -2], [x + 16, 98], [x - 6, 98]], NEON[i % NEON.length], ' opacity="0.8"') }
+look('bear', 'Bear', 'A plaid woven from the bear pride colours: dark brown and rust crossed with gold, tan, white and grey threads.', [
+  L({ kind: 'still' }, () => {
+    let s = band(0, CONE_H, '#623804')
+    for (let y = 0; y < CONE_H; y += 24) s += band(y + 2, y + 12, '#d56300', ' opacity="0.8"') + band(y + 14, y + 15.5, '#fedd63') + band(y + 18, y + 19, '#fee6b8')
+    for (let x = 0; x < FRAME_W; x += 24) s += rect(x + 4, 0, 10, CONE_H, '#d56300', ' opacity="0.55"') + rect(x + 16, 0, 1.5, CONE_H, '#ffffff', ' opacity="0.8"') + rect(x + 20, 0, 2, CONE_H, '#555555') + rect(x + 1, 0, 2, CONE_H, '#000', ' opacity="0.7"')
     return s
-  }, band(0, PIN_H, C.pink)),
-  L({ kind: 'still' }, () => swags([22, 48, 74], (row, i) => NEON[(row * 3 + i) % NEON.length], '#fff')),
-  L({ kind: 'twinkle' }, scatter(77, 34, 4, 92, (x, y, r) => r() > 0.5 ? heart(x, y, 0.9, NEON[Math.floor(r() * 6)]) : star(x, y, 2.6, C.white))),
+  }, band(0, PIN_H, '#d56300')),
 ])
-
+look('trans', 'Trans', 'Light blue, pink, white, pink, light blue, sparkling, with their average, a soft lavender, washing in over them and back out again.', [
+  L({ kind: 'twinkle' }, bands(['#5bcefa', '#f5a9b8', '#ffffff', '#f5a9b8', '#5bcefa']), band(0, PIN_H, C.white)),
+  L({ kind: 'fade', period: 6 }, band(0, CONE_H, '#c7b4f0'), band(0, PIN_H, '#c7b4f0')),
+])
+look('red-ribbon', 'Red Ribbon', 'Two red stripes on opposite sides, slanting opposite ways like the crossing of the ribbon, on black; after a moment, concentric opposing chevrons of red and black fill the whole tree, then draw back to the ribbon.', [
+  L({ kind: 'still' }, halves((cx, k) => { const d = k ? -1 : 1; return poly([[cx - 9 - d * 24, 0], [cx + 9 - d * 24, 0], [cx + 9 + d * 24, CONE_H], [cx - 9 + d * 24, CONE_H]], C.red) }), band(0, PIN_H, C.red)),
+  L({ kind: 'fade', period: 14 }, () => halves((cx, k) => {
+    const id = `rr${k}`; let s = `<defs><clipPath id="${id}"><rect x="${cx - 48}" y="0" width="96" height="${CONE_H}"/></clipPath></defs><g clip-path="url(#${id})">` + rect(cx - 48, 0, 96, CONE_H, '#000')
+    for (let y = -60; y < 110; y += 12) s += k ? poly([[cx - 48, y + 40], [cx, y], [cx + 48, y + 40], [cx + 48, y + 46], [cx, y + 6], [cx - 48, y + 46]], C.red)
+                                                : poly([[cx - 48, y], [cx, y + 40], [cx + 48, y], [cx + 48, y + 6], [cx, y + 46], [cx - 48, y + 6]], C.red)
+    return s + '</g>'
+  }), band(0, PIN_H, C.red)),
+])
 // ═══ TREES & TRIMMINGS ═══════════════════════════════════════════════════════════════════════════════════════════════
 look('plaid', 'Plaid', 'Red tartan with green bands, dark threads and a gold line; green pinnacle.', [
   L({ kind: 'still' }, () => {
@@ -337,33 +322,25 @@ function swags(rows, colour, bead) {
     return path(`M${f(x0)},${y} Q${f((x0 + x1) / 2)},${y + 13} ${f(x1)},${y}`, colour(row, i), 2.4) + circle(x1, y, 2.4, bead)
   }).join('')).join('')
 }
-look('garland', 'Garland', 'Gold swags in three tiers, a red bead where each swag meets the next; the repeat closes all the way round.', [
-  L({ kind: 'still' }, band(0, CONE_H, '#073d1a') + swags([20, 46, 72], () => C.gold, C.red), band(0, PIN_H, C.gold)),
+look('classic-tree', 'Classic Tree', 'A green tree hung with gold garland swags, a red bead where each meets the next, and multicoloured bulbs placed irregularly that twinkle; the pinnacle washes gold.', [
+  L({ kind: 'twinkle' }, band(0, CONE_H, '#0b6b25') + scatterApart(22, 300, 2, 94, 3.6, (x, y, r) => circle(x, y, 1.3, [C.red, C.gold, C.blue, '#ff7a12', C.purple, C.white][Math.floor(r() * 6)])), band(0, PIN_H, C.gold)),
+  L({ kind: 'still' }, swags([20, 46, 72], () => C.gold, C.red)),
 ])
-
-look('classic-tree', 'Classic Tree', 'A green tree with multicoloured bulbs placed irregularly, never in rows; the pinnacle is the gold star; they twinkle.', [
-  L({ kind: 'twinkle' }, band(0, CONE_H, '#0b6b25') + scatterApart(22, 300, 2, 94, 3.6, (x, y, r) => circle(x, y, 1.3, [C.red, C.gold, C.blue, '#ff7a12', C.purple, C.white][Math.floor(r() * 6)])),
-    band(0, PIN_H, '#000') + perFace((cx) => star(cx, 9, 8.5, C.gold))),
+look('white-bulbs', 'White Bulbs', 'The classic: a deep green tree with individual warm-white bulbs, irregular; the pinnacle washes gold.', [
+  L({ kind: 'twinkle' }, band(0, CONE_H, '#033a14') + scatterApart(23, 330, 2, 94, 3.4, (x, y) => circle(x, y, 1.2, '#fff1cf')), band(0, PIN_H, C.gold)),
 ])
-look('white-bulbs', 'White Bulbs', 'The classic: a deep green tree with individual warm-white bulbs, irregular, and a gold star at the pinnacle.', [
-  L({ kind: 'twinkle' }, band(0, CONE_H, '#033a14') + scatterApart(23, 330, 2, 94, 3.4, (x, y) => circle(x, y, 1.2, '#fff1cf')),
-    band(0, PIN_H, '#000') + perFace((cx) => star(cx, 9, 8.5, C.gold))),
-])
-
 // ═══ JOY: block letters with real separation, lower on the tree, with snow falling over them. ═════════════════════
-const LW = 12, LH = 26, ST = 4, GAP = 5
-const J = (x, y) => rect(x, y, LW, ST, C.white) + rect(x + LW - ST - 2, y, ST, LH - 4, C.white) + `<path d="M${x},${y + LH - 9} L${x},${y + LH - 4} Q${x},${y + LH} ${x + 4},${y + LH} L${x + 6},${y + LH} Q${x + LW - 2},${y + LH} ${x + LW - 2},${y + LH - 5}" fill="none" stroke="${C.white}" stroke-width="${ST}"/>`
+const LW = 16, LH = 28, ST = 5, GAP = 6
+const J = (x, y) => rect(x + LW - ST, y, ST, LH, C.white) + rect(x, y + LH - ST, LW, ST, C.white) + rect(x, y + LH - 12, ST, 12, C.white)
 const O = (x, y) => `<rect x="${x + ST / 2}" y="${y + ST / 2}" width="${LW - ST}" height="${LH - ST}" rx="5" fill="none" stroke="${C.white}" stroke-width="${ST}"/>`
 const Y = (x, y) => poly([[x, y], [x + ST, y], [x + LW / 2, y + 11], [x + LW - ST, y], [x + LW, y], [x + LW / 2 + ST / 2, y + 14], [x + LW / 2 + ST / 2, y + LH], [x + LW / 2 - ST / 2, y + LH], [x + LW / 2 - ST / 2, y + 14]], C.white)
-look('joy', 'Joy', 'JOY on every face, block letters with clear gaps, low on the tree where it is widest, white on red between gold bands, with snow falling over it.', [
-  L({ kind: 'still' }, band(0, CONE_H, '#c40d1c') + band(0, 5, C.gold) + band(91, 96, C.gold) + perFace((cx) => {
-    const x = cx - (3 * LW + 2 * GAP) / 2, y = 54
+look('joy', 'Joy', 'JOY on two sides, big block letters with clear gaps, low on the tree where it is widest, white on red between gold bands, with snow falling over it.', [
+  L({ kind: 'still' }, band(0, CONE_H, '#c40d1c') + band(0, 5, C.gold) + band(91, 96, C.gold) + halves((cx) => {
+    const x = cx - (3 * LW + 2 * GAP) / 2, y = 50
     return J(x, y) + O(x + LW + GAP, y) + Y(x + 2 * (LW + GAP), y)
   }), band(0, PIN_H, C.gold)),
   L({ kind: 'fall', speed: 5 }, scatter(41, 70, 6, 90, (x, y, r) => circle(x, y, 0.55 + r() * 0.4, C.white))),
 ])
-
-// ── write ────────────────────────────────────────────────────────────────────────────────────────────────────────────
 const resolve = (v, ph) => typeof v === 'function' ? v(ph) : (v || '')
 function frameSvg(layer, ph) {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${FRAME_W}" height="${FRAME_H}" viewBox="0 0 ${FRAME_W} ${FRAME_H}">` +

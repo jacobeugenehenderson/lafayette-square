@@ -63,12 +63,12 @@ footer { max-width: 1240px; margin: 0 auto; padding: 0 24px 48px; color: var(--m
 <body>
 <header>
   <h1>The Pilgrim Monument's looks · <span>draft 2</span></h1>
-  <p class="lede">Thirty looks, now at the real tree's proportions and with the pinnacle lit too: the tower's upper stage carries the show on all four faces, above the cone of strands that hangs from the balcony ridge beneath it to the ground. Each look is drawn as SVG layers at the show's frame and lit here exactly as the monument would light it, one pixel per bulb. Above each card, the monument from the harbour side, motion running, at the number of colour strands chosen below; under it, the full drawing, the pinnacle's band at the top. The real tree has 5 strands a side; switch between 2×, 3× and 192 to see what each resolution can carry.</p>
-  <ul class="facts"><li>the real tree: 5 strands a side, 20 in all, ~3,000 bulbs</li><li>pinnacle: 4 faces × 48 × 18</li><li>black = bulbs off</li><li>ring radius illustrative</li></ul>
+  <p class="lede">${looks.length} looks at the real tree's proportions, with the pinnacle lit too: a strip light at the foot of each of its four faces washes the stone in the look's colour, above the cone of strands that hangs from the balcony ridge beneath it to the ground. Each look is drawn as SVG layers at the show's frame and lit here exactly as the monument would light it, one pixel per bulb. Above each card, the monument from the harbour side, motion running, at the number of colour strands chosen below; under it, the full drawing, the pinnacle's colours in the band at the top. The real tree has 5 strands a side; switch between 2×, 3× and 192 to see what each resolution can carry.</p>
+  <ul class="facts"><li>the real tree: 5 strands a side, 20 in all, ~3,000 bulbs</li><li>pinnacle: a strip light on each face</li><li>black = bulbs off</li><li>ring radius illustrative</li></ul>
   <div class="switch" role="group" aria-label="Colour strands for the show"><span>Show strands</span><button type="button" data-n="40">40 · 2×</button><button type="button" data-n="60" aria-pressed="true">60 · 3×</button><button type="button" data-n="192">192</button></div>
 </header>
 <main class="grid" id="grid"></main>
-<footer>Motions, one per layer: still · fall · rise · spin (round the tree) · twinkle · pulse · strobe, and three that move glyphs in place, drawn by the system: turn (the peppermints), swing (the bells), tumble (the snowflakes). "One colour" means the motion touches only that colour. Transitions are the next sheet.</footer>
+<footer>Motions, one per layer: still · fall · rise · spin (round the tree) · spiral (round and up) · twinkle · pulse · strobe · fade (washing in over the layer beneath and back out), and three that move glyphs in place, drawn by the system: turn (the peppermints), swing (the bells), tumble (the snowflakes). "One colour" means the motion touches only that colour. Transitions are the next sheet.</footer>
 <script>
 const LOOKS = ${JSON.stringify(looks)};
 const FW = ${M.frame.w}, FH = ${M.frame.h}, P = ${M.frame.pinH}, FACES = ${M.frame.faces}, CONE = FH - P;
@@ -89,16 +89,7 @@ function geometry(strands) {
       (p.z < 0 ? back : front).push({ c: Math.floor(c * FW / strands), row: P + j, sx: p.sx | 0, sy: p.sy | 0, lit: p.z < 0 ? 0.32 : 1 });
     }
   }
-  const pin = [];
-  for (let k = 0; k < FACES; k++) {
-    const rot = -k * Math.PI / 2, nz = (-Math.sin(rot)) * Math.sin(VY) + Math.cos(rot) * Math.cos(VY);
-    if (nz < 0.05) continue;
-    for (let i = 0; i < FW / FACES; i++) for (let r = 0; r < P; r++) {
-      const u = (i + 0.5) / (FW / FACES) * 2 - 1, [x, z] = onFace(k, u, A + 0.05), p = view(x, TOP - (r + 0.5) / P * (TOP - DECK), z);
-      pin.push({ c: k * FW / FACES + i, row: r, sx: p.sx | 0, sy: p.sy | 0, lit: 0.55 + 0.45 * nz });
-    }
-  }
-  return { back, front: pin.concat(front) };
+  return { back, front };
 }
 const GEO = { 20: geometry(20), 40: geometry(40), 60: geometry(60), 192: geometry(192) };
 let SHOW = 60;   // colour strands for the show: 2-3x the real 20
@@ -108,14 +99,16 @@ function hexRGB(h) { return [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5)
 const wrapIn = (v, lo, n) => lo + (((v - lo) % n) + n) % n;
 
 // What a bulb shows at time t: the top layer that has paint there, moved by that layer's motion. Pure.
-function sample(look, c, row, t) {
-  for (let li = look.layers.length - 1; li >= 0; li--) {
+function sample(look, c, row, t, top = look.layers.length - 1) {
+  for (let li = top; li >= 0; li--) {
     const L = look.layers[li], m = L.motion, px = L.px[L.px.length > 1 ? Math.floor(t * L.fps) % L.px.length : 0], sp = m.speed ?? 6;
     let cc = c, rr = row;
-    const lo = row < P ? 0 : P, n = row < P ? P : CONE;
+    let lo = row < P ? 0 : P, n = row < P ? P : CONE;
+    if (m.rows && row >= P) { lo = P + m.rows[0]; n = m.rows[1] - m.rows[0]; if (row < lo || row >= lo + n) continue; }   // a motion kept to part of the tree
     if (m.kind === 'fall') rr = wrapIn(row - Math.floor(t * sp), lo, n);
     if (m.kind === 'rise') rr = wrapIn(row + Math.floor(t * sp), lo, n);
-    if (m.kind === 'spin') cc = ((c - Math.floor(t * sp)) % FW + FW) % FW;
+    if (m.kind === 'spin' || m.kind === 'spiral') cc = ((c - Math.floor(t * sp)) % FW + FW) % FW;
+    if (m.kind === 'spiral') rr = wrapIn(row + Math.floor(t * (m.rise ?? 3)), lo, n);
     const o = (rr * FW + cc) * 4;
     if (px[o + 3] < 110) continue;
     const r = px[o], g = px[o + 1], b = px[o + 2];
@@ -126,16 +119,20 @@ function sample(look, c, row, t) {
       if (m.kind === 'pulse') k = 0.4 + 0.6 * (0.5 + 0.5 * Math.sin(t * 2 * Math.PI * (m.speed ?? 1)));
       if (m.kind === 'strobe') k = (t % 1.2) < 0.06 || ((t % 1.2) > 0.14 && (t % 1.2) < 0.2) ? 3 : 1;
     }
+    if (m.kind === 'fade') {                                    // the layer washes in over what is beneath it, and back out
+      const a = fadeAlpha(t, m.period ?? 6);
+      if (a < 1) { const u = sample(look, c, row, t, li - 1); return [u[0] + (r - u[0]) * a, u[1] + (g - u[1]) * a, u[2] + (b - u[2]) * a]; }
+    }
     return [r * k, g * k, b * k];
   }
   return [0, 0, 0];
 }
+function fadeAlpha(t, period) { const s = 0.5 + 0.5 * Math.sin(2 * Math.PI * t / period); return Math.min(1, Math.max(0, (s - 0.25) * 2)); }
 const glowColour = (p, t) => { const h = hash(p.c * 131 + p.row), w = 0.8 + 0.2 * Math.sin(t * 1.5 + h * 30); return [255 * w, 214 * w, 150 * w]; };
 
 function paintPoints(buf, pts, look, t, glow, avg) {
   const img = buf.ctx.createImageData(CW, CH), d = img.data;
   for (const p of pts) {
-    if (glow && p.row < P) continue;                            // the glow is the strands alone; the pinnacle is dark
     const [r, g, b] = glow ? glowColour(p, t) : sample(look, p.c, p.row, t);
     if (avg) { avg[0] += r; avg[1] += g; avg[2] += b; avg[3]++; }
     if (r + g + b < 6) continue;
@@ -154,11 +151,41 @@ function drawMonument(ctx, bufs, look, t, strands, glow) {
   paintPoints(bufs.front, G.front, look, t, glow, avg);
   ctx.globalCompositeOperation = 'source-over'; ctx.clearRect(0, 0, CW, CH);
   ctx.drawImage(bufs.back.c, 0, 0);
+  const pinFaces = glow ? null : pinnacleColours(look, t, avg);
   drawTower(ctx, avg[3] ? [avg[0] / avg[3], avg[1] / avg[3], avg[2] / avg[3]] : [0, 0, 0]);
+  if (pinFaces) drawPinnacle(ctx, pinFaces);
   ctx.drawImage(bufs.front.c, 0, 0);
   ctx.globalCompositeOperation = 'lighter';
   for (const [blur, a] of [[2, 0.45], [8, 0.3]]) { ctx.filter = 'blur(' + blur + 'px)'; ctx.globalAlpha = a; ctx.drawImage(bufs.back.c, 0, 0); ctx.drawImage(bufs.front.c, 0, 0); }
   ctx.filter = 'none'; ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+}
+// The pinnacle is STRIP-LIT: a strip at the foot of each face, on the ridge, washing up the stone and fading toward the
+// top. Its colour per face is that face's pinnacle region of the frame (lower half → the strip, upper half → the fade).
+function pinnacleColours(look, t, avg) {
+  const out = [];
+  for (let k = 0; k < FACES; k++) {
+    const lo = [0, 0, 0], hi = [0, 0, 0]; let nl = 0, nh = 0;
+    for (let c = k * FW / FACES; c < (k + 1) * FW / FACES; c += 3) for (let row = 0; row < P; row += 2) {
+      const v = sample(look, c, row, t), into = row >= P / 2 ? lo : hi; into[0] += v[0]; into[1] += v[1]; into[2] += v[2]; row >= P / 2 ? nl++ : nh++;
+    }
+    const L = lo.map(v => v / nl), H = hi.map(v => v / nh);
+    avg[0] += L[0] * 40; avg[1] += L[1] * 40; avg[2] += L[2] * 40; avg[3] += 40;
+    out.push({ k, L, H });
+  }
+  return out;
+}
+function drawPinnacle(ctx, faces) {
+  const rgb = (c, m = 1) => 'rgb(' + c.map(v => Math.min(255, Math.round(v * m))).join(',') + ')';
+  for (const { k, L, H } of faces) {
+    const [ax, az] = onFace(k, -1, A + 0.02), [bx, bz] = onFace(k, 1, A + 0.02);
+    const p0 = view(ax, DECK, az), p1 = view(bx, DECK, bz), p2 = view(bx, TOP, bz), p3 = view(ax, TOP, az);
+    if ((p0.z + p1.z) / 2 <= 0) continue;                       // a face turned away
+    const gr = ctx.createLinearGradient(0, (p0.sy + p1.sy) / 2, 0, (p2.sy + p3.sy) / 2);
+    gr.addColorStop(0, rgb(L, 0.95)); gr.addColorStop(0.35, rgb(L.map((v, i) => (v + H[i]) / 2), 0.55)); gr.addColorStop(1, rgb(H, 0.18));
+    ctx.fillStyle = gr; ctx.beginPath(); ctx.moveTo(p0.sx, p0.sy); ctx.lineTo(p1.sx, p1.sy); ctx.lineTo(p2.sx, p2.sy); ctx.lineTo(p3.sx, p3.sy); ctx.closePath(); ctx.fill();
+    ctx.save(); ctx.strokeStyle = rgb(L, 1.3); ctx.lineWidth = 2; ctx.shadowColor = rgb(L); ctx.shadowBlur = 8;   // the strip itself
+    ctx.beginPath(); ctx.moveTo(p0.sx, p0.sy - 1); ctx.lineTo(p1.sx, p1.sy - 1); ctx.stroke(); ctx.restore();
+  }
 }
 // The granite, block by block: each stage's sides that face the viewer and its top, washed by the tree's average glow.
 function drawTower(ctx, glow) {

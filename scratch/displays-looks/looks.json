@@ -55,7 +55,7 @@
     {
       "id": "rudolph",
       "name": "Rudolph",
-      "notes": "The pinnacle is his nose, glowing red to light the way, and it pulses; gold antlers, brown coat, a tan band, a small nose on every face too.",
+      "notes": "No antlers: brown, the tan stripe, and a scalloped hem low on the tree; where each pair of scallops meets, a red nose glows and pulses, two eyes above it. The pinnacle washes red.",
       "layers": [
         {
           "motion": {
@@ -72,7 +72,7 @@
     {
       "id": "snowfall",
       "name": "Snowfall",
-      "notes": "Snow falling on night blue, behind a ring of dark pines around the base of the tree.",
+      "notes": "Snow falling in front of a ring of dark pines, the night sky brightening to a glow just above the treetops.",
       "layers": [
         {
           "motion": {
@@ -84,8 +84,7 @@
         },
         {
           "motion": {
-            "kind": "fall",
-            "speed": 6
+            "kind": "still"
           },
           "frames": [
             "looks/snowfall/1.svg"
@@ -93,7 +92,8 @@
         },
         {
           "motion": {
-            "kind": "still"
+            "kind": "fall",
+            "speed": 6
           },
           "frames": [
             "looks/snowfall/2.svg"
@@ -137,7 +137,7 @@
     {
       "id": "gifts",
       "name": "Gifts",
-      "notes": "Two big parcels on opposite sides, red with gold ribbon and green with white, each ribbon wrapping round diagonally to a big bow; gold sparkles above.",
+      "notes": "Two parcels on opposite sides, wrapped in diagonal stripes and no bows: red and gold on one, the Pride flag on the other.",
       "layers": [
         {
           "motion": {
@@ -145,14 +145,6 @@
           },
           "frames": [
             "looks/gifts/0.svg"
-          ]
-        },
-        {
-          "motion": {
-            "kind": "twinkle"
-          },
-          "frames": [
-            "looks/gifts/1.svg"
           ]
         }
       ]
@@ -285,12 +277,12 @@
     {
       "id": "dreidel",
       "name": "Dreidel",
-      "notes": "A dreidel on every face, each showing a different letter (nun, gimel, hey, shin), and the whole tree turns, so the dreidel spins its letters past you.",
+      "notes": "The whole tree is one dreidel: a silver handle at the pinnacle, a blue body with silver corners, one great gold letter on each face (nun, gimel, hey, shin), tapering to its point; the tree turns, so it spins its letters past you.",
       "layers": [
         {
           "motion": {
             "kind": "spin",
-            "speed": 14
+            "speed": 12
           },
           "frames": [
             "looks/dreidel/0.svg"
@@ -301,7 +293,7 @@
     {
       "id": "kinara",
       "name": "Kinara",
-      "notes": "A kinara on every face, its holder woven in kente colours: three red candles, the black one in the centre, three green; behind it, warm bands with a kente stripe; the pinnacle is red, black and green. Only the flames flicker.",
+      "notes": "A kinara on every face, its holder in gold and brown: three red candles, the black one in the centre, three green; behind it, warm bands of gold and brown. Only the flames flicker.",
       "layers": [
         {
           "motion": {
@@ -333,7 +325,7 @@
     {
       "id": "doves",
       "name": "Doves",
-      "notes": "Gold rays streaming down from a white pinnacle, and a white dove with an olive sprig on every face, rising; the rays shimmer.",
+      "notes": "White doves with olive sprigs flying an ascending spiral round the wide part of the tree, through gold rays that shimmer; white pinnacle.",
       "layers": [
         {
           "motion": {
@@ -346,8 +338,13 @@
         },
         {
           "motion": {
-            "kind": "rise",
-            "speed": 3
+            "kind": "spiral",
+            "speed": 8,
+            "rise": 3,
+            "rows": [
+              24,
+              94
+            ]
           },
           "frames": [
             "looks/doves/1.svg"
@@ -374,7 +371,7 @@
     {
       "id": "progress-pride",
       "name": "Progress Pride",
-      "notes": "The rainbow with the Progress chevron (white, pink, light blue, brown, black) pointing round the tree from every face.",
+      "notes": "Two flags on opposite sides, turned upright: the rainbow in vertical stripes, and the Progress chevron rising from the ground, white at its heart, through pink, light blue and brown to black.",
       "layers": [
         {
           "motion": {
@@ -389,7 +386,7 @@
     {
       "id": "bear",
       "name": "Bear",
-      "notes": "The bear pride stripes, dark brown to black, with a black paw on every face; brown pinnacle.",
+      "notes": "A plaid woven from the bear pride colours: dark brown and rust crossed with gold, tan, white and grey threads.",
       "layers": [
         {
           "motion": {
@@ -404,15 +401,23 @@
     {
       "id": "trans",
       "name": "Trans",
-      "notes": "Light blue, pink, white, pink, light blue, breathing slowly; white pinnacle.",
+      "notes": "Light blue, pink, white, pink, light blue, sparkling, with their average, a soft lavender, washing in over them and back out again.",
       "layers": [
         {
           "motion": {
-            "kind": "pulse",
-            "speed": 0.35
+            "kind": "twinkle"
           },
           "frames": [
             "looks/trans/0.svg"
+          ]
+        },
+        {
+          "motion": {
+            "kind": "fade",
+            "period": 6
+          },
+          "frames": [
+            "looks/trans/1.svg"
           ]
         }
       ]
@@ -420,11 +425,11 @@
     {
       "id": "red-ribbon",
       "name": "Red Ribbon",
-      "notes": "A red ribbon on every face, breathing slowly, among small white lights like a vigil of candles; red pinnacle.",
+      "notes": "Two red stripes on opposite sides, slanting opposite ways like the crossing of the ribbon, on black; after a moment, concentric opposing chevrons of red and black fill the whole tree, then draw back to the ribbon.",
       "layers": [
         {
           "motion": {
-            "kind": "twinkle"
+            "kind": "still"
           },
           "frames": [
             "looks/red-ribbon/0.svg"
@@ -432,43 +437,11 @@
         },
         {
           "motion": {
-            "kind": "pulse",
-            "speed": 0.25
+            "kind": "fade",
+            "period": 14
           },
           "frames": [
             "looks/red-ribbon/1.svg"
-          ]
-        }
-      ]
-    },
-    {
-      "id": "rainbow-explosion",
-      "name": "Rainbow Explosion",
-      "notes": "Neon rays bursting from the pinnacle and turning, neon garlands swagged round in every colour, hearts and stars sprinkled over all of it.",
-      "layers": [
-        {
-          "motion": {
-            "kind": "spin",
-            "speed": 6
-          },
-          "frames": [
-            "looks/rainbow-explosion/0.svg"
-          ]
-        },
-        {
-          "motion": {
-            "kind": "still"
-          },
-          "frames": [
-            "looks/rainbow-explosion/1.svg"
-          ]
-        },
-        {
-          "motion": {
-            "kind": "twinkle"
-          },
-          "frames": [
-            "looks/rainbow-explosion/2.svg"
           ]
         }
       ]
@@ -519,24 +492,9 @@
       ]
     },
     {
-      "id": "garland",
-      "name": "Garland",
-      "notes": "Gold swags in three tiers, a red bead where each swag meets the next; the repeat closes all the way round.",
-      "layers": [
-        {
-          "motion": {
-            "kind": "still"
-          },
-          "frames": [
-            "looks/garland/0.svg"
-          ]
-        }
-      ]
-    },
-    {
       "id": "classic-tree",
       "name": "Classic Tree",
-      "notes": "A green tree with multicoloured bulbs placed irregularly, never in rows; the pinnacle is the gold star; they twinkle.",
+      "notes": "A green tree hung with gold garland swags, a red bead where each meets the next, and multicoloured bulbs placed irregularly that twinkle; the pinnacle washes gold.",
       "layers": [
         {
           "motion": {
@@ -545,13 +503,21 @@
           "frames": [
             "looks/classic-tree/0.svg"
           ]
+        },
+        {
+          "motion": {
+            "kind": "still"
+          },
+          "frames": [
+            "looks/classic-tree/1.svg"
+          ]
         }
       ]
     },
     {
       "id": "white-bulbs",
       "name": "White Bulbs",
-      "notes": "The classic: a deep green tree with individual warm-white bulbs, irregular, and a gold star at the pinnacle.",
+      "notes": "The classic: a deep green tree with individual warm-white bulbs, irregular; the pinnacle washes gold.",
       "layers": [
         {
           "motion": {
@@ -566,7 +532,7 @@
     {
       "id": "joy",
       "name": "Joy",
-      "notes": "JOY on every face, block letters with clear gaps, low on the tree where it is widest, white on red between gold bands, with snow falling over it.",
+      "notes": "JOY on two sides, big block letters with clear gaps, low on the tree where it is widest, white on red between gold bands, with snow falling over it.",
       "layers": [
         {
           "motion": {
