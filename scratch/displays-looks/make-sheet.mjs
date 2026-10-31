@@ -68,7 +68,7 @@ footer { max-width: 1240px; margin: 0 auto; padding: 0 24px 48px; color: var(--m
   <div class="switch" role="group" aria-label="Colour strands for the show"><span>Show strands</span><button type="button" data-n="40">40 · 2×</button><button type="button" data-n="60" aria-pressed="true">60 · 3×</button><button type="button" data-n="192">192</button></div>
 </header>
 <main class="grid" id="grid"></main>
-<footer>Motions, one per layer: still · fall · rise · spin (round the tree) · spiral (round and up) · twinkle · pulse · strobe · fade (washing in over the layer beneath and back out), and three that move glyphs in place, drawn by the system: turn (the peppermints), swing (the bells), tumble (the snowflakes), build (the ribbon's bands wrapping on, one by one). "One colour" means the motion touches only that colour. Transitions are the next sheet.</footer>
+<footer>Motions, one per layer: still · fall · rise · spin (round the tree) · spiral (round and up) · twinkle · pulse · strobe · fade (washing in over the layer beneath and back out), and three that move glyphs in place, drawn by the system: turn (the peppermints), swing (the bells), tumble (the snowflakes), build (the ribbon's lines wrapping on, one by one). "One colour" means the motion touches only that colour. Transitions are the next sheet.</footer>
 <script>
 const LOOKS = ${JSON.stringify(looks)};
 const FW = ${M.frame.w}, FH = ${M.frame.h}, P = ${M.frame.pinH}, FACES = ${M.frame.faces}, CONE = FH - P;
@@ -206,14 +206,20 @@ function drawTower(ctx, glow) {
 }
 function drawFlat(ctx, look, t) {
   const W = FW * 2, Hh = FH * 2, img = ctx.createImageData(W, Hh), d = img.data;
-  for (let row = 0; row < FH; row++) for (let c = 0; c < FW; c++) {
+  for (let row = P; row < FH; row++) for (let c = 0; c < FW; c++) {   // the cone: one dot per bulb
     const [r, g, b] = sample(look, c, row, t), o = ((row * 2) * W + c * 2) * 4;
     d[o] = Math.min(255, r); d[o + 1] = Math.min(255, g); d[o + 2] = Math.min(255, b); d[o + 3] = 255;
   }
-  for (let x = 0; x < W; x += 2) { const o = ((P * 2 - 1) * W + x) * 4; d[o] = 120; d[o + 1] = 96; d[o + 2] = 30; d[o + 3] = 255; }
   ctx.putImageData(img, 0, 0);
+  // the pinnacle: four strip lights, one per face, each washing up its band (no bulbs)
+  for (const { k, L, H } of pinnacleColours(look, t, [0, 0, 0, 0])) {
+    const x0 = k * W / FACES, rgb = (c, m) => 'rgb(' + c.map(v => Math.min(255, Math.round(v * m))).join(',') + ')';
+    const gr = ctx.createLinearGradient(0, P * 2, 0, 0);
+    gr.addColorStop(0, rgb(L, 0.95)); gr.addColorStop(0.35, rgb(L.map((v, i) => (v + H[i]) / 2), 0.55)); gr.addColorStop(1, rgb(H, 0.18));
+    ctx.fillStyle = gr; ctx.fillRect(x0 + 1, 0, W / FACES - 2, P * 2);
+    ctx.fillStyle = rgb(L, 1.3); ctx.fillRect(x0 + 1, P * 2 - 3, W / FACES - 2, 3);
+  }
 }
-
 function motionLabel(look) {
   const parts = [];
   for (const l of look.layers) {

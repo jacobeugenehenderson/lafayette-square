@@ -277,20 +277,21 @@ look('trans', 'Trans', 'Light blue, pink, white, pink, light blue, sparkling, wi
   L({ kind: 'twinkle' }, bands(['#5bcefa', '#f5a9b8', '#ffffff', '#f5a9b8', '#5bcefa']), band(0, PIN_H, C.white)),
   L({ kind: 'fade', period: 6 }, band(0, CONE_H, '#b46cff'), band(0, PIN_H, '#b46cff')),
 ])
-const RIBBON_FRAMES = 40                                    // 26 bands wrapping on, a hold, then the ribbon alone again
-look('red-ribbon', 'Red Ribbon', 'Two red stripes on opposite sides, slanting opposite ways like the crossing of the ribbon, on black; then concentric opposing chevrons of red and black are added one by one, from the ground up, as if the tree were being wrapped; then back to the ribbon.', [
-  L({ kind: 'still' }, halves((cx, k) => { const d = k ? -1 : 1; return poly([[cx - 9 - d * 24, 0], [cx + 9 - d * 24, 0], [cx + 9 + d * 24, CONE_H], [cx - 9 + d * 24, CONE_H]], C.red) }), band(0, PIN_H, C.red)),
+const RIBBON_FRAMES = 16                                    // 8 lines wrapping on, a hold, then the V alone again
+/** One leg of the ribbon's V in half k (0 slants one way, 1 the other), shifted sideways by `off` columns. */
+const ribbonLeg = (k, off) => {
+  const cx = FRAME_W / 4 + k * FRAME_W / 2 + off, d = k ? -1 : 1, id = `rl${k}_${off}`
+  return `<defs><clipPath id="${id}"><rect x="${k * FRAME_W / 2}" y="0" width="${FRAME_W / 2}" height="${CONE_H}"/></clipPath></defs>` +
+    `<g clip-path="url(#${id})">` + poly([[cx - 9 - d * 24, 0], [cx + 9 - d * 24, 0], [cx + 9 + d * 24, CONE_H], [cx - 9 + d * 24, CONE_H]], C.red) + '</g>'
+}
+look('red-ribbon', 'Red Ribbon', 'The ribbon: two red stripes on opposite sides, slanting opposite ways, a V on black. Then more diagonal lines, parallel to each leg, are added one by one, spreading outward on both sides as if the tree were being wrapped; then back to the V.', [
+  L({ kind: 'still' }, ribbonLeg(0, 0) + ribbonLeg(1, 0), band(0, PIN_H, C.red)),
   L({ kind: 'still' }, (ph) => {
-    const bands = []                                            // ground up, alternating sides: the order they wrap on
-    for (let y = 96; y > -60; y -= 12) for (const k of [0, 1]) bands.push([y, k])
-    const shown = Math.min(bands.length, Math.round(ph * RIBBON_FRAMES)) - 2
-    return bands.slice(0, Math.max(0, shown)).map(([y, k]) => {
-      const cx = FRAME_W / 4 + k * FRAME_W / 2, id = `rb${y}_${k}`, V = (yy, c) => k
-        ? poly([[cx - 48, yy + 40], [cx, yy], [cx + 48, yy + 40], [cx + 48, yy + 46], [cx, yy + 6], [cx - 48, yy + 46]], c)
-        : poly([[cx - 48, yy], [cx, yy + 40], [cx + 48, yy], [cx + 48, yy + 6], [cx, yy + 46], [cx - 48, yy + 6]], c)
-      return `<defs><clipPath id="${id}"><rect x="${cx - 48}" y="0" width="96" height="${CONE_H}"/></clipPath></defs><g clip-path="url(#${id})">${V(y, C.red)}${V(y + 6, '#000')}</g>`
-    }).join('')
-  }, '', { frames: RIBBON_FRAMES, fps: 5, turn: 'build' }),
+    const order = []                                            // outward from the V, alternating sides
+    for (const n of [1, 2]) order.push([0, 36 * n], [1, -36 * n], [0, -36 * n], [1, 36 * n])
+    const shown = Math.min(order.length, Math.round(ph * RIBBON_FRAMES) - 1)
+    return order.slice(0, Math.max(0, shown)).map(([k, off]) => ribbonLeg(k, off)).join('')
+  }, '', { frames: RIBBON_FRAMES, fps: 2, turn: 'build' }),
 ])
 // ═══ TREES & TRIMMINGS ═══════════════════════════════════════════════════════════════════════════════════════════════
 look('plaid', 'Plaid', 'Red tartan with green bands, dark threads and a gold line; green pinnacle.', [
