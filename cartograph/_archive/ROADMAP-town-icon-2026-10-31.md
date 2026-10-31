@@ -12,3 +12,10 @@ convention"). Live home: `scripts/towns-record.mjs`, `src/lib/townIdentity.js#to
 ## From the `claims-no-town-wears-another-towns-mark` entry (struck: overruled 2026-10-31)
 
 Also recorded: HPDM's `markSvg: 'arch'` is its own authored choice (Jacob, 2026-09-25: *"LS and HPDM can keep the custom arch"*), not a bleed.
+
+## The `claims-no-town-wears-another-towns-mark` entry (resolved 2026-10-31)
+
+Jacob: "they're free to choose any emoji" (registry `r-a-town-may-choose-any-mark`). The check now fails only a mark a
+town wears without authoring it (its baked `markAuthored` false) while another town wears it; mutation-tested both ways.
+
+- **⛔ `checks/claims-no-town-wears-another-towns-mark.mjs` contradicts a ruling: it fails because HPDM and LS both author ⚜️** *(Jacob, 2026-10-04: "They're both in St. Louis, and anyway it's their prerogative")*. The defect is the INSTRUMENT (`CLAUDE.md` Layer 0 q3: never call the operator's authoring a defect). ⇒ the check must tell **inherited** (copied from the mould by a seed, the real bleed) from **authored** (a town's own choice, even when it matches another's), e.g. by the mark's provenance in the Look, and fail only on inheritance. ⛔ Not an exception list naming HPDM. Mutation-test both directions. XS–S.
