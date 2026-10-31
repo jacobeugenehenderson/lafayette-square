@@ -13,7 +13,10 @@ one place per building, the docks). The step list is in the Diary: `cartograph/_
 NO ROUTINE PURGE: content names give a changed file a fresh name, and our readers bypass the edge (src/lib/freshUrl.js).
 ### ⭐ STATE AT JACOB'S BEDTIME, 2026-10-31 (Boz). Read this first.
 - **LS PROMOTED 2026-10-31** (`scratch/ls-cutover-runbook.md`): lafayettesquare.online + www serve LS on Ward 4334c64 / kit 2a44e317;
-  backup `scratch/promote-rollback/lafayettesquare-prod-20261031`. NEXT, Jacob: the .com → .online 301 (§5), then the gates (§6).
+  backup `scratch/promote-rollback/lafayettesquare-prod-20261031`. **The .com → .online 301 is LIVE** (Jacob's Cloudflare rule,
+  2026-10-31): runbook §6's curl gates pass, both hosts, every card route, query kept; the slab gate passes. Open: Jacob's and
+  Ward's eye on both addresses (phone first) · the §6 retirements · `/favicon.svg` 404s on .online, and the instances'
+  branding.faviconUrl names the .com one, which now redirects there (which reader fetches it: not established).
 - **Backend: two sittings after the cutover, all built and Zob-PASSed, none deployed.** Sitting 1: hotfix + recovery B + fortify
   (`scratch/backend-deploy-runbook.md`). Sitting 2 (§E): patches ④–⑫ as ONE set (theward plumb/fortify) + Ward's client
   (ward/ladder-client) + Operations signers + kit plumb/ladder-docs (merge on deploy only). Deploy-day hands: predeploy-audit items 6–12.
