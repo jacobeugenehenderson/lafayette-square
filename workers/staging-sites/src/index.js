@@ -209,7 +209,7 @@ async function wardBuild(env) {
 
 /**
  * ⭐ THE SHARE CARD — what an SMS/iMessage/social crawler reads. Crawlers never run JavaScript,
- * so the player's runtime branding (`src/lib/townMark.js`) never reaches them and every town's
+ * so the player's runtime never reaches them and every town's
  * link showed index.html's static Lafayette Square tags. WRITE them here (`shareCard.js#withShareCard`
  * removes any the document carries and appends the whole card, so a Ward document with none gets one), per <map>, from
  * `towns.json` — generated from the instance registry by publish-player-to-staging.mjs, so

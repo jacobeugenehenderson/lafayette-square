@@ -38,6 +38,7 @@ import { execFile, execFileSync } from 'node:child_process'
 import { promisify } from 'node:util'
 import { freshUrl } from '../src/lib/freshUrl.js'
 import { playerShipSet, VITE_MANIFEST } from './player-graph.mjs'
+import { buildTownsRecord } from './towns-record.mjs'
 
 const execFileAsync = promisify(execFile)
 const REPO_ROOT = fileURLToPath(new URL('..', import.meta.url))
@@ -201,6 +202,11 @@ async function alreadyThere(files) {
     console.log(`already  ${fresh.size} objects identical in R2 — not re-uploaded`)
   }
   console.log(`upload   ${pending.length} files, ${mb(pending.reduce((s, f) => s + f.bytes, 0))} → ${BUCKET}/${PLAYER_PREFIX}`)
+  // ⭐ THE SHARE CARD, per town, for crawlers that never run JavaScript (SMS/iMessage/social): towns.json, from the
+  // instance registry and each town's BAKED Look (scripts/towns-record.mjs). Built before --dry-run returns, so a dry
+  // run says where every town's icon comes from.
+  const towns = await buildTownsRecord(REPO_ROOT)
+  for (const [m, t] of Object.entries(towns)) console.log(`icon     ${m.padEnd(18)} ${t.iconFrom}`)
   if (dryRun) { console.log('\n--dry-run: nothing uploaded.'); return }
   if (!pending.length) console.log('already current — no player file changed')
 
@@ -213,20 +219,7 @@ async function alreadyThere(files) {
     }
   }))
 
-  // ⭐ THE SHARE CARD, per town, for crawlers that never run JavaScript (SMS/iMessage/social).
-  // The worker serves ONE index.html whose static tags are Lafayette Square's; it rewrites
-  // them per <map> from this file; the picture is the town's own slab's (src/lib/shareCard.js), not this file's.
-  // ⛔ Generated from the instance REGISTRY — never a list
-  // here — so a town with a module gets its own card and a town without one gets neutral
-  // tags from the worker, never LS's.
-  const { registeredMaps, instanceForMap } = await import(join(REPO_ROOT, 'src', 'instances', 'registry.js'))
-  const { titleOf } = await import(join(REPO_ROOT, 'src', 'lib', 'townRecord.js'))
-  const towns = {}
-  for (const m of registeredMaps()) {
-    const t = instanceForMap(m), b = t.branding || {}
-    towns[m] = { title: titleOf(t), description: t.profile?.tagline || null,
-      faviconUrl: b.faviconUrl || null, mark: b.mark || null, markSvg: b.markSvg || null }
-  }
+  // The Workers write each town's card from this file; the picture is the town's own slab's (src/lib/shareCard.js).
   const townsTmp = join(DIST, 'towns.json')
   writeFileSync(townsTmp, JSON.stringify(towns, null, 2))
   await put({ abs: townsTmp, rel: 'towns.json' })

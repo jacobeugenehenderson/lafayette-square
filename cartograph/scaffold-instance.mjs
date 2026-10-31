@@ -3,15 +3,14 @@
  * scaffold-instance.mjs — GIVE A POURED TOWN ITS OWN INSTANCE MODULE (`src/instances/<map>.js`).
  *
  * ⛔ WHY: a poured town had no module unless someone hand-wrote one, and without one the
- * player boots WEARING LAFAYETTE SQUARE (`src/instance.js`): LS's name in the tab, LS's arch
+ * player boots WEARING LAFAYETTE SQUARE (`src/instance.js`): LS's name in the tab, LS's mark
  * as favicon/loader/badge, LS's legal documents. Provincetown did, until 2026-09-25.
  *
  * Everything written is the town's OWN fact (geography.json, neighborhood.json) or null, and
- * null is DECLARED, never borrowed. ⭐ The mark is authored by the operator, not produced:
- * `mark: null` means "no mark yet" — the town shows its own initial, and
- * `checks/claims-every-town-has-a-mark.mjs` stays red on it until one is authored. `--mark` writes it to its source,
- * the Look's design.json `identity.mark` (src/lib/townIdentity.js), and the instance's copy the old player reads
- * until cutover (checks/claims-a-towns-identity-is-its-own.mjs holds the two equal).
+ * null is DECLARED, never borrowed. ⭐ The mark is authored by the operator, not produced, and it lives in ONE place:
+ * the Look's design.json `identity.mark` (src/lib/townIdentity.js). `--mark` writes it there; the module carries no
+ * copy. Without one the town shows its own initial, and `checks/claims-every-town-has-a-mark.mjs` stays red on it
+ * until one is authored.
  *
  *   node cartograph/scaffold-instance.mjs --scene=<map> [--mark=<emoji>]
  * Refuses if the module exists (a module is authored state; never overwritten).
@@ -62,9 +61,6 @@ export default {
   contentRoot: 'content/${scene}/',
 
   branding: {
-    faviconUrl: null,
-    // ${mark ? "OLD PLAYER ONLY, UNTIL CUTOVER: a copy of the Look's identity.mark (the source)." : '⛔ NO MARK YET — the operator authors one (an emoji), in the Look. Until then the town shows its own initial.'}
-    mark: ${q(mark)},
     assetSlug: ${q(scene)},
   },
 

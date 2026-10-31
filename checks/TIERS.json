@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 545,
+  "total": 546,
   "counts": {
-    "safe": 376,
+    "safe": 377,
     "local-effect": 31,
     "live": 138
   },
@@ -995,6 +995,13 @@
       "tier": "safe",
       "why": [
         "computed import of src/hooks/useEvents.js — read, safe"
+      ]
+    },
+    {
+      "file": "checks/claims-a-town-has-one-icon.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
       ]
     },
     {
@@ -2313,6 +2320,7 @@
       "file": "checks/claims-no-town-wears-another-towns-mark.mjs",
       "tier": "safe",
       "why": [
+        "computed import of src/lib/townIdentity.js — read, safe",
         "computed import of src/instances/registry.js — read, safe"
       ]
     },

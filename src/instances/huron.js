@@ -46,12 +46,6 @@ export default {
     // so it is a convention rather than a rule: ⛔ Lafayette Square keeps its own name,
     // because lafayette-square.com is a live product nobody asked to rename.
     title: 'Huron Online',
-    faviconUrl: null,
-    // ⭐ THE TOWN'S MARK, AUTHORED — one glyph drives the tab icon, the load screen and the
-    // default visitor badge. ⚠️ Unicode has no lighthouse, which is the obvious choice for
-    // Huron Harbor; ⚓ is the stand-in. ▶ paste any glyph that renders for you — that is the
-    // whole authoring surface, and nothing needs rebuilding but the player.
-    mark: '⚓',   // OLD PLAYER ONLY, UNTIL CUTOVER: a copy of the Look's identity.mark (the source). ▶ node checks/claims-a-towns-identity-is-its-own.mjs
     assetSlug: 'huron',
   },
 
