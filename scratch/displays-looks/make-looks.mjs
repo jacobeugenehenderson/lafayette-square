@@ -3,7 +3,7 @@
  * make-looks.mjs: draft 2 of the Light Show's starter looks (BRIEF-the-monument-lights-up §1), after Jacob's notes on
  * draft 1 (2026-10-31).
  *
- *   node scratch/displays-looks/make-looks.mjs   → public/displays/provincetown/monument-lights/{looks.json, looks/<id>/*.svg}
+ *   node scratch/displays-looks/make-looks.mjs   → cartograph/data/provincetown/content/displays/monument-lights/{looks.json, looks/<id>/*.svg}
  *
  * THE FRAME is FRAME_W × FRAME_H, one pixel = one bulb, in two regions stacked:
  *   rows 0 … PIN_H-1      the PINNACLE: the tower's upper stage, its four faces unrolled (lit like the Empire State's top)
@@ -20,7 +20,7 @@ import { fileURLToPath } from 'node:url'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 // The town's drawer: Provincetown's looks for its monument's Light Show (the town's data, not the plugin's).
-const DRAWER = join(HERE, '../../public/displays/provincetown/monument-lights'), OUT = join(DRAWER, 'looks')
+const DRAWER = join(HERE, '../../cartograph/data/provincetown/content/displays/monument-lights'), OUT = join(DRAWER, 'looks')
 export const FRAME_W = 192, CONE_H = 96, PIN_H = 18, FRAME_H = PIN_H + CONE_H, FACES = 4, FACE_W = FRAME_W / FACES
 const faceCx = (k) => FACE_W * k + FACE_W / 2
 const perFace = (fn) => Array.from({ length: FACES }, (_, k) => fn(faceCx(k), k)).join('')

@@ -7,6 +7,7 @@
  *   · the GLOW: `strands.glow` warm-white strands, ridge to ground ring
  *   · the SHOW: `strands.show` colour strands on the same cone, playing the run (looks separated by transitions)
  *   · the PINNACLE: a strip light at the foot of each face, washing up it in a gradient (never a screen)
+ * Sizes and strengths are derived (./geometry.js), never one tower's. The drawer is the TOWN's content (its contentRoot).
  *   · one AVERAGE GLOW: a light tinted by the tree's mean colour, washing everything round it
  * The ground ring follows the drawn terrain at each strand's foot, live with the exaggeration.
  * The clock: LIVE reads the town's one clock (useTimeOfDay.currentTime) and the display's schedule; Stage's preview
@@ -19,10 +20,11 @@ import useTimeOfDay from '../../hooks/useTimeOfDay'
 import { townClockOf } from '../../lib/townClock.js'
 import { drawnGroundParts, onDrawnGround } from '../../utils/elevation.js'
 import { onTerrainReload, terrainExag } from '../../utils/terrainShader.js'
-import { validateDrawer, compileRun, showAt, showSeconds, glowColour, liveState, sampleLook } from './engine.js'
+import { validateDrawer, compileRun, showAt, showSeconds, glowColour, liveState } from './engine.js'
+import { checkFaces, strandEnds, pinnacleFace, bulbRadius, avgGlow } from './geometry.js'
 import useDisplayPreview from '../preview.js'
 
-const BULB_RADIUS = 0.22, SHOW_GAIN = 2.4, GLOW_GAIN = 1.7      // HDR, so the bulbs bloom like high-wattage lamps
+const SHOW_GAIN = 2.4, GLOW_GAIN = 1.7                         // HDR, so the bulbs bloom like high-wattage lamps
 
 /** Loads the town's drawer: looks.json, then every layer frame rasterized at the frame's size to RGBA. */
 function useDrawer(url, where) {
@@ -51,38 +53,28 @@ function useDrawer(url, where) {
   return drawer
 }
 
-/** The strands: for strand s of n, its top on the ridge's square and its foot on the ground ring (local x, z). */
-function strandEnds(n, faces, ridgeHalf, ringR) {
-  const per = n / faces, out = []
-  for (let s = 0; s < n; s++) {
-    const k = Math.floor(s / per), u = ((s % per) + 0.5) / per * 2 - 1, rot = -k * Math.PI / 2
-    const tx = u * ridgeHalf * Math.cos(rot) - ridgeHalf * Math.sin(rot), tz = u * ridgeHalf * Math.sin(rot) + ridgeHalf * Math.cos(rot)
-    const th = ((s + 0.5) / n - 0.5 / faces) * 2 * Math.PI
-    out.push({ tx, tz, bx: ringR * Math.sin(th), bz: ringR * Math.cos(th) })
-  }
-  return out
-}
-
 function Bulbs({ name, ends, rows, meshRef }) {
-  const geo = useMemo(() => new THREE.SphereGeometry(BULB_RADIUS, 6, 4), [])
+  const geo = useMemo(() => new THREE.SphereGeometry(1, 6, 4), [])   // unit: each bulb is scaled to its strand's spacing
   const mat = useMemo(() => new THREE.MeshBasicMaterial({ toneMapped: false }), [])
   const count = ends.length * rows
   useEffect(() => () => { geo.dispose(); mat.dispose() }, [geo, mat])
   return <instancedMesh name={name} ref={meshRef} args={[geo, mat, count]} frustumCulled={false} />
 }
 
-export default function LightShow({ display, extent, calendar, where }) {
+export default function LightShow({ display, extent, calendar, contentRoot, where }) {
   if (!extent?.ridge || !extent?.pinnacle) throw new Error(`[LightShow] ⛔ ${where}: the set-piece declares no ridge and pinnacle in its extent, so the strands have nowhere to hang`)
   const st = display.strands
   if (!(st?.glow > 0 && st?.show > 0 && st?.ringRadiusM > 0)) throw new Error(`[LightShow] ⛔ ${where}: strands needs glow, show and ringRadiusM`)
   const preview = useDisplayPreview(s => s.modes[display.id])
   // Load the drawer only when the display can be on: Stage's preview, or a calendar to read the season from.
-  const drawer = useDrawer(preview || calendar ? `${import.meta.env.BASE_URL}${display.drawer}` : null, where)
+  if (contentRoot == null) throw new Error(`[LightShow] ⛔ ${where}: the town declares no contentRoot, so its drawer has no home`)
+  const drawer = useDrawer(preview || calendar ? `${import.meta.env.BASE_URL}${contentRoot}${display.drawer}` : null, where)
   const compiled = useMemo(() => (drawer ? compileRun(display.run, drawer.byId, where) : null), [drawer, display.run, where])
   const F = drawer?.frame, rows = F ? F.h - F.pinH : 0
+  if (F) checkFaces(F.faces, extent, where)
 
-  const glowEnds = useMemo(() => F ? strandEnds(st.glow, F.faces, extent.ridge.halfWidthM, st.ringRadiusM) : [], [F, st, extent])
-  const showEnds = useMemo(() => F ? strandEnds(st.show, F.faces, extent.ridge.halfWidthM, st.ringRadiusM) : [], [F, st, extent])
+  const glowEnds = useMemo(() => F ? strandEnds(st.glow, extent.ridge.sides, extent.ridge.halfWidthM, st.ringRadiusM) : [], [F, st, extent])
+  const showEnds = useMemo(() => F ? strandEnds(st.show, extent.ridge.sides, extent.ridge.halfWidthM, st.ringRadiusM) : [], [F, st, extent])
 
   // The ground under each strand's foot, from the drawn terrain (re-read when the terrain changes).
   const root = useRef(), glowRef = useRef(), showRef = useRef(), pinRef = useRef(), lightRef = useRef()
@@ -93,18 +85,15 @@ export default function LightShow({ display, extent, calendar, where }) {
 
   const pinFaces = useMemo(() => {
     if (!F) return null
-    const { fromM, toM, halfWidthM } = extent.pinnacle, H = toM - fromM
     return Array.from({ length: F.faces }, (_, k) => {
-      const g = new THREE.PlaneGeometry(halfWidthM * 2, H, 1, 6)
+      const f = pinnacleFace(k, extent.pinnacle), g = new THREE.PlaneGeometry(f.width, f.height, 1, 6)
       g.setAttribute('color', new THREE.BufferAttribute(new Float32Array(g.attributes.position.count * 3), 3))
-      const rot = -k * Math.PI / 2
-      return { g, position: [-(halfWidthM + 0.05) * Math.sin(rot), fromM + H / 2, (halfWidthM + 0.05) * Math.cos(rot)], rotation: [0, -rot, 0] }
+      return { g, position: f.position, rotation: f.rotation }
     })
   }, [F, extent])
   const pinMat = useMemo(() => new THREE.MeshBasicMaterial({ vertexColors: true, toneMapped: false, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }), [])
 
   const tmp = useMemo(() => ({ m: new THREE.Matrix4(), v: new THREE.Vector3(), c: new THREE.Color(), w: new THREE.Vector3() }), [])
-  const anchor = useRef(null)
 
   useFrame(() => {
     if (!F || !compiled || !root.current || !glowRef.current || !showRef.current) return
@@ -117,9 +106,10 @@ export default function LightShow({ display, extent, calendar, where }) {
         ends.forEach((e, s) => {
           tmp.v.set(e.bx, 0, e.bz); root.current.localToWorld(tmp.v)
           const gp = drawnGroundParts(tmp.v.x, tmp.v.z), footY = gp.raw * exag + gp.y - tmp.w.y + 0.3
+          const r = bulbRadius(Math.hypot(e.bx - e.tx, footY - extent.ridge.yM, e.bz - e.tz), rows)
           for (let j = 0; j < rows; j++) {
             const t = (j + 0.5) / rows
-            tmp.m.makeTranslation(e.tx + (e.bx - e.tx) * t, extent.ridge.yM + (footY - extent.ridge.yM) * t, e.tz + (e.bz - e.tz) * t)
+            tmp.m.makeScale(r, r, r).setPosition(e.tx + (e.bx - e.tx) * t, extent.ridge.yM + (footY - extent.ridge.yM) * t, e.tz + (e.bz - e.tz) * t)
             ref.current.setMatrixAt(s * rows + j, tmp.m)
           }
         })
@@ -131,7 +121,6 @@ export default function LightShow({ display, extent, calendar, where }) {
     const instant = useTimeOfDay.getState().currentTime
     let mode, t, now
     if (preview) {
-      if (!anchor.current || anchor.current.at !== preview.at) anchor.current = { at: preview.at }
       const since = (performance.now() - preview.at) / 1000
       mode = preview.mode; now = instant.getTime() / 1000 + since; t = since % (showSeconds(compiled) + 4)
       if (mode === 'show' && t > showSeconds(compiled)) mode = 'glow'                   // a breath of glow between plays
@@ -189,7 +178,7 @@ export default function LightShow({ display, extent, calendar, where }) {
     if (lightRef.current) {
       const mr = n ? avg[0] / n / 255 : 0, mg = n ? avg[1] / n / 255 : 0, mb = n ? avg[2] / n / 255 : 0, lum = Math.max(mr, mg, mb)
       lightRef.current.color.setRGB(lum ? mr / lum : 0, lum ? mg / lum : 0, lum ? mb / lum : 0)
-      lightRef.current.intensity = 4000 * lum
+      lightRef.current.intensity = avgGlow(extent, lum).intensity
     }
   })
 
@@ -201,7 +190,7 @@ export default function LightShow({ display, extent, calendar, where }) {
       <group ref={pinRef} name="light-show:pinnacle">
         {pinFaces.map((f, k) => <mesh key={k} geometry={f.g} material={pinMat} position={f.position} rotation={f.rotation} />)}
       </group>
-      <pointLight ref={lightRef} position={[0, extent.ridge.yM * 0.45, 0]} intensity={0} decay={2} distance={0} />
+      <pointLight ref={lightRef} position={[0, avgGlow(extent, 0).y, 0]} intensity={0} decay={2} distance={0} />
     </group>
   )
 }

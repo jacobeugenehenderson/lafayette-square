@@ -23,6 +23,6 @@ export default function Displays({ town, lookId, attach, extent, calendar = null
     const where = `"${lookId}" display "${d.id}"`
     if (!P) throw new Error(`[Displays] ⛔ ${where} is of kind "${d.kind}", and no plugin exists for it (have: ${Object.keys(PLUGINS).join(', ')})`)
     if (!P.attaches.includes(attach)) throw new Error(`[Displays] ⛔ ${where}: a ${P.label} cannot attach to a ${attach} (it attaches to: ${P.attaches.join(', ')})`)
-    return <Suspense key={d.id} fallback={null}><P.Renderer display={d} extent={extent} calendar={calendar} where={where} /></Suspense>
+    return <Suspense key={d.id} fallback={null}><P.Renderer display={d} extent={extent} calendar={calendar} contentRoot={town.contentRoot} where={where} /></Suspense>
   })
 }

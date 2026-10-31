@@ -53,7 +53,7 @@ if (process.argv.includes('--mutants')) {
   const P = towns.find(t => t.coords.length) || towns[0], name = P.strings[0]
   const mutants = [
     [`a town's look id ("${name}") in Displays.jsx`, { file: 'src/displays/Displays.jsx', text: `\nconst only = '${name}'\n` }],
-    [`a set-piece building in LightShow.jsx`, { file: 'src/displays/lightShow/LightShow.jsx', text: `\nconst b = '${P.strings.find(s => /^osm-/.test(s)) || P.strings.at(-1)}'\n` }],
+    (() => { const v = P.strings.find(s => /^osm-/.test(s)) || P.strings.at(-1); return [`"${v}" from ${P.file} in LightShow.jsx`, { file: 'src/displays/lightShow/LightShow.jsx', text: `\nconst b = '${v}'\n` }] })(),
     [`a latitude in engine.js`, { file: 'src/displays/lightShow/engine.js', text: `\nconst lat = ${P.coords[0]}\n` }],
   ]
   let bad = 0
