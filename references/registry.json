@@ -5257,6 +5257,17 @@
       "findings": [
         "r-a-place-cards-qrs-are-for-management"
       ]
+    },
+    {
+      "id": "q-how-a-town-authors-a-display",
+      "ask": "Where a town authors its seasonal effects (the monument's lights, fireworks, holiday arches), and whose its light setups are",
+      "neededBy": "BRIEF-the-monument-lights-up §3 standup (Tinsel, 2026-10-30): 20+ setups with transitions need an authoring surface",
+      "status": "answered",
+      "findings": [
+        "r-displays-is-a-stage-section-of-plugins",
+        "r-a-displays-setups-belong-to-its-town",
+        "r-a-show-is-what-a-display-may-do-not-what-it-is"
+      ]
     }
   ],
   "findings": [
@@ -8927,6 +8938,50 @@
       "quote": "\"The PLACE card gets QRs which are only visible to management\"",
       "canon": "theward README §2/§8 (QrStudio, PRINTABLE), when built",
       "notes": "UNBUILT. Part of the QR work after the ladder."
+    },
+    {
+      "id": "r-displays-is-a-stage-section-of-plugins",
+      "question": "q-how-a-town-authors-a-display",
+      "kind": "ruling",
+      "value": {
+        "section": "Displays, a Stage section in every town; its CONTENTS vary by town (what that town has added)",
+        "label": "the word alone, with no descriptive text under it",
+        "items": "each display is a PLUGIN, like an effect in After Effects; every town may add any of them (fireworks included)"
+      },
+      "by": "Jacob",
+      "date": "2026-10-30",
+      "quote": "\"I think we just have to be OK with an aux section in the Stage that varies from map to map...? I guess everybody gets fireworks. But this seems to be like a section called \\\"shows\\\" or \\\"displays\\\" and inside that it's like plugins in aftereffects\" · \"It doesn't make sense that *this* panel would open in Jackson Heights though\" · \"yes, Displays but no extra text. People can figure it out.\"",
+      "canon": "docs/briefs/BRIEF-the-monument-lights-up.md (ROADMAP H-36)",
+      "notes": "UNBUILT. The kit has no plugin concept today (grep of the canon, 2026-10-30). The first plugin (the light show) is built through a narrow seam; fireworks, the second, tests it. Rejected names, in the record: Shows (arches are not shows), Seasonal, Exuberances (Jacob asked whether it was too esoteric), Flourishes."
+    },
+    {
+      "id": "r-a-displays-setups-belong-to-its-town",
+      "question": "q-how-a-town-authors-a-display",
+      "kind": "ruling",
+      "value": {
+        "plugin": "kit-wide code: its motions and transitions",
+        "setups": "authored in the town's instance of the plugin, with a surface to see, edit, create and delete them; NOT a cross-town preset library",
+        "scale": "20+ light setups with transitions"
+      },
+      "by": "Jacob",
+      "date": "2026-10-30",
+      "quote": "\"I think there needs to be a helper surface where the user can see/edit/create/delete patterns\" · \"We want to do like 20+light setups with transitions\" · on 'presets: your 20+ setups, saved and reusable on any town': \"No makes no sense\"",
+      "canon": "docs/briefs/BRIEF-the-monument-lights-up.md (ROADMAP H-36)",
+      "notes": "OPEN, not ruled: whether a setup only composes the plugin's motions (Tinsel's recommendation, the After Effects model) or the operator may also hand-draw motion."
+    },
+    {
+      "id": "r-a-show-is-what-a-display-may-do-not-what-it-is",
+      "question": "q-how-a-town-authors-a-display",
+      "kind": "ruling",
+      "value": {
+        "rule": "a timed show is a capability a display plugin MAY have, never the category: holiday arches over streets are displays and play no show",
+        "consequence": "a display may attach across a street; its span reads the street's authored width there, never a constant"
+      },
+      "by": "Jacob",
+      "date": "2026-10-30",
+      "quote": "\"What about lighted holiday arches over streets... those aren't shows\"",
+      "canon": "docs/briefs/BRIEF-the-monument-lights-up.md (ROADMAP H-36)",
+      "notes": "The consequence is Tinsel's reading under CLAUDE.md Layer 0 (a constant right for town #1), not Jacob's words."
     }
   ]
 }
