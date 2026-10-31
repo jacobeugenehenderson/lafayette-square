@@ -14,7 +14,7 @@ NO ROUTINE PURGE: content names give a changed file a fresh name, and our reader
 ### ⭐ STATE AT JACOB'S BEDTIME, 2026-10-31 (Boz). Read this first.
 - **LS PROMOTED 2026-10-31** (`scratch/ls-cutover-runbook.md`): lafayettesquare.online + www serve LS on Ward 4334c64 / kit 2a44e317;
   backup `scratch/promote-rollback/lafayettesquare-prod-20261031`. **The .com → .online 301 is LIVE** (Jacob's Cloudflare rule,
-  2026-10-31): runbook §6's curl gates pass, both hosts, every card route, query kept; the slab gate passes. Open: Jacob's and
+  2026-10-31): runbook §6's curl gates pass, both hosts, every card route, query kept; the slab gate passes. Jacob's eye ✅ ("absolutely responsive and *totally* gorgeous"). Open:
   Ward's eye on both addresses (phone first) · the §6 retirements · `/favicon.svg` 404s on .online, and the instances'
   branding.faviconUrl names the .com one, which now redirects there. ▶ Ward measured it (2026-10-31): the static icon tag on
   LS + HPDM comes from towns.json `faviconUrl` (publish-player-to-staging.mjs ← INSTANCE.branding.faviconUrl); the Ward then
