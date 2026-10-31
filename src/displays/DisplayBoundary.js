@@ -31,6 +31,11 @@ export default class DisplayBoundary extends Component {
       kind: refused ? 'refusal' : 'gave-up', reason: refused ? reason : `not retried: ${reason}` })
   }
 
+  componentDidMount() {
+    // Mounted without a failure: the display draws, so an entry from an earlier mount is stale.
+    if (!this.state.failed) useFailures.getState().clear(this.props.lookId, `display:${this.props.id}`)
+  }
+
   render() {
     return this.state.failed ? null : this.props.children
   }

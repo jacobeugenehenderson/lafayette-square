@@ -10,7 +10,7 @@
  *      count: an untyped `new Error(x)` whose message is a call or a server's answer cannot be read.
  *   2. httpFailure, driven: no answer, 5xx, 408 and 429 → Transient; any other status (404) → Refusal.
  *   3. R3FErrorBoundary, driven: a Refusal is reported to the one sink at once, keyed to the town in TownContext, with no
- *      retry scheduled, and the layer renders nothing; an untyped crash is retried on every delay and, when the last one
+ *      retry scheduled, and the layer renders nothing; a clean remount clears the entry; an untyped crash is retried on every delay and, when the last one
  *      fails, reported as given up with its reason.
  *   5. THE DEV FLAG (`?refuse=<layer>`, for seeing the banner in Stage) is gone from a production build.
  *   4. ONE SINK: exactly one store of failures under src/ (src/lib/failures.js); both boundaries report to it; Stage
@@ -117,6 +117,12 @@ async function boundary(transform) {
     const got = failures.getState().failed['a-town/Trees']
     if (got?.kind !== 'refusal' || got.reason !== '[Trees] ⛔ the anchors are refused') fails.push(`a Refusal is not reported to the one sink under its town and layer (got ${JSON.stringify(got)})`)
     if (b.render() !== null) fails.push('a refused layer still renders its children')
+    // a remount that draws clears the entry: a banner never outlives its cause
+    const again = new B({ name: 'Trees', children: 'CHILD' }); again.context = { lookId: 'a-town' }; again.componentDidMount?.()
+    if (failures.getState().failed['a-town/Trees']) fails.push('a refused layer that mounts again cleanly still shows as refused: the banner outlives its cause')
+    // …and a mount that fails keeps its report
+    failures.setState({ failed: {} }); const failing = drive(new Refusal('[Trees] ⛔ again'), 0); failing.componentDidMount?.()
+    if (!failures.getState().failed['a-town/Trees']) fails.push('a layer that fails on mount clears its own report')
     // an untyped crash: retried on every delay, then reported as given up
     failures.setState({ failed: {} }); timers.length = 0
     let n = 0
@@ -174,6 +180,7 @@ if (process.argv.includes('--mutants')) {
   const mutants = [
     ['the boundary retries a Refusal', { boundary: (s) => s.replace('if (error instanceof Refusal) {', 'if (false) {') }],
     ['the boundary drops the report', { boundary: (s) => s.replace("useFailures.getState().report({ lookId, layer, kind: 'refusal', reason: reasonOf(error) })", '') }],
+    ['a clean remount leaves the stale entry', { boundary: (s) => s.replace('if (!this.state.hasError) useFailures.getState().clear(', 'if (false) useFailures.getState().clear(') }],
     ['the boundary never reports giving up', { boundary: (s) => s.replace("useFailures.getState().report({ lookId, layer, kind: 'gave-up', reason })", '') }],
     ['an untyped ⛔ throw returns', { files: swap('src/lib/failures.js', 'throw new Refusal(`[failures] ⛔', 'throw new Error(`[failures] ⛔') }],
     ['a ⛔ message held in a const returns untyped', { files: (fs) => [...fs, ['src/__mutant.js', "const msg = `[x] ⛔ held first`\nexport const f = () => { const e = new Error(msg); throw e }\n"]] }],
