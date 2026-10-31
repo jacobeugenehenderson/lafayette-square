@@ -54,6 +54,7 @@ let _saidNoBerm = false
 let _saidNoLevel = false
 let _saidNoLevels = false
 import { slabFetch, slabManifest } from '../lib/slabUrl.js'
+import { Refusal } from '../lib/refusal.js'
 
 /** How far from the camera the DETAILED drape and the stones are built, metres.
  *  ⛔ A BUDGET, not a look: it sets how much work one camera move can trigger.
@@ -183,7 +184,7 @@ export default function SlabRevetment({ lookId, bakeLastMs, visible = true }) {
       // ⭐ The toe is BAKED: toeFor's walk down to the bed (at least one course below LOW, no deeper than the bottom can be
       // seen), run by bake-revetment-far.js and read back through toeFor's own interpolation
       const baked = farFaces.get(f.key)
-      if (!baked) throw new Error(`[revetment] ⛔ face ${f.key} is in revetment.json but not in revetment-far.json — the two were baked apart. ▶ re-bake`)
+      if (!baked) throw new Refusal(`[revetment] ⛔ face ${f.key} is in revetment.json but not in revetment-far.json — the two were baked apart. ▶ re-bake`)
       const toeAt = baked.toe ? toeFromBaked(f, baked.toe) : () => 1
       if (!f.toeBerm && !_saidNoBerm) { _saidNoBerm = true; console.warn('[SlabRevetment] ⛔ this revetment.json carries no material.toeBerm — the heaps have no toe berm. ▶ re-bake the revetment') }
       f = { ...f, toeAt, berm: f.toeBerm, groundAt: drawnAt1, waterY }
@@ -230,7 +231,7 @@ export default function SlabRevetment({ lookId, bakeLastMs, visible = true }) {
       // three's culling bounds: the chunk's box over every exaggeration it can be drawn at (0 … the town's ceiling, or 1 at Street),
       // from the SAME function the overhead selection reads (revetmentFromSlab.js#chunkBox)
       const key = `${c.face}#${c.k}`, info = infoByKey.get(key)
-      if (!info?.box) throw new Error(`[revetment] ⛔ far chunk ${key} has no info row — revetment-far.json is malformed. ▶ re-bake`)
+      if (!info?.box) throw new Refusal(`[revetment] ⛔ far chunk ${key} has no info row — revetment-far.json is malformed. ▶ re-bake`)
       const [x0, y0, z0, x1, y1, z1] = chunkBox(info.box, 0, Math.max(1, sceneExag()))
       for (const g of [far, band]) { g.boundingBox = new THREE.Box3(new THREE.Vector3(x0, y0, z0), new THREE.Vector3(x1, y1, z1)); g.boundingSphere = g.boundingBox.getBoundingSphere(new THREE.Sphere()) }
       out.push({ key, c, far, band })
@@ -257,7 +258,7 @@ export default function SlabRevetment({ lookId, bakeLastMs, visible = true }) {
     const e = terrainExag.value
     const wants = (f, k, p) => {
       const info = infoByKey.get(`${f.key}#${k}`)
-      if (!info) throw new Error(`[revetment] ⛔ near chunk ${f.key}#${k} has no info row — revetment.json and revetment-far.json were baked apart. ▶ re-bake`)
+      if (!info) throw new Refusal(`[revetment] ⛔ near chunk ${f.key}#${k} has no info row — revetment.json and revetment-far.json were baked apart. ▶ re-bake`)
       if (!info.nearTris) return false                     // the bake built it: nothing is kept here at any distance
       if (!overhead) return Math.hypot(p.x - c.x, p.z - c.z) <= NEAR_RADIUS_M
       // at the LIVE exaggeration: Browse draws at 0, so a box at exag 1 stands metres above what is drawn (Zob, 2026-10-29)

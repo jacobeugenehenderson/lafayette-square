@@ -26,6 +26,7 @@
 // vertex the boundary turns to the next kept edge CLOCKWISE from where it came in, the tightest turn.
 // ▶ node checks/claims-the-faces-are-walked-once.mjs
 import { crossOf, NODE_BOUND } from './latticeNode.js'
+import { Refusal } from './refusal.js'
 
 const SMALL = 2 ** 24
 const small = (...v) => v.every(x => Math.abs(x) < SMALL)
@@ -49,14 +50,14 @@ export function onLineTiered(l, q, segs = null) {
   const dx = BigInt(l[1][0] - l[0][0]), dy = BigInt(l[1][1] - l[0][1]), cr = dx * BigInt(Math.round(q[1]) - l[0][1]) - dy * BigInt(Math.round(q[0]) - l[0][0])
   return 2n * cr * cr <= dx * dx + dy * dy }
 export function facesOf(edges, keep, { sets, who = 'facesOf', numberOnly = false, allTags = false, prefer = null, inserted = null, tags: withTags = true } = {}) {
-  if (!(sets > 0)) throw new Error(`[${who}] ⛔ facesOf: no \`sets\` count — the windings are per input set`)
-  if (typeof keep !== 'function') throw new Error(`[${who}] ⛔ facesOf: no \`keep\` predicate — which faces are the region is the caller's to say`)
+  if (!(sets > 0)) throw new Refusal(`[${who}] ⛔ facesOf: no \`sets\` count — the windings are per input set`)
+  if (typeof keep !== 'function') throw new Refusal(`[${who}] ⛔ facesOf: no \`keep\` predicate — which faces are the region is the caller's to say`)
   // ── the vertices, and the merged edges: lo → hi by vertex id, m[s] the signed multiplicity of set s along lo → hi
   const vid = new Map(), V = []
   const idOf = (p) => { const k = p[0] + ',' + p[1]; let i = vid.get(k); if (i === undefined) { i = V.length; vid.set(k, i); V.push(p) } return i }
   const eid = new Map(), E = []
   for (const e of edges) { const u = idOf(e.a), v = idOf(e.b); if (u === v) continue
-    if (!(e.set >= 0 && e.set < sets)) throw new Error(`[${who}] ⛔ facesOf: an edge of set ${e.set}, outside 0…${sets - 1}`)
+    if (!(e.set >= 0 && e.set < sets)) throw new Refusal(`[${who}] ⛔ facesOf: an edge of set ${e.set}, outside 0…${sets - 1}`)
     const lo = Math.min(u, v), hi = Math.max(u, v), k = lo + ',' + hi, dir = u === lo ? 1 : -1
     let me = eid.get(k); if (!me) { me = { lo, hi, m: new Array(sets).fill(0), tags: [] }; eid.set(k, me); E.push(me) }
     me.m[e.set] += dir; me.tags.push({ dir, tag: e.tag, set: e.set }) }
@@ -75,10 +76,10 @@ export function facesOf(edges, keep, { sets, who = 'facesOf', numberOnly = false
     for (const n of l) { const me = live[n]; if (me.lo === i || me.hi === i) continue; const a = V[me.lo], b = V[me.hi]
       if (p[0] < B[n][0] || p[0] > B[n][2] || p[1] < B[n][1] || p[1] > B[n][3]) continue
       if (crossSign(b[0] - a[0], b[1] - a[1], p[0] - a[0], p[1] - a[1], numberOnly) === 0)
-        throw new Error(`[${who}] ⛔ facesOf: the vertex (${p}) lies inside the segment (${a}) → (${b}) — a T or a collinear overlap the noding should have split (snap rounding's precondition broke). Refusing.`) } }
+        throw new Refusal(`[${who}] ⛔ facesOf: the vertex (${p}) lies inside the segment (${a}) → (${b}) — a T or a collinear overlap the noding should have split (snap rounding's precondition broke). Refusing.`) } }
   for (const l of cells.values()) for (let u = 0; u < l.length; u++) for (let w = u + 1; w < l.length; w++) { const s = live[l[u]], t = live[l[w]]
     const X = crossOf({ a: V[s.lo], b: V[s.hi] }, { a: V[t.lo], b: V[t.hi] }, numberOnly)
-    if (X) throw new Error(`[${who}] ⛔ facesOf: (${V[s.lo]}) → (${V[s.hi]}) and (${V[t.lo]}) → (${V[t.hi]}) cross at (${X}) — the input is not noded. Refusing.`) }
+    if (X) throw new Refusal(`[${who}] ⛔ facesOf: (${V[s.lo]}) → (${V[s.hi]}) and (${V[t.lo]}) → (${V[t.hi]}) cross at (${X}) — the input is not noded. Refusing.`) }
   // ── the half-edges: 2n = lo → hi, 2n + 1 = hi → lo; each vertex's outgoing ones in counter-clockwise order
   const H = live.length * 2, org = new Int32Array(H), dst = new Int32Array(H)
   live.forEach((me, n) => { org[2 * n] = me.lo; dst[2 * n] = me.hi; org[2 * n + 1] = me.hi; dst[2 * n + 1] = me.lo })
@@ -118,7 +119,7 @@ export function facesOf(edges, keep, { sets, who = 'facesOf', numberOnly = false
       for (const h of members[c]) {
         const me = live[h >> 1], sg = h & 1 ? -1 : 1, t = cyc[twin(h)], wt = W[c].map((x, s) => x - sg * me.m[s])
         if (!W[t]) { W[t] = wt; queue.push(t) }
-        else if (W[t].some((x, s) => x !== wt[s])) throw new Error(`[${who}] ⛔ facesOf: a face reached with two windings ([${W[t]}] and [${wt}]) across (${V[org[h]]}) → (${V[dst[h]]}) — the input is not a set of closed rings. Refusing.`) } } }
+        else if (W[t].some((x, s) => x !== wt[s])) throw new Refusal(`[${who}] ⛔ facesOf: a face reached with two windings ([${W[t]}] and [${wt}]) across (${V[org[h]]}) → (${V[dst[h]]}) — the input is not a set of closed rings. Refusing.`) } } }
   // ── the boundary: each edge whose two faces the predicate splits, oriented with the kept face on its left
   const isB = new Uint8Array(H)
   live.forEach((me, n) => { const kl = !!keep(W[cyc[2 * n]]), kr = !!keep(W[cyc[2 * n + 1]]); if (kl !== kr) isB[kl ? 2 * n : 2 * n + 1] = 1 })
@@ -145,15 +146,15 @@ export function facesOf(edges, keep, { sets, who = 'facesOf', numberOnly = false
       if (sx * sx + sy * sy <= 2 && L.every(isLine)) return L }
     if (keys.size > 1 && prefer != null) { const own = new Set(same.filter(t => t.set === prefer).map(t => JSON.stringify(t.tag)))
       if (own.size === 1) return JSON.parse([...own][0]) }
-    if (keys.size > 1) throw new Error(`[${who}] ⛔ facesOf: the boundary edge (${V[org[h]]}) → (${V[dst[h]]}) carries ${keys.size} different tags from its same-way inputs (${same.map(t => `set ${t.set}: ${JSON.stringify(t.tag)}`).join(' · ')}) — refusing to pick one.`)
+    if (keys.size > 1) throw new Refusal(`[${who}] ⛔ facesOf: the boundary edge (${V[org[h]]}) → (${V[dst[h]]}) carries ${keys.size} different tags from its same-way inputs (${same.map(t => `set ${t.set}: ${JSON.stringify(t.tag)}`).join(' · ')}) — refusing to pick one.`)
     return same.length ? same[0].tag : null }
   for (let h = 0; h < H; h++) { if (!isB[h] || used[h]) continue
     const ring = [], tg = []; let g = h
     do { used[g] = 1; ring.push({ X: V[org[g]][0], Y: V[org[g]][1] }); tg.push(tagOf(g))
       const l = out.get(dst[g]); let i = pos[twin(g)], f = -1
       for (let k = 1; k <= l.length; k++) { const c = l[(i - k + l.length * 2) % l.length]; if (isB[c]) { f = c; break } }
-      if (f < 0) throw new Error(`[${who}] ⛔ facesOf: the boundary stops at (${V[dst[g]]}) — no kept edge leaves it. Refusing.`)
-      if (used[f] && f !== h) throw new Error(`[${who}] ⛔ facesOf: the boundary walk from (${V[org[h]]}) re-entered (${V[org[f]]}) without closing. Refusing.`)
+      if (f < 0) throw new Refusal(`[${who}] ⛔ facesOf: the boundary stops at (${V[dst[g]]}) — no kept edge leaves it. Refusing.`)
+      if (used[f] && f !== h) throw new Refusal(`[${who}] ⛔ facesOf: the boundary walk from (${V[org[h]]}) re-entered (${V[org[f]]}) without closing. Refusing.`)
       g = f } while (g !== h)
     rings.push(ring); tags.push(tg) }
   // ⭐ THE BOOKS BALANCE (Zob, 2026-10-28; PTown's deck, a ring whose shoelace and region disagreed): the kept region's exact area,
@@ -164,6 +165,6 @@ export function facesOf(edges, keep, { sets, who = 'facesOf', numberOnly = false
   members.forEach((m, c) => { if (!keep(W[c])) return; faceA += sh(m.map(g => V[org[g]])) })
   const ringA = rings.reduce((t, r) => t + sh(r.map(q => [q.X, q.Y])), 0n)
   if (faceA !== ringA) { const worst = rings.map((r, k) => ({ k, n: r.length, at: [r[0].X, r[0].Y], a2: sh(r.map(q => [q.X, q.Y])) }))
-    throw new Error(`[${who}] ⛔ facesOf: the books do not balance — the kept faces enclose ${faceA}/2 units² and the emitted rings ${ringA}/2 (Δ ${ringA - faceA}/2) over ${rings.length} ring(s); rings: ${JSON.stringify(worst.slice(0, 12), (k, v) => typeof v === 'bigint' ? v.toString() : v)}. Refusing.`) }
+    throw new Refusal(`[${who}] ⛔ facesOf: the books do not balance — the kept faces enclose ${faceA}/2 units² and the emitted rings ${ringA}/2 (Δ ${ringA - faceA}/2) over ${rings.length} ring(s); rings: ${JSON.stringify(worst.slice(0, 12), (k, v) => typeof v === 'bigint' ? v.toString() : v)}. Refusing.`) }
   return { rings, tags }
 }

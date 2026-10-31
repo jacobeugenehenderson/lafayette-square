@@ -27,12 +27,13 @@
 import * as THREE from 'three'
 import { applyWeatherToShader } from '../lib/weather-uniforms.js'
 import { SURFACE_NOISE_GLSL } from './grassMaterial.js'
+import { Refusal } from '../lib/refusal.js'
 
 export function makeGraniteMasonryMaterial({ beds, jointM, jointShade, bond = null, reliefM = 0, toneVar = 0, color }) {
-  if (!beds?.length || beds.length < 2) throw new Error('⛔ makeGraniteMasonryMaterial: no course table')
-  if (!(jointM > 0)) throw new Error('⛔ makeGraniteMasonryMaterial: no joint width')
-  if (!color) throw new Error('⛔ makeGraniteMasonryMaterial: no stone colour')
-  if (!(jointShade > 0)) throw new Error('⛔ makeGraniteMasonryMaterial: no joint shade (d-pilgrim-joint-shade)')
+  if (!beds?.length || beds.length < 2) throw new Refusal('⛔ makeGraniteMasonryMaterial: no course table')
+  if (!(jointM > 0)) throw new Refusal('⛔ makeGraniteMasonryMaterial: no joint width')
+  if (!color) throw new Refusal('⛔ makeGraniteMasonryMaterial: no stone colour')
+  if (!(jointShade > 0)) throw new Refusal('⛔ makeGraniteMasonryMaterial: no joint shade (d-pilgrim-joint-shade)')
   const bedTex = new THREE.DataTexture(new Float32Array(beds), beds.length, 1, THREE.RedFormat, THREE.FloatType)
   bedTex.minFilter = bedTex.magFilter = THREE.NearestFilter
   bedTex.needsUpdate = true

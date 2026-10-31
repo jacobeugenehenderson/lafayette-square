@@ -13,6 +13,7 @@
  * ⛔ An unknown look, motion or transition THROWS by name. Nothing here falls back.
  */
 import { TRANSITIONS } from './transitions.js'
+import { Refusal } from '../../lib/refusal.js'
 export { uplightTarget } from '../dim.js'
 
 export const MOTIONS = ['still', 'fall', 'rise', 'spin', 'spiral', 'twinkle', 'pulse', 'strobe', 'fade']
@@ -34,15 +35,15 @@ const frameAt = (L, t) => { const n = L.px.length; if (n === 1) return 0; const 
 /** Checks a drawer (looks.json) against the engine: every motion known, every layer's frames present. Throws by name. */
 export function validateDrawer(drawer, where) {
   const { frame, looks } = drawer || {}
-  if (!(frame?.w > 0 && frame?.h > frame?.pinH && frame?.faces > 0)) throw new Error(`[lightShow] ⛔ ${where}: the drawer has no usable frame`)
+  if (!(frame?.w > 0 && frame?.h > frame?.pinH && frame?.faces > 0)) throw new Refusal(`[lightShow] ⛔ ${where}: the drawer has no usable frame`)
   for (const L of looks || []) for (const [i, layer] of L.layers.entries()) {
-    if (!MOTIONS.includes(layer.motion?.kind)) throw new Error(`[lightShow] ⛔ ${where}: look "${L.id}" layer ${i} has motion "${layer.motion?.kind}", which the Light Show does not have (have: ${MOTIONS.join(', ')})`)
-    if (!layer.frames?.length) throw new Error(`[lightShow] ⛔ ${where}: look "${L.id}" layer ${i} has no frames`)
+    if (!MOTIONS.includes(layer.motion?.kind)) throw new Refusal(`[lightShow] ⛔ ${where}: look "${L.id}" layer ${i} has motion "${layer.motion?.kind}", which the Light Show does not have (have: ${MOTIONS.join(', ')})`)
+    if (!layer.frames?.length) throw new Refusal(`[lightShow] ⛔ ${where}: look "${L.id}" layer ${i} has no frames`)
     // The layer's clock fields: refused unless meaningful, never read as something plausible (Zob, 2026-10-31).
-    if (layer.frames.length > 1 && !(typeof layer.fps === 'number' && layer.fps > 0)) throw new Error(`[lightShow] ⛔ ${where}: look "${L.id}" layer ${i} has ${layer.frames.length} frames and no fps (a number > 0), so it has no clock to play them on`)
-    if ('once' in layer && typeof layer.once !== 'boolean') throw new Error(`[lightShow] ⛔ ${where}: look "${L.id}" layer ${i} has once ${JSON.stringify(layer.once)}; once is true or false`)
+    if (layer.frames.length > 1 && !(typeof layer.fps === 'number' && layer.fps > 0)) throw new Refusal(`[lightShow] ⛔ ${where}: look "${L.id}" layer ${i} has ${layer.frames.length} frames and no fps (a number > 0), so it has no clock to play them on`)
+    if ('once' in layer && typeof layer.once !== 'boolean') throw new Refusal(`[lightShow] ⛔ ${where}: look "${L.id}" layer ${i} has once ${JSON.stringify(layer.once)}; once is true or false`)
     const out = layer.motion.out
-    if (out !== undefined && !(layer.motion.kind === 'fade' && typeof out === 'number' && out > 0)) throw new Error(`[lightShow] ⛔ ${where}: look "${L.id}" layer ${i} has out ${JSON.stringify(out)} on a ${layer.motion.kind} layer; out is a fade's seconds to play out, a number > 0`)
+    if (out !== undefined && !(layer.motion.kind === 'fade' && typeof out === 'number' && out > 0)) throw new Refusal(`[lightShow] ⛔ ${where}: look "${L.id}" layer ${i} has out ${JSON.stringify(out)} on a ${layer.motion.kind} layer; out is a fade's seconds to play out, a number > 0`)
   }
 }
 
@@ -52,15 +53,15 @@ export function validateDrawer(drawer, where) {
  */
 export function validateDisplay(display, drawer, where) {
   validateDrawer(drawer, where)
-  if (display.dimUplights !== undefined && !(display.dimUplights >= 0 && display.dimUplights <= 1)) throw new Error(`[lightShow] ⛔ ${where}: dimUplights (${display.dimUplights}) is a fraction of the uplights, 0 … 1`)
+  if (display.dimUplights !== undefined && !(display.dimUplights >= 0 && display.dimUplights <= 1)) throw new Refusal(`[lightShow] ⛔ ${where}: dimUplights (${display.dimUplights}) is a fraction of the uplights, 0 … 1`)
   const st = display.strands
-  if (!(st?.glow > 0 && st?.show > 0 && st?.ringRadiusM > 0)) throw new Error(`[lightShow] ⛔ ${where}: strands needs glow, show and ringRadiusM`)
-  if (st.show % st.glow) throw new Error(`[lightShow] ⛔ ${where}: strands.show (${st.show}) must be a whole multiple of strands.glow (${st.glow}): the glow strands are show strands`)
-  if (!(st.footHeightM >= 0)) throw new Error(`[lightShow] ⛔ ${where}: strands.footHeightM, the ring's height above the set-piece's base, is not authored`)
-  if (typeof display.season !== 'string' || !display.season) throw new Error(`[lightShow] ⛔ ${where}: the display names no season`)
-  if ('shows' in display) throw new Error(`[lightShow] ⛔ ${where}: the display authors \`shows\`, and the Light Show has no such field: its schedule is the plugin's, dusk to dawn with a show on every hour (r-the-lights-run-dusk-to-dawn-and-the-show-plays-on-the-hour)`)
+  if (!(st?.glow > 0 && st?.show > 0 && st?.ringRadiusM > 0)) throw new Refusal(`[lightShow] ⛔ ${where}: strands needs glow, show and ringRadiusM`)
+  if (st.show % st.glow) throw new Refusal(`[lightShow] ⛔ ${where}: strands.show (${st.show}) must be a whole multiple of strands.glow (${st.glow}): the glow strands are show strands`)
+  if (!(st.footHeightM >= 0)) throw new Refusal(`[lightShow] ⛔ ${where}: strands.footHeightM, the ring's height above the set-piece's base, is not authored`)
+  if (typeof display.season !== 'string' || !display.season) throw new Refusal(`[lightShow] ⛔ ${where}: the display names no season`)
+  if ('shows' in display) throw new Refusal(`[lightShow] ⛔ ${where}: the display authors \`shows\`, and the Light Show has no such field: its schedule is the plugin's, dusk to dawn with a show on every hour (r-the-lights-run-dusk-to-dawn-and-the-show-plays-on-the-hour)`)
   const compiled = compileRun(display.run, Object.fromEntries(drawer.looks.map(L => [L.id, L])), where)
-  if (showSeconds(compiled) > 3600) throw new Error(`[lightShow] ⛔ ${where}: the show runs ${Math.round(showSeconds(compiled))} s, longer than the hour between showtimes; it would be clipped, so it is refused`)
+  if (showSeconds(compiled) > 3600) throw new Refusal(`[lightShow] ⛔ ${where}: the show runs ${Math.round(showSeconds(compiled))} s, longer than the hour between showtimes; it would be clipped, so it is refused`)
 }
 
 /**
@@ -104,20 +105,20 @@ export function sampleLook(F, look, c, row, t, top = look.layers.length - 1, ent
  * transitions alternating. Returns segments with start times and the total length. Throws on any unknown name.
  */
 export function compileRun(run, looksById, where) {
-  if (!run?.length) throw new Error(`[lightShow] ⛔ ${where}: the show has no running order`)
+  if (!run?.length) throw new Refusal(`[lightShow] ⛔ ${where}: the show has no running order`)
   const segs = []; let at = 0
   run.forEach((step, i) => {
     if (step.look) {
-      if (!looksById[step.look]) throw new Error(`[lightShow] ⛔ ${where}: the show names look "${step.look}", and the drawer has no such look`)
-      if (!(step.seconds > 0)) throw new Error(`[lightShow] ⛔ ${where}: look "${step.look}" in the show has no seconds`)
+      if (!looksById[step.look]) throw new Refusal(`[lightShow] ⛔ ${where}: the show names look "${step.look}", and the drawer has no such look`)
+      if (!(step.seconds > 0)) throw new Refusal(`[lightShow] ⛔ ${where}: look "${step.look}" in the show has no seconds`)
       segs.push({ kind: 'look', look: step.look, at, seconds: step.seconds }); at += step.seconds
     } else if (step.transition) {
       const tr = TRANSITION[step.transition]
-      if (!tr) throw new Error(`[lightShow] ⛔ ${where}: the show names transition "${step.transition}", and there is none (have: ${Object.keys(TRANSITION).join(', ')})`)
+      if (!tr) throw new Refusal(`[lightShow] ⛔ ${where}: the show names transition "${step.transition}", and there is none (have: ${Object.keys(TRANSITION).join(', ')})`)
       const prev = run[i - 1]?.look, next = run[i + 1]?.look
-      if (!prev || !next) throw new Error(`[lightShow] ⛔ ${where}: transition "${step.transition}" must stand between two looks`)
+      if (!prev || !next) throw new Refusal(`[lightShow] ⛔ ${where}: transition "${step.transition}" must stand between two looks`)
       segs.push({ kind: 'transition', tr, from: prev, to: next, at, seconds: tr.seconds }); at += tr.seconds
-    } else throw new Error(`[lightShow] ⛔ ${where}: step ${i} of the show is neither a look nor a transition`)
+    } else throw new Refusal(`[lightShow] ⛔ ${where}: step ${i} of the show is neither a look nor a transition`)
   })
   // Where each look's motion objects stand while it holds: the next transition may want them below the ground.
   segs.forEach((s, i) => { if (s.kind === 'look') s.enter = segs[i + 1]?.kind === 'transition' ? (segs[i + 1].tr.fromEnter ?? 1) : 1 })
@@ -162,7 +163,7 @@ export const showSeconds = (compiled) => OPEN_SECONDS + compiled.seconds + OPEN_
 /** A running order's length (the opening and close included), without its drawer: for Stage's Tonight strip. */
 export const runSeconds = (run) => OPEN_SECONDS * 2 + run.reduce((a, s) => {
   if (s.look) return a + s.seconds
-  if (!TRANSITION[s.transition]) throw new Error(`[lightShow] ⛔ the show names transition "${s.transition}", and there is none (have: ${Object.keys(TRANSITION).join(', ')})`)
+  if (!TRANSITION[s.transition]) throw new Refusal(`[lightShow] ⛔ the show names transition "${s.transition}", and there is none (have: ${Object.keys(TRANSITION).join(', ')})`)
   return a + TRANSITION[s.transition].seconds
 }, 0)
 
@@ -214,6 +215,6 @@ export function glowColour(c, row, now) { const h = hash(c * 131 + row), w = 0.8
 export function inSeason(calendar, seasonId, day, where) {
   if (calendar == null) return false
   const e = calendar.find(r => r.id === seasonId)
-  if (!e) throw new Error(`[lightShow] ⛔ ${where}: the display's season "${seasonId}" is not on the town's calendar`)
+  if (!e) throw new Refusal(`[lightShow] ⛔ ${where}: the display's season "${seasonId}" is not on the town's calendar`)
   return e.start_date <= day && day <= (e.end_date || e.start_date)
 }

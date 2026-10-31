@@ -75,6 +75,7 @@ import { migrateSkyChannel, SKY_BANDS, SKY_HOURS } from '../skyGrid.js'
 import { validateIdentity } from '../../lib/townIdentity.js'
 import { discOf } from '../../../cartograph/boundaryRecords.mjs'
 import { assertHardPolicy } from '../../lib/colourPolicy.js'
+import { Refusal } from '../../lib/refusal.js'
 
 const ACTIVE_LOOK_KEY = ADDRESS_STORAGE.look
 // ⛔⛔ There is deliberately NO `DEFAULT_LOOK_ID = 'lafayette-square'` here any
@@ -871,7 +872,7 @@ const useCartographStore = create((set, get) => ({
   setEdgeFadeBand: (v) => {
     if (v === null) { set({ edgeFadeBand: null }); get()._saveDesignDebounced(); return }
     const n = Number(v)
-    if (!Number.isFinite(n) || n < 0) throw new Error(`[edge] ⛔ fade band must be a width in metres, ≥ 0 — got ${JSON.stringify(v)}`)
+    if (!Number.isFinite(n) || n < 0) throw new Refusal(`[edge] ⛔ fade band must be a width in metres, ≥ 0 — got ${JSON.stringify(v)}`)
     set({ edgeFadeBand: n })
     get()._saveDesignDebounced()
   },

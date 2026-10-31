@@ -25,6 +25,7 @@
 // ⛔ ② never reads this (Boz's ruling A(i)): it offsets the un-absorbed face, so the authoring keys cannot move.
 import { nodeCrossings } from './latticeNode.js'
 import { CLIP_SCALE } from './lattice.js'
+import { Refusal } from './refusal.js'
 
 const rl = (v) => Math.round(v * CLIP_SCALE) / CLIP_SCALE
 const area2 = (r) => { let a = 0; for (let i = 0, j = r.length - 1; i < r.length; j = i++) a += r[j][0] * r[i][1] - r[i][0] * r[j][1]; return a }
@@ -34,7 +35,7 @@ const area2 = (r) => { let a = 0; for (let i = 0, j = r.length - 1; i < r.length
 // in the face (Zob, 2026-10-25). Exported for the check's planted row.
 export function holeProbe(hs, who = '①') {
   const inN = new Set(hs), real = hs.filter(g => !inN.has(g.twin)), len = (g) => Math.hypot(g.to[0] - g.from[0], g.to[1] - g.from[1])
-  if (!real.length) throw new Error(`[${who}][absorb] ⛔ a hole cycle at (${hs[0].from.map(v => v / CLIP_SCALE)}) is all antenna — no side to probe. Refusing.`)
+  if (!real.length) throw new Refusal(`[${who}][absorb] ⛔ a hole cycle at (${hs[0].from.map(v => v / CLIP_SCALE)}) is all antenna — no side to probe. Refusing.`)
   const h = real.reduce((m, g) => len(g) > len(m) ? g : m, real[0])
   const dx = h.to[0] - h.from[0], dy = h.to[1] - h.from[1], L = Math.hypot(dx, dy)
   return [(h.from[0] + h.to[0]) / 2 - dy / L * 0.25, (h.from[1] + h.to[1]) / 2 + dx / L * 0.25]
@@ -121,7 +122,7 @@ export function splitAnnulus(O, H, cls, own) {
 
 export function absorbInk({ inkRings, inkLabels, frame, frameOwner, waterRings = [], waterOwner = null, centrelines, spokes = [], outlineRefused = [], faces, owners, who = '①', diag = null }) {
   // `diag` (optional, a diagnostic's): filled with the PLACES behind a refusal — what each refused face or cell is made of
-  if (!Array.isArray(centrelines)) throw new Error(`[${who}][absorb] ⛔ no sealed centreline — nothing to cut the ink by. Refusing.`)
+  if (!Array.isArray(centrelines)) throw new Refusal(`[${who}][absorb] ⛔ no sealed centreline — nothing to cut the ink by. Refusing.`)
   // ── 1. the inputs, on the lattice, each knowing what it is ──
   const inputs = []
   inkRings.forEach((r, i) => { if (r?.length >= 3) inputs.push({ tag: 'ink', p: r.map(q => [rl(q[0]), rl(q[1])]), kind: 'ink', i }) })
@@ -168,7 +169,7 @@ export function absorbInk({ inkRings, inkLabels, frame, frameOwner, waterRings =
   const cycles = []
   for (const h of H) { if (h.cyc != null) continue
     const c = { hs: [], n: cycles.length }
-    for (let g = h, guard = 0; g.cyc == null; g = next(g)) { if (++guard > 1e7) throw new Error(`[${who}][absorb] ⛔ a face walk did not close. Refusing.`); g.cyc = c.n; c.hs.push(g) }
+    for (let g = h, guard = 0; g.cyc == null; g = next(g)) { if (++guard > 1e7) throw new Refusal(`[${who}][absorb] ⛔ a face walk did not close. Refusing.`); g.cyc = c.n; c.hs.push(g) }
     cycles.push(c) }
   const cycArea = (c) => c.area ??= c.hs.reduce((t, h) => t + h.from[0] * h.to[1] - h.to[0] * h.from[1], 0)
   const leftOf = (h, t) => { const along = t.along === h.fwd       // this half-edge runs the input's way
@@ -207,7 +208,7 @@ export function absorbInk({ inkRings, inkLabels, frame, frameOwner, waterRings =
             kinds: [...new Set(c.hs.flatMap(g => g.e.tags.map(u => u.kind)))], inkLeft: [...new Set(c.hs.flatMap(g => g.e.tags.filter(u => u.kind === 'ink').map(u => leftOf(g, u))))],
             outer: c === f.cycles[0], linkedBy: c.linkProbe || null }))
           if (diag) diag.bothInk = f.cycles.flatMap(c => c.hs.flatMap(g => g.e.tags.filter(u => u.kind === 'ink').map(u => ({ at: g.from.map(v => v / CLIP_SCALE), to: g.to.map(v => v / CLIP_SCALE), label: u.label, ring: u.ring, inkLeft: leftOf(g, u), cycle: g.cyc }))))
-          throw new Error(`[${who}][absorb] ⛔ a face at (${h.from.map(v => v / CLIP_SCALE)}) is both ink and not ink by its own edges. Refusing.`) } }
+          throw new Refusal(`[${who}][absorb] ⛔ a face at (${h.from.map(v => v / CLIP_SCALE)}) is both ink and not ink by its own edges. Refusing.`) } }
         else if (t.kind === 'water') { if (L) water = true }
         else if (t.kind === 'frame') frameIn = L } }
     f.type = (ink === true || (ink === null && !flags)) ? 'cell' : water ? 'water' : (frameIn === false || f === unbounded) ? 'outside' : 'land'
@@ -256,7 +257,7 @@ export function absorbInk({ inkRings, inkLabels, frame, frameOwner, waterRings =
   for (const c of cycles) c.group = c.face.group ?? null
   const print = `[${who}][absorb] the ink cut by its centrelines: ${census.cells} cell(s) · ${census.joined} joined ONE face (${census.toWater} the water) · ${census.zero.length} touch none · ${census.two.length} touch two · ${census.outside} beyond the frame · land faces with no ① label ${census.landUnnamed}${census.landTwoNames.length ? ` · ⛔ ${census.landTwoNames.length} land face(s) named by two faces' labels` : ''}`
   console.log(`    ${print}`)
-  if (census.zero.length || census.two.length || census.landTwoNames.length) throw new Error(`${print} — ⛔ a cell must touch exactly one face: ${[...census.zero.map(a => 'none ' + a), ...census.two.map(a => 'two ' + a), ...census.landTwoNames.map(a => 'land ' + a)].slice(0, 8).join(' · ')}. Refusing.`)
+  if (census.zero.length || census.two.length || census.landTwoNames.length) throw new Refusal(`${print} — ⛔ a cell must touch exactly one face: ${[...census.zero.map(a => 'none ' + a), ...census.two.map(a => 'two ' + a), ...census.landTwoNames.map(a => 'land ' + a)].slice(0, 8).join(' · ')}. Refusing.`)
   // ── 4. the splice: each face's boundary, read off the arrangement ──
   const groupOf = (h) => cycles[h.cyc].group
   const labelOf = (h) => {   // the label of the boundary edge h, the face on its LEFT
@@ -275,16 +276,16 @@ export function absorbInk({ inkRings, inkLabels, frame, frameOwner, waterRings =
     const isB = (h) => groupOf(h) === g && groupOf(h.twin) !== g, seen = new Set(), rings = []
     for (const h0 of hs) { if (seen.has(h0)) continue
       const pts = [], labs = []
-      for (let h = h0, guard = 0; !seen.has(h); ) { if (++guard > 1e7) throw new Error(`[${who}][absorb] ⛔ face ${g}'s boundary did not close. Refusing.`)
+      for (let h = h0, guard = 0; !seen.has(h); ) { if (++guard > 1e7) throw new Refusal(`[${who}][absorb] ⛔ face ${g}'s boundary did not close. Refusing.`)
         seen.add(h); pts.push([h.from[0] / CLIP_SCALE, h.from[1] / CLIP_SCALE]); const l = labelOf(h); if (l == null) unlabelled++; labs.push(l)
         // rotate clockwise from h's twin at its head to the next boundary half-edge of this face
         const L = out.get(key(h.to)); let i = h.twin.at, nx = null
         for (let s = 1; s <= L.length; s++) { const c = L[(i - s + L.length) % L.length]; if (isB(c)) { nx = c; break } }
-        if (!nx) throw new Error(`[${who}][absorb] ⛔ face ${g}'s boundary stops at (${h.to.map(v => v / CLIP_SCALE)}). Refusing.`)
+        if (!nx) throw new Refusal(`[${who}][absorb] ⛔ face ${g}'s boundary stops at (${h.to.map(v => v / CLIP_SCALE)}). Refusing.`)
         h = nx }
       rings.push({ pts, labs, a: area2(pts) }) }
     const outers = rings.filter(r => r.a > 0)
-    if (outers.length !== 1) throw new Error(`[${who}][absorb] ⛔ face ${g} absorbs into ${outers.length} outer boundaries (want 1): ${outers.slice(0, 4).map(r => `${(r.a / 2).toFixed(3)} m² from (${r.pts[0].map(v => v.toFixed(3)).join(', ')})`).join(' · ')}. Refusing.`)
+    if (outers.length !== 1) throw new Refusal(`[${who}][absorb] ⛔ face ${g} absorbs into ${outers.length} outer boundaries (want 1): ${outers.slice(0, 4).map(r => `${(r.a / 2).toFixed(3)} m² from (${r.pts[0].map(v => v.toFixed(3)).join(', ')})`).join(' · ')}. Refusing.`)
     // the block convention (`blocks` wound as ①'s holes): the outer negative, a hole positive, labels rotated with a reversal
     const flip = (r) => { const p = [...r.pts].reverse(), l = [...r.labs].reverse(); l.push(l.shift()); return { p, l } }
     const o = flip(outers[0]), H2 = rings.filter(r => r.a < 0).map(flip)
@@ -302,8 +303,8 @@ export function absorbInk({ inkRings, inkLabels, frame, frameOwner, waterRings =
   if (noInk) console.log(`    [${who}][absorb] ${noInk} face(s) border no ink — painted as themselves (nothing to absorb)`)
   const unpainted = faces.map((f, k) => f && !paint[k] ? k : null).filter(k => k != null)
   if (diag && unpainted.length) diag.unpainted = unpainted.map(k => ({ k, labels: [...new Set([...(faces[k].labels || []), ...(faces[k].holeLabels || []).flat()])].map(l => ({ l, owner: owners[l] ? `${owners[l].skelId}/${owners[l].side}/${owners[l].segOrd}` : null, faces: [...(facesOfLabel.get(l) || [])] })) }))
-  if (unpainted.length) throw new Error(`[${who}][absorb] ⛔ ${unpainted.length} face(s) came out of the arrangement with no boundary (e.g. ${unpainted.slice(0, 6).join(', ')}). Refusing.`)
-  if (unlabelled) throw new Error(`[${who}][absorb] ⛔ ${unlabelled} painted edge(s) carry no label — an edge whose owner the splice could not read. Refusing.`)
+  if (unpainted.length) throw new Refusal(`[${who}][absorb] ⛔ ${unpainted.length} face(s) came out of the arrangement with no boundary (e.g. ${unpainted.slice(0, 6).join(', ')}). Refusing.`)
+  if (unlabelled) throw new Refusal(`[${who}][absorb] ⛔ ${unlabelled} painted edge(s) carry no label — an edge whose owner the splice could not read. Refusing.`)
   // ── the cells the ground paints apart from the road: water and grade-separated owners ──
   const cells = []
   const ringOf = (c) => { const ring = []   // a cycle as a polygon: its spur antennas (an exact retrace) removed
@@ -389,6 +390,6 @@ export function absorbInk({ inkRings, inkLabels, frame, frameOwner, waterRings =
         ;(diag.mixed ||= []).push(why) } }
   }
   if (census.annuli) console.log(`    [${who}][absorb] ${census.annuli} cell(s) round a face no spoke reached, split by their own class changes (paired by owner)`)
-  if (census.mixed.length) throw new Error(`[${who}][absorb] ⛔ ${census.mixed.length} cell(s) hold two classes of owner and cannot be split at their class changes (an odd pairing, or a hole): ${census.mixed.slice(0, 8).join(' · ')}${census.mixed.length > 8 ? ' …' : ''}. Refusing.`)
+  if (census.mixed.length) throw new Refusal(`[${who}][absorb] ⛔ ${census.mixed.length} cell(s) hold two classes of owner and cannot be split at their class changes (an odd pairing, or a hole): ${census.mixed.slice(0, 8).join(' · ')}${census.mixed.length > 8 ? ' …' : ''}. Refusing.`)
   return { paint, cells, census }
 }

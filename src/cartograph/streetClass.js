@@ -50,6 +50,7 @@
 //             stripes, double yellow OK for default otherwise"; unclassified (a `local` road) is unmarked, Boz's call,
 //             vetoable by Jacob. Every class that can become a chain carries one: a chain whose class has none REFUSES.
 import { KIT_CURB_WIDTH } from './streetProfiles.js'   // read at call time only: streetProfiles imports this module
+import { Refusal } from '../lib/refusal.js'
 const FT = 0.3048
 // ⛔ No row carries a curb width: the curb is the Look's (`curbWidth`), else the kit's one home, `streetProfiles.js#KIT_CURB_WIDTH`.
 const street = (lane, parking, treelawn, sidewalk, cornerR) => ({ lane: lane * FT, parking: parking * FT, treelawn, sidewalk, cornerR })
@@ -157,7 +158,7 @@ export function classifyWay(tags) {
  */
 export function classOf(tags) {
   const c = classifyWay(tags || {})
-  if (!c) throw new Error(`⛔ no class in the vocabulary (src/cartograph/streetClass.js) for highway=${tags?.highway ?? '(none)'}${tags?.area ? ` area=${tags.area}` : ''}${tags?.type === 'multipolygon' ? ' (a multipolygon)' : ''}${tags?.name ? ` "${tags.name}"` : ''}${isArea(tags) ? ' — it is an AREA, not a street: map its centreline (or tag area:highway)' : ''}`)
+  if (!c) throw new Refusal(`⛔ no class in the vocabulary (src/cartograph/streetClass.js) for highway=${tags?.highway ?? '(none)'}${tags?.area ? ` area=${tags.area}` : ''}${tags?.type === 'multipolygon' ? ' (a multipolygon)' : ''}${tags?.name ? ` "${tags.name}"` : ''}${isArea(tags) ? ' — it is an AREA, not a street: map its centreline (or tag area:highway)' : ''}`)
   return c
 }
 
@@ -175,10 +176,10 @@ export const LOCAL_SECTION = CLASSES.local.section
 
 export function classSection(cls, { lanes = null, oneway = false, expressway = false } = {}) {
   const c = CLASSES[cls]
-  if (!c) throw new Error(`⛔ classSection: "${cls}" is not a class in the vocabulary`)
+  if (!c) throw new Refusal(`⛔ classSection: "${cls}" is not a class in the vocabulary`)
   if (c.swept) return { seededClass: cls, swept: true }
   const s = c.section
-  if (!s) throw new Error(`⛔ classSection: class "${cls}" has no section — it never seeds a chain`)
+  if (!s) throw new Refusal(`⛔ classSection: class "${cls}" has no section — it never seeds a chain`)
   const tagged = Number.isInteger(lanes) && lanes > 0
   const nLanes = s.lane ? (tagged ? lanes : (oneway ? 1 : 2)) : null
   const pavementHW = +(s.lane ? (nLanes * s.lane + 2 * s.parking) / 2 : s.halfWidth).toFixed(2)

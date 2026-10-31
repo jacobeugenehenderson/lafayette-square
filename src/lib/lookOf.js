@@ -3,7 +3,8 @@
  * a piece mounted without its Look throws, because a guessed Look draws another town's slab
  * (BRIEF-one-town-assembly, 2026-09-28). App code that really means "this page's Look" uses resolveLookId.
  */
+import { Refusal } from './refusal.js'
 export function lookOf(lookId, who) {
-  if (!lookId) throw new Error(`[${who}] ⛔ mounted without lookId — the renderer draws the Look it is given, never a guessed one`)
+  if (!lookId) throw new Refusal(`[${who}] ⛔ mounted without lookId — the renderer draws the Look it is given, never a guessed one`)
   return lookId
 }

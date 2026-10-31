@@ -15,6 +15,7 @@ function isDrag(e) {
   return dx * dx + dy * dy > 36
 }
 import { lookOf } from '../lib/lookOf.js'
+import { Refusal } from '../lib/refusal.js'
 
 // Per-building overrides (roof shape, foundation height, colour) are applied by the BAKE
 // (cartograph/bake-buildings.js) and reach the player through the slab. This live path used to
@@ -118,7 +119,7 @@ function LafayetteScene({ town, lookId, bakeLastMs, materialColorsOverride, forc
 
   // The browse-only street labels follow the shot the town is drawn in (<Town shot>), which
   // <Town> passes as labelViewMode. Authoring surfaces pass forceContentReady instead.
-  if (!labelViewMode && !forceContentReady) throw new Error('[LafayetteScene] ⛔ needs labelViewMode (the shot) or forceContentReady')
+  if (!labelViewMode && !forceContentReady) throw new Refusal('[LafayetteScene] ⛔ needs labelViewMode (the shot) or forceContentReady')
 
   // Register drag-guard listener with cleanup (avoids stacking on HMR)
   useEffect(() => {

@@ -21,6 +21,7 @@
  * canopy slabs flutter (aWindTier 0 vs 3).
  */
 import * as THREE from 'three'
+import { Refusal } from '../lib/refusal.js'
 
 /** Headroom (m) around a tree in every impostor capture frame; capture and card share it. */
 export const IMPOSTOR_FRAME_PAD_M = 1.5
@@ -276,8 +277,8 @@ export function buildOverheadHulaGeometry(rec, season = 'summer', opts = {}) {
  * @param {object} opts  { yLoNorm, yHiNorm, pad }
  */
 export function buildOverheadBandDisc(rec, opts = {}) {
-  if (!(rec?.heightM > 0) || !(rec?.canopyRadiusM > 0)) throw new Error(`[buildOverheadBandDisc] ⛔ the record has no measured heightM/canopyRadiusM (${rec?.heightM}, ${rec?.canopyRadiusM}) — re-capture it`)
-  if (!Number.isFinite(opts.yLoNorm) || !Number.isFinite(opts.yHiNorm)) throw new Error(`[buildOverheadBandDisc] ⛔ the band has no yLoNorm/yHiNorm (${opts.yLoNorm}, ${opts.yHiNorm})`)
+  if (!(rec?.heightM > 0) || !(rec?.canopyRadiusM > 0)) throw new Refusal(`[buildOverheadBandDisc] ⛔ the record has no measured heightM/canopyRadiusM (${rec?.heightM}, ${rec?.canopyRadiusM}) — re-capture it`)
+  if (!Number.isFinite(opts.yLoNorm) || !Number.isFinite(opts.yHiNorm)) throw new Refusal(`[buildOverheadBandDisc] ⛔ the band has no yLoNorm/yHiNorm (${opts.yLoNorm}, ${opts.yHiNorm})`)
   const H = rec.heightM
   const half = Math.max(0.5, rec.canopyRadiusM) + (opts.pad ?? IMPOSTOR_FRAME_PAD_M)   // half-side of the SQUARE capture frame
   const yLoN = Math.min(1, Math.max(0, opts.yLoNorm))

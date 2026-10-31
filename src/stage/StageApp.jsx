@@ -37,7 +37,7 @@ import { LampGlowEditor } from '../cartograph/CartographSurfaces.jsx'
 import { StoreChannel } from '../cartograph/CartographSkyLight.jsx'
 import { setPieceOf, townForLook } from '../instance.js'
 import useDisplayPreview from '../displays/preview.js'
-import useDisplayFailures from '../displays/failures.js'
+import useFailures, { failuresFor } from '../lib/failures.js'
 import { nightAt } from '../displays/night.js'
 import { glowSpan, showtimes, runSeconds } from '../displays/lightShow/engine.js'
 import { PLUGINS as DISPLAY_PLUGINS } from '../displays/Displays.jsx'
@@ -136,21 +136,41 @@ function Uplights() {
   </>)
 }
 
+const ALERT_STYLE = { background: 'var(--error-container, #5c1a1a)', color: 'var(--on-error-container, #ffdad6)' }
+
+// What the kit took out of this town, and why (src/lib/failures.js, the one sink): a layer's refusal, a layer a
+// boundary gave up retrying, a display that failed. At the top of the panel, so a missing piece is never silent; a
+// reload clears it. Renders nothing when nothing failed.
+function FailuresBanner() {
+  const lookId = useCartographStore(s => s.activeLookId)
+  const list = failuresFor(useFailures(s => s.failed), lookId)
+  if (!list.length) return null
+  return (
+    <div className="glass-panel rounded-xl p-3 pointer-events-auto">
+      {list.map(f => (
+        <div key={`${f.lookId}/${f.layer}`} role="alert" className="text-caption rounded px-2 py-1 my-1" style={ALERT_STYLE}>
+          {f.layer} {f.kind === 'refusal' ? 'refused' : 'failed'}: {f.reason}
+        </div>
+      ))}
+    </div>
+  )
+}
+
 // Displays — every town has the section; its contents are the town's displays (Jacob, 2026-10-30: "Displays", no
 // extra text). Each plays LIVE (its season and schedule, on the town's clock) unless previewed here: Off (hung, unlit),
 // Glow or Show, from the moment pressed. The preview is Stage's alone (src/displays/preview.js).
 function DisplaysSection() {
   const lookId = useCartographStore(s => s.activeLookId)
   const list = (lookId && townForLook(lookId)?.displays) || []
-  const modes = useDisplayPreview(s => s.modes), setMode = useDisplayPreview(s => s.setMode), failed = useDisplayFailures(s => s.failed)
+  const modes = useDisplayPreview(s => s.modes), setMode = useDisplayPreview(s => s.setMode), failed = useFailures(s => s.failed)
   return (
     <Collapsible label="Displays">
       {list.map(d => {
         const cur = modes[d.id]?.mode || 'live'
         return (<div key={d.id}>
-          {failed[`${lookId}/${d.id}`] && (
-            <div role="alert" className="text-caption rounded px-2 py-1 my-1" style={{ background: 'var(--error-container, #5c1a1a)', color: 'var(--on-error-container, #ffdad6)' }}>
-              Display {d.id} failed: {failed[`${lookId}/${d.id}`]}
+          {failed[`${lookId}/display:${d.id}`] && (
+            <div role="alert" className="text-caption rounded px-2 py-1 my-1" style={ALERT_STYLE}>
+              Display {d.id} failed: {failed[`${lookId}/display:${d.id}`].reason}
             </div>
           )}
           <div className="flex items-center justify-between gap-2 py-1">
@@ -1191,6 +1211,9 @@ export function StagePanel({ shot, setShot, keyframes, setKeyframes, heroMotion,
           Hero"). Owns its own container so it can render nothing. Provided by
           the cartograph chunk (store-bound); standalone /stage passes none. */}
       {lookForkSlot}
+
+      {/* What failed in this town, and why (the one sink). Nothing when nothing failed. */}
+      <FailuresBanner />
 
       {/* Time of Day — top slot for Preview parity. The weather row is Stage's own. */}
       <div className="glass-panel rounded-xl p-3 pointer-events-auto">

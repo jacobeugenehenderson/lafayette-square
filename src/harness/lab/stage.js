@@ -23,6 +23,7 @@ import { loadRevetment } from '../../lib/revetmentFromSlab.js'
 import { currentTerrain } from '../../utils/terrainShader.js'
 import { INSTANCE } from '../../instance.js'
 import { siteFromFootprint, southFacingYaw, DOSSIER, FT } from '../../setpieces/pilgrimMonument.js'
+import { Refusal } from '../../lib/refusal.js'
 
 async function getJSON(lookId, rel, bust) {
   const r = await slabFetch(lookId, rel, undefined, bust || null)
@@ -48,9 +49,9 @@ export async function resolveStage(lookId, stageId, bust) {
   // measured (BRIEF-the-ground-knows-its-height §4). The optional facing is the direction the camera stands back along.
   if (stageId.startsWith('xz:')) {
     const v = stageId.slice(3).split(',').map(Number)
-    if (!(v.length === 2 || v.length === 4) || !v.every(Number.isFinite)) throw new Error(`⛔ stage "${stageId}": expected xz:<x>,<z> or xz:<x>,<z>,<nx>,<nz>`)
+    if (!(v.length === 2 || v.length === 4) || !v.every(Number.isFinite)) throw new Refusal(`⛔ stage "${stageId}": expected xz:<x>,<z> or xz:<x>,<z>,<nx>,<nz>`)
     const L = v.length === 4 ? Math.hypot(v[2], v[3]) : 0
-    if (v.length === 4 && !(L > 0)) throw new Error(`⛔ stage "${stageId}": the facing (${v[2]}, ${v[3]}) has no length`)
+    if (v.length === 4 && !(L > 0)) throw new Refusal(`⛔ stage "${stageId}": the facing (${v[2]}, ${v[3]}) has no length`)
     return { x: v[0], z: v[1], normal: L ? [v[2] / L, v[3] / L] : [1, 0], why: `the point named by the URL (${v[0]}, ${v[1]})` }
   }
   if (stageId === 'revetment') {
@@ -62,7 +63,7 @@ export async function resolveStage(lookId, stageId, bust) {
         if (st[i].armour && (!best || st[i].crest > best.crest)) { best = st[i]; bestArc = st; bi = i }
       }
     }
-    if (!best) throw new Error(`⛔ stage "revetment" on ${lookId}: revetment.json has NO armoured station`)
+    if (!best) throw new Refusal(`⛔ stage "revetment" on ${lookId}: revetment.json has NO armoured station`)
     // Facing along the arc's normal, so the eye camera looks AT the wall, not along it.
     const a = bestArc[Math.max(0, bi - 1)], b = bestArc[Math.min(bestArc.length - 1, bi + 1)]
     const L = Math.hypot(b.x - a.x, b.z - a.z) || 1
@@ -70,11 +71,11 @@ export async function resolveStage(lookId, stageId, bust) {
   }
   if (stageId === 'setpiece') {
     const sp = INSTANCE.setPiece
-    if (!sp?.buildingId) throw new Error(`⛔ stage "setpiece" on ${lookId}: this town declares no set-piece (src/instances/<town>.js setPiece)`)
+    if (!sp?.buildingId) throw new Refusal(`⛔ stage "setpiece" on ${lookId}: this town declares no set-piece (src/instances/<town>.js setPiece)`)
     // The footprint is the set-piece's building record in the slab, as <SetPiece> reads it.
     const m = await getJSON(lookId, 'buildings.json', bust)
     const b = m.buildings.find(x => x.id === sp.buildingId)
-    if (!b) throw new Error(`⛔ stage "setpiece" on ${lookId}: the slab has no building ${sp.buildingId}`)
+    if (!b) throw new Refusal(`⛔ stage "setpiece" on ${lookId}: the slab has no building ${sp.buildingId}`)
     const bin = await slabFetch(lookId, m.bin, undefined, bust || null).then(r => r.arrayBuffer())
     const [start, count] = b.footprintRange
     const fp = new Float32Array(bin, m.footprintByteOffset + start * 8, count * 2)
@@ -88,9 +89,9 @@ export async function resolveStage(lookId, stageId, bust) {
     const st = m.stencil
     // ⭐ Inside the fade's INNER edge: past it the ground dissolves, and a slope judged
     // through a half-transparent rim is not a slope judged. ⛔ No fade band ⇒ refuse.
-    if (!(st?.fade?.inner > 0)) throw new Error(`⛔ stage "steepest" on ${lookId}: ground.json's stencil has no fade band — the opaque disc to search is unknown`)
+    if (!(st?.fade?.inner > 0)) throw new Refusal(`⛔ stage "steepest" on ${lookId}: ground.json's stencil has no fade band — the opaque disc to search is unknown`)
     const T = currentTerrain()
-    if (T.width <= 2) throw new Error(`⛔ stage "steepest" on ${lookId}: no baked terrain (the terrain module is rendering flat)`)
+    if (T.width <= 2) throw new Refusal(`⛔ stage "steepest" on ${lookId}: no baked terrain (the terrain module is rendering flat)`)
     const sx = (T.bounds.maxX - T.bounds.minX) / (T.width - 1), sz = (T.bounds.maxZ - T.bounds.minZ) / (T.height - 1)
     let best = -1, bx = 0, bz = 0, gx0 = 0, gz0 = 0
     for (let j = 1; j < T.height - 1; j++) for (let i = 1; i < T.width - 1; i++) {
@@ -105,18 +106,18 @@ export async function resolveStage(lookId, stageId, bust) {
     const L = Math.hypot(gx0, gz0) || 1
     return { x: bx, z: bz, normal: [-gx0 / L, -gz0 / L], why: `steepest sample in the disc: ${(Math.atan(best) * 180 / Math.PI).toFixed(1)}° at the ${sx.toFixed(1)} m grid step` }
   }
-  if (!stageId.startsWith('class:')) throw new Error(`⛔ unknown stage "${stageId}" — expected class:<id> or revetment`)
+  if (!stageId.startsWith('class:')) throw new Refusal(`⛔ unknown stage "${stageId}" — expected class:<id> or revetment`)
   const id = stageId.slice(6)
   const m = await getJSON(lookId, 'ground.json', bust)
   const g = m.groups.find(q => q.id === id)
-  if (!g) throw new Error(`⛔ stage "${stageId}": ${lookId}'s ground has no group "${id}" (has: ${m.groups.map(q => q.id).join(', ')})`)
+  if (!g) throw new Refusal(`⛔ stage "${stageId}": ${lookId}'s ground has no group "${id}" (has: ${m.groups.map(q => q.id).join(', ')})`)
   const bin = await slabFetch(lookId, m.bin, undefined, bust || null).then(r => r.arrayBuffer())
   const P = new Float32Array(bin, g.vertexByteOffset, g.vertexCount * 3)
   const I = new Uint32Array(bin, g.indexByteOffset, g.indexCount)
   // ⭐ Inside the fade's INNER edge, the same rule as `steepest`: huron's largest farmland triangle
   // sat at r 3449 m in a 3339–3539 m fade, so the surface was judged half-transparent over the sky.
   const st = m.stencil
-  if (!(st?.fade?.inner > 0)) throw new Error(`⛔ stage "${stageId}" on ${lookId}: ground.json's stencil has no fade band — the opaque disc to search is unknown`)
+  if (!(st?.fade?.inner > 0)) throw new Refusal(`⛔ stage "${stageId}" on ${lookId}: ground.json's stencil has no fade band — the opaque disc to search is unknown`)
   let best = -1, bestA = 0
   for (let k = 0; k < I.length; k += 3) {
     const a = I[k] * 3, b = I[k + 1] * 3, c = I[k + 2] * 3
@@ -124,7 +125,7 @@ export async function resolveStage(lookId, stageId, bust) {
     const A = Math.abs((P[b] - P[a]) * (P[c + 2] - P[a + 2]) - (P[c] - P[a]) * (P[b + 2] - P[a + 2])) / 2
     if (A > bestA) { bestA = A; best = k }
   }
-  if (best < 0) throw new Error(`⛔ stage "${stageId}": no triangle of "${id}" inside the fade's inner edge (${st.fade.inner} m)`)
+  if (best < 0) throw new Refusal(`⛔ stage "${stageId}": no triangle of "${id}" inside the fade's inner edge (${st.fade.inner} m)`)
   const a = I[best] * 3, b = I[best + 1] * 3, c = I[best + 2] * 3
   return {
     x: (P[a] + P[b] + P[c]) / 3, z: (P[a + 2] + P[b + 2] + P[c + 2]) / 3, normal: [1, 0],

@@ -164,6 +164,7 @@ import DrawnAnchor from './DrawnAnchor.jsx'
 import { markStartup, markTime, markTimeline, isPrepared, failureOf, isRevealed, subscribeStartup } from '../lib/startupMarks.js'
 import { getSceneStencil } from './sceneStencilState'
 import { buildingLiftY } from '../lib/buildingLift.js'
+import { Refusal } from '../lib/refusal.js'
 
 // The application runtime has arrived: the renderer's module is evaluated (src/lib/startupMarks.js).
 markStartup('runtime')
@@ -179,6 +180,9 @@ export { adoptSlabManifest } from '../lib/slabUrl.js'
 export { tenantOf, titleOf } from '../lib/townRecord.js'
 // The weather at an instant is one answer (lib/weatherAt.js); an app catches its out-of-forecast error by this class.
 export { WeatherRangeError } from '../lib/weatherAt.js'
+// The kit's one failure sink (src/lib/failures.js): what a boundary took out of the town, and why. The app decides how
+// its visitor sees it; ⛔ never silent.
+export { default as useFailures, failuresFor } from '../lib/failures.js'
 // The wind sheet's API — the field every wind consumer reads (lib/windSheet.js; contract ARCHITECTURE §8).
 export { WIND_SHEET_GLSL, bindWindSheet } from '../lib/windSheet.js'
 // The Canvas the town is drawn through, from its quality profile — an app spreads it (the Ward imports only Town).
@@ -407,8 +411,8 @@ export function useTownSky(lookId) {
   const scene = useSceneJson(lookOf(lookId, 'useTownSky'))
   const sky = scene?.sky ?? null
   return useMemo(() => (!scene ? null : (minute, dayOfYear) => {
-    if (!Number.isFinite(minute)) throw new Error(`[useTownSky] ⛔ skyAt needs a minute of the day; got ${minute}`)
-    if (!Number.isFinite(dayOfYear)) throw new Error(`[useTownSky] ⛔ skyAt needs dayOfYear — never the authoring calendar's; got ${dayOfYear}`)
+    if (!Number.isFinite(minute)) throw new Refusal(`[useTownSky] ⛔ skyAt needs a minute of the day; got ${minute}`)
+    if (!Number.isFinite(dayOfYear)) throw new Refusal(`[useTownSky] ⛔ skyAt needs dayOfYear — never the authoring calendar's; got ${dayOfYear}`)
     return resolveSkyAtMinute(sky, minute, null, dayOfYear)
   }), [scene, sky])
 }
@@ -507,7 +511,7 @@ function GroundPoint({ x, z, lat, lon, lift = 0, children, ...props }) {
   const geo = lat != null || lon != null
   const px = geo ? (lon - place.lon) * place.lonToMeters : x
   const pz = geo ? (place.lat - lat) * place.latToMeters : z
-  if (!Number.isFinite(px) || !Number.isFinite(pz)) throw new Error(`[TownPoint] ⛔ no place: x=${x} z=${z} lat=${lat} lon=${lon}`)
+  if (!Number.isFinite(px) || !Number.isFinite(pz)) throw new Refusal(`[TownPoint] ⛔ no place: x=${x} z=${z} lat=${lat} lon=${lon}`)
   const ref = useRef()
   const y = () => getElevationRaw(px, pz) * terrainExag.value + lift
   useFrame(() => { if (ref.current) ref.current.position.y = y() })
@@ -620,19 +624,19 @@ export default function Town({
   holdScrubbedTime = false, time, movie, flight = true, streetAt, viewInset, flightRef, onFlightEnd, frameKey, frameIds, frameMode = 'densest', frameMover = null, onFramed, planHeading = 'town', bearingRef,
   controls = false, movers, onMovers, children, towerLight = false, onTowerLight,
 }) {
-  if (time !== undefined && holdScrubbedTime) throw new Error('[Town] ⛔ `time` and `holdScrubbedTime` both drive the clock — pass one (the app owns its time, or Stage holds a scrub)')
-  if (time != null && !(time instanceof Date && Number.isFinite(time.getTime()))) throw new Error(`[Town] ⛔ \`time\` is a Date or null (live); got ${time}`)
-  if (!lookId) throw new Error('[Town] ⛔ needs lookId — the Look to draw')
-  if (!quality?.id) throw new Error('[Town] ⛔ needs quality — a profile from src/lib/qualityProfile.js')
-  if (!SHOT_KEY[shot]) throw new Error(`[Town] ⛔ shot "${shot}" is not one of ${Object.keys(SHOT_KEY).join(' · ')}`)
-  if (liveIds) throw new Error('[Town] ⛔ liveIds: the live-announcement mark is not built yet (a design question with Jacob) — nothing would draw it')
-  for (const k of Object.keys(layers || {})) if (!LAYERS.includes(k)) throw new Error(`[Town] ⛔ unknown layer "${k}" (have: ${LAYERS.join(' ')})`)
-  for (const k of Object.keys(overrides)) if (!OVERRIDE_KEYS.includes(k)) throw new Error(`[Town] ⛔ unknown override "${k}"`)
+  if (time !== undefined && holdScrubbedTime) throw new Refusal('[Town] ⛔ `time` and `holdScrubbedTime` both drive the clock — pass one (the app owns its time, or Stage holds a scrub)')
+  if (time != null && !(time instanceof Date && Number.isFinite(time.getTime()))) throw new Refusal(`[Town] ⛔ \`time\` is a Date or null (live); got ${time}`)
+  if (!lookId) throw new Refusal('[Town] ⛔ needs lookId — the Look to draw')
+  if (!quality?.id) throw new Refusal('[Town] ⛔ needs quality — a profile from src/lib/qualityProfile.js')
+  if (!SHOT_KEY[shot]) throw new Refusal(`[Town] ⛔ shot "${shot}" is not one of ${Object.keys(SHOT_KEY).join(' · ')}`)
+  if (liveIds) throw new Refusal('[Town] ⛔ liveIds: the live-announcement mark is not built yet (a design question with Jacob) — nothing would draw it')
+  for (const k of Object.keys(layers || {})) if (!LAYERS.includes(k)) throw new Refusal(`[Town] ⛔ unknown layer "${k}" (have: ${LAYERS.join(' ')})`)
+  for (const k of Object.keys(overrides)) if (!OVERRIDE_KEYS.includes(k)) throw new Refusal(`[Town] ⛔ unknown override "${k}"`)
   const on = (k) => layers?.[k] !== false
   // The canvas's anti-aliasing, as made, against whether this Town draws a composer (qualityProfile.js#canvasAAMismatch).
   const contextAntialias = useThree((s) => !!s.gl.getContextAttributes()?.antialias)
   const aaMismatch = canvasAAMismatch(quality, { contextAntialias, composer: on('post') })
-  if (aaMismatch) throw new Error(aaMismatch)
+  if (aaMismatch) throw new Refusal(aaMismatch)
   // Latched on the first ask: the Tower Light stays mounted after (its programs compiled once), off by intensity.
   const [towerArmed, setTowerArmed] = useState(false)
   if (towerLight && !towerArmed) setTowerArmed(true)
@@ -643,15 +647,16 @@ export default function Town({
   const scene = useSceneJson(lookId)
   const bake = bakeLastMs ?? scene?.bakedAt ?? null
   const key = SHOT_KEY[shot]
-  if (!Array.isArray(listings)) throw new Error('[Town] ⛔ needs the `listings` prop — the town\'s content listings (an array; [] for a town with none)')
+  if (!Array.isArray(listings)) throw new Refusal('[Town] ⛔ needs the `listings` prop — the town\'s content listings (an array; [] for a town with none)')
   // What the leaves read (townContext.js) — the shot, the selection, the listings. No player store.
   // The town's labels and their style: labels.json, read once, the style under Stage's live override. Every label
   // reader takes them from here (src/lib/labelStyle.js) — never the authoring store.
   const labelsArtifact = useStreetLabels(lookId, bake)
   const labelStyle = useMemo(() => labelStyleOf(labelsArtifact, o.labels), [labelsArtifact, o.labels])
   const setPieceTitles = useMemo(() => ({ ...labelsArtifact.setPieceTitles, ...(o.setPieceTitles || {}) }), [labelsArtifact, o.setPieceTitles])
-  const scope = useMemo(() => ({ shotKey: key, selectedId, select: onSelectBuilding ?? null, listings, streetLabels: labelsArtifact.labels, labelStyle, setPieceTitles }),
-    [key, selectedId, onSelectBuilding, listings, labelsArtifact, labelStyle, setPieceTitles])
+  // lookId: the town a failure belongs to (R3FErrorBoundary keys its report to the one sink by it, src/lib/failures.js).
+  const scope = useMemo(() => ({ lookId, shotKey: key, selectedId, select: onSelectBuilding ?? null, listings, streetLabels: labelsArtifact.labels, labelStyle, setPieceTitles }),
+    [lookId, key, selectedId, onSelectBuilding, listings, labelsArtifact, labelStyle, setPieceTitles])
   // The town's movie: its baked path (heroKeyframes + heroMotion), or the opening view derived from its own disc
   // when it has none — Stage's live keys arrive as overrides. The same resolution the apps used (cameraRegimes.js).
   const stencil = useSceneStencil()

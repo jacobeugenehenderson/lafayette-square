@@ -13,6 +13,7 @@
 // them here so the two consumers share one definition.
 
 import { defaultMeasure } from './streetProfiles.js'
+import { Refusal } from '../lib/refusal.js'
 
 // Drag clamps — a handle dragged very far must not explode ribbon geometry
 // (subdivideGeo can request a multi-million-vert buffer). 30m past any real
@@ -70,7 +71,7 @@ export function chainMeasure(st) {
         && Math.abs(fromPipeline.left.sidewalk - fromPipeline.right.sidewalk) < 0.01,
     }
   }
-  if (!st.class) throw new Error(`⛔ chainMeasure: street ${st.skelId || st.name} carries no class — re-pour (streetClass.js)`)
+  if (!st.class) throw new Refusal(`⛔ chainMeasure: street ${st.skelId || st.name} carries no class — re-pour (streetClass.js)`)
   return defaultMeasure(st.class, null, { lanes: Number.isInteger(st.lanes) ? st.lanes : null, oneway: !!st.oneway })
 }
 

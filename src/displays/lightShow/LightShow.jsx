@@ -27,6 +27,7 @@ import { validateDrawer, compileRun, showAt, showSeconds, glowColour, liveState,
 import { checkFaces, strandEnds, pinnacleFace, pinnacleWash, bulbRadius, cordRadius, SOCKET_OF_BULB, avgGlow } from './geometry.js'
 import useDisplayPreview from '../preview.js'
 import { nightAt } from '../night.js'
+import { Refusal } from '../../lib/refusal.js'
 
 const SHOW_GAIN = 2.4, GLOW_GAIN = 1.7                         // HDR, so the bulbs bloom like high-wattage lamps
 const CORD = '#3a3a3c'                                          // the cords: dark gray (Jacob, 2026-10-31)
@@ -55,7 +56,7 @@ function useDrawer(url, where) {
     })().catch(e => { if (!dead) setErr(e) })
     return () => { dead = true }
   }, [url, where])
-  if (err) throw new Error(`[LightShow] ⛔ ${where}: ${err.message}`)
+  if (err) throw new Refusal(`[LightShow] ⛔ ${where}: ${err.message}`)
   return drawer
 }
 
@@ -76,14 +77,14 @@ function Strands({ count, strands, glassRef, coreRef, socketRef, cordRef }) {
 }
 
 export default function LightShow({ display, extent, calendar, contentRoot, dim, where }) {
-  if (!extent?.ridge || !extent?.pinnacle) throw new Error(`[LightShow] ⛔ ${where}: the set-piece declares no ridge and pinnacle in its extent, so the strands have nowhere to hang`)
+  if (!extent?.ridge || !extent?.pinnacle) throw new Refusal(`[LightShow] ⛔ ${where}: the set-piece declares no ridge and pinnacle in its extent, so the strands have nowhere to hang`)
   const st = display.strands
-  if (!(st?.glow > 0 && st?.show > 0 && st?.ringRadiusM > 0)) throw new Error(`[LightShow] ⛔ ${where}: strands needs glow, show and ringRadiusM`)
-  if (st.show % st.glow || st.glow % extent.ridge.sides) throw new Error(`[LightShow] ⛔ ${where}: strands.show (${st.show}) must be a whole multiple of strands.glow (${st.glow}), and glow of the ridge's ${extent.ridge.sides} sides, so the glow strands are show strands`)
-  if (!(st.footHeightM >= 0 && st.footHeightM < extent.ridge.yM)) throw new Error(`[LightShow] ⛔ ${where}: strands.footHeightM (${st.footHeightM}) must be authored, from the base up to below the ridge (${extent.ridge.yM.toFixed(1)} m)`)
+  if (!(st?.glow > 0 && st?.show > 0 && st?.ringRadiusM > 0)) throw new Refusal(`[LightShow] ⛔ ${where}: strands needs glow, show and ringRadiusM`)
+  if (st.show % st.glow || st.glow % extent.ridge.sides) throw new Refusal(`[LightShow] ⛔ ${where}: strands.show (${st.show}) must be a whole multiple of strands.glow (${st.glow}), and glow of the ridge's ${extent.ridge.sides} sides, so the glow strands are show strands`)
+  if (!(st.footHeightM >= 0 && st.footHeightM < extent.ridge.yM)) throw new Refusal(`[LightShow] ⛔ ${where}: strands.footHeightM (${st.footHeightM}) must be authored, from the base up to below the ridge (${extent.ridge.yM.toFixed(1)} m)`)
   const preview = useDisplayPreview(s => s.modes[display.id])
   // Load the drawer only when the display can be on: Stage's preview, or a calendar to read the season from.
-  if (contentRoot == null) throw new Error(`[LightShow] ⛔ ${where}: the town declares no contentRoot, so its drawer has no home`)
+  if (contentRoot == null) throw new Refusal(`[LightShow] ⛔ ${where}: the town declares no contentRoot, so its drawer has no home`)
   const drawer = useDrawer(preview || calendar ? `${import.meta.env.BASE_URL}${contentRoot}${display.drawer}` : null, where)
   const compiled = useMemo(() => (drawer ? compileRun(display.run, drawer.byId, where) : null), [drawer, display.run, where])
   const F = drawer?.frame, rows = F ? F.h - F.pinH : 0
@@ -191,7 +192,7 @@ export default function LightShow({ display, extent, calendar, contentRoot, dim,
     } catch (e) { frameDead.current = true; setFrameErr(e) }
   })
 
-  if (frameErr) throw new Error(`[LightShow] ⛔ ${where}: ${frameErr.message}`)
+  if (frameErr) throw new Refusal(`[LightShow] ⛔ ${where}: ${frameErr.message}`)
   if (!F) return null
   // ⭐ Its reach, for depth of field (r-the-focus-object-is-everything-hung-on-it): the strands hang out to the ring, well
   // past the set-piece's own extent, so the focus box must grow to them (focusObject.js#focusBox reads this).

@@ -4,6 +4,7 @@ import { applyWeatherToShader } from '../lib/weather-uniforms.js'
 import { GROUND_LAMP_DECLS, groundLampFragment, bindGroundLamp, bindGroundLampShared } from '../lib/groundLamp.js'
 import { groundRules, GROUND_RULES_DECLS, groundRulesFragment, bindGroundRules } from '../lib/groundRules.js'
 import { SURFACES } from '../../cartograph/surfaces.mjs'
+import { Refusal } from '../lib/refusal.js'
 
 /**
  * Reusable factory for the noise-based park grass material.
@@ -297,7 +298,7 @@ if (typeof window !== 'undefined') window.__cropPom = CROP_UNIFORMS.uPom
 function rampUniforms(u, name, stops) {
   const ok = Array.isArray(stops) && stops.length >= 1 && stops.length <= 4
     && stops.every(s => Number.isFinite(s?.t) && /^#[0-9a-f]{6}$/i.test(s?.color || ''))
-  if (!ok) throw new Error(`⛔ ${name.toLowerCase()} ramp: 1–4 stops of { t, color: '#rrggbb' } required, got ${JSON.stringify(stops)}`)
+  if (!ok) throw new Refusal(`⛔ ${name.toLowerCase()} ramp: 1–4 stops of { t, color: '#rrggbb' } required, got ${JSON.stringify(stops)}`)
   const st = [...stops].sort((a, b) => a.t - b.t)
   while (st.length < 4) st.push({ t: 1, color: st[st.length - 1].color })
   u[`u${name}T`] = { value: new THREE.Vector4(...st.map(s => s.t)) }
@@ -361,7 +362,7 @@ export function makeGroundSurfaceMaterial({
   coast = null,
 } = {}) {
   const gen = SURFACES[surface]?.generator || surface
-  if (!ALBEDO[gen]) throw new Error(`⛔ makeGroundSurfaceMaterial: no albedo for surface "${surface}" (generator "${gen}"; have ${Object.keys(ALBEDO).join(', ')})`)
+  if (!ALBEDO[gen]) throw new Refusal(`⛔ makeGroundSurfaceMaterial: no albedo for surface "${surface}" (generator "${gen}"; have ${Object.keys(ALBEDO).join(', ')})`)
   const shaderRef = { current: null }
   const material = new THREE.MeshStandardMaterial({ roughness: 0.92, color })
   if (fade) material.transparent = true
@@ -415,7 +416,7 @@ export function makeGroundSurfaceMaterial({
     if (gen === 'cover') {
       // All four are authored with defaults in surfaces.mjs, which BakedGround lays under the resolved values.
       for (const k of ['coverFrac', 'patchM'])
-        if (!Number.isFinite(surfaceParams?.[k])) throw new Error(`⛔ ${surface}: authored param "${k}" is missing or not a number (${surfaceParams?.[k]})`)
+        if (!Number.isFinite(surfaceParams?.[k])) throw new Refusal(`⛔ ${surface}: authored param "${k}" is missing or not a number (${surfaceParams?.[k]})`)
       shader.uniforms.uCoverFrac = { value: surfaceParams.coverFrac }
       shader.uniforms.uPatchM = { value: surfaceParams.patchM }
       rampUniforms(shader.uniforms, 'Earth', surfaceParams?.soilRamp)
@@ -437,7 +438,7 @@ export function makeGroundSurfaceMaterial({
       for (const [u, k] of [['uHeadlandRows', 'headlandRows'], ['uTrackGaugeRows', 'trackGaugeRows'], ['uBedFrac', 'bedFrac'],
         ['uClodSizeM', 'clodSizeM'], ['uClodHeightM', 'clodHeightM'], ['uQuiltM', 'quiltM']]) {
         // Authored with defaults in surfaces.mjs, which BakedGround always lays under the resolved values.
-        if (!Number.isFinite(surfaceParams?.[k])) throw new Error(`⛔ crop: authored param "${k}" is missing or not a number (${surfaceParams?.[k]})`)
+        if (!Number.isFinite(surfaceParams?.[k])) throw new Refusal(`⛔ crop: authored param "${k}" is missing or not a number (${surfaceParams?.[k]})`)
         shader.uniforms[u] = { value: surfaceParams[k] }
       }
       shader.uniforms.uHasEdge = { value: fieldEdge ? 1 : 0 }
