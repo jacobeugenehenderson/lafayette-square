@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 544,
+  "total": 545,
   "counts": {
-    "safe": 375,
+    "safe": 376,
     "local-effect": 31,
     "live": 138
   },
@@ -385,7 +385,7 @@
       "tier": "safe",
       "why": [
         "importSource of src/displays/DisplayBoundary.js — read, safe",
-        "computed import of src/displays/failures.js — read, safe"
+        "computed import of src/lib/failures.js — read, safe"
       ]
     },
     {
@@ -735,6 +735,17 @@
       "tier": "safe",
       "why": [
         "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-a-refusal-is-never-swallowed.mjs",
+      "tier": "safe",
+      "why": [
+        "importSource of src/lib/refusal.js — read, safe",
+        "importSource of src/components/R3FErrorBoundary.jsx — read, safe",
+        "computed import of src/lib/failures.js — read, safe",
+        "computed import of src/lib/refusal.js — read, safe",
+        "runs `git ls-files --cached --others` — local, read-only"
       ]
     },
     {

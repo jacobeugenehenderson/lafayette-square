@@ -24,6 +24,7 @@ import { SHOTS_FLAT_DEFAULTS } from '../cartograph/skyLightChannels.js'
 import { getSceneStencil } from './sceneStencilState.js'
 import { applyRegime } from '../lib/cameraRegimes.js'
 import RegimeControls from './RegimeControls.jsx'
+import { Refusal } from '../lib/refusal.js'
 
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -639,7 +640,7 @@ const townCanvas = townCanvasProps(QUALITY, { composer: !IS_GROUND })
 function Scene({ sheeted = false, ground = 'plate' } = {}) {
   const viewMode = useCamera((s) => s.viewMode)
   const shot = SHOT_OF_MODE[viewMode]
-  if (!shot) throw new Error(`[Scene] ⛔ camera mode '${viewMode}' draws no shot`)
+  if (!shot) throw new Refusal(`[Scene] ⛔ camera mode '${viewMode}' draws no shot`)
   const { paused, idle } = usePlayerPacing()
   // The player owns its selection and its listings; <Town> is handed them (a click opens the place card, as before).
   const selectedId = useSelectedBuilding((s) => s.selectedId)

@@ -36,6 +36,7 @@ import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { stampTreeVertexAttrs } from './treeAtlasMaterial.js'
 import { heroCardFrame, IMPOSTOR_FRAME_PAD_M } from './impostorGeometry.js'
+import { Refusal } from '../lib/refusal.js'
 
 // One shared loader for all captures. The tree GLBs carry no DRACO/meshopt (only
 // EXT_texture_webp, which we don't read — the material is overridden with the
@@ -256,7 +257,7 @@ function renderTreeToTexture(gl, glbScene, heightM, canopyRadiusM, opts = {}) {
   if (opts.captureMask || opts.captureDepth) {
     shaderUniforms = captureUniforms()
     if (!shaderUniforms) { gl.compile(scene, cam); shaderUniforms = captureUniforms() }
-    if (!shaderUniforms) throw new Error('[captureImpostor] ⛔ the tree material has no capture switches even after compiling — this shot would leak woody into leaves (or colour into depth)')
+    if (!shaderUniforms) throw new Refusal('[captureImpostor] ⛔ the tree material has no capture switches even after compiling — this shot would leak woody into leaves (or colour into depth)')
   }
   let maskUniform = null, prevMask = 0
   const wantMask = opts.captureMask || 0

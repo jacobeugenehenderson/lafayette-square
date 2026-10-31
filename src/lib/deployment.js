@@ -13,6 +13,7 @@
  * in its manifest, and every surface ships everything: said, never guessed.
  * ▶ node checks/claims-deployment-has-one-authority.mjs
  */
+import { Refusal } from './refusal.js'
 
 export const SURFACES = ['desktop', 'phone-hi', 'phone-lo']
 
@@ -25,13 +26,13 @@ const KEYS = ['postFxOff']
 /** The file's content, checked. Throws on a shape it does not know: a misspelt key would ship silently. */
 export function readDeployment(raw, where = 'deployment.json') {
   if (!raw || typeof raw !== 'object' || !raw.surfaces || typeof raw.surfaces !== 'object') {
-    throw new Error(`[deployment] ⛔ ${where}: expected { surfaces: { … } }`)
+    throw new Refusal(`[deployment] ⛔ ${where}: expected { surfaces: { … } }`)
   }
   for (const [surface, policy] of Object.entries(raw.surfaces)) {
-    if (!SURFACES.includes(surface)) throw new Error(`[deployment] ⛔ ${where}: "${surface}" is no surface (${SURFACES.join(', ')})`)
-    for (const k of Object.keys(policy || {})) if (!KEYS.includes(k)) throw new Error(`[deployment] ⛔ ${where}: ${surface}.${k} is no deployment key (${KEYS.join(', ')})`)
+    if (!SURFACES.includes(surface)) throw new Refusal(`[deployment] ⛔ ${where}: "${surface}" is no surface (${SURFACES.join(', ')})`)
+    for (const k of Object.keys(policy || {})) if (!KEYS.includes(k)) throw new Refusal(`[deployment] ⛔ ${where}: ${surface}.${k} is no deployment key (${KEYS.join(', ')})`)
     if (policy?.postFxOff !== undefined && !(Array.isArray(policy.postFxOff) && policy.postFxOff.every((x) => typeof x === 'string'))) {
-      throw new Error(`[deployment] ⛔ ${where}: ${surface}.postFxOff must be a list of pass ids`)
+      throw new Refusal(`[deployment] ⛔ ${where}: ${surface}.postFxOff must be a list of pass ids`)
     }
   }
   return { authored: true, surfaces: raw.surfaces }
@@ -40,9 +41,9 @@ export function readDeployment(raw, where = 'deployment.json') {
 /** One surface's policy from a manifest's `deployment` (or Preview's live copy of the file). Absent keys ship. */
 export function surfacePolicy(deployment, surface) {
   if (!deployment || typeof deployment !== 'object') {
-    throw new Error(`[deployment] ⛔ no deployment record (got ${deployment}): a manifest always carries one, { authored: false } when the town has none`)
+    throw new Refusal(`[deployment] ⛔ no deployment record (got ${deployment}): a manifest always carries one, { authored: false } when the town has none`)
   }
-  if (!SURFACES.includes(surface)) throw new Error(`[deployment] ⛔ "${surface}" is no surface (${SURFACES.join(', ')})`)
+  if (!SURFACES.includes(surface)) throw new Refusal(`[deployment] ⛔ "${surface}" is no surface (${SURFACES.join(', ')})`)
   const p = deployment.authored ? deployment.surfaces?.[surface] : null
   return { postFxOff: p?.postFxOff ?? [] }
 }

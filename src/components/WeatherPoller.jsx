@@ -3,6 +3,7 @@ import { acquireWeatherPoll, fetchWindTendencyFromDeg } from '../hooks/useWeathe
 import useSkyState from '../hooks/useSkyState'
 import { WEATHER_PRESETS, windTendencyFromDeg, withStillAir } from '../lib/weatherPresets.js'
 import useAtmosphere from '../hooks/useAtmosphere.js'
+import { Refusal } from '../lib/refusal.js'
 
 // `mode` = 'live' (poll the town's real weather) or a WEATHER_PRESETS key, which
 // stands the scene in that weather and stops polling (Stage's Weather switch: the
@@ -11,7 +12,7 @@ function WeatherPoller({ mode = 'live' }) {
   useEffect(() => {
     if (mode !== 'live') {
       const preset = WEATHER_PRESETS[mode]
-      if (!preset) throw new Error(`[weather] ⛔ unknown weather mode '${mode}' (have: live, ${Object.keys(WEATHER_PRESETS).join(', ')})`)
+      if (!preset) throw new Refusal(`[weather] ⛔ unknown weather mode '${mode}' (have: live, ${Object.keys(WEATHER_PRESETS).join(', ')})`)
       const sky = useSkyState.getState()
       // The town's wind TENDENCY, read before the forecast is cleared: its own readings, never a kit constant.
       const fromDeg = windTendencyFromDeg(sky.hourlyForecast?.length ? sky.hourlyForecast

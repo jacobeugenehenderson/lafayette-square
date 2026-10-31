@@ -35,6 +35,7 @@
  *           against this; measure the model the same way when it lands.
  * ════════════════════════════════════════════════════════════════════════════════════════
  */
+import { Refusal } from '../lib/refusal.js'
 
 export const FT = 0.3048
 
@@ -187,7 +188,7 @@ export function courseBeds({ minIn, maxIn }, d = DOSSIER, seed = COURSE_SEED, co
     const c = counted.find(q => Math.abs(q.fromZ_ft * 12 - z) < 1e-6 && Math.abs(q.toZ_ft * 12 - end) < 1e-6)
     if (c) {
       const n = c.courses, h0 = (end - z) / n, room = Math.min(h0 - minIn, maxIn - h0)
-      if (!(room >= 0)) throw new Error(`⛔ courseBeds: ${n} counted courses over ${(end - z).toFixed(1)}″ is ${h0.toFixed(2)}″ each, outside ${minIn}–${maxIn}″`)
+      if (!(room >= 0)) throw new Refusal(`⛔ courseBeds: ${n} counted courses over ${(end - z).toFixed(1)}″ is ${h0.toFixed(2)}″ each, outside ${minIn}–${maxIn}″`)
       const w = Array.from({ length: n }, () => rnd() * 2 - 1), mean = w.reduce((a, b) => a + b, 0) / n
       const dev = w.map(v => v - mean), peak = Math.max(...dev.map(Math.abs)) || 1
       for (let i = 0; i < n - 1; i++) { z += h0 + dev[i] / peak * room; beds.push(z) }
@@ -195,10 +196,10 @@ export function courseBeds({ minIn, maxIn }, d = DOSSIER, seed = COURSE_SEED, co
       continue
     }
     for (let guard = 0; end - z > 1e-9; guard++) {
-      if (guard > 10000) throw new Error(`⛔ courseBeds: cannot fill ${datums[k - 1]}″–${end}″ with ${minIn}–${maxIn}″ courses`)
+      if (guard > 10000) throw new Refusal(`⛔ courseBeds: cannot fill ${datums[k - 1]}″–${end}″ with ${minIn}–${maxIn}″ courses`)
       const rem = end - z
       if (rem <= maxIn) {
-        if (rem < minIn - 1e-9) throw new Error(`⛔ courseBeds: a ${rem.toFixed(2)}″ remainder under ${minIn}″ at ${z}″`)
+        if (rem < minIn - 1e-9) throw new Refusal(`⛔ courseBeds: a ${rem.toFixed(2)}″ remainder under ${minIn}″ at ${z}″`)
         z = end
       } else {
         // Draw a course, rejecting any that would leave a remainder no course can fill

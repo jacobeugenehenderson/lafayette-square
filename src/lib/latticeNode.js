@@ -2,6 +2,7 @@
 // Two producers node and split with it: the bake's paint stack before the flatten (bake-ground.js) and the land evidence as it leaves the pour
 // (cartograph/derive.js#layerLandEvidence: one partition, BRIEF from Boz 2026-10-21). One rule, one bound, never a copy.
 import { CLIP_SCALE, LATTICE_M } from './lattice.js'
+import { Refusal } from './refusal.js'
 
 // one lattice step in Clipper's integer units
 export const LATTICE_STEP = CLIP_SCALE * LATTICE_M
@@ -25,12 +26,12 @@ export function nodeAcrossGroups(entries, { bound = NODE_BOUND, maxRounds = 8, w
   const R = [], slots = entries.map((e, g) => e.items.map(it => ringsOf(it).map(r => {
     if (!r || r.length < 3) return -1
     for (const [x, z] of r) if (Math.abs(x * CLIP_SCALE - Math.round(x * CLIP_SCALE)) > 1e-6 || Math.abs(z * CLIP_SCALE - Math.round(z * CLIP_SCALE)) > 1e-6)
-      throw new Error(`[${who}] ⛔ node: ${e.groupKey} carries (${x}, ${z}), off the lattice (1 / ${CLIP_SCALE} m) — every ring of the paint stack must already be on it. Refusing.`)
+      throw new Refusal(`[${who}] ⛔ node: ${e.groupKey} carries (${x}, ${z}), off the lattice (1 / ${CLIP_SCALE} m) — every ring of the paint stack must already be on it. Refusing.`)
     R.push({ g, p: r.slice() }); return R.length - 1 })))
   const B2 = bound * bound, pairs = new Map()
   let total = 0, near = new Map()
   for (let round = 0; ; round++) {
-    if (round === maxRounds) throw new Error(`[${who}] ⛔ node: the rings did not agree in ${maxRounds} rounds — an insertion keeps making another`)
+    if (round === maxRounds) throw new Refusal(`[${who}] ⛔ node: the rings did not agree in ${maxRounds} rounds — an insertion keeps making another`)
     const K = R.map(r => r.p.map(([x, z]) => [Math.round(x * CLIP_SCALE), Math.round(z * CLIP_SCALE)]))
     // every edge in a grid of cells (cell = the median edge, never smaller than the extent shared over the edges), listed in
     // each cell its box widened by the bound touches; a vertex reads only its own cell
@@ -153,7 +154,7 @@ const pointOf = (s, Rx, Ry, D, T) => { if (D < 0n) { D = -D; T = -T }
 export const lineCrossOf = (s, t, who = 'lineCrossOf') => {
   const [Rx, Ry, Sx, Sy, Ex, Ey] = [s.b[0] - s.a[0], s.b[1] - s.a[1], t.b[0] - t.a[0], t.b[1] - t.a[1], t.a[0] - s.a[0], t.a[1] - s.a[1]].map(BigInt)
   const D = Rx * Sy - Ry * Sx
-  if (D === 0n) throw new Error(`[${who}] ⛔ lineCrossOf: the lines through (${s.a}) → (${s.b}) and (${t.a}) → (${t.b}) are parallel — no crossing. Refusing.`)
+  if (D === 0n) throw new Refusal(`[${who}] ⛔ lineCrossOf: the lines through (${s.a}) → (${s.b}) and (${t.a}) → (${t.b}) are parallel — no crossing. Refusing.`)
   return pointOf(s, Rx, Ry, D, Ex * Sy - Ey * Sx) }
 // are s and t on ONE line? Exact: both direction cross products zero (parallel, and t.a on s's line)
 export const sameLine = (s, t) => { const [Rx, Ry, Sx, Sy, Ex, Ey] = [s.b[0] - s.a[0], s.b[1] - s.a[1], t.b[0] - t.a[0], t.b[1] - t.a[1], t.a[0] - s.a[0], t.a[1] - s.a[1]].map(BigInt)
@@ -193,8 +194,8 @@ export function verifyNoded(K, R, pairs, tags, who, hot, open = [], self = false
   const known = new Set(hot.keys())
   R.forEach((o, ri) => o.forEach((v, n) => { if (open[ri] && (n === 0 || n === o.length - 1)) return
     const u = o[(n - 1 + o.length) % o.length], w = o[(n + 1) % o.length]
-    if (o.length >= 3 && u.k[0] === w.k[0] && u.k[1] === w.k[1]) throw new Error(`[${who}] ⛔ nodeCrossings: ${tags[ri]} retraces through (${v.k.map(c => c / CLIP_SCALE)}) and back to (${u.k.map(c => c / CLIP_SCALE)}) — an antenna. Refusing.`) }))
-  R.forEach((o, ri) => o.forEach(v => { if (!known.has(v.k[0] + ',' + v.k[1])) throw new Error(`[${who}] ⛔ nodeCrossings: ${tags[ri]} carries (${v.k.map(c => c / CLIP_SCALE)}), neither an input vertex nor a hot pixel — an invented point. Refusing.`) }))
+    if (o.length >= 3 && u.k[0] === w.k[0] && u.k[1] === w.k[1]) throw new Refusal(`[${who}] ⛔ nodeCrossings: ${tags[ri]} retraces through (${v.k.map(c => c / CLIP_SCALE)}) and back to (${u.k.map(c => c / CLIP_SCALE)}) — an antenna. Refusing.`) }))
+  R.forEach((o, ri) => o.forEach(v => { if (!known.has(v.k[0] + ',' + v.k[1])) throw new Refusal(`[${who}] ⛔ nodeCrossings: ${tags[ri]} carries (${v.k.map(c => c / CLIP_SCALE)}), neither an input vertex nor a hot pixel — an invented point. Refusing.`) }))
   const outSegs = []; R.forEach((o, ri) => o.forEach((v, n) => { if (open[ri] && n === o.length - 1) return; outSegs.push({ ri, a: v.k, b: o[(n + 1) % o.length].k }) }))
   const OG = grid(outSegs, sbox)
   for (const [c, l] of OG.cells) for (let u = 0; u < l.length; u++) for (let w = u + 1; w < l.length; w++) {
@@ -202,7 +203,7 @@ export function verifyNoded(K, R, pairs, tags, who, hot, open = [], self = false
     const A = OG.B[l[u]], B = OG.B[l[w]]; if (A[0] > B[2] || B[0] > A[2] || A[1] > B[3] || B[1] > A[3]) continue
     if (OG.cellOf(Math.max(A[0], B[0]), Math.max(A[1], B[1])) !== c) continue
     const X = crossOf(s, t)
-    if (X) throw new Error(`[${who}] ⛔ nodeCrossings: ${tags[s.ri]} and ${tags[t.ri]} still cross at (${X.map(v => v / CLIP_SCALE)}) after the noding — a hot pixel was not honoured. Refusing.`) }
+    if (X) throw new Refusal(`[${who}] ⛔ nodeCrossings: ${tags[s.ri]} and ${tags[t.ri]} still cross at (${X.map(v => v / CLIP_SCALE)}) after the noding — a hot pixel was not honoured. Refusing.`) }
 }
 // ⭐ AN INPUT MAY BE AN OPEN PATH (`{ p, tag, open: true }`, BRIEF-the-ink-is-owned-by-its-labels §3.1; Zob's read, Boz
 // 2026-10-25): a centreline is a polyline, not a ring. It has no closing segment, its two ENDPOINTS are its own (never
@@ -210,13 +211,13 @@ export function verifyNoded(K, R, pairs, tags, who, hot, open = [], self = false
 // the same way. A closed ring is the default and unchanged. ⛔ `tjoin` does not take open paths (its t-join rule nodes
 // rings), and refuses rather than guess.
 export function nodeCrossings(rings, { pairs, tjoin = false, self = false, who = 'stamp' } = {}) {
-  if (typeof pairs !== 'function') throw new Error(`[${who}] ⛔ nodeCrossings: no \`pairs\` — which rings may cross is the caller's to say`)
+  if (typeof pairs !== 'function') throw new Refusal(`[${who}] ⛔ nodeCrossings: no \`pairs\` — which rings may cross is the caller's to say`)
   const open = rings.map(r => !!r.open)
-  if (tjoin && open.some(Boolean)) throw new Error(`[${who}] ⛔ nodeCrossings: \`tjoin\` with an open path — the t-join rule nodes rings only. Refusing.`)
-  if (tjoin && self) throw new Error(`[${who}] ⛔ nodeCrossings: \`tjoin\` with \`self\` — the t-join rule (nodeAcrossGroups) puts one ring in each group and never nodes a ring against itself. Refusing.`)
+  if (tjoin && open.some(Boolean)) throw new Refusal(`[${who}] ⛔ nodeCrossings: \`tjoin\` with an open path — the t-join rule nodes rings only. Refusing.`)
+  if (tjoin && self) throw new Refusal(`[${who}] ⛔ nodeCrossings: \`tjoin\` with \`self\` — the t-join rule (nodeAcrossGroups) puts one ring in each group and never nodes a ring against itself. Refusing.`)
   const K = rings.map((r, ri) => (r.p || []).map(([x, z]) => {
     const X = Math.round(x * CLIP_SCALE), Y = Math.round(z * CLIP_SCALE)
-    if (Math.abs(x * CLIP_SCALE - X) > 1e-6 || Math.abs(z * CLIP_SCALE - Y) > 1e-6) throw new Error(`[${who}] ⛔ (${x}, ${z}) of ${rings[ri].tag} is off the lattice (1 / ${CLIP_SCALE} m) — every ring the noding is given must already be on it. Refusing.`)
+    if (Math.abs(x * CLIP_SCALE - X) > 1e-6 || Math.abs(z * CLIP_SCALE - Y) > 1e-6) throw new Refusal(`[${who}] ⛔ (${x}, ${z}) of ${rings[ri].tag} is off the lattice (1 / ${CLIP_SCALE} m) — every ring the noding is given must already be on it. Refusing.`)
     return [X, Y] }))
   const segs = []; K.forEach((k, ri) => k.forEach((a, i) => { if (open[ri] && i === k.length - 1) return; segs.push({ ri, i, a, b: k[(i + 1) % k.length] }) }))
   const SG = grid(segs, sbox)
@@ -273,7 +274,7 @@ export function nodeCrossings(rings, { pairs, tjoin = false, self = false, who =
       else if (same(c[n - 1], c[1])) { pop(c.shift()); c[0] = merge(c.pop(), c[0]) }
       else if (same(c[n - 1], c[0])) c.pop()
       else break }
-    if (new Set(c.map(v => v.k.join(','))).size < (open[ri] ? 2 : 3)) throw new Error(`[${who}] ⛔ nodeCrossings: ${rings[ri].tag} at (${K[ri][0]?.map(v => v / CLIP_SCALE)}) collapsed under ${open[ri] ? 'two distinct points (an open path)' : 'three distinct points'} when routed through its hot pixels. Refusing.`)
+    if (new Set(c.map(v => v.k.join(','))).size < (open[ri] ? 2 : 3)) throw new Refusal(`[${who}] ⛔ nodeCrossings: ${rings[ri].tag} at (${K[ri][0]?.map(v => v / CLIP_SCALE)}) collapsed under ${open[ri] ? 'two distinct points (an open path)' : 'three distinct points'} when routed through its hot pixels. Refusing.`)
     return c })
   if (tjoin) {
     // ⭐ the home's own T-junction rule, as a SECOND step: an existing vertex within NODE_BOUND of another ring's edge enters

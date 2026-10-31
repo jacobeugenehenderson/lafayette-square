@@ -21,6 +21,7 @@
 // Parking is authored as a separate overlay layer — not represented here.
 
 import { CLASSES, classSection, LOCAL_SECTION } from './streetClass.js'
+import { Refusal } from '../lib/refusal.js'
 
 const FT = 0.3048
 
@@ -35,7 +36,7 @@ export const KIT_CURB_WIDTH = 0.1524   // m (6 in)
 export function resolveCurbWidth(design) {
   const a = design?.curbWidth
   if (a == null) return { value: KIT_CURB_WIDTH, rung: 'kit' }
-  if (!Number.isFinite(a) || a < 0) throw new Error(`[curbWidth] ⛔ design.json's curbWidth is ${JSON.stringify(a)} — author a width in metres (≥ 0), or remove the field to inherit the kit's ${KIT_CURB_WIDTH} m`)
+  if (!Number.isFinite(a) || a < 0) throw new Refusal(`[curbWidth] ⛔ design.json's curbWidth is ${JSON.stringify(a)} — author a width in metres (≥ 0), or remove the field to inherit the kit's ${KIT_CURB_WIDTH} m`)
   return { value: a, rung: 'authored' }
 }
 
@@ -60,7 +61,7 @@ export function resolveCurbWidth(design) {
 // ⭐ WHICH CHAINS: a class the vocabulary marks `swept` (`streetClass.js`: highway · highway-link). The two
 // copied sets that stood here (`HIGHWAY_MAINLINE` / `HIGHWAY_RAMP`) are gone; a ramp is `highway-link`.
 export const isSweptClass = (cls) => {
-  if (!CLASSES[cls]) throw new Error(`⛔ isSweptClass: "${cls}" is not a class in the vocabulary (streetClass.js)`)
+  if (!CLASSES[cls]) throw new Refusal(`⛔ isSweptClass: "${cls}" is not a class in the vocabulary (streetClass.js)`)
   return CLASSES[cls].swept === true
 }
 export const isInterstateRef = (ref) => typeof ref === 'string' && /(^|;)\s*I[\s-]?\d/.test(ref)
@@ -103,12 +104,12 @@ export function highwayStandard(registry, state = { code: null }, read = null) {
     read?.set(id, byId.get(id)?.value ?? null)
     let v = byId.get(id)?.value
     for (const k of path) v = v?.[k]
-    if (!Number.isFinite(v)) throw new Error(`⛔ references/registry.json: ${id}.value.${path.join('.')} is missing — the highway section is drawn only from cited values`)
+    if (!Number.isFinite(v)) throw new Refusal(`⛔ references/registry.json: ${id}.value.${path.join('.')} is missing — the highway section is drawn only from cited values`)
     return v
   }
   for (const id of ['d-left-shoulder-any-lane-count', 'd-interstate-std-on-non-interstate', 'd-motorway-untagged-two-lanes', 'm-osm-line-lane-centre', 'q-ramp-section', 'r-manuals-disagree-take-smaller']) {
     read?.set(id, byId.has(id))
-    if (!byId.has(id)) throw new Error(`⛔ references/registry.json: ${id} is missing — the highway section cites it`)
+    if (!byId.has(id)) throw new Refusal(`⛔ references/registry.json: ${id} is missing — the highway section cites it`)
   }
   const caLane = val('f-caltrans-ramp-lane-width', 'minRampLane_ft') * FT
   const U = (why) => `[U] q-ramp-section (${why})`
@@ -147,7 +148,7 @@ export function highwayStandard(registry, state = { code: null }, read = null) {
 export function curbedMinWidth(registry, state = { code: null }, read = null) {
   const id = 'f-massdot-island-min-size', f = registryIndex(registry).get(id), ft = f?.value?.linearMinWidth_ft
   read?.set(id, f?.value ?? null); read?.set('q-curbed-nose-radius', registryIndex(registry).has('q-curbed-nose-radius'))
-  if (!Number.isFinite(ft) || !(ft > 0)) throw new Error(`⛔ references/registry.json: ${id}.value.linearMinWidth_ft is missing — the nose (where a curbed feature ends) is drawn only from a cited width`)
+  if (!Number.isFinite(ft) || !(ft > 0)) throw new Refusal(`⛔ references/registry.json: ${id}.value.linearMinWidth_ft is missing — the nose (where a curbed feature ends) is drawn only from a cited width`)
   const own = state.code === 'MA'
   return { m: ft * FT, sources: [id, '[U] q-curbed-nose-radius (r = w/2)'], label: `${id}, ${ft} ft${own ? '' : `, borrowed for ${state.code ?? 'a town whose state is unknown'}`}` }
 }
@@ -161,7 +162,7 @@ export function kitCurbCut(registry, read = null) {
   const byId = registryIndex(registry), ids = ['r-curb-ramp-default-perpendicular', 'f-prowag-curb-ramp-geometry', 'f-prowag-perpendicular-ramp-dws']
   const [rule, geo, dws] = ids.map(id => { const f = byId.get(id); read?.set(id, f?.value ?? null); return f })
   const style = rule?.value?.kitDefaultCurbCutStyle, w = geo?.value?.width_in, d = dws?.value?.dwsDepth_in?.min
-  if (typeof style !== 'string' || !(w > 0) || !(d > 0)) throw new Error(`⛔ references/registry.json: the kit curb cut is drawn only from cited values — ${ids.join(', ')} must give value.kitDefaultCurbCutStyle, value.width_in and value.dwsDepth_in.min`)
+  if (typeof style !== 'string' || !(w > 0) || !(d > 0)) throw new Refusal(`⛔ references/registry.json: the kit curb cut is drawn only from cited values — ${ids.join(', ')} must give value.kitDefaultCurbCutStyle, value.width_in and value.dwsDepth_in.min`)
   return { style, width: w * FT / 12, warningDepth: d * FT / 12, cites: ids }
 }
 
@@ -175,7 +176,7 @@ export function registryReadChanged(record, registry) {
 
 // chain: { class, oneway, lanes?, laneProfile?, length?, ref? } → { left, right, report }
 export function highwaySection(chain, std) {
-  if (!isSweptClass(chain.class)) throw new Error(`⛔ highwaySection: class ${chain.class} is not swept — it has a class section`)
+  if (!isSweptClass(chain.class)) throw new Refusal(`⛔ highwaySection: class ${chain.class} is not swept — it has a class section`)
   const isRamp = chain.class === 'highway-link'
   const oneway = !!chain.oneway
   const interstate = chain.ref == null ? null : isInterstateRef(chain.ref)
@@ -265,7 +266,7 @@ export const SNAP_RADIUS = 0.25
 // A class with no pedestrian realm → terminal 'none'. One side surveyed and not the other → the other is a
 // park-edge lawn. Neither surveyed → the class's own walk and lawn. ⛔ No class → throw (no residential default).
 export function defaultSideMeasure(cls, survey, sideKey = 'left', { lanes = null, oneway = false } = {}) {
-  if (isSweptClass(cls)) throw new Error(`⛔ defaultSideMeasure: a ${cls} has no class-constant width — its section is \`highwaySection\` (H-3)`)
+  if (isSweptClass(cls)) throw new Refusal(`⛔ defaultSideMeasure: a ${cls} has no class-constant width — its section is \`highwaySection\` (H-3)`)
   const sec = classSection(cls, { lanes, oneway })
   const hw = survey?.pavementHalfWidth || sec.pavementHW
   if (!classHasPed(cls)) {
@@ -342,7 +343,7 @@ export function pourMeasureOf(chain, overlay, std) {
     return { measure: { left: m.left, right: m.right, symmetric: m.symmetric, source: 'highway-section' }, authored: false, refusedOnHighway: ovm, hwy: { id: chain.id, ...hs.report, sources: hs.right.section.sources } }
   }
   // ⛔ Every skeleton chain is seeded from its class (`classSection`); a chain without a seed is a skeleton that predates it.
-  if (!chain.seed) throw new Error(`⛔ pourMeasureOf: "${chain.name}" (${chain.id}) has no seed — re-pour the skeleton`)
+  if (!chain.seed) throw new Refusal(`⛔ pourMeasureOf: "${chain.name}" (${chain.id}) has no seed — re-pour the skeleton`)
   const m = measureFromSeed(chain.seed, chain.class)
   return { measure: { left: m.left, right: m.right, symmetric: m.symmetric, source: chain.seed.widthSource === 'survey' ? 'seed-survey' : 'seed' }, authored: false, refusedOnHighway: false, hwy: null }
 }
@@ -351,12 +352,12 @@ export function measureFromSeed(seed, cls, highway = null) {
   // A highway is its typical section (`highwaySection`), never the seed: a swept class's seed carries no
   // widths. ⛔ No section → throw.
   if (isSweptClass(cls)) {
-    if (!highway?.left || !highway?.right) throw new Error(`⛔ measureFromSeed: a ${cls} needs its highwaySection (H-3) — there is no class constant to fall back to`)
+    if (!highway?.left || !highway?.right) throw new Refusal(`⛔ measureFromSeed: a ${cls} needs its highwaySection (H-3) — there is no class constant to fall back to`)
     return { left: highway.left, right: highway.right, symmetric: Math.abs(highway.left.pavementHW - highway.right.pavementHW) < 0.01 }
   }
   const buildSide = (sd, other) => {
     const pavementHW = Number.isFinite(sd?.pavementHW) ? sd.pavementHW : seed.pavementHW
-    if (!Number.isFinite(pavementHW)) throw new Error(`⛔ measureFromSeed: a ${cls} seed carries no carriageway (seed.pavementHW) — it was not seeded from its class section`)
+    if (!Number.isFinite(pavementHW)) throw new Refusal(`⛔ measureFromSeed: a ${cls} seed carries no carriageway (seed.pavementHW) — it was not seeded from its class section`)
     // A class with no pedestrian realm paints none, surveyed or not — `pedRealm:false` is what
     // `resolvePedDepths` (the paint) reads; `terminal` alone it does not.
     if (!classHasPed(cls)) {

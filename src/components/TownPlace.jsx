@@ -13,10 +13,11 @@ import { useLayoutEffect, useSyncExternalStore } from 'react'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import { setTownPlace, placedLook, onPlaceMoved } from '../lib/townPlace.js'
 import { reloadTerrain, terrainLook, onTerrainReload } from '../utils/terrainShader'
+import { Refusal } from '../lib/refusal.js'
 
 function requireTown(town, lookId) {
-  if (!town?.geography) throw new Error(`[Town] ⛔ needs the \`town\` prop — the installation's identity ({ geography, skyMode, profile, setPiece, … }, a town manifest's \`identity\`); got ${town ? `{ ${Object.keys(town).join(', ')} }` : town}`)
-  if (!lookId) throw new Error('[Town] ⛔ needs the `lookId` prop — the Look being drawn')
+  if (!town?.geography) throw new Refusal(`[Town] ⛔ needs the \`town\` prop — the installation's identity ({ geography, skyMode, profile, setPiece, … }, a town manifest's \`identity\`); got ${town ? `{ ${Object.keys(town).join(', ')} }` : town}`)
+  if (!lookId) throw new Refusal('[Town] ⛔ needs the `lookId` prop — the Look being drawn')
   return town
 }
 

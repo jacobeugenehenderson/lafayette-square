@@ -20,6 +20,7 @@ import { readFeCustom } from './feCustomKey.js'
 import { smoothChain } from './smoothCenterline.js'
 import { CLIP_SCALE as SCALE } from './lattice.js'
 import { LOCAL_SECTION } from '../cartograph/streetClass.js'
+import { Refusal } from './refusal.js'
 
 const RAD = Math.PI / 180
 
@@ -1383,7 +1384,7 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
     smooth = 0,
     useRingBandEmitter = false } = opts  // C4 flag — every caller passes true since C5
   // ⛔ The curb width arrives RESOLVED (authored, else the kit's); the default lives at the design-read layer (Boz, 2026-10-20).
-  if (!Number.isFinite(curbWidth)) throw new Error(`[buildBlockGeometryV2] ⛔ no curbWidth given (${curbWidth}) — pass the width the design reader resolved (authored, else the kit's: lookDesign.mjs#bakeCurbWidth, the store's curbWidthOf); a builder never picks one`)
+  if (!Number.isFinite(curbWidth)) throw new Refusal(`[buildBlockGeometryV2] ⛔ no curbWidth given (${curbWidth}) — pass the width the design reader resolved (authored, else the kit's: lookDesign.mjs#bakeCurbWidth, the store's curbWidthOf); a builder never picks one`)
   // ⛔ The inner-edge anchor transform that used to run here is DELETED
   // (2026-08-13, streetProfiles.js). It re-applied `derive.js innerEdgeAssign`'s
   // ped-zeroing through the persisted `innerSign` key — a constant `-1` on every

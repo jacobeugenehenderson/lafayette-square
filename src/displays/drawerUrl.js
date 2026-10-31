@@ -10,20 +10,21 @@
  * ▶ node checks/claims-the-bake-carries-its-displays.mjs
  */
 import { slabManifest, slabReady, slabUrl } from '../lib/slabUrl.js'
+import { Refusal } from '../lib/refusal.js'
 
 export async function drawerUrls(source, { lookId, display, contentRoot, where }) {
   const dir = display.drawer.slice(0, display.drawer.lastIndexOf('/') + 1)
   if (source === 'authoring') {
-    if (contentRoot == null) throw new Error(`[displays] ⛔ ${where}: the town declares no contentRoot, so its authoring drawer has no home`)
+    if (contentRoot == null) throw new Refusal(`[displays] ⛔ ${where}: the town declares no contentRoot, so its authoring drawer has no home`)
     const base = `${import.meta.env.BASE_URL}${contentRoot}`
     return { drawer: base + display.drawer, frame: (rel) => base + dir + rel }
   }
   if (source === 'published') {
     const m = await slabManifest(lookId)
     const block = m?.displays?.[display.id]
-    if (!block?.drawer) throw new Error(`[displays] ⛔ ${where}: the town's published manifest carries no drawer for display "${display.id}" — re-run node cartograph/bake-manifest.mjs --town=${lookId}`)
+    if (!block?.drawer) throw new Refusal(`[displays] ⛔ ${where}: the town's published manifest carries no drawer for display "${display.id}" — re-run node cartograph/bake-manifest.mjs --town=${lookId}`)
     await slabReady(lookId)
     return { drawer: slabUrl(lookId, block.drawer), frame: (rel) => slabUrl(lookId, 'content/' + dir + rel) }
   }
-  throw new Error(`[displays] ⛔ ${where}: the app names no drawer source ("${source}"): 'authoring' (Stage) or 'published' (Preview, the player)`)
+  throw new Refusal(`[displays] ⛔ ${where}: the app names no drawer source ("${source}"): 'authoring' (Stage) or 'published' (Preview, the player)`)
 }

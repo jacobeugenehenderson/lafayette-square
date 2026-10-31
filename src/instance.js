@@ -37,6 +37,7 @@ import { readAddress, resolveTown } from './lib/authoringAddress.js'
 // `./instances/registry.js`, never this file; the browser imports this one.
 // ▶ node checks/claims-the-dev-servers-do-not-import-the-looks-index.mjs
 import looksIndex from '../public/looks/index.json' with { type: 'json' }
+import { Refusal } from './lib/refusal.js'
 
 // ⛔⛔ THERE IS NO DEFAULT TOWN (Jacob, 2026-10-21: "LS is only the fallback because it was first"; BRIEF-no-default-town
 // §4). A page names its town by the production host's `<meta name="ward-look">`, `?look=`, or its first path segment —
@@ -147,7 +148,7 @@ function resolveInstance() {
   if (lookId === null) {
     // an authoring page with no town open, or a node importer — no identity is guessed
     if (AUTHORING_PAGE || !browser) return null
-    throw new Error(`[instance] ⛔ this page names no town — no <meta name="ward-look">, no ?look=, and no first path segment ` +
+    throw new Refusal(`[instance] ⛔ this page names no town — no <meta name="ward-look">, no ?look=, and no first path segment ` +
       `naming a look in public/looks/index.json (path "${window.location?.pathname}"). There is no default town to show.`)
   }
   const mapId = mapForLook(lookId)
@@ -155,7 +156,7 @@ function resolveInstance() {
     const msg = `[instance] ⛔ Look "${lookId}" is not in public/looks/index.json, so there is no map to resolve its ` +
       `identity from — and no default town to wear instead.`
     if (AUTHORING_PAGE) { console.error(msg); return null }
-    throw new Error(msg)
+    throw new Refusal(msg)
   }
   const town = instanceForMap(mapId)
   // ⛔ `lookId` last: it OVERRIDES the module's own literal, which names the map.
@@ -164,7 +165,7 @@ function resolveInstance() {
     `is not registered (registry has: ${registeredMaps().join(', ')}). This page has NO town identity; it will not borrow ` +
     `another town's. ▶ node cartograph/scaffold-instance.mjs --scene=${mapId}, then register it in src/instances/registry.js.`
   if (AUTHORING_PAGE) { console.error(msg); return null }
-  throw new Error(msg)
+  throw new Refusal(msg)
 }
 
 export const INSTANCE = resolveInstance()
@@ -188,7 +189,7 @@ export function setPieceOf(lookId) { return townForLook(lookId)?.setPiece ?? nul
 
 export function townForLook(lookId, where = 'a caller') {
   // ⛔ No Look ⇒ no town. This used to answer the BOOT town for a null Look (Stage drew it under no Look).
-  if (!lookId) throw new Error(`[instance] ⛔ townForLook(${lookId}) from ${where} — no Look, no town; pass the Look being drawn`)
+  if (!lookId) throw new Refusal(`[instance] ⛔ townForLook(${lookId}) from ${where} — no Look, no town; pass the Look being drawn`)
   if (INSTANCE && lookId === INSTANCE.lookId) return INSTANCE
   const map = mapForLook(lookId)
   const town = map && instanceForMap(map)

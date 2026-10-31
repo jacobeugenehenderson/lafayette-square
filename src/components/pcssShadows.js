@@ -22,6 +22,7 @@
  */
 import * as THREE from 'three'
 import { SHADOW_FIELDS } from '../cartograph/skyLightChannels.js'
+import { Refusal } from '../lib/refusal.js'
 
 const TAG = 256
 /** The most samples the shader's loop runs: the Samples slider's max, read from the field, never restated. */
@@ -109,7 +110,7 @@ let stamp = null
   const chunk = THREE.ShaderChunk.shadowmap_pars_fragment
   const PCF = '#if defined( SHADOWMAP_TYPE_PCF )'
   if (!chunk.includes('#ifdef USE_SHADOWMAP') || !chunk.includes(PCF) || !chunk.includes('float shadowRadius')) {
-    throw new Error('[pcssShadows] ⛔ three\'s shadowmap_pars_fragment no longer has the seams PCSS installs at (getShadow(…, shadowRadius, …) and its PCF branch). Re-read the chunk before upgrading three.')
+    throw new Refusal('[pcssShadows] ⛔ three\'s shadowmap_pars_fragment no longer has the seams PCSS installs at (getShadow(…, shadowRadius, …) and its PCF branch). Re-read the chunk before upgrading three.')
   }
   THREE.ShaderChunk.shadowmap_pars_fragment = chunk
     .replace('#ifdef USE_SHADOWMAP', '#ifdef USE_SHADOWMAP\n' + pcss)
@@ -122,7 +123,7 @@ let stamp = null
   const viaSpot = Object.getPrototypeOf(Object.getPrototypeOf(new THREE.SpotLight().shadow))
   const own = (k) => Object.prototype.hasOwnProperty.call(lightShadow, k) && typeof lightShadow[k] === 'function'
   if (!lightShadow || lightShadow !== viaSpot || !own('getFrustum') || !own('updateMatrices') || !own('copy')) {
-    throw new Error('[pcssShadows] ⛔ could not reach three\'s LightShadow prototype to stamp the penumbra on.')
+    throw new Refusal('[pcssShadows] ⛔ could not reach three\'s LightShadow prototype to stamp the penumbra on.')
   }
   Object.defineProperty(lightShadow, 'radius', {
     configurable: true,

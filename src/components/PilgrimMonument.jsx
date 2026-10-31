@@ -30,6 +30,7 @@ import { onTerrainReload, terrainExag } from '../utils/terrainShader.js'
 import {
   DOSSIER, FT, placeholderStages, courseBeds, COURSE_SEED, siteFromFootprint, seatOnGround, southFacingYaw, displayExtent,
 } from '../setpieces/pilgrimMonument.js'
+import { Refusal } from '../lib/refusal.js'
 
 // The monument's own stone, a mid granite grey. Colour is not a dossier value; it is the set-piece's own.
 const GRANITE_HEX = '#8f8b84'
@@ -126,7 +127,7 @@ function Model({ path }) {
 }
 
 export default function PilgrimMonument({ town, lookId, footprint, graniteOverride, focusName, children } = {}) {
-  if (!town || !footprint) throw new Error('[PilgrimMonument] ⛔ no town or footprint — mount <SetPiece>, which passes both')
+  if (!town || !footprint) throw new Refusal('[PilgrimMonument] ⛔ no town or footprint — mount <SetPiece>, which passes both')
   const sp = town.setPiece
   // The operator's layer (`scene.surfaces.params['pilgrim-granite']`); the lab may override it for a preview.
   const scene = useSceneJson(lookId)

@@ -55,6 +55,7 @@ import { CompassRoseSVG } from '../components/CompassRose.jsx'
 import {
   TileMesh, TILE_URL, AerialCredit, lonLatToTile, tileToLonLat, wgs84ToLocal, localToWgs84,
 } from './AerialTiles.jsx'
+import { Refusal } from '../lib/refusal.js'
 
 // Extent's OWN persisted working scene — separate from the global `cartograph-scene`
 // (which the Look loader can reset to the default installation). This is what makes
@@ -1554,7 +1555,7 @@ export default function ExtentApp() {
         ? await Promise.all([fetchGeography(scene), fetchBoundary(scene)])
         : await Promise.all([fetchGeography(scene).catch(() => null), fetchBoundary(scene).catch(() => null)])
       if (cancelled) return
-      if (nb.committed && !(disk && b)) throw new Error(`[Extent] ⛔ '${scene}' is committed, but its ${!disk ? 'geography' : 'boundary'} is missing. Nothing is shown or saved.`)
+      if (nb.committed && !(disk && b)) throw new Refusal(`[Extent] ⛔ '${scene}' is committed, but its ${!disk ? 'geography' : 'boundary'} is missing. Nothing is shown or saved.`)
       const g = st.mapGeography || disk
       // A town fetched before (its geography is on disk) has its address: the scene id.
       if (Number.isFinite(disk?.lat)) setAddressEdit(scene)

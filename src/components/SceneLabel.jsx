@@ -1,4 +1,5 @@
 import { Text } from '@react-three/drei'
+import { Refusal } from '../lib/refusal.js'
 
 // Shared street label renderer — a DUMB drawer. drei <Text> (TroikaText/SDF)
 // sized in world units, so labels live inside the cartographic surface and
@@ -15,7 +16,7 @@ const RENDER_ORDER = 16
 
 // `style` is the town's label style, resolved upstream (labelStyleOf — complete, never partial).
 export default function SceneLabel({ position, rotation, text, fontSize = 4, style }) {
-  if (!style) throw new Error('[SceneLabel] ⛔ needs `style` — the town\'s label style (src/lib/labelStyle.js#labelStyleOf)')
+  if (!style) throw new Refusal('[SceneLabel] ⛔ needs `style` — the town\'s label style (src/lib/labelStyle.js#labelStyleOf)')
 
   const caseMode = style.case
   const displayText = caseMode === 'upper' ? String(text).toUpperCase()

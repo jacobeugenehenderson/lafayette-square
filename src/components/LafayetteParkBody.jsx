@@ -48,6 +48,7 @@ import { buildStairGeometry } from '../lib/buildStairGeometry.js'
 import featureElev from '../data/park-feature-elev.json'
 import { makeGravelPathMaterial } from './gravelPathMaterial.js'
 import { lookOf } from '../lib/lookOf.js'
+import { Refusal } from '../lib/refusal.js'
 
 // Lafayette Park: ~350m square park (30 acres) centered at origin.
 // Bounded by Park Ave (N), Lafayette Ave (S), Mississippi Ave (W),
@@ -546,7 +547,7 @@ function ElevatedGroup({ at, children }) {
 // `style` is the town's label style (the street labels' own — labelStyleOf, complete), so the Labels panel governs
 // the park title too.
 export function useParkTitleTexture(town, style) {
-  if (!style) throw new Error('[ParkTitle] ⛔ needs the town\'s label style (src/lib/labelStyle.js#labelStyleOf)')
+  if (!style) throw new Refusal('[ParkTitle] ⛔ needs the town\'s label style (src/lib/labelStyle.js#labelStyleOf)')
   const { fill, halo, haloWidth, weight } = style
   const tracking = style.letterSpacing
   const fam = (style.fontFamily || '').trim()

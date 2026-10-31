@@ -5,6 +5,7 @@
  * lamps) not drawn, the scene up. ⛔ There is no field fallback: an object seated on the smooth field instead of the drawn
  * ground is a plausible-looking wrong map, which the kit never draws (Layer 0). ▶ node checks/claims-anchors-know-their-terrain.mjs
  */
+import { Refusal } from './refusal.js'
 
 /** FNV-1a over the placements' coordinates, in order: what bake-tree-anchors stamps as `placementKey`. */
 export function placementKeyOf(instances) {
@@ -51,5 +52,5 @@ export function lampAnchorsVerdict({ doc, terrainId }) {
 /** An anchored object's raw ground height. ⛔ Never looked up: an object without one is a bug past the gate, loud. */
 export function anchoredRaw(o, kind) {
   if (typeof o?.groundRaw === 'number') return o.groundRaw
-  throw new Error(`[${kind}] ⛔ an object at (${o?.x}, ${o?.z}) has no baked groundRaw, past the anchor gate (src/lib/anchorGate.js) — it is never seated on the field`)
+  throw new Refusal(`[${kind}] ⛔ an object at (${o?.x}, ${o?.z}) has no baked groundRaw, past the anchor gate (src/lib/anchorGate.js) — it is never seated on the field`)
 }

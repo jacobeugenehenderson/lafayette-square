@@ -20,6 +20,7 @@
 import { ASSET_BASE, ASSET_BASE_IS_REMOTE } from './bakedUrl.js'
 import { HASHED, slabPath, manifestPath, manifestOrNull } from './slabNames.js'
 import { markStartup } from './startupMarks.js'
+import { Refusal } from './refusal.js'
 
 const _towns = new Map()   // look → { ready: Promise, manifest, hashed, done }
 
@@ -72,9 +73,9 @@ function townOf(look) {
 export function adoptSlabManifest(look, manifest, url) {
   requireLook(look)
   const own = ASSET_BASE + manifestPath(look)
-  if (url !== own) throw new Error(`[slabUrl] ⛔ "${look}"'s manifest was read from ${url}, but its slab is at ${own} — one town, two hosts. Refusing.`)
-  if (!manifest || typeof manifest !== 'object') throw new Error(`[slabUrl] ⛔ adoptSlabManifest("${look}") was handed no manifest`)
-  if (_towns.has(look)) throw new Error(`[slabUrl] ⛔ "${look}"'s manifest was already read on this page — adopt it before anything draws the town`)
+  if (url !== own) throw new Refusal(`[slabUrl] ⛔ "${look}"'s manifest was read from ${url}, but its slab is at ${own} — one town, two hosts. Refusing.`)
+  if (!manifest || typeof manifest !== 'object') throw new Refusal(`[slabUrl] ⛔ adoptSlabManifest("${look}") was handed no manifest`)
+  if (_towns.has(look)) throw new Refusal(`[slabUrl] ⛔ "${look}"'s manifest was already read on this page — adopt it before anything draws the town`)
   const t = { manifest: null, hashed: false, done: false }
   settle(t, look, url, manifest)
   t.ready = Promise.resolve(t)
@@ -109,7 +110,7 @@ export function slabUrl(look, rel, reread) {
 export function slabStamped(look, json, file) {
   requireLook(look)
   if (json?.look !== look) {
-    throw new Error(`[slab] ⛔ ${slabPath(look, file)} says it belongs to "${json?.look}" — this slab was baked for another `
+    throw new Refusal(`[slab] ⛔ ${slabPath(look, file)} says it belongs to "${json?.look}" — this slab was baked for another `
       + `town (a moved or copied folder?). It is not drawn under "${look}". ▶ re-bake "${look}".`)
   }
   return json

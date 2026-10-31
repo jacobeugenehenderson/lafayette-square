@@ -90,6 +90,7 @@ const PRI = {
 // radius, polygon) is boundary.js's.
 import { lookFade } from '../../cartograph/boundaryRecords.mjs'
 import { NEIGHBORHOOD_FADE_GLSL, bindNeighborhoodFade } from '../lib/neighborhoodFade.js'
+import { Refusal } from '../lib/refusal.js'
 
 
 // Safe empties for a poured scene whose map/ribbons haven't fetched yet.
@@ -118,7 +119,7 @@ const _EMPTY_RIBBONS = { streets: [] }
 // ⚠️ `null` still injects the TERRAIN displacement — buildings must conform to the
 // elevation field like everything else. Only the alpha multiply is skipped.
 function injectRadialFade(mat, { rigidCentroid = false, fade } = {}) {
-  if (fade === undefined) throw new Error("[MapLayers] ⛔ injectRadialFade needs a fade — the scene's own, or null to opt out. There is no default band.")
+  if (fade === undefined) throw new Refusal("[MapLayers] ⛔ injectRadialFade needs a fade — the scene's own, or null to opt out. There is no default band.")
   const faded = fade !== null
   if (faded) mat.transparent = true
   mat.onBeforeCompile = (shader) => {

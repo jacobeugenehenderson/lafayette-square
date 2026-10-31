@@ -9,6 +9,7 @@
  * ⛔ PURE (no fs, no three): the bake and `checks/claims-crop-rows-derived-per-field.mjs` both
  * import it.
  */
+import { Refusal } from './refusal.js'
 
 const cross = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
 
@@ -30,7 +31,7 @@ const xy = (v) => (Array.isArray(v) ? v : [v.x, v.z ?? v.y])
  */
 export function minAreaRect(ring) {
   const h = convexHull(ring.map(xy))
-  if (h.length < 3) throw new Error(`⛔ minAreaRect: degenerate field ring (${h.length} hull points)`)
+  if (h.length < 3) throw new Refusal(`⛔ minAreaRect: degenerate field ring (${h.length} hull points)`)
   let best = null
   for (let i = 0; i < h.length; i++) {
     const a = h[i], b = h[(i + 1) % h.length]

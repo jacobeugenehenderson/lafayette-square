@@ -12,6 +12,7 @@
  * never drop a file the runtime would ask for.
  */
 import { rosterOf } from './treeRoster.js'
+import { Refusal } from './refusal.js'
 
 /**
  * The Arborist's decision for one placement. ⛔⛔ ASK THE SLAB WHETHER THE FIELD IS STAMPED — never
@@ -85,5 +86,5 @@ export function lodsOf(trees, inst) {
   const format = trees?.format ?? 1
   if (format === 1) return inst?.lods ?? null
   if (format === 2) return trees.variants?.[`${inst.species}:${inst.variantId}`]?.lods ?? null
-  throw new Error(`[treeGeometry] ⛔ trees.json format ${format} is newer than this kit reads (1–2) — update the kit before the slab`)
+  throw new Refusal(`[treeGeometry] ⛔ trees.json format ${format} is newer than this kit reads (1–2) — update the kit before the slab`)
 }

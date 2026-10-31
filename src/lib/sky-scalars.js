@@ -12,6 +12,7 @@
  * rain could fall in full sun (Jacob, 2026-09-26, Provincetown). Only the Meteorologist's
  * canary derived the scalars from the directive; now every mount does, through here.
  */
+import { Refusal } from './refusal.js'
 
 const clamp01 = (v) => Math.max(0, Math.min(1, v))
 
@@ -29,11 +30,11 @@ export function directiveDarkness(directive) {
 /** A cloud preset's own coverage (params.coverage), from the preset library. */
 export function presetCoverage(presets, id) {
   const list = Array.isArray(presets) ? presets : presets?.presets
-  if (!list) throw new Error(`[sky-scalars] ⛔ no cloud preset library to read '${id}' coverage from`)
+  if (!list) throw new Refusal(`[sky-scalars] ⛔ no cloud preset library to read '${id}' coverage from`)
   const p = list.find((x) => x.id === id)
-  if (!p) throw new Error(`[sky-scalars] ⛔ cloud preset '${id}' is not in the library`)
+  if (!p) throw new Refusal(`[sky-scalars] ⛔ cloud preset '${id}' is not in the library`)
   const v = p.params?.coverage?.values?.value
-  if (!Number.isFinite(v)) throw new Error(`[sky-scalars] ⛔ cloud preset '${id}' has no coverage`)
+  if (!Number.isFinite(v)) throw new Refusal(`[sky-scalars] ⛔ cloud preset '${id}' has no coverage`)
   return v
 }
 

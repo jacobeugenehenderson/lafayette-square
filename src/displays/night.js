@@ -12,9 +12,10 @@
 import SunCalc from 'suncalc'
 import { getTodSlotMinutes } from '../cartograph/animatedParam.js'
 import { townPlace } from '../lib/townPlace.js'
+import { Refusal } from '../lib/refusal.js'
 
 const TWILIGHT_DEG = SunCalc.times.find(([, rise, set]) => rise === 'dawn' && set === 'dusk')?.[0]
-if (TWILIGHT_DEG == null) throw new Error('[displays/night] ⛔ SunCalc has no dawn/dusk angle: the night has no definition')
+if (TWILIGHT_DEG == null) throw new Refusal('[displays/night] ⛔ SunCalc has no dawn/dusk angle: the night has no definition')
 
 export function nightAt(instant) {
   const m = getTodSlotMinutes(instant)

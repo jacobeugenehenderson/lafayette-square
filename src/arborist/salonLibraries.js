@@ -1,4 +1,5 @@
 // salonLibraries.js — THE SALON'S LIBRARIES, READ OFF THE ARBORIST SERVER'S FOUR ANSWERS, or a refusal naming which one failed.
+import { Refusal, httpFailure } from '../lib/refusal.js'
 // ⛔ A failed answer is never an empty library (2026-10-28, "a message explains or goes away"): the loader used to read every
 // body with `.json()` and default a missing list to [], so a dead or erroring server (a 500, a proxy page, a restart) drew
 // "Chassis library is empty. Run node arborist/survey-deleaf.js" while public/trees/_chassis held 241 chassis
@@ -8,9 +9,9 @@
 export async function readSalonLibraries({ chassis, bark, leaves, options }) {
   const body = async (kind, r, key) => {
     if (!r?.ok) { let why = ''; try { why = (await r.json())?.error || '' } catch { /* the status alone says it */ }
-      throw new Error(`⛔ the Salon's ${kind} did not load: the arborist server answered HTTP ${r?.status ?? '(none)'}${why ? ` (${why})` : ''}`) }
-    let d; try { d = await r.json() } catch (e) { throw new Error(`⛔ the Salon's ${kind} did not load: the answer is not JSON (${e.message})`) }
-    if (key && !Array.isArray(d?.[key])) throw new Error(`⛔ the Salon's ${kind} did not load: the answer carries no \`${key}\` list`)
+      throw httpFailure(r, `⛔ the Salon's ${kind} did not load: the arborist server answered HTTP ${r?.status ?? '(none)'}${why ? ` (${why})` : ''}`) }
+    let d; try { d = await r.json() } catch (e) { throw new Refusal(`⛔ the Salon's ${kind} did not load: the answer is not JSON (${e.message})`) }
+    if (key && !Array.isArray(d?.[key])) throw new Refusal(`⛔ the Salon's ${kind} did not load: the answer carries no \`${key}\` list`)
     return d
   }
   const [cD, bD, lD, oD] = await Promise.all([body('chassis catalog', chassis, 'chassis'), body('bark library', bark, 'bark'), body('leaf library', leaves, 'leaves'), body('options', options, null)])

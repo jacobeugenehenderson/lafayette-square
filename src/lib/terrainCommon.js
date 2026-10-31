@@ -1,4 +1,5 @@
 // terrainCommon.js — single source of truth for spatial constants and
+import { Refusal } from './refusal.js'
 // elevation math, shared by browser runtime (vite) and node bake scripts.
 //
 // Consumers load terrain.json themselves (vite `import` in the browser,
@@ -73,9 +74,9 @@ export function terrainIdentity(t) {
  */
 export function assertHeightfield(t, from = 'heightfield') {
   const { width, height, data } = t || {}
-  if (!(Number.isInteger(width) && Number.isInteger(height) && width >= 2 && height >= 2)) throw new Error(`[terrain] ⛔ ${from}: ${width} × ${height} is not a grid`)
-  if (!data || data.length !== width * height) throw new Error(`[terrain] ⛔ ${from}: ${data?.length ?? 'no'} values for a ${width} × ${height} grid`)
-  for (let k = 0; k < data.length; k++) if (!Number.isFinite(data[k])) throw new Error(`[terrain] ⛔ ${from}: node ${k % width}, ${Math.floor(k / width)} holds ${data[k]}, not a height`)
+  if (!(Number.isInteger(width) && Number.isInteger(height) && width >= 2 && height >= 2)) throw new Refusal(`[terrain] ⛔ ${from}: ${width} × ${height} is not a grid`)
+  if (!data || data.length !== width * height) throw new Refusal(`[terrain] ⛔ ${from}: ${data?.length ?? 'no'} values for a ${width} × ${height} grid`)
+  for (let k = 0; k < data.length; k++) if (!Number.isFinite(data[k])) throw new Refusal(`[terrain] ⛔ ${from}: node ${k % width}, ${Math.floor(k / width)} holds ${data[k]}, not a height`)
 }
 
 export function makeElevationSampler(terrain, exag = DEFAULT_V_EXAG) {

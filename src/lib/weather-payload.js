@@ -15,6 +15,7 @@
 import SunCalc from 'suncalc'
 import { townClockOf } from './townClock.js'
 import { townPlace } from './townPlace.js'
+import { Refusal } from './refusal.js'
 
 // WMO weather codes → precip kind enum from weather-payload.schema.json
 // (rain | snow | sleet | hail | null). Codes the schema doesn't accept
@@ -103,7 +104,7 @@ export function buildWeatherPayload(weatherTargets, currentTime) {
   //   compass = (sun.azimuth_rad * 180/π + 180) mod 360
   const sunAzimuthDeg = ((sun.azimuth * 180 / Math.PI) + 180 + 360) % 360
 
-  if (!Number.isFinite(weatherTargets?.cloudCover)) throw new Error(`[weather-payload] ⛔ the weather has no cloud cover (${weatherTargets?.cloudCover}) — the sky's directive cannot be chosen`)
+  if (!Number.isFinite(weatherTargets?.cloudCover)) throw new Refusal(`[weather-payload] ⛔ the weather has no cloud cover (${weatherTargets?.cloudCover}) — the sky's directive cannot be chosen`)
   const payload = {
     tempC: tempC,
     cloudCover: Math.max(0, Math.min(1, weatherTargets.cloudCover)),

@@ -36,6 +36,7 @@ import SetPieceUplights from './SetPieceUplights.jsx'
 import Displays from '../displays/Displays.jsx'
 import useSlabBuildingIndex from '../hooks/useSlabBuildingIndex'
 import { useTownContext } from './townContext.js'
+import { Refusal } from '../lib/refusal.js'
 
 // kind → renderer. The only place a set-piece component is imported.
 const RENDERERS = {
@@ -43,8 +44,8 @@ const RENDERERS = {
 }
 
 export default function SetPiece({ town, lookId, lightOverride, displaySource, ...props }) {
-  if (!town) throw new Error('[SetPiece] ⛔ needs `town` — the installation being drawn')
-  if (!lookId) throw new Error('[SetPiece] ⛔ needs `lookId` — the Look being drawn')
+  if (!town) throw new Refusal('[SetPiece] ⛔ needs `town` — the installation being drawn')
+  if (!lookId) throw new Refusal('[SetPiece] ⛔ needs `lookId` — the Look being drawn')
   const scene = useSceneJson(lookId)
   const index = useSlabBuildingIndex(s => s.index)
   // A click reports to the app (<Town onSelectBuilding>), as a click on any building does.
@@ -55,13 +56,13 @@ export default function SetPiece({ town, lookId, lightOverride, displaySource, .
   const sp = town?.setPiece
   if (!sp) return null
   const R = RENDERERS[sp.kind]
-  if (!R) throw new Error(`[SetPiece] ⛔ "${lookId}" declares a set-piece of kind "${sp.kind}", and no renderer exists for it (have: ${Object.keys(RENDERERS).join(', ')})`)
-  if (!sp.buildingId) throw new Error(`[SetPiece] ⛔ "${lookId}" declares a set-piece with no buildingId — a set-piece stands on one of the town's buildings`)
+  if (!R) throw new Refusal(`[SetPiece] ⛔ "${lookId}" declares a set-piece of kind "${sp.kind}", and no renderer exists for it (have: ${Object.keys(RENDERERS).join(', ')})`)
+  if (!sp.buildingId) throw new Refusal(`[SetPiece] ⛔ "${lookId}" declares a set-piece with no buildingId — a set-piece stands on one of the town's buildings`)
   // The slab for THIS town has not loaded yet (Stage switches towns live): nothing to seat on yet.
   if (index?.look !== lookId) return null
   const b = index.byId.get(sp.buildingId)
-  if (!b) throw new Error(`[SetPiece] ⛔ "${lookId}" puts its set-piece on building ${sp.buildingId}, and the slab has no such building — is it hidden in building-overrides.json, or is the bake older than the claim?`)
-  if (b.ranges?.wall || b.ranges?.roof || b.ranges?.foundation) throw new Error(`[SetPiece] ⛔ "${lookId}": the slab built geometry for ${sp.buildingId}, the set-piece's building — it would stand twice. Re-bake the buildings.`)
+  if (!b) throw new Refusal(`[SetPiece] ⛔ "${lookId}" puts its set-piece on building ${sp.buildingId}, and the slab has no such building — is it hidden in building-overrides.json, or is the bake older than the claim?`)
+  if (b.ranges?.wall || b.ranges?.roof || b.ranges?.foundation) throw new Refusal(`[SetPiece] ⛔ "${lookId}": the slab built geometry for ${sp.buildingId}, the set-piece's building — it would stand twice. Re-bake the buildings.`)
   const id = sp.buildingId
   return (
     <group

@@ -24,6 +24,7 @@
  * framed alone (`also` in the result counts the points that were framed). They never stand in for the set: no placed id,
  * no frame.
  */
+import { Refusal } from './refusal.js'
 /** The `also` points inside the Extent, as zero-footprint places. */
 function alsoIn(also, stencil) {
   const [cx, cz] = stencil.center
@@ -32,7 +33,7 @@ function alsoIn(also, stencil) {
 }
 /** The partition every frame shares: placed inside the Extent, beyond it, or with no place. */
 function partition(places, ids, stencil, who) {
-  if (!(stencil?.radius > 0) || !Array.isArray(stencil.center)) throw new Error(`[${who}] ⛔ needs the Extent — the slab's stencil { center, radius }`)
+  if (!(stencil?.radius > 0) || !Array.isArray(stencil.center)) throw new Refusal(`[${who}] ⛔ needs the Extent — the slab's stencil { center, radius }`)
   const [cx, cz] = stencil.center
   const all = [...ids]
   const pts = [], outside = [], unplaced = []
@@ -92,7 +93,7 @@ export function frameAll(places, ids, stencil, also) {
 export function framePlaces(places, ids, stencil, mode = 'densest', also) {
   if (mode === 'all') return frameAll(places, ids, stencil, also)
   if (mode === 'densest') return frameDensest(places, ids, stencil, also)
-  throw new Error(`[framePlaces] ⛔ frameMode "${mode}" — the plan frames 'densest' or 'all'`)
+  throw new Refusal(`[framePlaces] ⛔ frameMode "${mode}" — the plan frames 'densest' or 'all'`)
 }
 
 export function frameDensest(places, ids, stencil, also) {

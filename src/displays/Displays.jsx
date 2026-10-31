@@ -12,6 +12,7 @@
  */
 import { lazy, Suspense } from 'react'
 import DisplayBoundary from './DisplayBoundary.js'
+import { Refusal } from '../lib/refusal.js'
 
 export const PLUGINS = {
   'light-show': { label: 'Light Show', attaches: ['setPiece'], Renderer: lazy(() => import('./lightShow/LightShow.jsx')) },
@@ -36,4 +37,4 @@ export default function Displays({ town, lookId, attach, extent, dim, calendar =
   })
 }
 
-function Refuse({ reason }) { throw new Error(`[Displays] ⛔ ${reason}`) }
+function Refuse({ reason }) { throw new Refusal(`[Displays] ⛔ ${reason}`) }

@@ -7,17 +7,18 @@
  *   frameRel(frame)     a frame looks.json names: relative, inside the drawer's dir (no '..', not absolute, no '\').
  * Each throws by name. Pure; no fs.
  */
+import { Refusal } from '../lib/refusal.js'
 // No '%' in a segment: an encoded '..' is a literal folder on disk, but the dev server may DECODE the authoring URL (Zob).
 const SEG_OK = (s) => s && s !== '.' && s !== '..' && !s.includes('%')
 
 export function drawerDir(drawer, where = 'a display') {
   if (typeof drawer !== 'string' || !/^displays\/[^/]+\/(?:[^/]+\/)*[^/]+\.json$/.test(drawer) || !drawer.split('/').every(SEG_OK) || drawer.includes('\\'))
-    throw new Error(`[displays] ⛔ ${where}: drawer "${drawer}" must be a looks .json under displays/<name>/ of the town's content (no '..', not absolute)`)
+    throw new Refusal(`[displays] ⛔ ${where}: drawer "${drawer}" must be a looks .json under displays/<name>/ of the town's content (no '..', not absolute)`)
   return drawer.slice(0, drawer.lastIndexOf('/'))
 }
 
 export function frameRel(frame, where = 'a look') {
   if (typeof frame !== 'string' || !frame || frame.startsWith('/') || frame.includes('\\') || /^[a-z]+:/i.test(frame) || !frame.split('/').every(SEG_OK))
-    throw new Error(`[displays] ⛔ ${where}: frame "${frame}" must be a path inside the drawer's own folder (no '..', not absolute)`)
+    throw new Refusal(`[displays] ⛔ ${where}: frame "${frame}" must be a path inside the drawer's own folder (no '..', not absolute)`)
   return frame
 }

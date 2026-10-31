@@ -15,6 +15,7 @@
  * (the legs are 16.5 m thick across it). © OpenStreetMap contributors, ODbL 1.0. ⛔ Never fetched at runtime.
  */
 import { projectorOf } from '../lib/townPlace.js'
+import { Refusal } from '../lib/refusal.js'
 
 export const GATEWAY_ARCH = Object.freeze({
   source: 'OpenStreetMap relation 12813920 (way 951594314), fetched 2026-10-28',
@@ -59,7 +60,7 @@ export function archPose(site, arch) {
  */
 export function archSite(place) {
   if (![place?.lat, place?.lon, place?.lonToMeters, place?.latToMeters].every(Number.isFinite)) {
-    throw new Error('[gatewayArch] ⛔ no town frame { lat, lon, lonToMeters, latToMeters } — the Arch cannot be placed')
+    throw new Refusal('[gatewayArch] ⛔ no town frame { lat, lon, lonToMeters, latToMeters } — the Arch cannot be placed')
   }
   const project = projectorOf(place)
   const [n, s] = GATEWAY_ARCH.feet.map(f => project(f.lon, f.lat))

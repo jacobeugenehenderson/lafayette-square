@@ -12,10 +12,11 @@
  * ⛔ It starts EMPTY and a read before anything is placed THROWS. There is no default town.
  * Pure (no React): the site Workers reach it through townClock.js. The hook is `src/hooks/useTownPlace.js`.
  */
+import { Refusal } from './refusal.js'
 function placeOf(geography, lookId) {
   const { lat, lon, timezone, lonToMeters, latToMeters } = geography || {}
   if (![lat, lon, lonToMeters, latToMeters].every(Number.isFinite) || !timezone) {
-    throw new Error(`[townPlace] ⛔ "${lookId}" has no geography { lat, lon, timezone, lonToMeters, latToMeters } — it cannot be placed`)
+    throw new Refusal(`[townPlace] ⛔ "${lookId}" has no geography { lat, lon, timezone, lonToMeters, latToMeters } — it cannot be placed`)
   }
   return Object.freeze({ lookId, lat, lon, timezone, lonToMeters, latToMeters })
 }
@@ -29,7 +30,7 @@ const _subs = new Set()
 
 /** Where the town being drawn stands: { lookId, lat, lon, timezone, lonToMeters, latToMeters }. Throws until placed. */
 export function townPlace() {
-  if (!_place) throw new Error('[townPlace] ⛔ no town has been placed — mount <Town town>, or call placeTown(town) at the app\'s entry')
+  if (!_place) throw new Refusal('[townPlace] ⛔ no town has been placed — mount <Town town>, or call placeTown(town) at the app\'s entry')
   return _place
 }
 

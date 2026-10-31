@@ -11,6 +11,7 @@
  * ▶ node checks/claims-a-town-keeps-its-own-clock.mjs
  */
 import { townPlace } from './townPlace.js'
+import { Refusal } from './refusal.js'
 
 const _fmt = new Map()
 function formatter(tz) {
@@ -19,7 +20,7 @@ function formatter(tz) {
     try {
       f = new Intl.DateTimeFormat('en-US', { timeZone: tz, hourCycle: 'h23', weekday: 'short', year: 'numeric',
         month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' })
-    } catch { throw new Error(`[townClock] ⛔ "${tz}" is not a time zone this device knows`) }
+    } catch { throw new Refusal(`[townClock] ⛔ "${tz}" is not a time zone this device knows`) }
     _fmt.set(tz, f)
   }
   return f
@@ -29,7 +30,7 @@ const DOW = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 }
 /** The placed town's zone. ⛔ Throws when no town is placed, or its geography has no zone. */
 export function townTimeZone() {
   const tz = townPlace().timezone
-  if (!tz) throw new Error('[townClock] ⛔ the placed town has no timezone in its geography — its clock cannot be read')
+  if (!tz) throw new Refusal('[townClock] ⛔ the placed town has no timezone in its geography — its clock cannot be read')
   return tz
 }
 
@@ -41,7 +42,7 @@ let _last = { ms: NaN, tz: null, v: null }
 export function townClockOf(when, tz = townTimeZone()) {
   const ms = when.getTime()
   if (ms === _last.ms && tz === _last.tz) return _last.v
-  if (!Number.isFinite(ms)) throw new Error('[townClock] ⛔ not a time')
+  if (!Number.isFinite(ms)) throw new Refusal('[townClock] ⛔ not a time')
   const p = {}
   for (const { type, value } of formatter(tz).formatToParts(when)) p[type] = value
   const hours = Number(p.hour) % 24, minutes = Number(p.minute), seconds = Number(p.second)

@@ -20,6 +20,7 @@ import useTimeOfDay from '../hooks/useTimeOfDay'
 import { resolveGroupAtMinute, getTodSlotMinutes } from '../cartograph/animatedParam.js'
 import { uplightScale } from '../displays/dim.js'
 import { ARCHLIGHT_FIELD_KEYS, ARCHLIGHT_FLAT_DEFAULTS, kitDayChannel } from '../cartograph/skyLightChannels.js'
+import { Refusal } from '../lib/refusal.js'
 
 const DEG = Math.PI / 180
 const DEFAULT_CHANNEL = Object.freeze(kitDayChannel('setPieceLight'))   // the kit's day: blank by day, up from Sunset
@@ -30,7 +31,7 @@ const DEFAULT_CHANNEL = Object.freeze(kitDayChannel('setPieceLight'))   // the k
  * @param halfWidthM  half its base width, metres
  */
 export default function SetPieceUplights({ channel, topM, halfWidthM, dim }) {
-  if (!(topM > 0) || !(halfWidthM > 0)) throw new Error(`[SetPieceUplights] ⛔ a set-piece renderer must declare topM and halfWidthM (got ${topM}, ${halfWidthM})`)
+  if (!(topM > 0) || !(halfWidthM > 0)) throw new Refusal(`[SetPieceUplights] ⛔ a set-piece renderer must declare topM and halfWidthM (got ${topM}, ${halfWidthM})`)
   const L = useRef(), R = useRef()
   // Floods stand off the front corners; each aims across the face at 60% of the height.
   const rig = useMemo(() => {
