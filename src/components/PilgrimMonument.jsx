@@ -28,7 +28,7 @@ import { ASSET_BASE } from '../lib/bakedUrl.js'
 import { drawnGroundParts, onDrawnGround } from '../utils/elevation.js'
 import { onTerrainReload, terrainExag } from '../utils/terrainShader.js'
 import {
-  DOSSIER, FT, placeholderStages, courseBeds, COURSE_SEED, siteFromFootprint, seatOnGround, southFacingYaw,
+  DOSSIER, FT, placeholderStages, courseBeds, COURSE_SEED, siteFromFootprint, seatOnGround, southFacingYaw, displayExtent,
 } from '../setpieces/pilgrimMonument.js'
 
 // The monument's own stone, a mid granite grey. Colour is not a dossier value; it is the set-piece's own.
@@ -181,8 +181,8 @@ export default function PilgrimMonument({ town, lookId, footprint, graniteOverri
   )
 }
 
-// The base extent the slot's lighting aims at (SetPiece.jsx): the documented top and the foundation's half-width.
-PilgrimMonument.extent = { topM: DOSSIER.topZ * FT, halfWidthM: DOSSIER.foundationTopSq * FT / 2 }
+// The base extent the slot's lighting aims at, and where a display hangs (displayExtent, from the dossier).
+PilgrimMonument.extent = { topM: DOSSIER.topZ * FT, halfWidthM: DOSSIER.foundationTopSq * FT / 2, ...displayExtent() }
 // The set-piece's own plan outline for the 2D views, in its base frame. null: it has none of its own (no deck yet), so
 // the 2D outline is its building's footprint, drawn with every other building (OPERATIONS, "A town's set-piece").
 PilgrimMonument.plan = null

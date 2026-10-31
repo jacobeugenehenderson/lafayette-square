@@ -1,0 +1,819 @@
+{
+  "frame": {
+    "w": 192,
+    "h": 114,
+    "pinH": 18,
+    "faces": 4
+  },
+  "looks": [
+    {
+      "id": "santa",
+      "name": "Santa",
+      "notes": "White at the pinnacle and down to the coat · red coat · black belt with a gold buckle on every face · red coat · white trim · red pants · white boot tops.",
+      "layers": [
+        {
+          "motion": {
+            "kind": "still"
+          },
+          "frames": [
+            "looks/santa/0.svg"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "santas-hat",
+      "name": "Santa's Hat",
+      "notes": "The whole tree is the hat: red up to the balcony ridge, a fluffy white brim at the ground ring, and the pinnacle is the white puff. The fur sparkles.",
+      "layers": [
+        {
+          "motion": {
+            "kind": "twinkle",
+            "only": "#fff6e8"
+          },
+          "frames": [
+            "looks/santas-hat/0.svg"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "frosty",
+      "name": "Frosty",
+      "notes": "His black hat with a red band is the pinnacle. Three shaded snowballs stacked down the tree, coal eyes and a bright carrot on every face, a red-and-white striped scarf, coal buttons.",
+      "layers": [
+        {
+          "motion": {
+            "kind": "still"
+          },
+          "frames": [
+            "looks/frosty/0.svg"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rudolph",
+      "name": "Rudolph",
+      "notes": "No antlers: brown, the tan stripe, and a scalloped hem low on the tree; where each pair of scallops meets, a red nose glows and pulses, two eyes above it. The pinnacle washes red.",
+      "layers": [
+        {
+          "motion": {
+            "kind": "pulse",
+            "only": "#ff1f2d",
+            "speed": 0.9
+          },
+          "frames": [
+            "looks/rudolph/0.svg"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "snowfall",
+      "name": "Snowfall",
+      "notes": "Snow falling in front of a ring of dark pines, the night sky brightening to a glow just above the treetops.",
+      "layers": [
+        {
+          "motion": {
+            "kind": "still"
+          },
+          "frames": [
+            "looks/snowfall/0.svg"
+          ]
+        },
+        {
+          "motion": {
+            "kind": "still"
+          },
+          "frames": [
+            "looks/snowfall/1.svg"
+          ]
+        },
+        {
+          "motion": {
+            "kind": "fall",
+            "speed": 6
+          },
+          "frames": [
+            "looks/snowfall/2.svg"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "snowflakes",
+      "name": "Snowflakes",
+      "notes": "Six-armed flakes tumbling as they fall, on bright blue; the pinnacle glows white.",
+      "layers": [
+        {
+          "motion": {
+            "kind": "still"
+          },
+          "frames": [
+            "looks/snowflakes/0.svg"
+          ]
+        },
+        {
+          "motion": {
+            "kind": "fall",
+            "speed": 5
+          },
+          "turn": "tumble",
+          "fps": 6,
+          "frames": [
+            "looks/snowflakes/1-0.svg",
+            "looks/snowflakes/1-1.svg",
+            "looks/snowflakes/1-2.svg",
+            "looks/snowflakes/1-3.svg",
+            "looks/snowflakes/1-4.svg",
+            "looks/snowflakes/1-5.svg",
+            "looks/snowflakes/1-6.svg",
+            "looks/snowflakes/1-7.svg"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "gift-red",
+      "name": "Red Gift",
+      "notes": "The whole tree wrapped like a present: wide diagonal stripes of red and gold.",
+      "layers": [
+        {
+          "motion": {
+            "kind": "still"
+          },
+          "frames": [
+            "looks/gift-red/0.svg"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "gift-pride",
+      "name": "Pride Gift",
+      "notes": "The whole tree wrapped like a present in the Pride flag: wide diagonal stripes, red through violet.",
+      "layers": [
+        {
+          "motion": {
+            "kind": "still"
+          },
+          "frames": [
+            "looks/gift-pride/0.svg"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "candy-cane",
+      "name": "Candy Cane",
+      "notes": "Red and white spiralling from the ridge to the ground, turning.",
+      "layers": [
+        {
+          "motion": {
+            "kind": "spin",
+            "speed": 10
+          },
+          "frames": [
+            "looks/candy-cane/0.svg"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "peppermint",
+      "name": "Peppermint",
+      "notes": "A peppermint pinwheel on every face, each spinning in place, between green bands; red pinnacle.",
+      "layers": [
+        {
+          "motion": {
+            "kind": "still"
+          },
+          "frames": [
+            "looks/peppermint/0.svg"
+          ]
+        },
+        {
+          "motion": {
+            "kind": "still"
+          },
+          "turn": "turn",
+          "fps": 8,
+          "frames": [
+            "looks/peppermint/1-0.svg",
+            "looks/peppermint/1-1.svg",
+            "looks/peppermint/1-2.svg",
+            "looks/peppermint/1-3.svg",
+            "looks/peppermint/1-4.svg",
+            "looks/peppermint/1-5.svg"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "holly",
+      "name": "Holly",
+      "notes": "Holly sprigs, two to a face, on dark green; the red berries twinkle, and the pinnacle is a berry.",
+      "layers": [
+        {
+          "motion": {
+            "kind": "twinkle",
+            "only": "#ff1f2d"
+          },
+          "frames": [
+            "looks/holly/0.svg"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bells",
+      "name": "Bells",
+      "notes": "Two big pairs of gold bells on opposite sides, swinging under a red bow, on green; gold pinnacle.",
+      "layers": [
+        {
+          "motion": {
+            "kind": "still"
+          },
+          "frames": [
+            "looks/bells/0.svg"
+          ]
+        },
+        {
+          "motion": {
+            "kind": "still"
+          },
+          "turn": "swing",
+          "fps": 6,
+          "frames": [
+            "looks/bells/1-0.svg",
+            "looks/bells/1-1.svg",
+            "looks/bells/1-2.svg",
+            "looks/bells/1-3.svg",
+            "looks/bells/1-4.svg",
+            "looks/bells/1-5.svg",
+            "looks/bells/1-6.svg",
+            "looks/bells/1-7.svg"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "stars",
+      "name": "Stars",
+      "notes": "Gold and white stars spread evenly over night blue, never clumped; they twinkle; the pinnacle washes gold.",
+      "layers": [
+        {
+          "motion": {
+            "kind": "twinkle"
+          },
+          "frames": [
+            "looks/stars/0.svg"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "menorah",
+      "name": "Menorah",
+      "notes": "A nine-branched menorah on every face, the shamash raised, on bands of blue: blue, darkest blue, dark blue, blue, lighter blue. Only the flames flicker.",
+      "layers": [
+        {
+          "motion": {
+            "kind": "twinkle",
+            "only": "#ffc23a"
+          },
+          "frames": [
+            "looks/menorah/0.svg"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dreidel",
+      "name": "Dreidel",
+      "notes": "The whole tree is one dreidel: a silver handle at the pinnacle, a blue body, one great gold letter on each face (nun, gimel, hey, shin), tapering to its point; the tree turns, so it spins its letters past you.",
+      "layers": [
+        {
+          "motion": {
+            "kind": "spin",
+            "speed": 12
+          },
+          "frames": [
+            "looks/dreidel/0.svg"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "kwanzaa-bands",
+      "name": "Kwanzaa Bands",
+      "notes": "Red over black over green, rising slowly; red pinnacle.",
+      "layers": [
+        {
+          "motion": {
+            "kind": "rise",
+            "speed": 4
+          },
+          "frames": [
+            "looks/kwanzaa-bands/0.svg"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "doves",
+      "name": "Doves",
+      "notes": "A white dove with an olive sprig on every face, among gold rays that shimmer; white pinnacle.",
+      "layers": [
+        {
+          "motion": {
+            "kind": "twinkle",
+            "only": "#ffc23a"
+          },
+          "frames": [
+            "looks/doves/0.svg"
+          ]
+        },
+        {
+          "motion": {
+            "kind": "still"
+          },
+          "frames": [
+            "looks/doves/1.svg"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "progress-pride",
+      "name": "Progress Pride",
+      "notes": "Two flags on opposite sides, turned upright: the rainbow in vertical stripes, and the Progress chevron rising from the ground, white at its heart, through pink, light blue and brown to black. The chevron is a motion object: in the Chevron transition it rises into place, pauses, and rises on to reveal the next look.",
+      "layers": [
+        {
+          "motion": {
+            "kind": "still"
+          },
+          "frames": [
+            "looks/progress-pride/0.svg"
+          ]
+        },
+        {
+          "motion": {
+            "kind": "still"
+          },
+          "enter": "rise",
+          "frames": [
+            "looks/progress-pride/1.svg"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bear",
+      "name": "Bear",
+      "notes": "A plaid woven from the bear pride colours: dark brown and rust crossed with gold, tan, white and grey threads.",
+      "layers": [
+        {
+          "motion": {
+            "kind": "still"
+          },
+          "frames": [
+            "looks/bear/0.svg"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "trans",
+      "name": "Trans",
+      "notes": "Light blue, pink, white, pink, light blue, sparkling, with their average, a bright lilac, washing in over them and back out again.",
+      "layers": [
+        {
+          "motion": {
+            "kind": "twinkle"
+          },
+          "frames": [
+            "looks/trans/0.svg"
+          ]
+        },
+        {
+          "motion": {
+            "kind": "fade",
+            "period": 6
+          },
+          "frames": [
+            "looks/trans/1.svg"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "red-ribbon",
+      "name": "Red Ribbon",
+      "notes": "The ribbon: two red stripes on opposite sides, slanting opposite ways, a V on black. Then, quickly and smoothly, more diagonal lines slide on from left to right, in both directions, crossing into a lattice, so the tree seems to twist on; it holds for a long, reverent moment, and dims gently back to the V. One cycle is about 25 seconds.",
+      "layers": [
+        {
+          "motion": {
+            "kind": "still"
+          },
+          "frames": [
+            "looks/red-ribbon/0.svg"
+          ]
+        },
+        {
+          "motion": {
+            "kind": "still"
+          },
+          "turn": "build",
+          "fps": 12,
+          "frames": [
+            "looks/red-ribbon/1-0.svg",
+            "looks/red-ribbon/1-1.svg",
+            "looks/red-ribbon/1-2.svg",
+            "looks/red-ribbon/1-3.svg",
+            "looks/red-ribbon/1-4.svg",
+            "looks/red-ribbon/1-5.svg",
+            "looks/red-ribbon/1-6.svg",
+            "looks/red-ribbon/1-7.svg",
+            "looks/red-ribbon/1-8.svg",
+            "looks/red-ribbon/1-9.svg",
+            "looks/red-ribbon/1-10.svg",
+            "looks/red-ribbon/1-11.svg",
+            "looks/red-ribbon/1-12.svg",
+            "looks/red-ribbon/1-13.svg",
+            "looks/red-ribbon/1-14.svg",
+            "looks/red-ribbon/1-15.svg",
+            "looks/red-ribbon/1-16.svg",
+            "looks/red-ribbon/1-17.svg",
+            "looks/red-ribbon/1-18.svg",
+            "looks/red-ribbon/1-19.svg",
+            "looks/red-ribbon/1-20.svg",
+            "looks/red-ribbon/1-21.svg",
+            "looks/red-ribbon/1-22.svg",
+            "looks/red-ribbon/1-23.svg",
+            "looks/red-ribbon/1-24.svg",
+            "looks/red-ribbon/1-25.svg",
+            "looks/red-ribbon/1-26.svg",
+            "looks/red-ribbon/1-27.svg",
+            "looks/red-ribbon/1-28.svg",
+            "looks/red-ribbon/1-29.svg",
+            "looks/red-ribbon/1-30.svg",
+            "looks/red-ribbon/1-31.svg",
+            "looks/red-ribbon/1-32.svg",
+            "looks/red-ribbon/1-33.svg",
+            "looks/red-ribbon/1-34.svg",
+            "looks/red-ribbon/1-35.svg",
+            "looks/red-ribbon/1-36.svg",
+            "looks/red-ribbon/1-37.svg",
+            "looks/red-ribbon/1-38.svg",
+            "looks/red-ribbon/1-39.svg",
+            "looks/red-ribbon/1-40.svg",
+            "looks/red-ribbon/1-41.svg",
+            "looks/red-ribbon/1-42.svg",
+            "looks/red-ribbon/1-43.svg",
+            "looks/red-ribbon/1-44.svg",
+            "looks/red-ribbon/1-45.svg",
+            "looks/red-ribbon/1-46.svg",
+            "looks/red-ribbon/1-47.svg",
+            "looks/red-ribbon/1-48.svg",
+            "looks/red-ribbon/1-49.svg",
+            "looks/red-ribbon/1-50.svg",
+            "looks/red-ribbon/1-51.svg",
+            "looks/red-ribbon/1-52.svg",
+            "looks/red-ribbon/1-53.svg",
+            "looks/red-ribbon/1-54.svg",
+            "looks/red-ribbon/1-55.svg",
+            "looks/red-ribbon/1-56.svg",
+            "looks/red-ribbon/1-57.svg",
+            "looks/red-ribbon/1-58.svg",
+            "looks/red-ribbon/1-59.svg",
+            "looks/red-ribbon/1-60.svg",
+            "looks/red-ribbon/1-61.svg",
+            "looks/red-ribbon/1-62.svg",
+            "looks/red-ribbon/1-63.svg",
+            "looks/red-ribbon/1-64.svg",
+            "looks/red-ribbon/1-65.svg",
+            "looks/red-ribbon/1-66.svg",
+            "looks/red-ribbon/1-67.svg",
+            "looks/red-ribbon/1-68.svg",
+            "looks/red-ribbon/1-69.svg",
+            "looks/red-ribbon/1-70.svg",
+            "looks/red-ribbon/1-71.svg",
+            "looks/red-ribbon/1-72.svg",
+            "looks/red-ribbon/1-73.svg",
+            "looks/red-ribbon/1-74.svg",
+            "looks/red-ribbon/1-75.svg",
+            "looks/red-ribbon/1-76.svg",
+            "looks/red-ribbon/1-77.svg",
+            "looks/red-ribbon/1-78.svg",
+            "looks/red-ribbon/1-79.svg",
+            "looks/red-ribbon/1-80.svg",
+            "looks/red-ribbon/1-81.svg",
+            "looks/red-ribbon/1-82.svg",
+            "looks/red-ribbon/1-83.svg",
+            "looks/red-ribbon/1-84.svg",
+            "looks/red-ribbon/1-85.svg",
+            "looks/red-ribbon/1-86.svg",
+            "looks/red-ribbon/1-87.svg",
+            "looks/red-ribbon/1-88.svg",
+            "looks/red-ribbon/1-89.svg",
+            "looks/red-ribbon/1-90.svg",
+            "looks/red-ribbon/1-91.svg",
+            "looks/red-ribbon/1-92.svg",
+            "looks/red-ribbon/1-93.svg",
+            "looks/red-ribbon/1-94.svg",
+            "looks/red-ribbon/1-95.svg",
+            "looks/red-ribbon/1-96.svg",
+            "looks/red-ribbon/1-97.svg",
+            "looks/red-ribbon/1-98.svg",
+            "looks/red-ribbon/1-99.svg",
+            "looks/red-ribbon/1-100.svg",
+            "looks/red-ribbon/1-101.svg",
+            "looks/red-ribbon/1-102.svg",
+            "looks/red-ribbon/1-103.svg",
+            "looks/red-ribbon/1-104.svg",
+            "looks/red-ribbon/1-105.svg",
+            "looks/red-ribbon/1-106.svg",
+            "looks/red-ribbon/1-107.svg",
+            "looks/red-ribbon/1-108.svg",
+            "looks/red-ribbon/1-109.svg",
+            "looks/red-ribbon/1-110.svg",
+            "looks/red-ribbon/1-111.svg",
+            "looks/red-ribbon/1-112.svg",
+            "looks/red-ribbon/1-113.svg",
+            "looks/red-ribbon/1-114.svg",
+            "looks/red-ribbon/1-115.svg",
+            "looks/red-ribbon/1-116.svg",
+            "looks/red-ribbon/1-117.svg",
+            "looks/red-ribbon/1-118.svg",
+            "looks/red-ribbon/1-119.svg",
+            "looks/red-ribbon/1-120.svg",
+            "looks/red-ribbon/1-121.svg",
+            "looks/red-ribbon/1-122.svg",
+            "looks/red-ribbon/1-123.svg",
+            "looks/red-ribbon/1-124.svg",
+            "looks/red-ribbon/1-125.svg",
+            "looks/red-ribbon/1-126.svg",
+            "looks/red-ribbon/1-127.svg",
+            "looks/red-ribbon/1-128.svg",
+            "looks/red-ribbon/1-129.svg",
+            "looks/red-ribbon/1-130.svg",
+            "looks/red-ribbon/1-131.svg",
+            "looks/red-ribbon/1-132.svg",
+            "looks/red-ribbon/1-133.svg",
+            "looks/red-ribbon/1-134.svg",
+            "looks/red-ribbon/1-135.svg",
+            "looks/red-ribbon/1-136.svg",
+            "looks/red-ribbon/1-137.svg",
+            "looks/red-ribbon/1-138.svg",
+            "looks/red-ribbon/1-139.svg",
+            "looks/red-ribbon/1-140.svg",
+            "looks/red-ribbon/1-141.svg",
+            "looks/red-ribbon/1-142.svg",
+            "looks/red-ribbon/1-143.svg",
+            "looks/red-ribbon/1-144.svg",
+            "looks/red-ribbon/1-145.svg",
+            "looks/red-ribbon/1-146.svg",
+            "looks/red-ribbon/1-147.svg",
+            "looks/red-ribbon/1-148.svg",
+            "looks/red-ribbon/1-149.svg",
+            "looks/red-ribbon/1-150.svg",
+            "looks/red-ribbon/1-151.svg",
+            "looks/red-ribbon/1-152.svg",
+            "looks/red-ribbon/1-153.svg",
+            "looks/red-ribbon/1-154.svg",
+            "looks/red-ribbon/1-155.svg",
+            "looks/red-ribbon/1-156.svg",
+            "looks/red-ribbon/1-157.svg",
+            "looks/red-ribbon/1-158.svg",
+            "looks/red-ribbon/1-159.svg",
+            "looks/red-ribbon/1-160.svg",
+            "looks/red-ribbon/1-161.svg",
+            "looks/red-ribbon/1-162.svg",
+            "looks/red-ribbon/1-163.svg",
+            "looks/red-ribbon/1-164.svg",
+            "looks/red-ribbon/1-165.svg",
+            "looks/red-ribbon/1-166.svg",
+            "looks/red-ribbon/1-167.svg",
+            "looks/red-ribbon/1-168.svg",
+            "looks/red-ribbon/1-169.svg",
+            "looks/red-ribbon/1-170.svg",
+            "looks/red-ribbon/1-171.svg",
+            "looks/red-ribbon/1-172.svg",
+            "looks/red-ribbon/1-173.svg",
+            "looks/red-ribbon/1-174.svg",
+            "looks/red-ribbon/1-175.svg",
+            "looks/red-ribbon/1-176.svg",
+            "looks/red-ribbon/1-177.svg",
+            "looks/red-ribbon/1-178.svg",
+            "looks/red-ribbon/1-179.svg",
+            "looks/red-ribbon/1-180.svg",
+            "looks/red-ribbon/1-181.svg",
+            "looks/red-ribbon/1-182.svg",
+            "looks/red-ribbon/1-183.svg",
+            "looks/red-ribbon/1-184.svg",
+            "looks/red-ribbon/1-185.svg",
+            "looks/red-ribbon/1-186.svg",
+            "looks/red-ribbon/1-187.svg",
+            "looks/red-ribbon/1-188.svg",
+            "looks/red-ribbon/1-189.svg",
+            "looks/red-ribbon/1-190.svg",
+            "looks/red-ribbon/1-191.svg",
+            "looks/red-ribbon/1-192.svg",
+            "looks/red-ribbon/1-193.svg",
+            "looks/red-ribbon/1-194.svg",
+            "looks/red-ribbon/1-195.svg",
+            "looks/red-ribbon/1-196.svg",
+            "looks/red-ribbon/1-197.svg",
+            "looks/red-ribbon/1-198.svg",
+            "looks/red-ribbon/1-199.svg",
+            "looks/red-ribbon/1-200.svg",
+            "looks/red-ribbon/1-201.svg",
+            "looks/red-ribbon/1-202.svg",
+            "looks/red-ribbon/1-203.svg",
+            "looks/red-ribbon/1-204.svg",
+            "looks/red-ribbon/1-205.svg",
+            "looks/red-ribbon/1-206.svg",
+            "looks/red-ribbon/1-207.svg",
+            "looks/red-ribbon/1-208.svg",
+            "looks/red-ribbon/1-209.svg",
+            "looks/red-ribbon/1-210.svg",
+            "looks/red-ribbon/1-211.svg",
+            "looks/red-ribbon/1-212.svg",
+            "looks/red-ribbon/1-213.svg",
+            "looks/red-ribbon/1-214.svg",
+            "looks/red-ribbon/1-215.svg",
+            "looks/red-ribbon/1-216.svg",
+            "looks/red-ribbon/1-217.svg",
+            "looks/red-ribbon/1-218.svg",
+            "looks/red-ribbon/1-219.svg",
+            "looks/red-ribbon/1-220.svg",
+            "looks/red-ribbon/1-221.svg",
+            "looks/red-ribbon/1-222.svg",
+            "looks/red-ribbon/1-223.svg",
+            "looks/red-ribbon/1-224.svg",
+            "looks/red-ribbon/1-225.svg",
+            "looks/red-ribbon/1-226.svg",
+            "looks/red-ribbon/1-227.svg",
+            "looks/red-ribbon/1-228.svg",
+            "looks/red-ribbon/1-229.svg",
+            "looks/red-ribbon/1-230.svg",
+            "looks/red-ribbon/1-231.svg",
+            "looks/red-ribbon/1-232.svg",
+            "looks/red-ribbon/1-233.svg",
+            "looks/red-ribbon/1-234.svg",
+            "looks/red-ribbon/1-235.svg",
+            "looks/red-ribbon/1-236.svg",
+            "looks/red-ribbon/1-237.svg",
+            "looks/red-ribbon/1-238.svg",
+            "looks/red-ribbon/1-239.svg",
+            "looks/red-ribbon/1-240.svg",
+            "looks/red-ribbon/1-241.svg",
+            "looks/red-ribbon/1-242.svg",
+            "looks/red-ribbon/1-243.svg",
+            "looks/red-ribbon/1-244.svg",
+            "looks/red-ribbon/1-245.svg",
+            "looks/red-ribbon/1-246.svg",
+            "looks/red-ribbon/1-247.svg",
+            "looks/red-ribbon/1-248.svg",
+            "looks/red-ribbon/1-249.svg",
+            "looks/red-ribbon/1-250.svg",
+            "looks/red-ribbon/1-251.svg",
+            "looks/red-ribbon/1-252.svg",
+            "looks/red-ribbon/1-253.svg",
+            "looks/red-ribbon/1-254.svg",
+            "looks/red-ribbon/1-255.svg",
+            "looks/red-ribbon/1-256.svg",
+            "looks/red-ribbon/1-257.svg",
+            "looks/red-ribbon/1-258.svg",
+            "looks/red-ribbon/1-259.svg",
+            "looks/red-ribbon/1-260.svg",
+            "looks/red-ribbon/1-261.svg",
+            "looks/red-ribbon/1-262.svg",
+            "looks/red-ribbon/1-263.svg",
+            "looks/red-ribbon/1-264.svg",
+            "looks/red-ribbon/1-265.svg",
+            "looks/red-ribbon/1-266.svg",
+            "looks/red-ribbon/1-267.svg",
+            "looks/red-ribbon/1-268.svg",
+            "looks/red-ribbon/1-269.svg",
+            "looks/red-ribbon/1-270.svg",
+            "looks/red-ribbon/1-271.svg",
+            "looks/red-ribbon/1-272.svg",
+            "looks/red-ribbon/1-273.svg",
+            "looks/red-ribbon/1-274.svg",
+            "looks/red-ribbon/1-275.svg",
+            "looks/red-ribbon/1-276.svg",
+            "looks/red-ribbon/1-277.svg",
+            "looks/red-ribbon/1-278.svg",
+            "looks/red-ribbon/1-279.svg",
+            "looks/red-ribbon/1-280.svg",
+            "looks/red-ribbon/1-281.svg",
+            "looks/red-ribbon/1-282.svg",
+            "looks/red-ribbon/1-283.svg",
+            "looks/red-ribbon/1-284.svg",
+            "looks/red-ribbon/1-285.svg",
+            "looks/red-ribbon/1-286.svg",
+            "looks/red-ribbon/1-287.svg",
+            "looks/red-ribbon/1-288.svg",
+            "looks/red-ribbon/1-289.svg",
+            "looks/red-ribbon/1-290.svg",
+            "looks/red-ribbon/1-291.svg",
+            "looks/red-ribbon/1-292.svg",
+            "looks/red-ribbon/1-293.svg",
+            "looks/red-ribbon/1-294.svg",
+            "looks/red-ribbon/1-295.svg",
+            "looks/red-ribbon/1-296.svg",
+            "looks/red-ribbon/1-297.svg",
+            "looks/red-ribbon/1-298.svg",
+            "looks/red-ribbon/1-299.svg"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "plaid",
+      "name": "Plaid",
+      "notes": "Red tartan with green bands, dark threads and a gold line; green pinnacle.",
+      "layers": [
+        {
+          "motion": {
+            "kind": "still"
+          },
+          "frames": [
+            "looks/plaid/0.svg"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "gingerbread",
+      "name": "Gingerbread",
+      "notes": "Brown with white icing zigzags and gumdrops in red and green; the pinnacle is icing.",
+      "layers": [
+        {
+          "motion": {
+            "kind": "still"
+          },
+          "frames": [
+            "looks/gingerbread/0.svg"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ornaments",
+      "name": "Ornaments",
+      "notes": "Baubles in red, gold, blue, silver and purple on deep green; they twinkle; gold pinnacle.",
+      "layers": [
+        {
+          "motion": {
+            "kind": "twinkle"
+          },
+          "frames": [
+            "looks/ornaments/0.svg"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "classic-tree",
+      "name": "Classic Tree",
+      "notes": "A green tree hung with gold garland swags, a red bead where each meets the next, and multicoloured bulbs placed irregularly that twinkle; the pinnacle washes gold.",
+      "layers": [
+        {
+          "motion": {
+            "kind": "twinkle"
+          },
+          "frames": [
+            "looks/classic-tree/0.svg"
+          ]
+        },
+        {
+          "motion": {
+            "kind": "still"
+          },
+          "frames": [
+            "looks/classic-tree/1.svg"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "white-bulbs",
+      "name": "White Bulbs",
+      "notes": "The classic: a deep green tree with individual warm-white bulbs, irregular; the pinnacle washes gold.",
+      "layers": [
+        {
+          "motion": {
+            "kind": "twinkle"
+          },
+          "frames": [
+            "looks/white-bulbs/0.svg"
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -37,6 +37,15 @@
  */
 
 export const FT = 0.3048
+
+/** Where a display hangs (src/displays): the balcony deck the strands hang from (dossier §5, the ridge Jacob named,
+ *  2026-10-31) and the upper stage above it, strip-lit. Square (4 sides); halfWidthM is centre to face. */
+export function displayExtent(d = DOSSIER) {
+  return {
+    ridge: { sides: 4, yM: d.balcony.z * FT, halfWidthM: d.balcony.sq * FT / 2 },
+    pinnacle: { sides: 4, fromM: d.balcony.z * FT, toM: d.topZ * FT, halfWidthM: d.belfryTopSq * FT / 2 },
+  }
+}
 /** feet + inches → feet */
 export const ft = (feet, inches = 0) => feet + inches / 12
 

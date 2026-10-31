@@ -35,7 +35,9 @@ import useCartographStore, { activeChannel } from '../cartograph/stores/useCarto
 import TodChannel from '../cartograph/TodChannel.jsx'
 import { LampGlowEditor } from '../cartograph/CartographSurfaces.jsx'
 import { StoreChannel } from '../cartograph/CartographSkyLight.jsx'
-import { setPieceOf } from '../instance.js'
+import { setPieceOf, townForLook } from '../instance.js'
+import useDisplayPreview from '../displays/preview.js'
+import { PLUGINS as DISPLAY_PLUGINS } from '../displays/Displays.jsx'
 import { keyframeFocusIds } from '../lib/focusObject.js'
 import useListings from '../hooks/useListings'
 import { ARCHLIGHT_FIELDS, ARCHLIGHT_FLAT_DEFAULTS, LANTERN_FIELDS, LANTERN_FLAT_DEFAULTS, MIST_FIELDS, MIST_FLAT_DEFAULTS, HALO_FIELDS, HALO_FLAT_DEFAULTS, EDGE_RUFFLE_FIELDS, EDGE_RUFFLE_FLAT_DEFAULTS } from '../cartograph/skyLightChannels.js'
@@ -129,6 +131,34 @@ function Uplights() {
     {hasArch && <StoreChannel name="archLight" label="Arch uplights" fields={ARCHLIGHT_FIELDS} flatDefaults={ARCHLIGHT_FLAT_DEFAULTS} />}
     {sp && <StoreChannel name="setPieceLight" label={`${sp.name || 'Set-piece'} uplights`} fields={ARCHLIGHT_FIELDS} flatDefaults={ARCHLIGHT_FLAT_DEFAULTS} />}
   </>)
+}
+
+// Displays — every town has the section; its contents are the town's displays (Jacob, 2026-10-30: "Displays", no
+// extra text). Each plays LIVE (its season and schedule, on the town's clock) unless previewed here: Glow or Show, from
+// the moment pressed. The preview is Stage's alone (src/displays/preview.js).
+function DisplaysSection() {
+  const lookId = useCartographStore(s => s.activeLookId)
+  const list = (lookId && townForLook(lookId)?.displays) || []
+  const modes = useDisplayPreview(s => s.modes), setMode = useDisplayPreview(s => s.setMode)
+  return (
+    <Collapsible label="Displays">
+      {list.map(d => {
+        const cur = modes[d.id]?.mode || 'live'
+        return (
+          <div key={d.id} className="flex items-center justify-between gap-2 py-1">
+            <span className="text-caption" style={{ color: 'var(--on-surface-variant)' }}>{d.name || DISPLAY_PLUGINS[d.kind]?.label || d.kind}</span>
+            <div className="flex gap-1">
+              {['live', 'glow', 'show'].map(m => (
+                <button key={m} onClick={() => setMode(d.id, m)}
+                  className="px-2 py-0.5 rounded text-caption cursor-pointer capitalize"
+                  style={{ background: cur === m ? 'var(--surface-container-high)' : 'transparent', color: cur === m ? 'var(--on-surface)' : 'var(--on-surface-variant)', border: '1px solid var(--outline-variant)' }}>{m}</button>
+              ))}
+            </div>
+          </div>
+        )
+      })}
+    </Collapsible>
+  )
 }
 
 // Lantern — the lamp's own light source (Bulb · Glow · Glow size · Colour), TOD-animatable. Same store-bound TodChannel pattern.
@@ -1162,6 +1192,11 @@ export function StagePanel({ shot, setShot, keyframes, setKeyframes, heroMotion,
           <LampGlowEditor />
           <Uplights />
         </Collapsible>
+      </div>
+
+      {/* Displays — the town's displays (src/displays), with Stage's preview. */}
+      <div className="glass-panel rounded-xl p-3 pointer-events-auto">
+        <DisplaysSection />
       </div>
 
       {/* Surfaces — defaults to the standalone /stage mockup gallery; the

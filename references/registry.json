@@ -5257,6 +5257,25 @@
       "findings": [
         "r-a-place-cards-qrs-are-for-management"
       ]
+    },
+    {
+      "id": "q-how-a-town-authors-a-display",
+      "ask": "Where a town authors its seasonal effects (the monument's lights, fireworks, holiday arches), and whose its light setups are",
+      "neededBy": "BRIEF-the-monument-lights-up §3 standup (Tinsel, 2026-10-30): 20+ setups with transitions need an authoring surface",
+      "status": "answered",
+      "findings": [
+        "r-displays-is-a-stage-section-of-plugins",
+        "r-a-displays-setups-belong-to-its-town",
+        "r-a-show-is-what-a-display-may-do-not-what-it-is",
+        "r-a-setup-composes-its-plugins-motions",
+        "r-a-show-is-looks-separated-by-transitions",
+        "r-looks-are-abstractions",
+        "r-the-tree-glows-white-and-the-show-is-colour",
+        "r-a-look-carries-one-motion",
+        "r-the-strands-hang-from-the-ridge-and-the-pinnacle-carries-the-show",
+        "r-a-look-is-layers-each-with-one-motion",
+        "r-provincetown-light-season-is-authored"
+      ]
     }
   ],
   "findings": [
@@ -8927,6 +8946,174 @@
       "quote": "\"The PLACE card gets QRs which are only visible to management\"",
       "canon": "theward README §2/§8 (QrStudio, PRINTABLE), when built",
       "notes": "UNBUILT. Part of the QR work after the ladder."
+    },
+    {
+      "id": "r-displays-is-a-stage-section-of-plugins",
+      "question": "q-how-a-town-authors-a-display",
+      "kind": "ruling",
+      "value": {
+        "section": "Displays, a Stage section in every town; its CONTENTS vary by town (what that town has added)",
+        "label": "the word alone, with no descriptive text under it",
+        "items": "each display is a PLUGIN, like an effect in After Effects; every town may add any of them (fireworks included)"
+      },
+      "by": "Jacob",
+      "date": "2026-10-30",
+      "quote": "\"I think we just have to be OK with an aux section in the Stage that varies from map to map...? I guess everybody gets fireworks. But this seems to be like a section called \\\"shows\\\" or \\\"displays\\\" and inside that it's like plugins in aftereffects\" · \"It doesn't make sense that *this* panel would open in Jackson Heights though\" · \"yes, Displays but no extra text. People can figure it out.\"",
+      "canon": "docs/briefs/BRIEF-the-monument-lights-up.md (ROADMAP H-36)",
+      "notes": "UNBUILT. The kit has no plugin concept today (grep of the canon, 2026-10-30). The first plugin (the light show) is built through a narrow seam; fireworks, the second, tests it. Rejected names, in the record: Shows (arches are not shows), Seasonal, Exuberances (Jacob asked whether it was too esoteric), Flourishes."
+    },
+    {
+      "id": "r-a-displays-setups-belong-to-its-town",
+      "question": "q-how-a-town-authors-a-display",
+      "kind": "ruling",
+      "value": {
+        "plugin": "kit-wide code: its motions and transitions",
+        "setups": "authored in the town's instance of the plugin, with a surface to see, edit, create and delete them; NOT a cross-town preset library",
+        "scale": "20+ light setups with transitions"
+      },
+      "by": "Jacob",
+      "date": "2026-10-30",
+      "quote": "\"I think there needs to be a helper surface where the user can see/edit/create/delete patterns\" · \"We want to do like 20+light setups with transitions\" · on 'presets: your 20+ setups, saved and reusable on any town': \"No makes no sense\"",
+      "canon": "docs/briefs/BRIEF-the-monument-lights-up.md (ROADMAP H-36)",
+      "notes": "'Setups' superseded by LOOKS the same day: r-a-show-is-looks-separated-by-transitions."
+    },
+    {
+      "id": "r-a-show-is-what-a-display-may-do-not-what-it-is",
+      "question": "q-how-a-town-authors-a-display",
+      "kind": "ruling",
+      "value": {
+        "rule": "a timed show is a capability a display plugin MAY have, never the category: holiday arches over streets are displays and play no show",
+        "consequence": "a display may attach across a street; its span reads the street's authored width there, never a constant"
+      },
+      "by": "Jacob",
+      "date": "2026-10-30",
+      "quote": "\"What about lighted holiday arches over streets... those aren't shows\"",
+      "canon": "docs/briefs/BRIEF-the-monument-lights-up.md (ROADMAP H-36)",
+      "notes": "The consequence is Tinsel's reading under CLAUDE.md Layer 0 (a constant right for town #1), not Jacob's words."
+    },
+    {
+      "id": "r-a-setup-composes-its-plugins-motions",
+      "question": "q-how-a-town-authors-a-display",
+      "kind": "ruling",
+      "value": {
+        "rule": "a setup is made ONLY by combining the plugin's built-in motions (and its transitions); no hand-drawn motion",
+        "consequence": "a new kind of motion is new plugin code, every town gets it; never authored per town"
+      },
+      "by": "Jacob",
+      "date": "2026-10-30",
+      "quote": "\"setups only made by combining the plugin's built-in motions\"",
+      "canon": "docs/briefs/BRIEF-the-monument-lights-up.md (ROADMAP H-36)",
+      "notes": "The consequence is Tinsel's reading, not Jacob's words. 'Setups' superseded by LOOKS the same day: r-a-show-is-looks-separated-by-transitions."
+    },
+    {
+      "id": "r-a-show-is-looks-separated-by-transitions",
+      "question": "q-how-a-town-authors-a-display",
+      "kind": "ruling",
+      "value": {
+        "looks": "a DRAWER of named SVGs, each drawn at the display's FRAME resolution (one pixel = one bulb)",
+        "frame": "the cone unrolled into a rectangle: the top edge is the crown's four sides, the bottom edge the ground circle's circumference; columns are strands, rows are bulbs",
+        "transitions": "a DRAWER of named transitions (kit code)",
+        "show": "looks separated by transitions",
+        "panel": "no per-bulb editor (the sky builder's click-a-cell grid is impossible at this resolution); drawing happens in a vector app",
+        "initial": "the system creates the initial looks and transitions"
+      },
+      "by": "Jacob",
+      "date": "2026-10-30",
+      "quote": "\"I expect the system to create the initial patterns and transitions\" · \"I personally don't think there's space for a proper interface in the panel; take a look in the caryograph at the sky builder. It is a grid of colored squares so *theoretically* a user could go one-by-one and create colored bulbs but I think that seems... not efficient. Impossible, even. I almost think what we need is svgs (or whatever) at our \\\"frame\\\" size (the four sides on the top and the circumference of the bottom, flattened and stretched into a rectangle) basically at the resolution of single rows and columns. And I think the transitions should be cool; you can do it! The way I'm picturing it is we end up with a \\\"drawer\\\" of simple SVGs that have the primitive pattern on it and each has a name. Then, we have a drawer of transitions. The show is just looks separated by transitions.\"",
+      "canon": "docs/briefs/BRIEF-the-monument-lights-up.md (ROADMAP H-36)",
+      "notes": "Supersedes the 'setups' wording of r-a-displays-setups-belong-to-its-town and r-a-setup-composes-its-plugins-motions: a setup is now a LOOK (an SVG + one built-in motion, r-a-look-carries-one-motion); ownership by the town is unchanged."
+    },
+    {
+      "id": "r-looks-are-abstractions",
+      "question": "q-how-a-town-authors-a-display",
+      "kind": "ruling",
+      "value": {
+        "rule": "looks are clever, conceptual colour-blocked abstractions, never pictures",
+        "example": "Santa, bottom to top: white (boot tops), red (pants), white (coat trim), red (coat body), black belt with big gold buckles, red (coat), white to the top",
+        "motifs": "20+: snow, gifts, Frosty, Santa, Rudolph, Hanukkah, candy, peace, Kwanzaa, holly, bells, stars, snowflakes, plaids, bows, etc."
+      },
+      "by": "Jacob",
+      "date": "2026-10-30",
+      "quote": "\"The 20+ pattern motifs should looks like snow, gifts, Frosty, Santa, Rudolph, Hannukah, Candy, Peace, Kwanzaa, Holly, bells, stars, etc. etc.\" · \"Santa = White stripe (boots top), red stripe (pants), White stripe (coat trim), red stripe (Coat body), black stripe with two big gold buckles on either side is santa's belt and buckle, red again for his coat, then white to the top... these will all need to be clever and conceptual, that's why I know you'll do a great job. These things will all be abstractions. Snowflakes, plaids, bows\"",
+      "canon": "docs/briefs/BRIEF-the-monument-lights-up.md (ROADMAP H-36)",
+      "notes": "Look names are drawer labels for the operator; visitors never see them (Jacob, 2026-10-30: \"visitors don't see names?\"), so Frosty and Rudolph keep their names. Santa's buckle repeats on every face (Jacob, 2026-10-30: \"every face\")."
+    },
+    {
+      "id": "r-the-tree-glows-white-and-the-show-is-colour",
+      "question": "q-how-a-town-authors-a-display",
+      "kind": "ruling",
+      "value": {
+        "glow": "the tree is a Christmas tree: white lights",
+        "show": "2-3x more strands in full colour, for resolution; the show may open by dramatically, magically changing from the white to the colour",
+        "start": "60 colour strands for the show (3x the real 20, 5 a side), ruled 2026-10-31; an authored value on the display",
+        "bulbs": "always bright, visible bulbs; where two are too close to distinguish, that is what makes the image smooth (no switch to a flat image at distance)",
+        "brightness": "like ~120 W bulbs: very bright, visible from all around the town; what they light around them is one AVERAGE glow (the tree's mean colour), never a light per bulb"
+      },
+      "by": "Jacob",
+      "date": "2026-10-30",
+      "quote": "\"I am considering doubling the number of strands for the shows to give us better \\\"resolution\\\" in the images\" · \"The tree is supposed to be a christmas tree... perhaps the show can open by dramatically magically changing from the white lights to 2-3x more full-color lights.\" · \"start with those strand counts. phone res is kind of irrelevant; sub pixel detail becomes a resolved image\" · \"No: the bulbs are very bright and visible. If two of them get too close together to distinguish that's what gives us a smooth image in the lights\" · \"IRL they are like 120 watt bulbs or something so they're very bright and very visible from all around\" · \"I also think an average glow all over things would suffice\" · on the show's strand count, 40 or 60: \"60\"",
+      "canon": "docs/briefs/BRIEF-the-monument-lights-up.md (ROADMAP H-36)"
+    },
+    {
+      "id": "r-a-look-carries-one-motion",
+      "question": "q-how-a-town-authors-a-display",
+      "kind": "ruling",
+      "value": {
+        "looks": "each look carries one built-in motion (still, fall, rise, spin, twinkle, pulse, strobe)",
+        "transitions": "include rising stripes, expanding stripes, drop-in stripes with a bounce",
+        "strobes": "mixed into the dynamic moments (the leading edge of a melt or a drop) AS SPARKLES: random glints on a softly waving edge; never a hard straight line, never the whole tree flashing (2026-10-31)"
+      },
+      "by": "Jacob",
+      "date": "2026-10-30",
+      "quote": "\"We also discussed strobes.\" · \"add rising stripes, expanding stripes... drop-in stripes (with bounce effect)... mix strobes into the dynamic moments (the leading edge of a melt or drop)\" · \"yes motion per look\" · \"I don't like the way we're using the strobes. All too jerkey, lines too straight. The strobes should look like sparkles. I definitely don't like the whole tree flash.\"",
+      "canon": "docs/briefs/BRIEF-the-monument-lights-up.md (ROADMAP H-36)"
+    },
+    {
+      "id": "r-the-strands-hang-from-the-ridge-and-the-pinnacle-carries-the-show",
+      "question": "q-how-a-town-authors-a-display",
+      "kind": "ruling",
+      "value": {
+        "strands": "hang from the balcony RIDGE (dossier: deck 204 ft 4 in, 29 ft 6 in square) to the ground ring, never from the top",
+        "pinnacle": "the upper stage standing on the ridge carries the show too, STRIP-LIT: a strip at the foot of each face washing up the stone in a gradient, never an LED screen",
+        "star": "there is no star at the top (confirmed)",
+        "real": "the real tree is 5 strands a side; the show's colour strand count is reopened against that"
+      },
+      "by": "Jacob",
+      "date": "2026-10-31",
+      "quote": "\"can we add the pinnacle tower level with the \\\"light show\\\" up there, too? I think that will really rock it.\" · \"Once we get the top of the tower turned on we can make it the white puff on santa's hat and make it red to the top.\" · \"there is no star, confirmed\" · \"You should also attempt to create the real proportions because in real life the bands are very sparse; only 5 per side and our styling misrepresents it completely\" · \"Look at the plans for the monument. There is a ridge on top of which is the pinnacle; the lights come from that ridge.\" · \"The light at the top is a bit severe now, and should probably be more like a gradient instead of flat. Oh I see, you've made that an LED *screen*: I meant more like a strip light.\"",
+      "canon": "docs/briefs/BRIEF-the-monument-lights-up.md (ROADMAP H-36); src/setpieces/pilgrimMonument.js DOSSIER.balcony",
+      "notes": "Kit consequence (Tinsel's reading): a set-piece renderer DECLARES where strands attach (a ring: height + half-width) and its display surfaces (the pinnacle: from, to, half-width), read from its own dimensions; the plugin never hardcodes them. The 64/192 starting counts in r-the-tree-glows-white-and-the-show-is-colour were Tinsel's, never measured; reopened here."
+    },
+    {
+      "id": "r-a-look-is-layers-each-with-one-motion",
+      "question": "q-how-a-town-authors-a-display",
+      "kind": "ruling",
+      "value": {
+        "look": "a stack of LAYERS, bottom to top, each with ONE built-in motion",
+        "motions": "still, fall, rise, spin, spiral, twinkle, pulse, strobe, fade; and, drawn by the system as frames, turn, swing, tumble, build",
+        "scope": "a motion may touch one colour only, or keep to part of the tree",
+        "objects": "a layer may be a MOTION OBJECT (the Progress flag's chevron) that transitions can move: below the ground, in place, or rising on past it"
+      },
+      "by": "Jacob",
+      "date": "2026-10-31",
+      "quote": "\"yes file it\" (on: a look is a few layers, each with one motion, with turn, swing and tumble drawn by the system)",
+      "canon": "docs/briefs/BRIEF-the-monument-lights-up.md (ROADMAP H-36)",
+      "notes": "Extends r-a-look-carries-one-motion: one motion per LAYER. Still no hand-drawn motion (r-a-setup-composes-its-plugins-motions)."
+    },
+    {
+      "id": "r-provincetown-light-season-is-authored",
+      "question": "q-how-a-town-authors-a-display",
+      "kind": "ruling",
+      "value": {
+        "start": "November 11 (the Mayflower anniversary)",
+        "end": "not ruled",
+        "status": "AUTHORED by the operator, not sourced: the sources disagree (Nov 11 in some years; Thanksgiving eve, 2026-11-25, in one listing; off through New Year's Day, into January, or about five weeks), and the show will not be live"
+      },
+      "by": "Jacob",
+      "date": "2026-10-31",
+      "quote": "\"dates not important, we won't be live. Say the 11th.\"",
+      "canon": "docs/briefs/BRIEF-the-monument-lights-up.md (ROADMAP H-36)",
+      "notes": "Labelled as authored, per H-31 (a season with no settled source is the operator's)."
     }
   ]
 }
