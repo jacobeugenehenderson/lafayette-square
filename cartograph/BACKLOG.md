@@ -19,6 +19,10 @@ NO ROUTINE PURGE: content names give a changed file a fresh name, and our reader
   (ward/ladder-client) + Operations signers + kit plumb/ladder-docs (merge on deploy only). Deploy-day hands: predeploy-audit items 6–12.
   The rulings: registry `r-the-host-verifies-eye-to-eye` (the four QRs, the Rep as a non-expiring mark, Host office hours, noListOfAPerson).
 - **OWED before sitting 2:** patch eight's tally column `date` → `weekday` (ruled 2026-10-31, registry `noListOfAPerson`).
+- **⛔ NEXT WARD PIN, two preconditions (Ward's):** Scene.jsx passes the published calendar (Tinsel's route makes it required);
+  and an error boundary around the Scene. Displays' refusal THROWS, and today only `<Body>` has a boundary, so a refusal is
+  a blank page (Ward, read in source, to be confirmed on the dev server). Event card: Ward briefs it (registry
+  `r-an-event-has-a-host-and-a-venue-and-opens-at-the-venue`); the kit validator goes to Tinsel.
 - **Displays (Tinsel):** the Light Show is on integration through 2e408e9a; the ground-ring radius stands as is (Jacob, 2026-10-31,
   "fine for now"). 65f8438f + 7d242849 await Zob. Owed: brief §2a. Jacob's revision list → Tinsel, coordinated through Boz.
 - Older OPEN: hours (56/447) · the preview-photo licence (parked) · the dock object + tide ride (unbuilt).
