@@ -15,7 +15,8 @@
  *
  * Usage: node checks/claims-a-light-show-runs-dusk-to-dawn-on-the-hour.mjs [--mutants]
  *   --mutants: midnight not wrapped · a late hour kept past dawn · a show on the half hour · white nights glowing ·
- *   polar night dark · the refusal of a long show dropped · the live path on the sun's altitude, each red.
+ *   polar night dark · the refusal of a long show dropped · runSeconds silent on an unknown transition · the live path
+ *   on the sun's altitude, each red. (The change of clocks is an assertion, exercised through townClockOf; no mutant.)
  */
 import { importSource, sourceOf } from './_importSource.mjs'
 
@@ -61,6 +62,8 @@ async function verdict({ engine, view } = {}) {
   const refuses = (r, named) => { try { E.validateDisplay(r, drawer, 'check'); return false } catch (e) { return named.test(e.message) } }
   F(refuses(rec({ run: [{ look: 'a', seconds: 3700 }] }), /longer than the hour/), 'a show longer than the hour is not refused by name')
   F(refuses(rec({ shows: { every: 'hour' } }), /shows/), 'a `shows` field is not refused by name')
+  let named = false; try { E.runSeconds([{ look: 'a', seconds: 5 }, { transition: 'no-such' }, { look: 'a', seconds: 5 }]) } catch (e) { named = /no-such/.test(e.message) }
+  F(named, 'runSeconds (Stage\'s Tonight strip) does not refuse an unknown transition by name')
   let ok = true; try { E.validateDisplay(rec(), drawer, 'check') } catch { ok = false }
   F(ok, 'a good record is refused')
   // 6. the live path: the town's clock and the town's night.
@@ -80,6 +83,7 @@ if (process.argv.includes('--mutants')) {
     ['a show on the half hour', { engine: (s) => s.replace('const t = clock.minutes * 60 + clock.seconds, seconds', 'const t = (clock.minutes % 30) * 60 + clock.seconds, seconds') }],
     ['white nights glowing', { engine: (s) => s.replace('if (night.dusk == null) return null', 'if (night.dusk == null) return { from: 0, len: DAY_MIN }') }],
     ['polar night dark', { engine: (s) => s.replace('if (night.dawn == null) return { from: 0, len: DAY_MIN }', 'if (night.dawn == null) return null') }],
+    ['runSeconds silent on an unknown transition', { engine: (s) => s.replace('if (!TRANSITION[s.transition]) throw', 'if (false) throw') }],
     ['the refusal of a long show dropped', { engine: (s) => s.replace('if (showSeconds(compiled) > 3600)', 'if (false)') }],
     ['the live path on the sun\'s altitude', { view: (s) => s.replace('calendar, nightAt(instant), where)', 'calendar, useTimeOfDay.getState().getLightingPhase().sunAltitude < 0, where)') }],
   ]

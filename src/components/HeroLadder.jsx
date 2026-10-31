@@ -172,7 +172,7 @@ class HeroLadderPass extends Pass {
     const prev = renderer.getRenderTarget(), prevClear = renderer.getClearAlpha(), prevColor = renderer.getClearColor(new THREE.Color())
     renderer.setClearColor(0x000000, 0)
     this._drawMask(renderer, rect, meshes)
-    u.uMask.value = this.mask.texture
+    u.uMask.value = this.mask.texture; _heroLadderRefs.mask.current = this.mask.texture   // RomanceDoF reads it too: the focus object's blur
     let hero = null, sharedSrc = inputBuffer.texture, sw = this._w, sh = this._h
     this.targets.forEach((t, i) => {
       // Scissor to the hero's box grown by this level's reach (the 13-tap kernel reaches 2 source texels a level).

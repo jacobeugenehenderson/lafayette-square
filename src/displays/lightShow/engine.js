@@ -160,7 +160,11 @@ export function showAt(F, compiled, looksById, t, now) {
 }
 export const showSeconds = (compiled) => OPEN_SECONDS + compiled.seconds + OPEN_SECONDS
 /** A running order's length (the opening and close included), without its drawer: for Stage's Tonight strip. */
-export const runSeconds = (run) => OPEN_SECONDS * 2 + run.reduce((a, s) => a + (s.look ? s.seconds : TRANSITION[s.transition]?.seconds ?? NaN), 0)
+export const runSeconds = (run) => OPEN_SECONDS * 2 + run.reduce((a, s) => {
+  if (s.look) return a + s.seconds
+  if (!TRANSITION[s.transition]) throw new Error(`[lightShow] ⛔ the show names transition "${s.transition}", and there is none (have: ${Object.keys(TRANSITION).join(', ')})`)
+  return a + TRANSITION[s.transition].seconds
+}, 0)
 
 /**
  * THE SCHEDULE (r-the-lights-run-dusk-to-dawn-and-the-show-plays-on-the-hour; Jacob, 2026-10-31: "Hourly on the hour,

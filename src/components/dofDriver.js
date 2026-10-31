@@ -38,23 +38,21 @@ if (typeof window !== 'undefined') window.__dof = _inspect
  * @param focusPoint  where the camera is looking — the controls' target: the focus in the views that take the aim (Street).
  * @param choice      what is focused (src/lib/focusObject.js#focusChoice, the one decision, by the view): { off } (Browse,
  *                    or the town not loaded) · { aim } · { a, b, lam, weight, heroMeshes } — `a` and `b` the two focus
- *                    objects' world boxes [x0,y0,z0,x1,y1,z1] (null where an end names nothing), `lam` how far the
+ *                    objects' { extent, reach } boxes (focusObject.js#focusBox; null where an end names nothing): the
+ *                    focal distance, heroGround and what stands in front read the EXTENT; only the hero's rect on screen
+ *                    (the mask's scissor) reads the REACH (Zob, 2026-10-31). `lam` how far the
  *                    segment has come, `weight` how much of a focus plane there is (0: the town's law). The focal
  *                    distance RACKS from a's to b's on the camera's own timing; the hero ladder's box is the nearer end's.
  */
 const _aim = new THREE.Vector3()
 const _boxC = new THREE.Vector3()
 const _corner = new THREE.Vector3()
-/** The hero's box on screen, uv (x0, y0, x1, y1), or null when there is no box or it is behind the camera. Sets
- *  `_heroNear`, the view depth of the box's nearest corner (what is nearer than it, at a pixel, stands in front). */
-let _heroNear = 0
+/** The hero's box on screen, uv (x0, y0, x1, y1), or null when there is no box or it is behind the camera. */
 function heroRectOnScreen(box, camera) {
   if (!Array.isArray(box) || box.length !== 6) return null
   let x0 = 1, y0 = 1, x1 = 0, y1 = 0
-  _heroNear = Infinity
   for (let i = 0; i < 8; i++) {
     _corner.set(box[i & 1 ? 3 : 0], box[i & 2 ? 4 : 1], box[i & 4 ? 5 : 2]).applyMatrix4(camera.matrixWorldInverse)
-    _heroNear = Math.min(_heroNear, -_corner.z)
     if (_corner.z > -camera.near) return [0, 0, 1, 1]                       // straddles the camera: take the screen
     _corner.applyMatrix4(camera.projectionMatrix)
     const u = _corner.x * 0.5 + 0.5, v = _corner.y * 0.5 + 0.5
@@ -62,6 +60,14 @@ function heroRectOnScreen(box, camera) {
   }
   if (x1 < 0 || y1 < 0 || x0 > 1 || y0 > 1) return null                     // off screen
   return [Math.max(0, x0), Math.max(0, y0), Math.min(1, x1), Math.min(1, y1)]
+}
+/** The view depth of a box's nearest corner: what is nearer than it, at a pixel, stands in front of the hero. ⛔ Of the
+ *  hero's own EXTENT, never its reach: grown to a display's ring it would move ~27 m nearer, and a real occluder in front
+ *  of the tower would go sharp (Zob's HOLD 2, 2026-10-31). */
+function nearestDepth(box, camera) {
+  let d = Infinity
+  for (let i = 0; i < 8; i++) d = Math.min(d, -_corner.set(box[i & 1 ? 3 : 0], box[i & 2 ? 4 : 1], box[i & 4 ? 5 : 2]).applyMatrix4(camera.matrixWorldInverse).z)
+  return d
 }
 const centreOf = (box, out) => out.set((box[0] + box[3]) / 2, (box[1] + box[4]) / 2, (box[2] + box[5]) / 2)
 export function applyDofFrame({ camera, dofChannel, minute, slotMins, focusPoint, choice }) {
@@ -112,10 +118,10 @@ export function applyDofFrame({ camera, dofChannel, minute, slotMins, focusPoint
     if (!s) { if (!_warnedNoDisc) { _warnedNoDisc = true; console.error('[dof] ⛔ no focus object and no scene stencil (ground.json#stencil) — the town\'s blur has no disc; depth of field is off') } off(); return }
     _dofRefs.discC.current.set(s.center[0], s.center[1]); _dofRefs.discR.current = s.radius
   }
-  _dofRefs.heroRect.current = heroRectOnScreen(near, camera)
-  _dofRefs.heroNear.current = _dofRefs.heroRect.current ? _heroNear : 0
+  _dofRefs.heroRect.current = near ? heroRectOnScreen(near.reach, camera) : null
+  _dofRefs.heroNear.current = _dofRefs.heroRect.current ? nearestDepth(near.extent, camera) : 0
   _dofRefs.heroMeshes.current = _dofRefs.heroRect.current ? (choice.heroMeshes ?? null) : null
-  const dA = choice.a ? distOf(centreOf(choice.a, _boxC)) : null, dB = choice.b ? distOf(centreOf(choice.b, _boxC)) : null
+  const dA = choice.a ? distOf(centreOf(choice.a.extent, _boxC)) : null, dB = choice.b ? distOf(centreOf(choice.b.extent, _boxC)) : null
   _inspect.focus = choice; _inspect.dA = dA; _inspect.dB = dB; _inspect.heroRect = _dofRefs.heroRect.current
   if (dA == null && dB == null) { _inspect.dist = null; return }   // no plane: focusOn 0, the town's law
   const a = dA ?? dB, b = dB ?? dA   // a broken end has no plane of its own: its weight takes the plane out, not its distance
