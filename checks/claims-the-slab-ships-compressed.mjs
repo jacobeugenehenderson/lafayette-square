@@ -34,6 +34,7 @@ import { tmpdir } from 'node:os'
 import { join, dirname, basename } from 'node:path'
 import { createServer } from 'node:http'
 import { createHash, randomBytes } from 'node:crypto'
+import { importSource } from './_importSource.mjs'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
@@ -50,9 +51,31 @@ const md5 = (b) => createHash('md5').update(b).digest('hex')
 let seq = 0
 const load = (p) => import(pathToFileURL(p).href + `?v=${++seq}`)
 
+// What each leg reads: the repo files, or — under a mutant { which, edit } — that one with its rule changed, in memory
+// (checks/_importSource.mjs; never a copy beside the source). A dependent reaches the mutated module through a redirect of
+// its import of it. Each load is a fresh module (a trailing comment per load), as the copies' ?m= queries were.
+function sources(mut = null) {
+  const is = (k) => mut?.which === k, edit = mut ? (s) => `${mut.edit(s)}\n// mutant load ${++seq}\n` : null
+  return {
+    text: (k) => { const s = readFileSync(P[k], 'utf8'); return is(k) ? mut.edit(s) : s },
+    wire: () => (is('wire') ? importSource('src/lib/slabWire.js', { transform: edit }) : load(P.wire)),
+    slabWireNode: () => (is('slabWireNode') ? importSource('scripts/slab-wire.mjs', { transform: edit }) : load(P.slabWireNode)),
+    upload: () => (is('upload') ? importSource('scripts/upload-baked-to-r2.mjs', { transform: edit })
+      : is('wire') ? importSource('scripts/upload-baked-to-r2.mjs', { redirect: { 'src/lib/slabWire.js': { transform: edit } } })
+      : is('slabWireNode') ? importSource('scripts/upload-baked-to-r2.mjs', { redirect: { 'scripts/slab-wire.mjs': { transform: edit } } })
+      : load(P.upload)),
+    prod: () => (is('prod') ? importSource('workers/production-sites/src/index.js', { transform: edit })
+      : is('wire') ? importSource('workers/production-sites/src/index.js', { redirect: { 'src/lib/slabWire.js': { transform: edit } } })
+      : load(P.prod)),
+    staging: () => (is('staging') ? importSource('workers/staging-sites/src/index.js', { transform: edit })
+      : is('wire') ? importSource('workers/staging-sites/src/index.js', { redirect: { 'src/lib/slabWire.js': { transform: edit } } })
+      : load(P.staging)),
+  }
+}
+
 // ── ① the rule ──────────────────────────────────────────────────────────────────────────────────────────────
-async function legRule(paths, fails) {
-  const W = await load(paths.wire)
+async function legRule(S, fails) {
+  const W = await S.wire()
   const want = { 'ground.bin': 'br', 'trees/oak/a-lod1.glb': 'br', 'scene.json': null, 'trees/oak/a.albedo.ktx2': null,
     'trees-atlas-color.png': null, 'content/photos/a/01.jpg': null, 'odd.dat': 'br' }
   for (const [f, enc] of Object.entries(want)) if (W.storedEncodingFor(f) !== enc) fails.push(`① ${f} is stored ${W.storedEncodingFor(f) ?? 'raw'}, want ${enc ?? 'raw'}`)
@@ -64,10 +87,10 @@ async function legRule(paths, fails) {
 }
 
 // ── ②a the stored bytes: two same-basename files through wireOf at once each get their OWN bytes (Zob's race) ───
-async function legWireRace(paths, fails) {
+async function legWireRace(S, fails) {
   const tmp = mkdtempSync(join(tmpdir(), 'slab-wire-race-'))
   try {
-    const { wireOf } = await load(paths.slabWireNode)
+    const { wireOf } = await S.slabWireNode()
     const abs = ['a', 'b', 'c'].map((d) => { const p = join(tmp, d, 'skeleton-1-lod0.glb'); mkdirSync(dirname(p), { recursive: true }); writeFileSync(p, randomBytes(4096 + d.charCodeAt(0))); return p })
     const ws = await Promise.all(abs.map((p, i) => wireOf(p, `baked/fx/trees/${'abc'[i]}/skeleton-1-lod0.glb`)))
     ws.forEach((w, i) => { if (md5(readFileSync(w.abs)) !== w.md5) fails.push(`②a wireOf("${abs[i]}") points at another file's bytes (${w.abs})`) })
@@ -75,7 +98,7 @@ async function legWireRace(paths, fails) {
 }
 
 // ── ② the uploader ──────────────────────────────────────────────────────────────────────────────────────────
-async function legUpload(paths, fails) {
+async function legUpload(S, fails) {
   const tmp = mkdtempSync(join(tmpdir(), 'slab-wire-check-'))
   const { encodeBytes } = await load(join(ROOT, 'scripts/slab-wire.mjs'))
   // A compressible "bin" (a smooth float field, like terrain) and a json.
@@ -105,7 +128,7 @@ async function legUpload(paths, fails) {
   const was = { PATH: process.env.PATH, ASSET_BASE: process.env.ASSET_BASE }
   process.env.PATH = `${bin}:${process.env.PATH}`; process.env.ASSET_BASE = `http://127.0.0.1:${server.address().port}/`
   try {
-    const U = await load(paths.upload)
+    const U = await S.upload()
     for (const f of files) await U.put(f)
     for (let n = 0; n < files.length; n++) {
       const args = readFileSync(join(tmp, `put-${n}.args`), 'utf8').trim().split('\n'), key = args[4].split('/').slice(1).join('/')
@@ -144,7 +167,7 @@ async function legUpload(paths, fails) {
 }
 
 // ── ③ the Workers ───────────────────────────────────────────────────────────────────────────────────────────
-async function legWorkers(paths, fails) {
+async function legWorkers(S, fails) {
   const NativeResponse = globalThis.Response, inits = []
   globalThis.Response = class extends NativeResponse { constructor(body, init) { super(body, init); inits.push(init || {}) } }
   try {
@@ -153,7 +176,7 @@ async function legWorkers(paths, fails) {
     const R2 = { 'hosts/demo.online.json': { json: async () => ({ v: 2, app: 'legacy', map: 'demo', look: 'demo' }) }, [enc.key]: enc, [raw.key]: raw }
     const gets = []
     const env = { ASSETS: { get: async (k, o) => { gets.push({ k, range: !!o?.range }); return R2[k] ?? null }, head: async (k) => R2[k] ?? null } }
-    const W = (await load(paths.prod)).default
+    const W = (await S.prod()).default
     const call = async (key, headers = {}) => { inits.length = 0; const r = await W.fetch(new Request(`https://demo.online/${key}`, { headers }), env); return { r, init: inits.at(-1) } }
 
     let { r, init } = await call(enc.key)
@@ -169,31 +192,31 @@ async function legWorkers(paths, fails) {
     if (r.headers.has('content-encoding')) fails.push('③ production names an encoding for a raw object')
     if (r.headers.get('accept-ranges') !== 'bytes') fails.push('③ production stopped offering ranges of a raw object')
 
-    const S = (await load(paths.staging)).default
+    const St = (await S.staging()).default
     const senv = { SLAB_BASE: 'https://assets.theward.online/staging/', PLAYER_PREFIX: 'staging/player/',
       ASSETS: { get: async (k) => (k === 'staging/player/x.bin' ? { ...enc, key: k } : null), head: async () => null } }
     inits.length = 0
-    const sr = await S.fetch(new Request('https://staging.theward.online/_player/x.bin'), senv)
+    const sr = await St.fetch(new Request('https://staging.theward.online/_player/x.bin'), senv)
     if (sr.headers.get('content-encoding') !== 'br' || inits.at(-1)?.encodeBody !== 'manual') fails.push(`③ staging-sites sends a stored-br object with content-encoding ${sr.headers.get('content-encoding')}, encodeBody ${JSON.stringify(inits.at(-1)?.encodeBody)}`)
   } finally { globalThis.Response = NativeResponse }
 }
 
 // ── ④ by source ─────────────────────────────────────────────────────────────────────────────────────────────
-function legSource(paths, fails) {
-  const v = readFileSync(paths.verify, 'utf8')
+function legSource(S, fails) {
+  const v = S.text('verify')
   if (!/'accept-encoding': readBackEncoding\(f\.key\)/.test(v)) fails.push('④ verify-baked-in-r2 does not HEAD with slabWire#readBackEncoding')
   if (!/\(await wireOf\(f\.abs, f\.key\)\)\.bytes/.test(v)) fails.push('④ verify-baked-in-r2 does not compare the STORED length (slab-wire.mjs#wireOf)')
-  const b = readFileSync(paths.backup, 'utf8')
+  const b = S.text('backup')
   if (!/getStored\([^)]*readBackEncoding|const want = readBackEncoding\(rel\)/.test(b) || !/strong !== md5\(r\.body\)/.test(b)) fails.push('④ backup-prod-slab does not compare the stored bytes to a strong etag')
 }
 
-async function run(paths) {
+async function run(S) {
   const fails = []
-  await legRule(paths, fails); await legWireRace(paths, fails); await legUpload(paths, fails); await legWorkers(paths, fails); legSource(paths, fails)
+  await legRule(S, fails); await legWireRace(S, fails); await legUpload(S, fails); await legWorkers(S, fails); legSource(S, fails)
   return fails
 }
 
-// ── mutants: each a copy beside its original (so its relative imports resolve), the paths pointed at it ────────
+// ── mutants: each one rule changed, in memory (sources(mut)); nothing is written beside a source ──────────────────
 const MUTANTS = [
   ['.bin stored raw (the octet-stream path restored)', 'wire', "bin: ['application/octet-stream', BR]", "bin: ['application/octet-stream', PACKED]"],
   ['the stored file named after the encode (the race)', 'slabWireNode', "const out = join(_dir, `${sha}.${enc}`)\n    const p = encodeBytes(raw).then((body) => {", "const p = encodeBytes(raw).then((body) => {\n      const out = join(_dir, `${_encoded.size}-x.${enc}`)"],
@@ -210,36 +233,26 @@ const MUTANTS = [
   ['verify reads back with identity', 'verify', "'accept-encoding': readBackEncoding(f.key)", "'accept-encoding': 'identity'"],
 ]
 
-const fails = await run(P)
+const fails = await run(sources())
 if (fails.length) { console.error(`⛔ the slab does not ship compressed:\n   ${fails.join('\n   ')}`); process.exit(1) }
 console.log('✅ the slab ships compressed: .bin/.glb stored br and put that way, read back as stored, served with encodeBody manual and no ranges')
 
 if (process.argv.includes('--mutants')) {
   let alive = 0
+  // ⛔ the controls: a no-op edit through each in-memory path must read GREEN, else every mutant's "RED" is the loader's
+  for (const which of ['wire', 'slabWireNode', 'upload', 'prod', 'staging']) {
+    const f = await run(sources({ which, edit: (s) => s }))
+    if (f.length) { console.error(`⛔ the in-memory ${which} fails unmutated — the mutants prove nothing:\n   ${f.join('\n   ')}`); process.exit(1) }
+  }
   for (const [name, which, from, to] of MUTANTS) {
     const src = readFileSync(P[which], 'utf8')
     if (!src.includes(from)) { console.error(`⛔ mutant "${name}": its target text is gone from ${P[which]} — re-aim it`); alive++; continue }
-    let body = src.replace(from, to)
-    if (name === 'probe compares the raw bytes') body = body.replace('export async function probe', "const md5raw = (a) => createHash('md5').update(readFileSync(a)).digest('hex')\nexport async function probe")
-    const copy = join(dirname(P[which]), `.mutant-${basename(P[which])}`)
-    writeFileSync(copy, body)
-    let red
-    try {
-      // A dependent whose import must reach the mutant copy is copied too, its import rewritten (the rule is imported).
-      const paths = { ...P, [which]: copy }, extra = []
-      if (which === 'wire') {
-        for (const dep of ['upload', 'prod', 'staging']) {
-          const d = join(dirname(P[dep]), `.mutant-${basename(P[dep])}`)
-          writeFileSync(d, readFileSync(P[dep], 'utf8').replace(/(['"])([./]*src\/lib\/)slabWire\.js\1/, `$1$2.mutant-slabWire.js$1`)); paths[dep] = d; extra.push(d)
-        }
-      }
-      if (which === 'slabWireNode') {   // the uploader must reach the mutant wire too (a query per mutant: one path, one module, else)
-        const d = join(dirname(P.upload), `.mutant-${basename(P.upload)}`)
-        writeFileSync(d, readFileSync(P.upload, 'utf8').replace("from './slab-wire.mjs'", `from './.mutant-slab-wire.mjs?m=${++seq}'`)); paths.upload = d; extra.push(d)
-      }
-      try { red = (await run(paths)).length > 0 } finally { for (const d of extra) rmSync(d, { force: true }) }
-    } finally { rmSync(copy, { force: true }) }
-    console.log(`   ${red ? 'RED  ' : 'ALIVE'} ${name}`)
+    const edit = name === 'probe compares the raw bytes'
+      ? (s) => s.replace(from, to).replace('export async function probe', "const md5raw = (a) => createHash('md5').update(readFileSync(a)).digest('hex')\nexport async function probe")
+      : (s) => s.replace(from, to)
+    let red, threw = ''
+    try { red = (await run(sources({ which, edit }))).length > 0 } catch (e) { red = true; threw = ` (by throwing: ${e.message.slice(0, 80)})` }   // as its crashed copy was
+    console.log(`   ${red ? 'RED  ' : 'ALIVE'} ${name}${threw}`)
     if (!red) alive++
   }
   if (alive) { console.error(`⛔ ${alive} mutant(s) survived — the check cannot see that edit`); process.exit(1) }

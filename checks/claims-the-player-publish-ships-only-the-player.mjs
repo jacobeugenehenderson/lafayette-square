@@ -13,12 +13,15 @@
  *   ② THE BUILD writes the manifest the publish reads: vite.config.js (loaded for `build`) sets build.manifest.
  *   ③ THE PUBLISH uses it, by source: publish-player-to-staging ships `playerShipSet`'s `ship` and refuses a build
  *     with no Vite manifest; the manifest it writes for Promote is made from that same set.
- * `--mutants`: each edit below must turn this RED. ⛔ READ-ONLY (mutant copies beside their originals, removed).
+ * `--mutants`: each edit below must turn this RED. ⛔ READ-ONLY: each mutant in memory (checks/_importSource.mjs), the config
+ * as a temp file (checks/_sourceFile.mjs; Vite reads a config by path); never a copy beside the source (the one-loader ruling).
  *
  * Usage: node checks/claims-the-player-publish-ships-only-the-player.mjs [--mutants]
  */
-import { readFileSync, writeFileSync, rmSync } from 'node:fs'
-import { join, dirname, basename } from 'node:path'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
+import { importSource } from './_importSource.mjs'
+import { sourceFile } from './_sourceFile.mjs'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
@@ -49,7 +52,7 @@ const UNTRACKED = ['photos/x.jpg']
 async function run(paths) {
   const fails = []
   // ── ① ──
-  const G = await load(paths.graph)
+  const G = paths.graphModule ? await paths.graphModule() : await load(paths.graph)
   const all = [...SHIP, ...OPERATOR, ...UNTRACKED].map((rel) => ({ rel, abs: `/dist/${rel}`, bytes: 1 }))
   const got = G.playerShipSet(all, MANIFEST, (rel) => !UNTRACKED.includes(rel))
   const same = (a, b) => JSON.stringify([...a].sort()) === JSON.stringify([...b].sort())
@@ -63,7 +66,7 @@ async function run(paths) {
   const { config } = await loadConfigFromFile({ command: 'build', mode: 'production' }, paths.config, ROOT, 'silent')
   if (!config.build?.manifest) fails.push('② vite.config.js does not set build.manifest — the publish cannot tell the player from the operator apps')
   // ── ③ ──
-  const src = readFileSync(paths.publish, 'utf8')
+  const src = paths.publishText ?? readFileSync(paths.publish, 'utf8')   // a mutant's publish is its text
   if (!/const \{ ship: files, operator, untracked: dropped \} = playerShipSet\(all, /.test(src)) fails.push('③ publish-player-to-staging does not ship playerShipSet\'s set')
   if (!/if \(!existsSync\(viteManifestAt\)\) throw new Error\(/.test(src)) fails.push('③ publish-player-to-staging does not refuse a build with no Vite manifest')
   if (!/files: \[\.\.\.files\.map\(\(f\) => f\.abs\), townsTmp\]/.test(src)) fails.push('③ the manifest Promote copies from is not made from the shipped set')
@@ -81,20 +84,29 @@ const MUTANTS = [
   ['the build writes no manifest', 'config', '    manifest: true,\n', ''],
 ]
 
+// a mutant, in memory: the graph imported edited, the publish's text edited, the config edited into a temp file
+let mseq = 0
+const mutated = (which, edit) => which === 'graph' ? { ...P, graphModule: () => importSource('scripts/player-graph.mjs', { transform: (s) => `${edit(s)}\n// load ${++mseq}\n` }) }
+  : which === 'publish' ? { ...P, publishText: edit(readFileSync(P.publish, 'utf8')) }
+  : { ...P, config: sourceFile('vite.config.js', { transform: edit }) }
+
 const fails = await run(P)
 if (fails.length) { console.error(`⛔ the kit-player publish ships more than the player:\n   ${fails.join('\n   ')}`); process.exit(1) }
 console.log('✅ the kit-player publish ships the player\'s graph and what public/ allows; never an operator app, its chunks, or the build manifest')
 
 if (process.argv.includes('--mutants')) {
   let alive = 0
+  // ⛔ the controls: a no-op edit through each in-memory path must read GREEN, else every mutant's "RED" is the loader's
+  for (const which of ['graph', 'publish', 'config']) {
+    const f = await run(mutated(which, (s) => s))
+    if (f.length) { console.error(`⛔ the in-memory ${which} fails unmutated — the mutants prove nothing:\n   ${f.join('\n   ')}`); process.exit(1) }
+  }
   for (const [name, which, from, to] of MUTANTS) {
     const src = readFileSync(P[which], 'utf8')
     if (!src.includes(from)) { console.error(`⛔ mutant "${name}": its target text is gone from ${P[which]} — re-aim it`); alive++; continue }
-    const copy = join(dirname(P[which]), `.mutant-${basename(P[which])}`)
-    writeFileSync(copy, src.replace(from, to))
-    let red
-    try { red = (await run({ ...P, [which]: copy })).length > 0 } finally { rmSync(copy, { force: true }) }
-    console.log(`   ${red ? 'RED  ' : 'ALIVE'} ${name}`)
+    let red, threw = ''
+    try { red = (await run(mutated(which, (s) => s.replace(from, to)))).length > 0 } catch (e) { red = true; threw = ` (by throwing: ${e.message.slice(0, 80)})` }
+    console.log(`   ${red ? 'RED  ' : 'ALIVE'} ${name}${threw}`)
     if (!red) alive++
   }
   if (alive) { console.error(`⛔ ${alive} mutant(s) survived — the check cannot see that edit`); process.exit(1) }

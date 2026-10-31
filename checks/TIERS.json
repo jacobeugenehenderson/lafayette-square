@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 530,
+  "total": 531,
   "counts": {
-    "safe": 364,
+    "safe": 365,
     "local-effect": 31,
     "live": 135
   },
@@ -102,8 +102,8 @@
         "calls fetch()",
         "imports a network module",
         "imports vite — its server resolves localhost over DNS (caught by the no-network guard)",
-        "writeFileSync",
-        "deletes files"
+        "importSource of vite.config.js, which can: imports vite — its server resolves localhost over DNS (caught by the no-network guard), mkdirSync, copies/renames files",
+        "imports checks/_sourceFile.mjs, which can: writeFileSync, deletes files"
       ]
     },
     {
@@ -555,6 +555,13 @@
     },
     {
       "file": "checks/claims-a-mover-stands-where-it-is.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-a-mutant-is-never-written-beside-its-source.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"
@@ -1087,10 +1094,8 @@
       "reasonClass": "outbound",
       "why": [
         "calls fetch()",
-        "writeFileSync",
-        "deletes files",
-        "runs `npx` — reaches out",
-        "child_process with a non-literal command — cannot be read"
+        "importSource of checks/claims-a-worker-deploy-darkens-no-town.mjs (its span: start → // ── mutants: each this file), which can: calls fetch(), runs `npx` — reaches out",
+        "runs `npx` — reaches out"
       ]
     },
     {
@@ -2353,8 +2358,16 @@
         "writeFileSync",
         "mkdirSync",
         "deletes files",
+        "importSource of src/lib/freshUrl.js — read, safe",
+        "importSource of scripts/upload-baked-to-r2.mjs, which can: calls fetch(), writeFileSync, imports scripts/slab-wire.mjs, which can: writeFileSync",
+        "importSource of scripts/upload-baked-to-r2.mjs — read, safe",
+        "importSource of scripts/upload-baked-to-r2.mjs redirects src/lib/freshUrl.js — read, safe",
+        "importSource of scripts/promote-player-to-prod.mjs, which can: calls fetch(), runs `npx` — reaches out",
+        "importSource of scripts/promote-player-to-prod.mjs — read, safe",
+        "sourceFile of scripts/promote-player-to-prod.mjs redirects src/lib/freshUrl.js — read, safe",
         "computed import() with no readable target — runs arbitrary modules",
-        "child_process with a non-literal command — cannot be read"
+        "child_process with a non-literal command — cannot be read",
+        "imports checks/_sourceFile.mjs, which can: writeFileSync, deletes files"
       ]
     },
     {
@@ -3455,9 +3468,10 @@
       "reasonClass": "unreadable",
       "why": [
         "imports vite — its server resolves localhost over DNS (caught by the no-network guard)",
-        "writeFileSync",
-        "deletes files",
-        "computed import() with no readable target — runs arbitrary modules"
+        "importSource of scripts/player-graph.mjs — read, safe",
+        "importSource of vite.config.js, which can: imports vite — its server resolves localhost over DNS (caught by the no-network guard), mkdirSync, copies/renames files",
+        "computed import() with no readable target — runs arbitrary modules",
+        "imports checks/_sourceFile.mjs, which can: writeFileSync, deletes files"
       ]
     },
     {
@@ -3663,6 +3677,19 @@
         "writeFileSync",
         "mkdirSync",
         "deletes files",
+        "importSource of src/lib/slabWire.js — read, safe",
+        "importSource of scripts/slab-wire.mjs, which can: writeFileSync",
+        "importSource of scripts/upload-baked-to-r2.mjs, which can: calls fetch(), writeFileSync",
+        "importSource of scripts/upload-baked-to-r2.mjs — read, safe",
+        "importSource of scripts/upload-baked-to-r2.mjs redirects src/lib/slabWire.js — read, safe",
+        "importSource of scripts/upload-baked-to-r2.mjs — read, safe",
+        "importSource of scripts/upload-baked-to-r2.mjs redirects scripts/slab-wire.mjs — read, safe",
+        "importSource of workers/production-sites/src/index.js, which can: calls fetch()",
+        "importSource of workers/production-sites/src/index.js — read, safe",
+        "importSource of workers/production-sites/src/index.js redirects src/lib/slabWire.js — read, safe",
+        "importSource of workers/staging-sites/src/index.js, which can: calls fetch()",
+        "importSource of workers/staging-sites/src/index.js — read, safe",
+        "importSource of workers/staging-sites/src/index.js redirects src/lib/slabWire.js — read, safe",
         "computed import() with no readable target — runs arbitrary modules"
       ]
     },
