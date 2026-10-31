@@ -8,9 +8,9 @@
  * `favicon.svg`, and every anonymous visitor's avatar was the GATEWAY ARCH. The address
  * was right and everything around it said St. Louis.
  *
- * ⭐ THE FIX IS AN AUTHORED GLYPH, not an asset: `branding.mark` is an emoji, so town #10
+ * ⭐ THE FIX IS AN AUTHORED GLYPH, not an asset: the Look's `identity.mark` is an emoji, so town #10
  * pastes a character and every badge follows — no file, no pipeline, no size variants.
- * `src/lib/townMark.js` resolves emoji → the town's own SVG → its INITIAL, and ⛔ never
+ * `src/lib/townIdentity.js#townIcon` draws the mark, or the town's own INITIAL, and ⛔ never
  * another town's mark: an unauthored town must LOOK unauthored rather than look finished
  * and be wrong (`CLAUDE.md` Layer 0 q2).
  *
@@ -40,12 +40,13 @@ function* walk(dir) {
   }
 }
 
-// 1. No shared source may hardcode a town-specific mark or domain as an ASSET source.
+// 1. No shared source may hardcode a town-specific mark or domain as an ASSET source. index.html is the one document
+// every town's page is served from, so it is a shared surface too (it carried LS's favicon URL until 2026-10-31).
 const OFFENDERS = [
   [/lafayette-square\.com\/favicon/i, "fetches Lafayette Square's favicon"],
   [/BASE_URL\s*\+\s*'favicon\.svg'/, 'draws the one shared favicon.svg as a town mark'],
 ]
-for (const f of [...walk(path.join(ROOT, 'src'))]) {
+for (const f of [...walk(path.join(ROOT, 'src')), path.join(ROOT, 'index.html')]) {
   if (isTownModule(f)) continue
   const src = readFileSync(f, 'utf8')
   for (const [re, why] of OFFENDERS) {
@@ -53,21 +54,18 @@ for (const f of [...walk(path.join(ROOT, 'src'))]) {
   }
 }
 
-// 2. The resolver must exist and must not fall back to a town.
-const tm = path.join(ROOT, 'src/lib/townMark.js')
-let resolver = ''
-try { resolver = readFileSync(tm, 'utf8') } catch { bad('src/lib/townMark.js is gone — nothing resolves a town mark') }
-if (resolver) {
-  if (!/kind:\s*'initial'/.test(resolver)) {
-    bad("townMark has no 'initial' case — a town that authors nothing must draw its OWN "
-      + 'placeholder, not inherit a mark')
-  } else ok("townMark falls back to the town's own initial, never to a town")
-}
+// 2. The icon must fall back to the town's OWN initial, never to a town. Run, not regex'd.
+const { townIcon, iconFor } = await import(path.join(ROOT, 'src/lib/townIdentity.js'))
+const unmarked = townIcon({ look: null, title: 'Zanzibar Heights', why: 'check' })
+const marked = townIcon({ look: { mark: '🦞' }, title: 'Zanzibar Heights' })
+if (unmarked.icon !== iconFor({ initial: 'Z' }) || !unmarked.from.startsWith('initial')) {
+  bad(`townIcon for a town with no mark draws ${JSON.stringify(unmarked.from)}, not its own initial — a town that authors nothing must draw its OWN placeholder, not inherit a mark`)
+} else if (marked.icon !== iconFor({ mark: '🦞' })) bad("townIcon does not draw a town's own mark")
+else ok("townIcon draws the town's own mark, else its own initial, never a town's")
 
 // 3. No two TOWNS share the mark the Ward wears. READ, never regex'd: the registry is imported (a declared alias —
 // LS's staging copy — is the same module, so the same town) and the mark is the Look's identity.mark, its source
-// (src/lib/townIdentity.js). Not the old player's `markSvg`: that player is frozen, the channel goes at cutover, and
-// its one shared value (LS and HPDM's arch) is Jacob's ruling, 2026-09-25 — shown below, never judged.
+// (src/lib/townIdentity.js).
 // ⛔ Found 2026-09-28: the old text-match read single quotes only (provincetown's "⚓" was "no mark", hiding that it
 // shares huron's) and skipped a map without a file of its own silently.
 const { registeredMaps, instanceForMap } = await import(path.join(ROOT, 'src/instances/registry.js'))
@@ -82,7 +80,6 @@ for (const m of registeredMaps()) {
   const t = towns.get(inst) || { maps: [], marks: new Set() }
   t.maps.push(m)
   const lm = lookMark(m); if (lm) t.marks.add(`emoji ${lm}`)
-  if (inst.branding?.markSvg) t.oldPlayer = inst.branding.markSvg
   towns.set(inst, t)
 }
 function collisions(list) {
@@ -94,7 +91,7 @@ function collisions(list) {
   return out
 }
 const list = [...towns.values()]
-for (const t of list) ok(`'${t.maps.join("' = '")}' authors ${[...t.marks].join(' + ') || 'no mark — draws its own initial, honestly'}${t.oldPlayer ? ` (old player: svg ${t.oldPlayer})` : ''}`)
+for (const t of list) ok(`'${t.maps.join("' = '")}' authors ${[...t.marks].join(' + ') || 'no mark — draws its own initial, honestly'}`)
 for (const c of collisions(list)) bad(c)
 // Mutation, every run: give a second town the first town's mark; the collision test must see it.
 const [m1, m2] = list.filter((t) => t.marks.size)

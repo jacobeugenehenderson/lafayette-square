@@ -73,7 +73,7 @@ export const PREVIEW_LICENCES = ['Public domain', 'CC0', 'CC0 1.0']
 
 /**
  * The card for a request to `path` in a town.
- *   town      — the town's towns.json entry ({ title, description, faviconUrl, mark }), or null
+ *   town      — the town's towns.json entry ({ title, description, icon, iconFrom }, scripts/towns-record.mjs), or null
  *   map       — the town's id (the title when it has no entry)
  *   path      — the request path WITHIN the town ('/' for its front, '/place/<id>/<name>' for a place)
  *   manifest  — the town's published slab manifest
@@ -98,7 +98,9 @@ export function cardFor({ town, map, path, manifest, slabBase, pageUrl, listings
     description: town?.description || null,
     image, imageError,
     url: pageUrl,
-    icon: town?.faviconUrl || (town?.mark ? emojiIcon(town.mark) : null),
+    // ⭐ The town's icon, a data: URI drawn from its baked Look at publish (scripts/towns-record.mjs). ⛔ Read from
+    // nowhere else: an entry without one is a towns.json published before the icon came from the Look.
+    icon: town?.icon || null,
     note: null,
   }
   const at = placeIdOf(path)
@@ -126,11 +128,6 @@ export function cardFor({ town, map, path, manifest, slabBase, pageUrl, listings
   return card
 }
 
-function emojiIcon(glyph) {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">${glyph}</text></svg>`
-  return `data:image/svg+xml,${encodeURIComponent(svg)}`
-}
-
 /**
  * ⭐ THE CARD'S TAGS, in the order they are written. `from` is the card field; `fixed` is a constant of the card's
  * kind. `optional` is the only tag a town may lack without it being a defect (a town that authored no description).
@@ -152,7 +149,7 @@ const escAttr = (s) => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').
 
 /**
  * The card as `<head>` markup → { html, missing: [tag keys], why }. Pure. Besides `CARD_TAGS`, the page's `<title>`
- * and its icon `<link>` — a crawler runs no JavaScript, so `townMark.js` never reaches it. ⛔ An absent icon is
+ * and its icon `<link>` — a crawler runs no JavaScript, so the player's runtime never reaches it. ⛔ An absent icon is
  * MISSING (named), never a silent remove (Boz, 2026-10-26).
  */
 export function cardHead(card) {
@@ -167,7 +164,7 @@ export function cardHead(card) {
     html += `<meta ${t.attr}="${t.key}" content="${escAttr(v)}" />`
   }
   if (card.icon) html += `<link rel="icon"${card.icon.startsWith('data:image/svg') ? ' type="image/svg+xml"' : ''} href="${escAttr(card.icon)}" />`
-  else lack('icon', 'the town authors no faviconUrl or mark')
+  else lack('icon', "the town's towns.json entry has no icon (published before the icon came from the Look: publish the player, then Promote)")
   return { html, missing, why: missing.length ? `missing ${missing.join(' ')}; ${reasons.join('; ')}` : '' }
 }
 
