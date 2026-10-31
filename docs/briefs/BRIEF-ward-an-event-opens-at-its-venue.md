@@ -33,15 +33,22 @@ rows; the Ward still reports by name anything that slips through and doesn't sho
 - `happenings({ events, listings, taxonomy })` takes no roster, and the roster loads on demand (`content.js`: `roster: null`).
 - **No route exists for a `{name, point}` spot** (grep). ⛔ **The pinned kit can't fly the camera to a lone point**
   (`Town.jsx`: `frameIds` are building ids; `frameMover` is never framed alone; `movers` kinds are closed). The point
-  frame is a KIT prop, briefed by Boz. The MARK works today: the kit's `TownPoint` takes `lat lon` (as `SelectionDot` uses).
+  frame is a KIT prop, briefed by Boz. A card route covers the map (`Place.jsx`: "the whole page, nothing behind it";
+  `Scene.jsx#shotOf` gives no shot), so a mark drawn under a card is unseen (Usher's stop, 2026-10-31).
+- **How a venue opens (Ward's reading of the ruling, 2026-10-31):** the ruling picks WHICH place the camera, the building and
+  the card belong to (always the venue, never the host). The Ward's two-step stands: a tap opens the full-page card, and
+  the card's map pin (`/society?show=<id>`) is the camera move.
 - The ticker's click: `src/app/Ticker.jsx` (`ticker__link` buttons, `onChoose`).
 
 ## The work
 
 1. **Model** (`happening.js`): read `host`, `venue` (four forms) and `action`. Delete the `links_to` read in the same
    commit, and say so in the message. ⛔ Don't read both shapes: a `links_to` row is reported by name and not shown.
-   - `happenings` takes the roster. When any live row has a `{building}` venue, ask for the roster; until it answers,
-     that row is PENDING, never reported as `notShown` (or every cold load files a false report).
+   - `happening.js` stays pure; the roster comes in through `useHappening.js#useHappenings`, which calls `loadRoster` when
+     a live `{building}` row exists. Until it answers, that row is PENDING, never reported as `notShown` (or every cold
+     load files a false report).
+   - `register.js#openNowLit` adds `buildingOf(placeId) ?? null` for every happening, and null means "couldn't place it".
+     A placeless happening (`{scene}`, a spot) is skipped there, not counted as null.
    - `tickerItems` keys by `placeId`, so placeless happenings (`{scene}`, and a spot) would collapse into one. Key a
      placeless happening by its own id.
 2. **Card** (`Happening.jsx#Featured`): "Hosted by …" (a link for a listing host, plain text for a name). The action as
@@ -49,14 +56,14 @@ rows; the Ward still reports by name anything that slips through and doesn't sho
    `invite` → "Invitation", `details` → "Details"); `url` must be `https:`. Anything else is reported by name and the
    button isn't drawn (the event still shows). ⛔ No URL text as a label.
 3. **A spot venue:** a shareable address that names the event (your choice of path; record it in `src/routes.js` and the
-   README). It marks the point with `TownPoint lat lon` (as `SelectionDot` does) and shows the event card under the
-   spot's name. An address that no longer resolves says so (as `Gone` does). ⛔ Never a silent home.
-   **The camera move waits for the kit's point-frame prop** (SPLIT, ruled by Boz 2026-10-31; the kit item is queued for
-   Tinsel after the calendar route). Until it lands, a spot click marks the spot and opens the card, and the code carries
-   a named TODO tied to that kit item. ⛔ The plan must NOT re-frame to Browse because a spot click asked for nothing:
-   the camera stays where it is. ⛔ Never frame nearby buildings to stand in for the point (that's proximity recovery).
+   README). It opens a full-page card like `Place`, under the spot's name, with the event featured. **No map pin on a spot
+   card yet:** its "show on map" step needs the kit's point-frame prop (ruled SPLIT by Boz; the kit item is queued for
+   Tinsel after the calendar route). The pin and the spot's mark (the kit's `GroundPoint` lat/lon form) land together with
+   that prop, as a named TODO in the code. ⛔ No dead pin, and never frame nearby buildings to stand in for the point
+   (that's proximity recovery). A spot address that no longer resolves says so in its own words (not `Gone`'s "the place
+   it was at"). ⛔ Never a silent home.
 4. **A scene venue:** the ticker shows it as text, not a button, so it isn't focusable as a link. ⛔ No dead button.
-5. **Checks** (`checks/`, wired into `run.mjs`): extend `happening-has-a-place.mjs` (or one new check, and say which) over
+5. **Checks** (`checks/`; `run.mjs` finds every check in the directory): extend `happening-has-a-place.mjs` (or one new check, and say which) over
    a fixture town with one row of each venue form, including a `{building}` WITH a listing and one with no name or
    address, two `{scene}` rows, a listing host, a name host, an action, a bad action, and a `links_to` row. Assert where
    each opens and what each card shows. **Mutation-test:** restore the `links_to` read, drop the scene case, accept an
