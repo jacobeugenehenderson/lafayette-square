@@ -44,7 +44,7 @@ Provincetown is first to use, never a Provincetown patch.
   - **The system creates the initial set:** 20+ looks and the transitions above.
 - **Looks are abstractions, never pictures** (`r-looks-are-abstractions`): colour-blocked and conceptual. Santa, bottom
   to top: white (boot tops) · red (pants) · white (coat trim) · red (coat) · black belt with gold buckles · red · white to
-  the crown. Motifs: snow, snowflakes, gifts, snowman, Santa, reindeer, Hanukkah, Kwanzaa, candy, peace, holly, bells,
+  the crown. Motifs: snow, snowflakes, gifts, Frosty, Santa, Rudolph, Hanukkah, Kwanzaa, candy, peace, holly, bells,
   stars, plaids, bows, and more. Jacob reviews them as a contact sheet before they go on the tree.
 - **The tree glows WHITE; the show is COLOUR** (`r-the-tree-glows-white-and-the-show-is-colour`). The glow is a white
   Christmas tree; a show opens with a magical transformation into 2–3× as many full-colour strands, and reverses at
@@ -54,8 +54,7 @@ Provincetown is first to use, never a Provincetown patch.
   image at distance; a far bulb keeps a minimum size and glow so it never drops out.
 - **A show is what a display MAY do, not what it is.** The Light Show glows all season and plays timed shows; arches play
   none (`r-a-show-is-what-a-display-may-do-not-what-it-is`).
-- ⚠️ **Open:** visitor-facing names for Frosty and Rudolph (trademarked characters; proposed: Snowman, Reindeer) ·
-  Santa's buckle per face, or on two opposite sides.
+- Look names are drawer labels; visitors never see them. ⚠️ **Open:** Santa's buckle per face, or on two opposite sides.
 
 ## 2. What the code says (checked 2026-10-30; confirm again at build, by symbol)
 
