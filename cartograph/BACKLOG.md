@@ -29,7 +29,11 @@ NO ROUTINE PURGE: content names give a changed file a fresh name, and our reader
   integration), from its own read (`content.js#loadContent`), no second reader. Today that read turns absent AND failed into [].
   Event card: Ward briefs it (registry `r-an-event-has-a-host-and-a-venue-and-opens-at-the-venue`); the kit validator goes to Tinsel.
 - **Displays (Tinsel):** the Light Show is on integration through 2e408e9a; the ground-ring radius stands as is (Jacob, 2026-10-31,
-  "fine for now"). 65f8438f + 7d242849 await Zob. Owed: brief §2a. Jacob's revision list → Tinsel, coordinated through Boz.
+  "fine for now"). Merged through 83078842 (looks, own clocks, gamut, schedule, the DoF subtree). ⛔ NO VISITOR SEES THE SHOW YET:
+  the bake carries no `displays` (manifest identity has none, the drawer isn't published), so Preview and the player mount
+  nothing (Tinsel, measured). Next for Tinsel: the bake publishes the drawer · then the pinnacle cap under the tone curve
+  (ACES desaturates the red) · then point framing. The calendar route (5725b7c7, Zob PASS) waits on Huron's 16 event rows.
+  Arborist: PTown trees near the Monument are drawn 37–40 m tall (an upper bound), and they truly occlude the strands.
 - Older OPEN: hours (56/447) · the preview-photo licence (parked) · the dock object + tide ride (unbuilt).
 
 ### ⭐ HANDOFF — 2026-10-28 (the sprint closed; Swash for Boz). Read this block first; everything below is detail.
