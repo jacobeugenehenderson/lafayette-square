@@ -84,8 +84,12 @@ Provincetown is first to use, never a Provincetown patch.
 
 ## 2a. Owed (Zob's review, 2026-10-31)
 
-- **Before Stage writes the record:** `placed` is a one-shot boolean. Key the bulb placement on the strand ends and
-  counts, so a changed record lays the bulbs again (today a new instancedMesh would sit every bulb at the origin).
+- **Before Stage writes the record:** `hung` keys only on the hang mode. Key it on (hang, ends, rows), so a changed record
+  hangs the strands again (today new instancedMeshes would sit every bulb, socket and cord at the origin).
+- **Before a calendar is passed (cost, not measured):** with nothing hung, or by day, all zero-scaled instances still draw
+  and the colouring loop runs. Hide the root when nothing hangs; skip colouring while the display is off.
+- **The contact sheet** (scratch, but where Jacob judges looks): its Transformation card still fades the glow; match the
+  product's overtake when the sheet is next touched.
 
 ## 3. Standup before code
 
