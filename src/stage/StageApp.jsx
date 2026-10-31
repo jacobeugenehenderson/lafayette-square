@@ -146,9 +146,9 @@ function DisplaysSection() {
       {list.map(d => {
         const cur = modes[d.id]?.mode || 'live'
         return (<div key={d.id}>
-          {failed[d.id] && (
+          {failed[`${lookId}/${d.id}`] && (
             <div role="alert" className="text-caption rounded px-2 py-1 my-1" style={{ background: 'var(--error-container, #5c1a1a)', color: 'var(--on-error-container, #ffdad6)' }}>
-              Display {d.id} failed: {failed[d.id]}
+              Display {d.id} failed: {failed[`${lookId}/${d.id}`]}
             </div>
           )}
           <div className="flex items-center justify-between gap-2 py-1">

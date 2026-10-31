@@ -95,7 +95,13 @@ export default function LightShow({ display, extent, calendar, contentRoot, wher
 
   const tmp = useMemo(() => ({ m: new THREE.Matrix4(), v: new THREE.Vector3(), c: new THREE.Color(), w: new THREE.Vector3() }), [])
 
+  // ⭐ A throw in the frame loop never reaches React (R3F calls useFrame in a bare loop), so it would freeze the whole
+  // town's canvas every frame (Zob, 2026-10-31). Catch it, stop the frame work, and rethrow it at render: the display's
+  // own DisplayBoundary then names and contains it.
+  const [frameErr, setFrameErr] = useState(null), frameDead = useRef(false)
   useFrame(() => {
+    if (frameDead.current) return
+    try {
     if (!F || !compiled || !root.current || !glowRef.current || !showRef.current) return
     // ── where: lay the bulbs along each strand, ridge to the ground at its foot ───────────────────────────────────────
     const exag = terrainExag.value
@@ -180,8 +186,10 @@ export default function LightShow({ display, extent, calendar, contentRoot, wher
       lightRef.current.color.setRGB(lum ? mr / lum : 0, lum ? mg / lum : 0, lum ? mb / lum : 0)
       lightRef.current.intensity = avgGlow(extent, lum).intensity
     }
+    } catch (e) { frameDead.current = true; setFrameErr(e) }
   })
 
+  if (frameErr) throw new Error(`[LightShow] ⛔ ${where}: ${frameErr.message}`)
   if (!F) return null
   return (
     <group ref={root} name="display:light-show">
