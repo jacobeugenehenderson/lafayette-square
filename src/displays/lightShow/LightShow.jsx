@@ -31,6 +31,9 @@ import { nightAt } from '../night.js'
 const SHOW_GAIN = 2.4, GLOW_GAIN = 1.7                         // HDR, so the bulbs bloom like high-wattage lamps
 const CORD = '#3a3a3c'                                          // the cords: dark gray (Jacob, 2026-10-31)
 const CORE_OF_BULB = 0.7                                        // the light inside each clear glass bulb, as a fraction of it
+// DEV-ONLY instrument (?displayDebug=noWash): hide the pinnacle's wash, to tell its colour from the stone's own lighting
+// (Jacob, 2026-10-31: a cyan band across the pinnacle; cause not established). Never in a build.
+const NO_WASH = import.meta.env.DEV && typeof window !== 'undefined' && (new URLSearchParams(window.location.search).get('displayDebug') || '').split(',').includes('noWash')
 
 /** Loads the town's drawer: looks.json, then every layer frame rasterized at the frame's size to RGBA. */
 function useDrawer(url, where) {
@@ -199,8 +202,10 @@ export default function LightShow({ display, extent, calendar, contentRoot, dim,
   return (
     <group ref={root} name="display:light-show" userData={{ focusReach: { radiusM: st.ringRadiusM + bulbR, fromM: Math.max(0, st.footHeightM - bulbR), toM: extent.pinnacle.toM } }}>
       <Strands count={ends.length * rows} strands={ends.length} glassRef={glassRef} coreRef={coreRef} socketRef={socketRef} cordRef={cordRef} />
-      <group ref={pinRef} name="light-show:pinnacle">
-        {pinFaces.map((f, k) => <mesh key={k} geometry={f.g} material={pinMat} position={f.position} rotation={f.rotation} />)}
+      <group visible={!NO_WASH}>
+        <group ref={pinRef} name="light-show:pinnacle">
+          {pinFaces.map((f, k) => <mesh key={k} geometry={f.g} material={pinMat} position={f.position} rotation={f.rotation} />)}
+        </group>
       </group>
       <pointLight ref={lightRef} position={[0, avgGlow(extent, 0).y, 0]} intensity={0} decay={2} distance={0} />
     </group>
