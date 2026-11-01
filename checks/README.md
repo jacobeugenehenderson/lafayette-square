@@ -15,7 +15,7 @@ gated without anyone remembering to gate it, which is what makes this work on to
 
 A non-zero exit is a **finding for the board**, not a runner fault. The suite reports; it does not fix.
 
-## ⛔ live — 138. Never in a default run.
+## ⛔ live — 139. Never in a default run.
 
 Two reason classes, and they are not the same thing. **outbound** — a demonstrated call out.
 **unreadable** — runs code the parser cannot read, so it *may* contact nothing but cannot be shown
@@ -71,6 +71,7 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `checks/claims-a-town-lists-each-place-once.mjs` | unreadable | import of a data: module built at run time — its body cannot be read (use checks/_importSource.mjs) · import of a data: module built at run time — its body cannot be read (use checks/_importSource.mjs) |
 | `checks/claims-a-town-page-fetches-no-authoring.mjs` | outbound | calls fetch() · opens a WebSocket · deletes files — only under its own temp dir · runs `/Applications/Google Chrome.app/Contents` — not a known-local command |
 | `checks/claims-a-town-page-writes-its-own-card.mjs` | unreadable | imports checks/_miniflare.mjs, which can: computed import() with no readable target — runs arbitrary modules, runs `npm` — not a known-local command |
+| `checks/claims-a-towns-calendar-reaches-its-displays.mjs` | outbound | importSource of src/hooks/useTownCalendar.js, which can: imports src/lib/slabUrl.js, which can: calls fetch() · importSource of src/hooks/useTownCalendar.js redirects src/lib/slabUrl.js — read, safe |
 | `checks/claims-a-tree-well-plants-only-standing-trees.mjs` | outbound | imports cartograph/fetch-trees.mjs, which can: writeFileSync, mkdirSync, imports cartograph/socrata-fetch.mjs, which can: deletes files, runs `curl` — reaches out |
 | `checks/claims-a-worker-deploy-darkens-no-town.mjs` | outbound | calls fetch() · importSource of checks/claims-a-worker-deploy-darkens-no-town.mjs (its span: start → // ── mutants: each this file), which can: calls fetch(), runs `npx` — reaches out · runs `npx` — reaches out |
 | `checks/claims-an-early-frame-key-is-held.mjs` | outbound | imports scripts/lib/headless.mjs, which can: calls fetch(), opens a WebSocket, deletes files — only under its own temp dir, child_process with a non-literal command — cannot be read |
@@ -166,7 +167,7 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `scratch/claims-the-roster-light-tells-the-truth.mjs` | unreadable | imports arborist/roster-coverage.js, which can: imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command, imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files |
 | `scratch/claims-unpainted-arcs.mjs` | unreadable | writeFileSync · mkdirSync · computed import of scratch/.arc-probe/tileGround.arc.mjs, a module it writes itself — made at run time, cannot be read |
 
-## local-effect — 31. `npm run test:all`, never CI.
+## local-effect — 32. `npm run test:all`, never CI.
 
 Writes into the repo or a scratch dir.
 
@@ -181,6 +182,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-a-road-marking-lies-inside-its-road.mjs` | EVERY ROAD MARKING THE GROUND PAINTS LIES ON THE ROAD. |
 | `checks/claims-a-scene-is-named-not-numbered.mjs` | a neighborhood's scene id is the slug |
 | `checks/claims-a-town-owns-its-raw-inputs.mjs` | DOES ANY TOWN READ ANOTHER TOWN'S RAW INPUT? |
+| `checks/claims-an-event-names-its-venue.mjs` | "DOES EVERY EVENT NAME WHERE IT HAPPENS, AND OPEN THERE?" (r-an-event-has-a-host-and-a-venue-and-opens-at-the-venue; |
 | `checks/claims-coast-distance-is-the-coast.mjs` | IS THE COAST-DISTANCE CHANNEL THE DISTANCE TO THIS TOWN'S COAST? |
 | `checks/claims-every-junction-corner-has-a-curb-cut-source.mjs` | ⭐⭐ EVERY JUNCTION CORNER'S CURB CUTS COME FROM SOMEWHERE NAMED — AND EVERY CROSSWALK ENDS AT A CURB CUT ON BOTH SIDES — `BRIEF-corner-ramps-and-kerb § |
 | `checks/claims-every-listing-keeps-its-building.mjs` | DOES EVERY LISTING'S BUILDING STAY IN THE NEIGHBORHOOD? |
