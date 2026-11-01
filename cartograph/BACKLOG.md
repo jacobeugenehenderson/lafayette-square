@@ -33,7 +33,8 @@ NO ROUTINE PURGE: content names give a changed file a fresh name, and our reader
   tally `date` → `weekday`, ruled).
 - **FOLLOW-UP BRIEFS OWED (named, not written):** terrain's floated `reloadTerrain` promise + useFrame throws (silent) · ⛔ console-only
   refusals (154 lines, 28 in Town's wrapped layers) to classify and route · R3FErrorBoundary's retryCount never resets ·
-  LightShow's two Stage-only mislabels (a malformed drawer / a 404 frame read "failed") · `/stage/lafayette-square/hero` blank (useTownPlace throws
+  LightShow's two Stage-only mislabels (a malformed drawer / a 404 frame read "failed") · useSceneJson#fetchSceneOnce caches a failed scene read as null
+  forever, warn only (Zob; now expressible with httpFailure) · `/stage/lafayette-square/hero` blank (useTownPlace throws
   outside any boundary) · the "legacy" player acceptance is dead wiring (remove after an R2 read of the records) · the 130 safe-tier
   reds have no baseline (Zob's triage: two stale towns abort 34 checks; a ribbonScenes refusal + a checks/BOARD.json are proposed).
 - **FINDINGS FOR OTHER BANDS:** Arborist — PTown trees near the Monument drawn 37–40 m (upper bound), truly occluding the strands ·
