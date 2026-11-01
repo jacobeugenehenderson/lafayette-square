@@ -2,9 +2,9 @@
   "generated_by": "node checks/tier.mjs --json",
   "total": 556,
   "counts": {
-    "safe": 383,
+    "safe": 382,
     "local-effect": 32,
-    "live": 141
+    "live": 142
   },
   "checks": [
     {
@@ -173,7 +173,7 @@
         "opens a WebSocket",
         "deletes files — only under its own temp dir",
         "runs `/Applications/Google Chrome.app/Contents` — not a known-local command",
-        "runs `pkill -9 -f 'user-data-dir=${profile}'` — not a known-local command"
+        "runs `pkill -9 -f 'user-data-dir=${profile}'` — a ${…} spliced in before the shell parses: its stages cannot be read"
       ]
     },
     {
@@ -514,7 +514,7 @@
         "opens a WebSocket",
         "deletes files — only under its own temp dir",
         "runs `/Applications/Google Chrome.app/Contents` — not a known-local command",
-        "runs `pkill -9 -f 'user-data-dir=${profile}'` — not a known-local command"
+        "runs `pkill -9 -f 'user-data-dir=${profile}'` — a ${…} spliced in before the shell parses: its stages cannot be read"
       ]
     },
     {
@@ -913,7 +913,7 @@
         "opens a WebSocket",
         "deletes files — only under its own temp dir",
         "runs `/Applications/Google Chrome.app/Contents` — not a known-local command",
-        "runs `pkill -9 -f 'user-data-dir=${profile}'` — not a known-local command"
+        "runs `pkill -9 -f 'user-data-dir=${profile}'` — a ${…} spliced in before the shell parses: its stages cannot be read"
       ]
     },
     {
@@ -1958,7 +1958,7 @@
         "opens a WebSocket",
         "deletes files — only under its own temp dir",
         "runs `/Applications/Google Chrome.app/Contents` — not a known-local command",
-        "runs `pkill -9 -f 'user-data-dir=${profile}'` — not a known-local command"
+        "runs `pkill -9 -f 'user-data-dir=${profile}'` — a ${…} spliced in before the shell parses: its stages cannot be read"
       ]
     },
     {
@@ -2230,7 +2230,7 @@
         "opens a WebSocket",
         "deletes files — only under its own temp dir",
         "runs `/Applications/Google Chrome.app/Contents` — not a known-local command",
-        "runs `pkill -9 -f 'user-data-dir=${profile}'` — not a known-local command"
+        "runs `pkill -9 -f 'user-data-dir=${profile}'` — a ${…} spliced in before the shell parses: its stages cannot be read"
       ]
     },
     {
@@ -2588,7 +2588,7 @@
         "opens a WebSocket",
         "deletes files — only under its own temp dir",
         "runs `/Applications/Google Chrome.app/Contents` — not a known-local command",
-        "runs `pkill -9 -f 'user-data-dir=${profile}'` — not a known-local command"
+        "runs `pkill -9 -f 'user-data-dir=${profile}'` — a ${…} spliced in before the shell parses: its stages cannot be read"
       ]
     },
     {
@@ -2763,9 +2763,10 @@
     },
     {
       "file": "checks/claims-references-are-sound.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "runs `git ls-files --error-unmatch $` — local, read-only"
+        "runs `git ls-files --error-unmatch ${script}` — a ${…} spliced in before the shell parses: its stages cannot be read"
       ]
     },
     {
@@ -2774,7 +2775,7 @@
       "reasonClass": "unreadable",
       "why": [
         "runs `git ls-files \"cartograph/data/` — local, read-only",
-        "runs `git show HEAD:${P}` — git history at a moving or unpinned rev, or with an option"
+        "runs `git show HEAD:${P}` — a ${…} spliced in before the shell parses: its stages cannot be read"
       ]
     },
     {
@@ -2953,7 +2954,7 @@
         "opens a WebSocket",
         "deletes files — only under its own temp dir",
         "runs `/Applications/Google Chrome.app/Contents` — not a known-local command",
-        "runs `pkill -9 -f 'user-data-dir=${profile}'` — not a known-local command"
+        "runs `pkill -9 -f 'user-data-dir=${profile}'` — a ${…} spliced in before the shell parses: its stages cannot be read"
       ]
     },
     {
@@ -3335,7 +3336,7 @@
         "opens a WebSocket",
         "deletes files — only under its own temp dir",
         "runs `/Applications/Google Chrome.app/Contents` — not a known-local command",
-        "runs `pkill -9 -f 'user-data-dir=${profile}'` — not a known-local command"
+        "runs `pkill -9 -f 'user-data-dir=${profile}'` — a ${…} spliced in before the shell parses: its stages cannot be read"
       ]
     },
     {
@@ -4011,7 +4012,7 @@
         "opens a WebSocket",
         "deletes files — only under its own temp dir",
         "runs `/Applications/Google Chrome.app/Contents` — not a known-local command",
-        "runs `pkill -9 -f 'user-data-dir=${profile}'` — not a known-local command"
+        "runs `pkill -9 -f 'user-data-dir=${profile}'` — a ${…} spliced in before the shell parses: its stages cannot be read"
       ]
     },
     {
@@ -4505,7 +4506,7 @@
       "reasonClass": "unreadable",
       "why": [
         "deletes files",
-        "runs `git show ${BASE}:src/components/Instance` — git history at a moving or unpinned rev, or with an option",
+        "runs `git show ${BASE}:src/components/Instance` — a ${…} spliced in before the shell parses: its stages cannot be read",
         "imports package(s) three, esbuild — not read from source"
       ]
     }

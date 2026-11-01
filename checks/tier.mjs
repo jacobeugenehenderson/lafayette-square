@@ -136,7 +136,7 @@ function shellStages(c) {
       if (!m) opaque = true; else { i += m[0].length - 1; continue }
       continue
     }
-    if (ch === '|' || ch === ';' || ch === '&') {
+    if (ch === '|' || ch === ';' || ch === '&' || ch === '\n') {
       if (/^\d$/.test(cur.slice(-1)) && ch === '&') { cur += ch; continue }
       stages.push(cur); cur = ''; if ((ch === '|' || ch === '&') && c[i + 1] === ch) i++
       continue
@@ -146,8 +146,24 @@ function shellStages(c) {
   stages.push(cur)
   return { stages: stages.map(s => s.replace(/\s+\d$/, '').trim()).filter(Boolean), opaque: opaque || q !== null }
 }
-function stringCmdRead(c) {
-  const head = c.slice(0, 40), { stages, opaque } = shellStages(c)
+// ⭐ A JS `${…}` IN A COMMAND IS SPLICED IN BEFORE THE SHELL PARSES (Fuse, 2026-11-01): a `;`, `|` or `>` inside the value
+// is shell. So a splice is opaque unless it names a `const NAME = '<plain word>'` in the same file, which is read in place.
+// (A shell `$VAR` is not: the shell only word-splits it, so it can add arguments to a local command, never a stage.)
+// A JS `\n` escape is a real newline at run time, and an unquoted newline separates commands, as `;` does.
+const PLAIN_WORD = /^[\w./:@%+=,-]*$/
+function spliceConsts(c, code) {
+  let opaque = false
+  const out = c.replace(/\$\{\s*([A-Za-z_$][\w$]*)?[^}]*\}/g, (whole, name) => {
+    const m = name && whole === `\${${name}}` ? new RegExp(`\\bconst\\s+${name.replace(/\$/g, '\\$')}\\s*=\\s*(['"])([^'"\`]*)\\1`).exec(code ?? '') : null
+    if (m && PLAIN_WORD.test(m[2])) return m[2]
+    opaque = true; return 'x'
+  })
+  return { text: out.replace(/(^|[^\\])\\n/g, '$1\n'), opaque }
+}
+function stringCmdRead(c, code) {
+  const head = c.slice(0, 40), sp = spliceConsts(c, code)
+  if (sp.opaque) return { local: false, why: `runs \`${head}\` — a \${…} spliced in before the shell parses: its stages cannot be read` }
+  const { stages, opaque } = shellStages(sp.text)
   if (opaque) return { local: false, why: `runs \`${head}\` — a redirect or a substitution: its effect cannot be read` }
   if (stages.length > 1) {
     const bad = stages.map(oneCmdRead).find(r => !r.local)
@@ -163,6 +179,26 @@ function oneCmdRead(c) {
       : { local: false, why: `runs \`${head}\` — git history at a moving or unpinned rev, or with an option` }
   }
   return LOCAL_CMD.test(c) ? { local: true, why: `runs \`${c.slice(0, 30)}\` — local, read-only` } : { local: false, why: `runs \`${head}\` — not a known-local command` }
+}
+// ⛔ GIT OPTIONS CAN WRITE OR RUN A PROGRAM (Fuse, 2026-11-01): `diff`/`log --output=<file>` writes, `grep -O` opens a
+// pager, `--ext-diff` / `--textconv` run a configured command. On an argv call, options are read only where none can:
+// ls-files, rev-parse and merge-base take any; grep takes the listed ones; every other subcommand (show, cat-file, log,
+// diff, status) takes none. An argv call outside that is unreadable: live. (The STRING form's options are the older
+// LOCAL_CMD hole, ticketed on its own.)
+const GIT_GREP_OPTS = new Set(['-n', '-I', '-e', '-l', '-i', '-w', '-E', '-F', '-c', '-h', '-q', '--'])
+function argvOptionsRead([sub, ...rest]) {
+  if (['ls-files', 'rev-parse', 'merge-base'].includes(sub)) return true
+  if (sub === 'cat-file') return rest.length === 2 && ['-p', 'blob'].includes(rest[0]) && !rest[1].startsWith('-')
+  let afterE = false, afterDashes = false
+  for (const w of rest) {
+    if (afterDashes) continue
+    if (afterE) { afterE = false; continue }
+    if (!w.startsWith('-')) continue
+    if (sub !== 'grep' || !GIT_GREP_OPTS.has(w)) return false
+    if (w === '-e') afterE = true
+    if (w === '--') afterDashes = true
+  }
+  return true
 }
 /** execFileSync / spawnSync('git', [ … ]): each array read element by element → the command it runs, or null (unreadable). */
 const GIT_ARGV = /\b(?:execFileSync|spawnSync|execFile|spawn)\s*\(\s*(['"])git\1\s*,\s*\[([^\]]*)\]/g
@@ -184,7 +220,7 @@ function gitArgvCommands(code) {
       const rev = t[1].slice(0, at).replace(/\$\{\s*([A-Za-z_$][\w$]*)\s*\}/g, (_, n) => constSha(n))
       return rev.includes('${') ? NOT_LITERAL : `${rev}:${t[1].slice(at + 1).replace(/\$\{[^}]*\}/g, 'x') || 'x'}`
     })
-    out.push(words.some(w => w.includes(NOT_LITERAL)) ? null : `git ${words.join(' ')}`)
+    out.push(words.some(w => w.includes(NOT_LITERAL)) || !argvOptionsRead(words) ? null : `git ${words.join(' ')}`)
   }
   return out
 }
@@ -241,15 +277,17 @@ const SELF_RERUN = /\b(?:spawnSync|execFileSync)\s*\(\s*process\.execPath\s*,\s*
 const IMPORTS_CHILD_PROCESS = /['"](?:node:)?child_process['"]/
 
 function execCommands(code) {
-  if (!IMPORTS_CHILD_PROCESS.test(code)) return { cmds: [], selfRuns: 0, opaque: false }
+  if (!IMPORTS_CHILD_PROCESS.test(code)) return { cmds: [], argv: new Set(), selfRuns: 0, opaque: false }
   const cmds = []
   for (const m of code.matchAll(/\b(execSync|execFileSync|exec|execFile|spawnSync|spawn)\s*\(\s*(['"`])([\s\S]*?)\2/g)) cmds.push(m[3])
   // an argv-form git call is read as its array: the bare 'git' captured above is replaced by the command, when readable
-  for (const g of gitArgvCommands(code)) if (g) { const i = cmds.indexOf('git'); if (i >= 0) cmds[i] = g }
+  // (no shell runs an argv call, so its command is read word by word, never split into stages)
+  const argv = new Set()
+  for (const g of gitArgvCommands(code)) if (g) { const i = cmds.indexOf('git'); if (i >= 0) { cmds[i] = g; argv.add(g) } }
   const selfRuns = [...code.matchAll(SELF_RERUN)].length
   // a child_process call whose command is not a literal cannot be read at all — unless it re-runs this same file
   const calls = [...code.matchAll(/\b(execSync|execFileSync|exec|execFile|spawnSync|spawn)\s*\(/g)].length
-  return { cmds, selfRuns, opaque: calls - selfRuns > cmds.length }
+  return { cmds, argv, selfRuns, opaque: calls - selfRuns > cmds.length }
 }
 
 /** The ruling, run on planted sources: the two self shapes are read; another file stays unreadable (the mutation). */
@@ -966,10 +1004,10 @@ export function classify(file, seen = new Set(), depth = 0, spanText = null) {
     }
   }
 
-  const { cmds, selfRuns, opaque } = execCommands(code)
+  const { cmds, argv, selfRuns, opaque } = execCommands(code)
   for (const c of cmds) {
     if (NET_CMD.test(c)) { bump('live'); why.push(`runs \`${c.slice(0, 40)}\` — reaches out`) }
-    else { const r = stringCmdRead(c); if (!r.local) bump('live'); why.push(r.why) }
+    else { const r = argv.has(c) ? oneCmdRead(c) : stringCmdRead(c, code); if (!r.local) bump('live'); why.push(r.why) }
   }
   if (selfRuns) why.push('re-runs its own file (process.execPath + its own path) — the same tier as itself')
   if (opaque) { bump('live'); why.push('child_process with a non-literal command — cannot be read') }
@@ -1135,6 +1173,17 @@ export function gitSelfTest() {
     ['string: a | inside a quoted pattern, then || true', at("execSync('grep -rlE \"a|b\" src || true')"), 'safe'],
     ['string: a pipe between two local commands', at("execSync('git ls-files | wc -l')"), 'safe'],
     ['string: stderr to /dev/null', at("execSync('git ls-files 2>/dev/null')"), 'safe'],
+    // Fuse's three (2026-11-01): a writer option on argv git, a JS splice, a newline
+    ['argv: git diff --output=<file>', at("execFileSync('git', ['diff', '--output=out.txt'])"), 'live'],
+    ['argv: git log --output=<file>', at("execFileSync('git', ['log', '--output=out.txt'])"), 'live'],
+    ['argv: git grep -O (opens a pager program)', at("execFileSync('git', ['grep', '-Orm', 'x'])"), 'live'],
+    ['argv: git grep with read-only options', at("execFileSync('git', ['grep', '-n', '-I', '-e', 'a|b', '--', 'src'])"), 'safe'],
+    ['argv: git ls-files with options', at("execFileSync('git', ['ls-files', '--error-unmatch', 'x'])"), 'safe'],
+    ['string: a ${…} spliced from a non-const', at("const f = (s) => execSync(`git ls-files --error-unmatch ${s}`)"), 'live'],
+    ['string: a ${…} spliced from a const plain word', at("const D = 'public/baked'\nexecSync(`git ls-files -- ${D}`)"), 'safe'],
+    ['string: a ${…} const holding a metacharacter', at("const D = 'x; rm -rf y'\nexecSync(`git ls-files -- ${D}`)"), 'live'],
+    ['string: a \\n escape between two commands', at("execSync('git ls-files\\nrm -rf x')"), 'live'],
+    ['string: a real newline between two commands', at("execSync(`git ls-files\nrm -rf x`)"), 'live'],
   ]
   for (const [name, got, want] of cases) if (got !== want) throw new Error(`[tier] ⛔ self-test: git — ${name} read as ${got}, want ${want}`)
   return cases.length
