@@ -47,7 +47,8 @@
  *                    projected once through townPlace.js#projectorOf. Alone (frameIds absent → the set is the points)
  *                    or with frameIds. Same floor and Extent; a point outside the town is DISCLOSED in onFramed.points
  *                    (never flown to). ⛔ A new framePoints moves the camera only on a frameKey change (or on entry): bump
- *                    frameKey on a spot click. ▶ node checks/claims-the-plan-frames-a-point.mjs
+ *                    frameKey on a spot click. ⛔ null for no spot: an EMPTY array is refused (it would enter on an empty set,
+ *                    hold, and drop litIds' framing). onFramed says `held: true` when nothing was placed. ▶ node checks/claims-the-plan-frames-a-point.mjs
  *   frameMode        how the plan frames its places: 'densest' (default — the densest cluster, frameDensest; Jacob, 2026-09-28)
  *                    | 'all' — EVERY placed member, footprints and all, fitted into viewInset with the town's browse
  *                    padding (frameAll; Jacob, 2026-09-29: "Dining should frame all the bars and restaurants"). Bounded
@@ -687,8 +688,8 @@ export default function Town({
   const frameKeyAtMount = useRef(frameKey).current
   const placeIds = useMemo(() => (frameIds != null ? [...frameIds] : framePoints != null ? []   // points alone: the set is the points
     : litIds?.size ? [...litIds] : listings.map((l) => l.building_id ?? null)), [frameIds, framePoints, litIds, listings])
-  if (framePoints != null && !(Array.isArray(framePoints) && framePoints.every((p) => p && typeof p.id === 'string' && p.id && Number.isFinite(p.lat) && Number.isFinite(p.lon))))
-    throw new Refusal(`[Town] ⛔ framePoints must be [{ id, lat, lon }] (got ${JSON.stringify(framePoints)?.slice(0, 120)})`)
+  if (framePoints != null && !(Array.isArray(framePoints) && framePoints.length && framePoints.every((p) => p && typeof p.id === 'string' && p.id && Number.isFinite(p.lat) && Number.isFinite(p.lon))))
+    throw new Refusal(`[Town] ⛔ framePoints must be a non-empty [{ id, lat, lon }] — null for no spot (an empty array would enter on an empty set and drop the app's own framing); got ${JSON.stringify(framePoints)?.slice(0, 120)}`)
   const ownHandle = useRef(null)
   const flightHold = useRef(() => false)
   const movieHandle = movie?.handle ?? ownHandle

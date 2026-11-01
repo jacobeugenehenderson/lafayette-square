@@ -206,7 +206,7 @@ export default function ShotFlight({ shot, flight = true, streetAt, viewInset, f
   const framed = (d) => {
     const f = d?.frame
     if (!f) return
-    live.current.onFramed?.({ x: f.x, z: f.z, radius: f.radius, placed: f.placed, of: f.of, outside: f.outside, unplaced: f.unplaced, points: f.points ?? null })
+    live.current.onFramed?.({ x: f.x, z: f.z, radius: f.radius, placed: f.placed, of: f.of, outside: f.outside, unplaced: f.unplaced, points: f.points ?? null, held: !!d.hold })
   }
 
   // ONE flight, whatever asked for it: a shot change, a re-frame (frameKey), a turn (planHeading). Under "reduce
@@ -292,6 +292,9 @@ export default function ShotFlight({ shot, flight = true, streetAt, viewInset, f
     planOn.current = 'places'
     const d = destination('plan')
     if (!d) return false
+    // ⛔ A hold never cancels a flight in progress (Zob, 2026-11-01): the running flight lands as it was going to, and the
+    // hold only reports. Cancelling first would stop the camera mid-air and swallow that flight's landing.
+    if (d.hold) { framed(d); return true }
     if (tween.current.isActive()) tween.current.cancel()
     flying.current = null
     fly('plan', 'plan', d, transitionMs('frame'))

@@ -14,8 +14,8 @@
  *   6. nothing placed is its OWN result: the destination is { hold }, never home() (the Browse frame); cut and fly both
  *      end the landing on it with the camera unmoved, and cut never parks it as pending;
  *   7. movers project through the same projector (the inline copy of its formula is gone);
- *   8. <Town> passes framePoints, enters on them (entryFrames), and its header says a new framePoints flies only on a
- *      frameKey change.
+ *   8. <Town> passes framePoints, enters on them (entryFrames), refuses an empty array (null is "no spot"), and its header
+ *      says a new framePoints flies only on a frameKey change; a frame-key hold never cancels a flight in progress.
  * Usage: node checks/claims-the-plan-frames-a-point.mjs [--mutants]
  */
 import { importSource, sourceOf } from './_importSource.mjs'
@@ -32,6 +32,7 @@ function floorAt(x, z) {   // the floor as the module defines it, recomputed fro
 
 async function verdict({ frame, flight, movers, town } = {}) {
   const fails = [], F = (c, m) => { if (!c) fails.push(m) }
+  const places = new Map(BUILDINGS.map((p, i) => [`b${i}`, { ...p }]))   // fresh each run: a mutant that writes into it leaves nothing behind
   const M = await importSource('src/lib/frameDensest.js', frame ? { transform: frame } : {})
   for (const mode of ['densest', 'all']) {
     const lone = M.framePlaces(places, [], ST, mode, [], [{ id: 'p', x: 120, z: 80 }])
@@ -55,6 +56,8 @@ async function verdict({ frame, flight, movers, town } = {}) {
   F(/return \{ hold: true, frame: \{[^}]*\.\.\.discloseFrame\(/.test(nofr) && !/home\(\)/.test(nofr), 'with nothing placed the plan does not hold (it returns the Browse frame, or no disclosure)')
   F(/pending\.current = null\s*if \(d\.hold\) \{ framed\(d\); if \(landed\) end\(landed\); return true \}/.test(sf), "cut does not end the landing on a hold (or parks it as pending)")
   F(/if \(d\.hold\) \{ framed\(d\); end\(landed\); return \}/.test(sf), 'fly does not end the landing on a hold without moving')
+  const fil = sf.slice(sf.indexOf('const frameIfLive = '), sf.indexOf('useLayoutEffect(', sf.indexOf('const frameIfLive = ')))
+  F(/if \(!d\) return false\s*if \(d\.hold\) \{ framed\(d\); return true \}\s*if \(tween\.current\.isActive\(\)\) tween\.current\.cancel\(\)/.test(fil), 'a frame-key hold cancels a flight in progress (it must report and return before any cancel)')
   // 7. movers
   const mv = code(movers ? movers(sourceOf('src/lib/movers.js')) : sourceOf('src/lib/movers.js'))
   F(/projectorOf\(place\)\(m\.lon, m\.lat\)/.test(mv) && !/\* place\.lonToMeters/.test(mv), 'movers project with their own copy of the formula, not the one projector')
@@ -62,6 +65,7 @@ async function verdict({ frame, flight, movers, town } = {}) {
   const tw = town ? town(sourceOf('src/components/Town.jsx')) : sourceOf('src/components/Town.jsx')
   F(/framePoints=\{framePoints\} \/>/.test(tw) && /entryFrames=\{frameIds != null \|\| framePoints != null\}/.test(tw), '<Town> does not pass framePoints, or does not enter on them')
   F(/A new framePoints moves the camera only on a frameKey change/.test(tw), "<Town>'s header does not say a new framePoints flies only on a frameKey change")
+  F(/framePoints\.length && framePoints\.every\(/.test(tw), '<Town> accepts an empty framePoints (null is "no spot")')
   return fails
 }
 
@@ -75,6 +79,9 @@ if (process.argv.includes('--mutants')) {
     ['points merged into the places (the floor moves)', { frame: (s) => s.replace('else { pts.push({ x: q.x, z: q.z, radius: 0 }); ptPlaced++ }', 'else { pts.push({ x: q.x, z: q.z, radius: 0 }); ptPlaced++; places.set(q.id, { x: q.x, z: q.z, radius: 0 }) }') }],
     ['an outside point framed', { frame: (s) => s.replace('if (Math.hypot(q.x - cx, q.z - cz) > stencil.radius) ptOutside.push(q.id)\n    else', 'if (false) ptOutside.push(q.id)\n    else') }],
     ['a duplicate point id accepted', { frame: (s) => s.replace("if (ptSeen.has(q.id)) throw", 'if (false) throw') }],
+    ['a place/point shadow accepted', { frame: (s) => s.replace('if (all.includes(q.id)) throw', 'if (false) throw') }],
+    ['a hold cancels the running flight', { flight: (s) => s.replace('    if (d.hold) { framed(d); return true }\n', '') }],
+    ['an empty framePoints accepted', { town: (s) => s.replace('framePoints.length && framePoints.every(', 'framePoints.every(') }],
     ['lat and lon swapped', { flight: (s) => s.replace('toLocal(p.lon, p.lat)', 'toLocal(p.lat, p.lon)') }],
     ['home() restored on null', { flight: (s) => s.replace("return { hold: true, frame: {", "return home() || { hold: true, frame: {") }],
     ['nothing-placed treated as pending', { flight: (s) => s.replace('if (!d) { pending.current = { shot: s, landed }', 'if (!d || d.hold) { pending.current = { shot: s, landed }').replace('if (d.hold) { framed(d); if (landed) end(landed); return true }', '') }],
