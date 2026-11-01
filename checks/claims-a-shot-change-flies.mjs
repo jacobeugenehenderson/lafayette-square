@@ -16,8 +16,9 @@
  *      transitions.js' plan entry (2400 ms) ± 1% (the slope of the flight's t against `at`, its frame's performance.now()); the camera's
  *      position is linear in easeInOutCubic(t) to 2% of the move; the ref's `eased` is that same curve; it lands in a
  *      true overhead (camera directly above its target).
- *   2. plan → movie flies into the MOVING path: after landing the camera keeps moving with no jump (no frame step
- *      > 4 × the median step around the landing).
+ *   2. plan → movie hands off onto the MOVING path with no jump (handoff(), below): the step into the landing is at
+ *      most the tween's remaining fraction of its own move plus one frame of the movie's travel; the two frames after it
+ *      run within the movie's own measured speed band; and the camera keeps moving. Every bound is this run's own.
  *   3. a wheel mid-flight ends it where it is: the ref reports interrupted with t < 1.
  *   4. viewInset (Preview's ?inset=): the movie is full frame (no view offset); the plan lands with its target at the
  *      centre of the FREE region (± 3 px); mid-flight the offset has moved by the flight's own eased fraction.
@@ -28,7 +29,10 @@
  *      heading and follows a change within 2 frames (no flight), holding north up while the heading is null; under prefers-reduced-motion a shot change is a cut (no frame
  *      with 0 < t < 1). (Pausing is its own check: claims-a-paused-town-draws-nothing.)
  *
- * ⛔ READ-ONLY. Usage: node checks/claims-a-shot-change-flies.mjs --town=<town> [--base=http://localhost:5173]
+ * ⛔ READ-ONLY. Usage: node checks/claims-a-shot-change-flies.mjs --town=<town> [--base=http://localhost:5173] [--dump=<file>]
+ *   --replay=<dump> [-v]: §2 and its three mutants on a saved --dump, no browser (stale landing · clock jump · tween cut short).
+ *   --code-mutant=chase: the browser run with ShotFlight served without its chase (the response rewritten in flight, never on
+ *   disk); passes only if §2 goes red.
  */
 import { spawn } from 'node:child_process'
 import { mkdtempSync, rmSync, readFileSync, existsSync } from 'node:fs'
@@ -38,10 +42,132 @@ import { SHOT_TRANSITION_MS } from '../src/camera/transitions.js'
 import { requiredTown } from './_scenes.mjs'
 
 const arg = (n) => process.argv.find((a) => a.startsWith(`--${n}=`))?.split('=')[1]
-const TOWN = requiredTown('town')
-const BASE = arg('base') || 'http://localhost:5173'
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2)
+const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2])
+
+/**
+ * §2, THE HAND-OFF: does plan → movie land on the MOVING path with no jump? On one recording of the flight ({ out, p0 }:
+ * every frame, and the camera at the click, which is the tween's `from`, since the plan holds still until the tween
+ * starts). → { fails, line } | { refused }.
+ * ⛔ Every bound comes from this run: the tween's own remaining move and the movie's own measured speeds. It replaced
+ * `max(speed(iL−1..iL+1)) ≤ 4 × the movie's median` (2026-11-01), a constant that was right for one town and one frame
+ * rate: speed(iL−1) is the eased tween's last coarse frame, so the ratio passed or failed by the move's length and the
+ * frame interval (PTown 70 m/s, Huron 30 m/s, against a movie at 4.2 m/s, with a clean hand-off in both).
+ * The movie's clock RUNS during the flight (MovieCamera's useFrame advances it before `hold` stops the writes), so the
+ * chase follows a moving target, and a landing without it is stale by the movie's travel over the flight.
+ */
+function handoff({ out: s, p0 }) {
+  const iL = s.findIndex((x) => x.landed && x.to === 'movie')
+  if (iL < 0) return { fails: ['plan → movie: the flight never landed (to=movie)'] }
+  if (!Array.isArray(p0)) return { refused: 'the recording carries no p0 (the camera at the click): the move\'s length cannot be bounded' }
+  const prev = s[iL - 1]
+  if (!prev || prev.landed || prev.e == null || prev.to !== 'movie') return { fails: ['plan → movie: no flight frame before the landing — a cut, not a flight'] }
+  // (b)'s speeds are per rAF TIMESTAMP (`ts`), the clock the movie steps by (MovieCamera#presentedClock, via r3f's addEffect);
+  // `ms`, performance.now() inside the recorder's callback, is a second clock that wanders by milliseconds, which on a
+  // movie that accelerates read as a speed band wide enough to hide a skipped frame (HPDM, 2026-11-01: 4.8–14.8 m/s).
+  if (s.slice(iL).some((x) => !Number.isFinite(x.ts))) return { refused: 'the recording carries no rAF timestamps (ts): the movie\'s speed cannot be read on its own clock' }
+  const speed = (k) => dist(s[k].p, s[k - 1].p) / Math.max(1e-3, s[k].ts - s[k - 1].ts)   // m per ms of the movie's clock
+  // The movie's own speeds, past the hand-off frames. ⛔ Fewer than 5 is a recording too short to measure, not a pass.
+  const win = []
+  for (let k = iL + 3; k < s.length; k++) win.push(speed(k))
+  if (win.length < 5) return { refused: `only ${win.length} movie frames after the hand-off (need 5)` }
+  const vMax = Math.max(...win), vMin = Math.min(...win)
+  // THE TIMESTAMP'S GRAIN, measured: the coarsest decimal step every recorded ts sits on (Chrome coarsens rAF time). A
+  // speed over one frame is then known to ± 2·grain/dt of itself: 0.1% on a 100 ms frame at a 0.1 ms grain, which is
+  // the size of a constant-speed movie's whole measured band (Huron, 2026-11-01: 4.125 against a window max of 4.120).
+  const grain = [1, 0.1, 0.01, 0.001, 1e-4].find((g) => s.every((x) => Math.abs(x.ts / g - Math.round(x.ts / g)) < 1e-3)) ?? 0
+  // ACCELERATION, measured: the largest change of the movie's speed from one frame to the next inside the window. A frame
+  // n frames before the window may run n of those faster than anything the window saw (a movie speeding up at the landing).
+  let dvMax = 0
+  for (let k = iL + 4; k < s.length; k++) dvMax = Math.max(dvMax, Math.abs(speed(k) - speed(k - 1)))
+  // The movie's speed bound on frame k: its window's top, its band, the grain's error on that frame, and the acceleration
+  // over the frames between k and the window's start (3 for the landing, 2 and 1 for the hand-off frames).
+  const bound = (k) => vMax + (vMax - vMin) + vMax * 2 * grain / Math.max(1e-3, s[k].ts - s[k - 1].ts) + dvMax * (iL + 3 - k)
+  const fails = []
+  // (a) THE STEP INTO THE LANDING: at most the tween's remaining fraction of its own move, plus the movie's travel in
+  // that frame. The move is bounded above by |landing − p0| plus the movie's travel over the flight (the chase's drift).
+  const T = s[iL].ms
+  const L = dist(s[iL].p, p0) + vMax * T
+  // The movie's travel in that frame is on the movie's clock (ts); `ms` here gave a false red (PTown, 2026-11-01: 0.578 m
+  // against 0.550 by ms, 0.580 by ts).
+  const into = dist(s[iL].p, prev.p), dtL = s[iL].ts - prev.ts
+  const allowed = (1 - prev.e) * L + bound(iL) * dtL
+  if (into > allowed) fails.push(`plan → movie: the step into the landing is ${into.toFixed(2)} m — the tween had ${((1 - prev.e) * L).toFixed(2)} m left and the movie travels ${(vMax * dtL).toFixed(2)} m in that frame (≤ ${allowed.toFixed(2)} m)`)
+  // (b) THE FIRST MOVIE FRAMES: within the movie's own measured speed band (its jitter, rAF time against presented time).
+  const hand = [speed(iL + 1), speed(iL + 2)]
+  hand.forEach((v, j) => { const b = bound(iL + 1 + j); if (v > b) fails.push(`plan → movie: ${(v * 1000).toFixed(3)} m/s on the frame ${j + 1} after the landing — the movie runs ${(vMin * 1000).toFixed(3)}–${(vMax * 1000).toFixed(3)} m/s (≤ ${(b * 1000).toFixed(3)} with the ${grain} ms grain): the hand-off jumped`) })
+  if (dist(s[s.length - 1].p, s[iL].p) < 1e-3) fails.push('plan → movie: the camera stopped after landing — it landed on a still pose, not the moving path')
+  // RESOLUTION: the smallest clock skip (b) can see on this run, at the first movie frame.
+  const vMed = [...win].sort((a, b) => a - b)[win.length >> 1]
+  const dtsW = s.slice(iL + 1).map((x, k) => x.ts - s[iL + k].ts).sort((a, b) => a - b), dtMed = dtsW[dtsW.length >> 1]
+  const skipSec = Math.max(0, (bound(iL + 1) - hand[0]) * (s[iL + 1].ts - s[iL].ts)) / vMed / 1000
+  const line = `plan → movie: landed at ${s[iL].ms.toFixed(0)} ms · into the landing ${into.toFixed(3)} m (≤ ${allowed.toFixed(3)}: the tween's last ${(1 - prev.e).toExponential(1)} of ${L.toFixed(0)} m + one movie frame) · `
+    + `then ${hand.map((v) => (v * 1000).toFixed(3)).join(', ')} m/s (≤ ${(bound(iL + 1) * 1000).toFixed(3)}: the movie ${(vMin * 1000).toFixed(3)}–${(vMax * 1000).toFixed(3)} m/s over ${win.length} frames, ts grain ${grain} ms, |Δv| ≤ ${(dvMax * 1000).toFixed(3)} m/s a frame) · `
+    + `resolution: a clock skip ≥ ${(skipSec * 1000).toFixed(1)} ms (${(skipSec * 1000 / dtMed).toFixed(2)} frames)`
+  return { fails, line, iL, vMed, dtMed }
+}
+
+/**
+ * The hand-off's mutants, on THIS recording: each is red only by a failure the baseline does not have.
+ *   stale landing (the chase removed): every flight frame lerps to the movie's pose at the click instead of the moving one
+ *   clock jump at the first movie frame: the movie skips two frames of its clock
+ *   a tween cut short: the camera one frame before landing sits where e(0.9) puts it (t and e as recorded: the camera moves, not the ref)
+ */
+function handoffMutants(rec) {
+  const base = handoff(rec)
+  if (base.refused || base.iL == null) return { refused: base.refused || base.fails.join(' · ') }
+  const { out: s, p0 } = rec, iL = base.iL, v = base.vMed
+  const d = s[iL + 1].p.map((c, i) => c - s[iL].p[i]), n = Math.hypot(...d) || 1, u = d.map((c) => c / n)
+  const dtMed = base.dtMed
+  const shift = (x, m) => ({ ...x, p: x.p.map((c, i) => c + u[i] * m) })
+  const mutants = [
+    ['stale landing (the chase removed)', s.map((x, k) => (k <= iL && x.to === 'movie' && x.e != null ? shift(x, -v * x.ms * (x.landed ? 1 : x.e)) : x))],
+    ['a clock jump at the first movie frame', s.map((x, k) => (k > iL ? shift(x, v * 2 * dtMed) : x))],
+    ['a tween cut short (lands from t 0.9)', s.map((x, k) => (k === iL - 1 ? { ...x, p: p0.map((c, i) => c + (s[iL].p[i] - c) * ease(0.9)) } : x))],
+  ]
+  const had = new Set(base.fails)
+  return { base, results: mutants.map(([name, out]) => {
+    const r = handoff({ out, p0 })
+    return { name, killed: !!r.fails?.some((f) => !had.has(f)), why: r.fails?.find((f) => !had.has(f)) ?? r.refused }
+  }) }
+}
+
+/**
+ * The code mutant's verdict: killed only when the rewrite landed exactly once AND §2 MEASURED a failure. ⛔ A refusal
+ * (too few movie frames, no p0, no landing) measured nothing, so it never counts as red (Zob, 2026-11-01).
+ */
+function codeMutantVerdict(applied, h) {
+  if (applied !== 1) return { killed: false, why: `the rewrite landed ${applied} time(s), not 1: ShotFlight was not mutated as named` }
+  if (!h || h.refused) return { killed: false, why: `§2 measured nothing (${h?.refused ?? 'no recording'})` }
+  if (!h.fails.length) return { killed: false, why: '§2 stayed green with the chase removed' }
+  return { killed: true, why: h.fails[0] }
+}
+
+// ── --replay=<dump>: §2 and its mutants on a saved dump (--dump's r2), no browser ──
+if (arg('replay')) {
+  const { r2 } = JSON.parse(readFileSync(arg('replay'), 'utf8'))
+  const m = handoffMutants(r2)
+  if (m.refused) { console.error(`⛔ NOT CHECKED — ${m.refused}`); process.exit(2) }
+  console.log(`  ${m.base.line}`)
+  for (const f of m.base.fails) console.log(`  ✗ ${f}`)
+  let bad = m.base.fails.length
+  for (const r of m.results) { console.log(`${r.killed ? '🔴' : '⚪ SURVIVED'} mutant: ${r.name}${process.argv.includes('-v') && r.why ? ` (${r.why})` : ''}`); if (!r.killed) bad++ }
+  // The code mutant's guard, mutated: a refusal and a missed rewrite must each read SURVIVED, never red.
+  for (const [name, applied, h] of [['a refused §2 counts as killed', 1, { refused: 'forced' }], ['a missed rewrite counts as killed', 0, { fails: ['§2 red'] }]]) {
+    const v = codeMutantVerdict(applied, h)
+    console.log(`${v.killed ? '⚪ SURVIVED' : '🔴'} mutant: ${name}`); if (v.killed) bad++
+  }
+  process.exit(bad ? 1 : 0)
+}
+
+const TOWN = requiredTown('town')
+const BASE = arg('base') || 'http://localhost:5173'
+// --code-mutant=chase: serve ShotFlight with the chase removed (`chase: d.chase` cut from the tween's start, in the
+// response only: nothing on disk, nobody else's page). §2 must go red; the run passes only if it does.
+const CODE_MUTANT = arg('code-mutant')
+if (CODE_MUTANT && CODE_MUTANT !== 'chase') { console.error(`⛔ --code-mutant=${CODE_MUTANT}: the only code mutant is 'chase'`); process.exit(2) }
+let mutantApplied = 0
 
 const profile = mkdtempSync(join(tmpdir(), 'shot-flight-'))
 const chrome = spawn('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', ['--headless=new', '--remote-debugging-port=0',
@@ -56,10 +182,20 @@ ws.onmessage = (e) => { const m = JSON.parse(e.data); if (m.id && pending.has(m.
 
 const { targetId } = await cdp('Target.createTarget', { url: 'about:blank' })
 const { sessionId: S } = await cdp('Target.attachToTarget', { targetId, flatten: true })
-await cdp('Fetch.enable', { patterns: [{ urlPattern: '*', requestStage: 'Request' }] }, S)
-ws.addEventListener('message', (e) => {
+await cdp('Fetch.enable', { patterns: [{ urlPattern: '*', requestStage: 'Request' },
+  ...(CODE_MUTANT ? [{ urlPattern: '*/src/camera/ShotFlight.jsx*', requestStage: 'Response' }] : [])] }, S)
+ws.addEventListener('message', async (e) => {
   const m = JSON.parse(e.data)
   if (m.method !== 'Fetch.requestPaused') return
+  if (m.params.responseStatusCode != null) {
+    const { body, base64Encoded } = await cdp('Fetch.getResponseBody', { requestId: m.params.requestId }, m.sessionId)
+    const text = base64Encoded ? Buffer.from(body, 'base64').toString('utf8') : body
+    const hits = text.split('chase: d.chase').length - 1
+    mutantApplied += hits
+    cdp('Fetch.fulfillRequest', { requestId: m.params.requestId, responseCode: m.params.responseStatusCode,
+      responseHeaders: m.params.responseHeaders, body: Buffer.from(text.replace('chase: d.chase', 'chase: null')).toString('base64') }, m.sessionId).catch(() => {})
+    return
+  }
   // ⛔ A throwaway profile sends nothing: every non-GET is refused.
   if (m.params.request.method !== 'GET' && m.params.request.method !== 'HEAD') cdp('Fetch.failRequest', { requestId: m.params.requestId, errorReason: 'BlockedByClient' }, m.sessionId).catch(() => {})
   else cdp('Fetch.continueRequest', { requestId: m.params.requestId }, m.sessionId).catch(() => {})
@@ -85,19 +221,17 @@ const record = (label, ms, wheelAt = null) => js(`new Promise((resolve) => {
   const c = window.__camera, ctl = window.__controls, out = []
   const btn = [...document.querySelectorAll('button')].find(b => b.textContent.trim() === ${JSON.stringify(label)})
   if (!btn) return resolve({ error: 'no button ${label}' })
-  const t0 = performance.now()
-  const tick = () => {
+  const t0 = performance.now(), p0 = c.position.toArray()   // p0: the camera at the click, the tween's from
+  const tick = (ts) => {   // ts: the rAF timestamp, the movie's own clock; ms: performance.now(), the flight clauses'
     const f = window.__flight?.current || {}
     const v = c.view && c.view.enabled ? [c.view.offsetX, c.view.offsetY] : [0, 0]
-    out.push({ ms: performance.now() - t0, p: c.position.toArray(), tg: ctl ? ctl.target.toArray() : null, off: v,
+    out.push({ ms: performance.now() - t0, ts: ts - t0, p: c.position.toArray(), tg: ctl ? ctl.target.toArray() : null, off: v,
       t: f.t ?? null, e: f.eased ?? null, at: f.at ?? null, landed: !!f.landed, interrupted: !!f.interrupted, from: f.from, to: f.to })
-    if (performance.now() - t0 < ${ms}) requestAnimationFrame(tick); else resolve({ out })
+    if (performance.now() - t0 < ${ms}) requestAnimationFrame(tick); else resolve({ out, p0 })
   }
   btn.click(); requestAnimationFrame(tick)
   ${wheelAt != null ? `setTimeout(() => document.querySelector('canvas').dispatchEvent(new WheelEvent('wheel', { deltaY: 40, bubbles: true, clientX: 640, clientY: 400 })), ${wheelAt})` : ''}
 })`)
-
-const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2])
 
 if (arg('dump')) console.log('  before: flight', await js('JSON.stringify(window.__flight?.current ?? null)'), '· camera', await js('JSON.stringify(window.__camera.position.toArray().map(v => +v.toFixed(1)))'))
 // ── 0. into the movie, and let it play ──
@@ -148,23 +282,17 @@ if (r1.error) { fails.push(r1.error) } else {
 // ── 2. plan → movie: lands on the MOVING path ─────────────────────────────────────
 const MOVIE_MS = SHOT_TRANSITION_MS.hero
 const r2 = await record('Hero', MOVIE_MS + 1500)
+let h2 = null   // §2's verdict, kept whole: the code mutant reads its MEASURED failures, never a refusal
 if (r2.error) { fails.push(r2.error) } else {
-  const s = r2.out
-  const iL = s.findIndex((x) => x.landed && x.to === 'movie')
-  if (iL < 0) fails.push('plan → movie: the flight never landed (to=movie)')
-  else {
-    // SPEED (m per ms), not per frame: a long frame at the landing (the movie's own pieces mount there) advances the
-    // movie's clock by that frame's time, a stutter, not a missed chase. The movie's own speed just after landing,
-    // against the speed at the landing itself.
-    const speed = (k) => dist(s[k].p, s[k - 1].p) / Math.max(1, s[k].ms - s[k - 1].ms)
-    const pace = s.slice(iL + 1, iL + 11).map((_, j) => speed(iL + 1 + j)).filter(Number.isFinite).sort((a, b) => a - b)
-    const med = pace[pace.length >> 1]
-    const jump = Math.max(speed(iL - 1), speed(iL), speed(iL + 1))
-    const after = dist(s[s.length - 1].p, s[iL].p)
-    if (after < 1e-3) fails.push('plan → movie: the camera stopped after landing — it landed on a still pose, not the moving path')
-    if (med > 0 && jump > 4 * med) fails.push(`plan → movie: the camera moves ${(jump * 1000).toFixed(1)} m/s at the landing, the movie ${(med * 1000).toFixed(1)} m/s — the flight did not chase the moving pose`)
-    console.log(`  plan → movie: landed at ${s[iL].ms.toFixed(0)} ms · ${(jump * 1000).toFixed(1)} m/s at the landing (the movie's own ${(med * 1000).toFixed(1)} m/s)`)
-  }
+  h2 = handoff(r2)   // ⭐ the hand-off's bounds and why: handoff(), above
+  if (h2.refused) fails.push(`plan → movie: NOT MEASURED — ${h2.refused}`)
+  else { fails.push(...h2.fails); if (h2.line) console.log(`  ${h2.line}`) }
+}
+if (CODE_MUTANT) {
+  if (arg('dump')) (await import('node:fs')).writeFileSync(arg('dump'), JSON.stringify({ r1, r2 }))
+  const v = codeMutantVerdict(mutantApplied, h2)
+  console.log(`${v.killed ? '🔴' : '⚪ SURVIVED'} code mutant: the chase removed (ShotFlight served with ${mutantApplied} rewrite(s)) — ${v.why}`)
+  done(v.killed ? 0 : 1)
 }
 
 // ── 3. a gesture mid-flight ends it where it is ───────────────────────────────────
