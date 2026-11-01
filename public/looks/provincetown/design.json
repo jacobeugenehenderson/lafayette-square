@@ -108,9 +108,9 @@
         "warmCool": 0.85
       },
       "sunset": {
-        "intensity": 1.5,
+        "intensity": 0.22,
         "threshold": 0.4,
-        "spread": 0.8,
+        "spread": 0.22,
         "warmCool": 0.8
       },
       "dusk": {
@@ -120,9 +120,9 @@
         "warmCool": 0.45
       },
       "night": {
-        "intensity": 0.34,
-        "threshold": 0.43,
-        "spread": 0.12,
+        "intensity": 0.9,
+        "threshold": 0.2,
+        "spread": 0.4,
         "warmCool": 0.5
       },
       "deep": {
@@ -130,6 +130,46 @@
         "threshold": 0.5,
         "spread": 0.1,
         "warmCool": 0.3
+      }
+    }
+  },
+  "ao": {
+    "animated": "tod",
+    "values": {
+      "dawn": {
+        "radius": 15,
+        "intensity": 2,
+        "distanceFalloff": 0.3
+      },
+      "sunrise": {
+        "radius": 15,
+        "intensity": 2.2,
+        "distanceFalloff": 0.3
+      },
+      "noon": {
+        "radius": 9.5,
+        "intensity": 3.2,
+        "distanceFalloff": 0.3
+      },
+      "golden": {
+        "radius": 15,
+        "intensity": 2,
+        "distanceFalloff": 0.3
+      },
+      "sunset": {
+        "radius": 15,
+        "intensity": 2.2,
+        "distanceFalloff": 0.3
+      },
+      "dusk": {
+        "radius": 15,
+        "intensity": 2.4,
+        "distanceFalloff": 0.3
+      },
+      "deep": {
+        "radius": 15,
+        "intensity": 2.6,
+        "distanceFalloff": 0.3
       }
     }
   },
@@ -169,17 +209,11 @@
       "sunset": {
         "blur": 0.08,
         "heroBlur": 0,
-        "softness": 0.5,
-        "melt": 0.56
+        "softness": 0.06,
+        "melt": 0.08
       },
       "dusk": {
         "blur": 0.1,
-        "heroBlur": 0,
-        "softness": 0.5,
-        "melt": 0.56
-      },
-      "night": {
-        "blur": 0,
         "heroBlur": 0,
         "softness": 0.5,
         "melt": 0.56
