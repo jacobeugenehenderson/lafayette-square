@@ -53,7 +53,7 @@ The claim cannot happen without the secret-bearing QR. The trace:
 2. **Fetch the claim secret** — `getClaimSecret` (`Code.js`) generates an 8-char hex lazily (`Utilities.getUuid.split('-')[0]`) and persists it to the `claim_secret` column. **Who may fetch:** a full guardian of the listing **or an admin** (`getClaimSecretAdmin`). Jacob is admin → he can pull it for any listing (`QR-CODES.md §2`).
 3. **Render the QR** — two ways, both client-side via the `QRCode` lib:
    - **Fast path:** open the place card → **QR tab** (`QrTab`, `PlaceCard.jsx:2299`) → switch to **Guardian** type → it auto-fetches the secret and renders `https://lafayette-square.com/claim/<id>/<secret>`. Owner scans off Jacob's screen.
-   - **Printed path:** **QR Studio / Code Desk** (`CodeDeskModal.jsx`, opened from the QR tab, `PlaceCard.jsx:2477`) in **admin mode** → pick the business → Guardian type (auto-fetches secret) → style + **print**.
+   - **Printed path:** the Ward's **QR Studio** (theward `src/place/printable.js`) prints the plain claim code; a styled card is designed in CodeDesk, its own repo (`QR-CODES.md §4`). The kit's in-app studio was retired 2026-11-01.
 4. **Result:** Jacob is holding (or showing) a printable claim card. Owner scans → guardian.
 
 > **On-the-spot answer:** Yes. As admin, Jacob can generate the secret and render the Guardian QR live from the card's QR tab — no pre-printing required (an on-screen scan suffices). Pre-print only for a polished hand-off or to post at the location.

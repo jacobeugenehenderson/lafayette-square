@@ -56,36 +56,6 @@ function serveHelperApps() {
   }
 }
 
-// Serve public/codedesk/*.html directly (bypass SPA history fallback)
-function serveCodedesk() {
-  return {
-    name: 'serve-codedesk',
-    configureServer(server) {
-      server.middlewares.use((req, res, next) => {
-        const url = (req.url || '').split('?')[0]
-        if (!url.startsWith('/codedesk')) return next()
-
-        // Resolve which file to serve
-        let filePath
-        if (url === '/codedesk' || url === '/codedesk/') {
-          filePath = path.resolve('public/codedesk/index.html')
-        } else if (url.endsWith('.html')) {
-          filePath = path.resolve('public' + url)
-        } else {
-          return next() // Let Vite handle JS/CSS/JSON normally
-        }
-
-        if (fs.existsSync(filePath)) {
-          res.setHeader('Content-Type', 'text/html; charset=utf-8')
-          res.end(fs.readFileSync(filePath, 'utf-8'))
-          return
-        }
-        next()
-      })
-    }
-  }
-}
-
 // Serve an installation's OWN content assets (§5.1.2). A payload keeps its
 // logos/photos under cartograph/data/<look>/content/; the reader references them
 // instance-relative and resolves to /content/<look>/… (see src/lib/assetUrl.js +
@@ -209,7 +179,7 @@ function mirrorInstallationContent() {
 }
 
 export default defineConfig(({ command }) => ({
-  plugins: [declareKitBase(), serveHelperApps(), serveCodedesk(), serveAuthoringAssets(), serveInstallationContent(), mirrorInstallationContent(), looksIndexFresh(), react()],
+  plugins: [declareKitBase(), serveHelperApps(), serveAuthoringAssets(), serveInstallationContent(), mirrorInstallationContent(), looksIndexFresh(), react()],
   define: {
     __BUILD_HASH__: JSON.stringify(new Date().toISOString().slice(0, 16)),
     // poly2tri's UMD shim references `global`; polyfill to globalThis so

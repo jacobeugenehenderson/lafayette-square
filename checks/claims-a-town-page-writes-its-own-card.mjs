@@ -24,6 +24,8 @@ import { workerInMiniflare, mint, hex } from './_miniflare.mjs'
 import { CARD_TAGS, CARD_HEADER, SHARE_IMAGE_RELS, cardFor } from '../src/lib/shareCard.js'
 import { HASHED, contentName } from '../src/lib/slabNames.js'
 import { iconFor } from '../src/lib/townIdentity.js'
+import { STAGING_TOWNS, townsKey } from '../src/lib/townsRecordKeys.js'
+import { readFileSync } from 'node:fs'
 
 const ROOT = new URL('..', import.meta.url).pathname
 const SHARE = join(ROOT, 'src/lib/shareCard.js')
@@ -52,30 +54,30 @@ function headTags(body) {
   return tags
 }
 
-/** Every failure, for one Worker, optionally a mutant. */
-async function run(site, mutate) {
+/** Every failure, for one Worker, optionally a mutant ({ [file]: (text) → text }); `noRecord`: no towns record at all. */
+async function run(site, mutate, { noRecord = false } = {}) {
   const fails = []
   const W = hex(), K = hex()
-  const [ward, legacy, bare] = ['ward', 'legacy', 'bare'].map(mint)
+  const [ward, legacy, bare, norec] = ['ward', 'legacy', 'bare', 'norec'].map(mint)
   const towns = {
     [ward]: { title: 'Ward "Town" & <Co>', description: 'A town on the Ward.', icon: 'data:image/svg+xml,%3Csvg%3E%3C/svg%3E?a=1&b=2', iconFrom: 'look.mark' },
     [legacy]: { title: 'Kit Town', icon: iconFor({ mark: '🦞' }), iconFrom: 'look.mark' },
     [bare]: { title: 'No Picture Town', description: 'Published before its capture.' },
   }
-  const mans = { [ward]: manifest(ward, true), [legacy]: manifest(legacy, true), [bare]: manifest(bare, false) }
+  const mans = { [ward]: manifest(ward, true), [legacy]: manifest(legacy, true), [bare]: manifest(bare, false), [norec]: manifest(norec, true) }
   const SLAB_BASE = 'https://assets.example/staging/'
   const bindings = site === 'staging'
     ? { SITE_PREFIX: 'staging/sites/', PLAYER_PREFIX: 'staging/player/', WARD_PREFIX: 'staging/ward/', SLAB_BASE, OPERATIONS_URL: 'http://ops.invalid' }
     : {}
-  const { mf, r2, get } = await workerInMiniflare(WORKERS[site], bindings, { mutate: mutate ? { [SHARE]: mutate } : null })
+  const { mf, r2, get } = await workerInMiniflare(WORKERS[site], bindings, { mutate })
   const page = {}
   if (site === 'staging') {
-    await r2.put('staging/player/towns.json', JSON.stringify(towns))
+    if (!noRecord) await r2.put(STAGING_TOWNS, JSON.stringify(towns))
     await r2.put('staging/player/index.html', KIT_DOC)
     await r2.put('staging/ward/current.json', JSON.stringify({ sha: W, kit: K }))
     await r2.put(`staging/ward/${W}/index.html`, WARD_DOC(W))
     await r2.put(`staging/kit/${K}/manifest.json`, '{}')
-    for (const t of [ward, legacy, bare]) {
+    for (const t of [ward, legacy, bare, norec]) {
       await r2.put(`staging/baked/${t}/manifest.json`, JSON.stringify(mans[t]))
       await r2.put(`staging/sites/${t}/player.json`, JSON.stringify({ player: t === legacy ? 'legacy' : 'ward' }))
       page[t] = { url: `https://staging.example/${t}/`, ogUrl: `https://staging.example/${t}/`, slab: `${SLAB_BASE}baked/${t}/` }
@@ -83,16 +85,33 @@ async function run(site, mutate) {
   } else {
     await r2.put(`ward/${W}/index.html`, WARD_DOC(W))
     await r2.put(`kit/${K}/manifest.json`, '{}')
-    for (const t of [ward, legacy, bare]) {
+    for (const t of [ward, legacy, bare, norec]) {
       const domain = `${t}.example`
       const rec = t === legacy ? { v: 2, app: 'legacy', map: t, look: t, domain } : { v: 2, app: 'ward', map: t, look: t, ward: W, kit: K, domain }
       await r2.put(`hosts/${domain}.json`, JSON.stringify(rec))
       await r2.put(`baked/${t}/manifest.json`, JSON.stringify(mans[t]))
-      await r2.put(`player/${t}/towns.json`, JSON.stringify(towns))
+      if (!noRecord) await r2.put(townsKey(t), JSON.stringify(towns))
       if (t === legacy) await r2.put(`player/${t}/index.html`, KIT_DOC)
       page[t] = { url: `https://${domain}/`, ogUrl: `https://${domain}/`, slab: `https://${domain}/baked/${t}/` }
     }
   }
+
+  // ⛔ No record, no card (Zob, 2026-11-01): served, NO card tags (its id as a title was a neutral stand-in), and the
+  // header and the head say why. With no record file at all, every town says so; never read as an empty table.
+  const recordless = noRecord ? [ward, legacy, bare, norec] : [norec]
+  for (const t of recordless) {
+    const r = await get(page[t].url)
+    const tags = headTags(r.body)
+    const say = (m) => fails.push(`${site} · ${noRecord ? 'no towns record at all' : 'a town with no record'}: ${m}`)
+    if (r.status !== 200) { say(`served ${r.status}, not the page`); continue }
+    const served = CARD_TAGS.filter((tag) => tags[tag.key]?.length).map((tag) => tag.key)
+    if (served.length || tags.title.length || tags.icon.length) say(`card tags served for a town with no record: ${[...served, ...(tags.title.length ? ['title'] : []), ...(tags.icon.length ? ['icon'] : [])].join(' ')}`)
+    const h = r.headers.get(CARD_HEADER) || ''
+    const why = noRecord ? 'no towns record at' : 'has no entry for'
+    if (!h.startsWith('absent;') || !h.includes(why)) say(`${CARD_HEADER} says ${JSON.stringify(h)}, want "absent; … ${why} …"`)
+    if (!r.body.includes(`<!-- ${CARD_HEADER}: absent;`)) say('the head does not say the card is absent')
+  }
+  if (noRecord) { await mf.dispose(); return fails }
 
   for (const [t, label] of [[ward, 'a Ward document with no og tags'], [legacy, 'a kit document with placeholder tags'], [bare, 'a town with no share image']]) {
     const r = await get(page[t].url)
@@ -148,13 +167,21 @@ const SILENT = (s) => s.replace("return { html, missing, why: missing.length ?",
 const ICON = (s) => s.replace(`.on('head > link[rel~="icon"]', drop)`, `.on('link[rel="icon"]', { element(el) { card.icon ? el.setAttribute('href', card.icon) : el.remove() } })`)
   .replace('if (card.icon) html += ', 'if (card.icon) void ')
 
+// (d) A town with no record drawn as a neutral card (its id, no picture), the pre-2026-11-01 behaviour.
+const NEUTRAL = (s) => s.replace('if (!town) return { absent: townWhy ||', 'if (!town) town = {}; if (false) return { absent: townWhy ||')
+// (e) A missing record FILE read as an empty table, `{}`, so it is said as "no entry", never as no record.
+const EMPTY = { staging: (s) => s.replace('table: obj ? await obj.json() : null', 'table: obj ? await obj.json() : {}'),
+  production: (s) => s.replace('const towns = tObj ? await tObj.json() : null', 'const towns = tObj ? await tObj.json() : {}') }
+
 let failed = 0
 for (const site of Object.keys(WORKERS)) {
-  const real = await run(site)
+  const real = [...await run(site), ...await run(site, null, { noRecord: true })]
   if (real.length) { failed += real.length; for (const f of real) console.log(`  ⛔ ${f}`) }
-  else console.log(`  ✅ ${site}: a Ward page and a kit page each carry the town's whole card, once; a town with no picture is served and says what is missing`)
-  for (const [name, m] of [['the old rewrite-only selectors', OLD], ['a silently dropped tag', SILENT], ['the old setAttribute-only icon handler', ICON]]) {
-    const mut = await run(site, m)
+  else console.log(`  ✅ ${site}: a Ward page and a kit page each carry the town's whole card, once; a town with no picture is served and says what is missing; a town with no record is served with no card and says why`)
+  for (const [name, m, opts] of [['the old rewrite-only selectors', { [SHARE]: OLD }], ['a silently dropped tag', { [SHARE]: SILENT }], ['the old setAttribute-only icon handler', { [SHARE]: ICON }],
+    ['a town with no record drawn as a neutral card', { [SHARE]: NEUTRAL }], ['a missing record file read as {}', { [WORKERS[site]]: EMPTY[site] }, { noRecord: true }]]) {
+    for (const [f, fn] of Object.entries(m)) if (fn(readFileSync(f, 'utf8')) === readFileSync(f, 'utf8')) throw new Error(`mutation (${name}) planted nothing in ${f}: its anchor moved`)
+    const mut = await run(site, m, opts)
     if (mut.length) console.log(`  ✅ mutation (${name}) is caught on ${site}: ${mut.length} failure(s), e.g. ${mut[0]}`)
     else { failed++; console.log(`  ⛔ mutation (${name}) PASSED on ${site} — the check cannot see it`) }
   }

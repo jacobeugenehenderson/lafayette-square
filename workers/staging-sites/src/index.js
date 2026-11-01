@@ -212,13 +212,14 @@ async function wardBuild(env) {
  * so the player's runtime never reaches them and every town's
  * link showed index.html's static Lafayette Square tags. WRITE them here (`shareCard.js#withShareCard`
  * removes any the document carries and appends the whole card, so a Ward document with none gets one), per <map>, from
- * `towns.json` — generated from the instance registry by publish-player-to-staging.mjs, so
+ * `staging/towns.json` — generated from the instance registry by scripts/publish-towns-record.mjs, so
  * this file still holds no list of towns — and its picture from the town's own slab, for the time
  * of day it is in the town now. The card itself is `src/lib/shareCard.js#cardFor`, shared with production.
- * ⛔ A map with no entry gets NEUTRAL tags (its id, no image), never Lafayette Square's.
+ * ⛔ A map with no entry gets NO card tags, and the response says why (`ward-share-card: absent; …`); never another town's.
  */
 import { decideProductionDomain } from '../../../src/lib/productionDomain.js'
 import { cardFor, withShareCard, placeListings } from '../../../src/lib/shareCard.js'
+import { STAGING_TOWNS } from '../../../src/lib/townsRecordKeys.js'
 import { wireHeaders } from '../../../src/lib/slabWire.js'
 
 /**
@@ -250,13 +251,15 @@ async function townDomain(env, map) {
   return d
 }
 
+// The towns record (scripts/publish-towns-record.mjs). ⛔ A missing file is null and said, never `{}`: an empty table
+// would make every town's card a neutral stand-in with nothing said (Zob, 2026-11-01).
 let _towns = null, _townsAt = 0
 async function townsIndex(env) {
-  if (_towns && Date.now() - _townsAt < 60_000) return _towns
-  const obj = await env.ASSETS.get(`${env.PLAYER_PREFIX}towns.json`)
-  _towns = obj ? await obj.json() : {}
+  if (_towns && Date.now() - _townsAt < 60_000) return _towns.table
+  const obj = await env.ASSETS.get(STAGING_TOWNS)
+  _towns = { table: obj ? await obj.json() : null }
   _townsAt = Date.now()
-  return _towns
+  return _towns.table
 }
 // Former map names → current ones (`staging/renamed.json`). Read at most once a minute per isolate;
 // ⛔ a record that is not a { string: string } object throws — a broken table is never "no renames".
@@ -276,7 +279,8 @@ async function shareCard(response, map, url, env, kitBase) {
   const manObj = await env.ASSETS.get(`staging/baked/${map}/manifest.json`)
   const manifest = manObj ? await manObj.json() : null
   const path = url.pathname.slice(`/${map}`.length) || '/'   // the path within the town, as production sees it
-  const card = cardFor({ town: (await townsIndex(env))[map] || null, map, path,
+  const towns = await townsIndex(env)
+  const card = cardFor({ town: towns?.[map] || null, townWhy: towns ? `${STAGING_TOWNS} has no entry for "${map}"` : `no towns record at ${STAGING_TOWNS}`, map, path,
     manifest, slabBase: `${env.SLAB_BASE}baked/${map}/`, pageUrl: `${url.origin}/${map}/`,
     ...await placeListings(env, `staging/baked/${map}/`, manifest, path), when: new Date() })
   const { domain } = await townDomain(env, map)

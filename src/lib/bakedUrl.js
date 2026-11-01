@@ -10,7 +10,7 @@
  * ⛔ THIS IS NOT `BASE_URL`, AND THE DIFFERENCE IS THE POINT.
  *   · `BASE_URL` is where the SITE is deployed (`/`, or `/lafayette-square-
  *     staging/`). It still resolves the app's own assets — textures, models,
- *     clouds JSON, basis/, `looks/<look>/design.json`, codedesk, routes.
+ *     clouds JSON, basis/, `looks/<look>/design.json`, routes.
  *   · `ASSET_BASE` is where the SLAB lives. In dev and in any build that does
  *     not set VITE_ASSET_BASE it IS BASE_URL, byte-for-byte the old behavior,
  *     so `npm run dev` and `npm run preview` read straight off disk.

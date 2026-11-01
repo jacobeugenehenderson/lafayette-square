@@ -28,6 +28,7 @@
  */
 import { route, hostKey, wwwRedirect } from './route.js'
 import { cardFor, withShareCard, placeListings } from '../../../src/lib/shareCard.js'
+import { townsKey } from '../../../src/lib/townsRecordKeys.js'
 import { wireHeaders } from '../../../src/lib/slabWire.js'
 const text = (body, status) => new Response(body + '\n', { status,
   headers: { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store' } })
@@ -120,16 +121,17 @@ export default {
  * the ones that were checked there (`src/instance.js#readLookParam`, `src/lib/bakedUrl.js`).
  * ⛔ The share card (`src/lib/shareCard.js#cardFor`, shared with staging) comes from the town's own pinned
  * `towns.json` and its picture from the town's own slab, for the time of day it is there now; a town missing
- * from it gets NEUTRAL tags (its id, no image), never Lafayette Square's. The card's tags are WRITTEN, not
+ * from it gets NO card tags, and the response says why (`ward-share-card: absent; …`), never another town's. The card's tags are WRITTEN, not
  * rewritten (`shareCard.js#withShareCard`), so a Ward document with none still gets the whole card.
  */
 async function townPage(response, rec, url, env, kitBase) {
-  // The share card's towns.json — Promote pins it at `player/<map>/` for either player, as staging
-  // reads the one beside the kit's player for both.
-  const tObj = await env.ASSETS.get(`player/${rec.map}/towns.json`)
+  // The share card's towns record — Promote pins it at `sites/<map>/towns.json` (townsKey). ⛔ Missing is said, never `{}`.
+  const tKey = townsKey(rec.map)
+  const tObj = await env.ASSETS.get(tKey)
+  const towns = tObj ? await tObj.json() : null
   const manObj = await env.ASSETS.get(`baked/${rec.look}/manifest.json`)
   const manifest = manObj ? await manObj.json() : null
-  const card = cardFor({ town: (tObj ? await tObj.json() : {})[rec.map] || null, map: rec.map, path: url.pathname,
+  const card = cardFor({ town: towns?.[rec.map] || null, townWhy: towns ? `${tKey} has no entry for "${rec.map}"` : `no towns record at ${tKey}`, map: rec.map, path: url.pathname,
     manifest, slabBase: `${url.origin}/baked/${rec.look}/`, pageUrl: `${url.origin}/`,
     ...await placeListings(env, `baked/${rec.look}/`, manifest, url.pathname), when: new Date() })
   const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;')

@@ -18,8 +18,14 @@
  * ⛔ Mutation-tested 2026-09-29: (1) a missing app read as legacy, (2) a bare {map, look, domain}
  *    record read as legacy, (3) Promote defaulting a missing staging record — each turns this red.
  *
+ * ⭐ The share card (2026-11-01): the towns record's three refusals and `--card-only`'s one-key write, each run as a mutant
+ *    of the script (sourceFile) that must turn it red; writes are seen through a stand-in `npx` on PATH, never made.
  * ⛔ LOCAL ONLY. Usage: node checks/claims-a-production-town-plays-the-player-promote-pinned.mjs
  */
+import { mkdtempSync, writeFileSync, chmodSync, existsSync, readFileSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { sourceFile } from './_sourceFile.mjs'
+import { STAGING_TOWNS, STAGING_TOWNS_LIST, townsKey } from '../src/lib/townsRecordKeys.js'
 import { createServer } from 'node:http'
 import { createHash } from 'node:crypto'
 import { execFile } from 'node:child_process'
@@ -106,6 +112,7 @@ function seedStaging(app) {
   putS('staging/player/manifest.json', lman)
   putS('staging/player/build.json', { assetBase: 'runtime', builtAt: '2026-09-29T00:00:00.000Z', manifestMd5: md5(JSON.stringify(lman)) })
   putS('staging/player/index.html', '<p>'); putS(`staging/player/looks/${MAP}/design.json`, '{}'); putS('staging/player/towns.json', townsJson)
+  putS(STAGING_TOWNS, townsJson); putS(STAGING_TOWNS_LIST, { sha256: sha256(townsJson), bytes: townsJson.length, builtAt: '2026-11-01T00:00:00.000Z' })
 }
 const server = createServer((req, res) => {
   const k = decodeURIComponent(req.url.split('?')[0].slice(1))
@@ -115,14 +122,62 @@ const server = createServer((req, res) => {
 }).listen(0, '127.0.0.1')
 await new Promise((ok) => server.on('listening', ok))
 const base = `http://127.0.0.1:${server.address().port}/`
-async function promote() {
+// ⭐ Writes are seen, not made: a stand-in `npx` first on PATH logs each `wrangler r2 object put <bucket>/<key>` and swallows
+// its bytes, so a real (non-dry) card-only run can be held to the one key it may write.
+const fakeBin = mkdtempSync(join(tmpdir(), 'promote-npx-')), putLog = join(fakeBin, 'puts.log')
+writeFileSync(join(fakeBin, 'npx'), `#!/bin/sh\necho "$5" >> "${putLog}"\ncat > /dev/null\nexit 0\n`)
+chmodSync(join(fakeBin, 'npx'), 0o755)
+const putsSeen = () => (existsSync(putLog) ? readFileSync(putLog, 'utf8').trim().split('\n').filter(Boolean) : [])
+async function promote(args = [`--map=${MAP}`, `--look=${MAP}`, '--dry-run'], script = 'scripts/promote-player-to-prod.mjs') {
+  rmSync(putLog, { force: true })
   try {
-    const { stdout } = await run('node', ['scripts/promote-player-to-prod.mjs', `--map=${MAP}`, `--look=${MAP}`, '--dry-run'],
-      { cwd: ROOT, env: { ...process.env, ASSET_BASE: base } })
+    const { stdout } = await run('node', [script, ...args],
+      { cwd: ROOT, env: { ...process.env, ASSET_BASE: base, PATH: `${fakeBin}:${process.env.PATH}` } })
     return { code: 0, out: stdout, last: stdout.trim().split('\n').pop() }
   } catch (e) { return { code: e.code ?? 1, out: `${e.stdout}${e.stderr}` } }
 }
+/** The towns-record refusals and the card-only pin, for the script at `script` (the repo's, or a mutant's). */
+async function cardFails(script) {
+  const f = []
+  const exp = (what, ok, got) => { if (!ok) f.push(`${what} — got ${got.status}: ${String(got.body).slice(0, 180).replace(/\n/g, ' ')}`) }
+  // ⛔ The towns record is published before Promote pins it (Zob, 2026-11-01): no list, a list that does not match, or a record
+  // without this town → Promote refuses by name, and never falls back to the legacy player's copy.
+  seedStaging('ward'); store.delete(STAGING_TOWNS_LIST)
+  let p = await promote(undefined, script)
+  exp('Promote refuses when the towns record was never published', p.code !== 0 && p.out.includes('publish-towns-record'), { status: p.code, body: p.out })
+  seedStaging('ward'); putS(STAGING_TOWNS, JSON.stringify({ other: { title: 'x' } }))
+  p = await promote(undefined, script)
+  exp('Promote refuses a towns record that does not match its list', p.code !== 0 && p.out.includes('does not match'), { status: p.code, body: p.out })
+  seedStaging('ward'); { const other = JSON.stringify({ other: { title: 'x' } }); putS(STAGING_TOWNS, other); putS(STAGING_TOWNS_LIST, { sha256: sha256(other) }) }
+  p = await promote(undefined, script)
+  exp('Promote refuses a towns record with no entry for the town', p.code !== 0 && p.out.includes(`no entry for "${MAP}"`), { status: p.code, body: p.out })
+  // ⭐ --card-only (Boz, 2026-11-01): the same verification, then sites/<map>/towns.json and nothing else.
+  seedStaging('ward'); store.delete(STAGING_TOWNS_LIST)
+  p = await promote([`--map=${MAP}`, '--card-only'], script)
+  exp('--card-only refuses an unpublished towns record, as the full promote does', p.code !== 0 && p.out.includes('publish-towns-record') && !putsSeen().length, { status: p.code, body: `${p.out} puts=${putsSeen().join(',')}` })
+  seedStaging('ward')
+  p = await promote([`--map=${MAP}`, '--card-only'], script)
+  const puts = putsSeen()
+  exp('--card-only writes exactly sites/<map>/towns.json', p.code === 0 && puts.length === 1 && puts[0].endsWith(`/${townsKey(MAP)}`), { status: p.code, body: `${p.out} puts=${puts.join(',')}` })
+  return f
+}
+
 try {
+  fails.push(...await cardFails('scripts/promote-player-to-prod.mjs'))
+  // Each refusal and the card-only bound, removed in turn from a copy of the script: each must turn the card half red.
+  const must = (from, to) => (s) => { if (!s.includes(from)) throw new Error(`mutant anchor gone: ${from.slice(0, 70)}`); return s.replace(from, to) }
+  for (const [name, transform] of [
+    ['no towns list read as fine', must("  if (!listBuf) throw new Error(`no ${STAGING_TOWNS_LIST}", "  if (false) throw new Error(`no ${STAGING_TOWNS_LIST}")],
+    ['a record that does not match its list pinned', must('  if (sha256(townsBuf) !== townsList.sha256) throw', '  if (false) throw')],
+    ['a record with no entry for the town pinned', must('  if (!JSON.parse(townsBuf)[map]) throw', '  if (false) throw')],
+    ['--card-only skips the verification', must("    const townsBuf = await verifiedTownsRecord()\n    console.log(`card", "    const townsBuf = await getBytes(STAGING_TOWNS)\n    console.log(`card")],
+    ['--card-only writes beyond its key', must('    await pinTownsRecord(townsBuf)\n    console.log(JSON.stringify({ ok: true, map, cardOnly', "    await put(`hosts/${map}.json`, Buffer.from('{}'), 'x.json')\n    await pinTownsRecord(townsBuf)\n    console.log(JSON.stringify({ ok: true, map, cardOnly")],
+  ]) {
+    const got = await cardFails(sourceFile('scripts/promote-player-to-prod.mjs', { transform }))
+    console.log(`${got.length ? '🔴' : '⚪ SURVIVED'} mutant: ${name}`)
+    if (!got.length) fails.push(`mutant survived: ${name}`)
+  }
+
   seedStaging(null)
   let p = await promote()
   expect('Promote refuses a town with no staging record, by name', p.code !== 0 && p.out.includes(MAP) && p.out.includes('player.json'), { status: p.code, body: p.out })

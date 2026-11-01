@@ -26,7 +26,6 @@ import AvatarEditor from './AvatarEditor'
 import RoleBadge from './RoleBadge'
 import QRCode from 'qrcode'
 import { useCourierAvailable } from './CourierDots'
-import { useCodeDesk } from './CodeDeskModal'
 import { loadInstanceData } from '../data/loadInstanceData.js'
 import { resolveBuildingPosition } from '../lib/buildingPosition'
 import { assetUrl } from '../lib/assetUrl.js'
@@ -2276,21 +2275,10 @@ function QrTab({ listingId, buildingId, listingName, isAdmin, isResidential, isH
   const [guardianQr, setGuardianQr] = useState(null)
   const [townieUrl, setTownieUrl] = useState('')
   const [guardianUrl, setGuardianUrl] = useState('')
-  const [claimSecret, setClaimSecret] = useState(null)
   const [loading, setLoading] = useState(true)
   const [styledLoading, setStyledLoading] = useState(false)
-  const [refreshKey, setRefreshKey] = useState(0)
   const [guardianRevealed, setGuardianRevealed] = useState(false)
 
-
-  // Listen for lsq-saved from QR Studio iframe to refresh QR codes
-  useEffect(() => {
-    const handler = (e) => {
-      if (e.data?.type === 'lsq-saved') setRefreshKey(k => k + 1)
-    }
-    window.addEventListener('message', handler)
-    return () => window.removeEventListener('message', handler)
-  }, [])
 
   useEffect(() => {
     const vanity = townOrigin()
@@ -2318,7 +2306,6 @@ function QrTab({ listingId, buildingId, listingName, isAdmin, isResidential, isH
             : await getClaimSecret(qrId, dh)
           const secret = res?.data?.claim_secret
           if (secret && !cancelled) {
-            setClaimSecret(secret)
             const gUrl = `${vanity}/claim/${qrId}/${secret}`
             setGuardianUrl(gUrl)
             const plainGuardian = await QRCode.toDataURL(gUrl, { width: 256, margin: 2 })
@@ -2332,7 +2319,7 @@ function QrTab({ listingId, buildingId, listingName, isAdmin, isResidential, isH
 
     loadQrs()
     return () => { cancelled = true }
-  }, [qrId, isAdmin, isResidential, refreshKey])
+  }, [qrId, isAdmin, isResidential])
 
   const shareUrl = async (url, title) => {
     if (navigator.share) {
@@ -2340,10 +2327,6 @@ function QrTab({ listingId, buildingId, listingName, isAdmin, isResidential, isH
     } else {
       try { await navigator.clipboard.writeText(url) } catch { /* silent */ }
     }
-  }
-
-  const openQrStudio = () => {
-    useCodeDesk.getState().setOpen(true, { listingId: qrId, qrType: isResidential ? 'Resident' : 'Townie', claimSecret, mode: 'guardian', placeName: listingName })
   }
 
   return (
@@ -2446,18 +2429,6 @@ function QrTab({ listingId, buildingId, listingName, isAdmin, isResidential, isH
         </div>
       )}
 
-      {/* Design button */}
-      {(!isResidential || isHouse) && (
-        <button
-          onClick={openQrStudio}
-          className="w-full py-2.5 px-4 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface hover:text-on-surface text-body font-medium transition-colors flex items-center justify-center gap-2"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
-          </svg>
-          Design in QR Studio
-        </button>
-      )}
     </div>
   )
 }

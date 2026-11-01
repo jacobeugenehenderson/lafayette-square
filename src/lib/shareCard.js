@@ -74,7 +74,8 @@ export const PREVIEW_LICENCES = ['Public domain', 'CC0', 'CC0 1.0']
 /**
  * The card for a request to `path` in a town.
  *   town      — the town's towns.json entry ({ title, description, icon, iconFrom }, scripts/towns-record.mjs), or null
- *   map       — the town's id (the title when it has no entry)
+ *   townWhy   — why `town` is null, said by the Worker that read it (no record file, or no entry for this town)
+ *   map       — the town's id
  *   path      — the request path WITHIN the town ('/' for its front, '/place/<id>/<name>' for a place)
  *   manifest  — the town's published slab manifest
  *   slabBase  — the absolute URL of the town's slab directory, ending in `baked/<look>/`
@@ -82,9 +83,12 @@ export const PREVIEW_LICENCES = ['Public domain', 'CC0', 'CC0 1.0']
  *   listings  — the town's published listings ([…], from content/listings.json) for a place path; null when not read
  *   listingsWhy — why `listings` is null for a place path (placeListings), said in the card's note
  *   when      — the instant the link is opened
- * → { title, description, image, url, icon, iconWhy, imageError, note }
+ * → { title, description, image, url, icon, iconWhy, imageError, note }, or { absent } when the town has no record.
+ * ⛔ NO RECORD, NO CARD (Zob, 2026-11-01). A town with no towns.json entry gets no card tags at all: its id as a title
+ * and no picture was a NEUTRAL card standing in for a missing record, a plausible preview with nothing said.
  */
-export function cardFor({ town, map, path, manifest, slabBase, pageUrl, listings = null, listingsWhy = null, when }) {
+export function cardFor({ town, townWhy = null, map, path, manifest, slabBase, pageUrl, listings = null, listingsWhy = null, when }) {
+  if (!town) return { absent: townWhy || `"${map}" has no share record`, note: null }
   let image = null, imageError = null
   try {
     if (!manifest) throw new Error('no published manifest')
@@ -94,16 +98,15 @@ export function cardFor({ town, map, path, manifest, slabBase, pageUrl, listings
     image = slabBase + servedRel(manifest, rel, true)
   } catch (e) { imageError = `share image for "${map}": ${e.message}` }
   const card = {
-    title: town?.title || map,
-    description: town?.description || null,
+    title: town.title || map,
+    description: town.description || null,
     image, imageError,
     url: pageUrl,
     // ⭐ The town's icon, a data: URI drawn from its baked Look at publish (scripts/towns-record.mjs). ⛔ Read from
     // nowhere else: an entry without one is a towns.json published before the icon came from the Look.
-    icon: town?.icon || null,
-    iconWhy: town?.icon ? null : town ? (town.iconFrom ? `the town has no icon (${town.iconFrom})`
-      : "the town's towns.json entry has no icon (published before the icon came from the Look: publish the player, then Promote)")
-      : 'the town has no towns.json entry',
+    icon: town.icon || null,
+    iconWhy: town.icon ? null : town.iconFrom ? `the town has no icon (${town.iconFrom})`
+      : "the town's towns.json entry has no icon (published before the icon came from the Look: publish the towns record, then Promote)",
     note: null,
   }
   const at = placeIdOf(path)
@@ -179,11 +182,13 @@ export function cardHead(card) {
  * served no tags at all on every Ward town (2026-10-26).
  * ⛔ A MISSING VALUE IS NEVER A SILENT DROP. The page is still served (a town without a share image is still a
  * town), but the response carries `ward-share-card: incomplete; missing <tags>; <why>`, the head carries the
- * same as a comment, and the Worker logs it by town. A whole card says `ward-share-card: complete`.
+ * same as a comment, and the Worker logs it by town. A whole card says `ward-share-card: complete`. A town with NO record
+ * (`cardFor` → `{ absent }`) is served with no card tags at all, and says `ward-share-card: absent; <why>` the same three ways.
  * ▶ node checks/claims-a-town-page-writes-its-own-card.mjs
  */
 export async function withShareCard(rewriter, response, card, { site, map }) {
-  const { html, why } = cardHead(card)
+  const { html, why } = card.absent ? { html: '', why: '' } : cardHead(card)
+  if (card.absent) console.error(`[${site}] share card for "${map}" ABSENT: ${card.absent}`)
   if (why) console.error(`[${site}] share card for "${map}" served incomplete: ${why}`)
   const drop = { element(el) { el.remove() } }
   const out = rewriter
@@ -192,12 +197,13 @@ export async function withShareCard(rewriter, response, card, { site, map }) {
     .on('head > title', drop)
     .on('head > link[rel~="icon"]', drop)
     .on('head', { element(el) {
-      el.append(html + (why ? `<!-- ${CARD_HEADER}: incomplete; ${why.replace(/--/g, '- -')} -->` : ''), { html: true })
+      const said = card.absent ? `absent; ${card.absent}` : why ? `incomplete; ${why}` : ''
+      el.append(html + (said ? `<!-- ${CARD_HEADER}: ${said.replace(/--/g, '- -')} -->` : ''), { html: true })
     } })
     .transform(await response)
   const res = new Response(out.body, out)
   // A place link that fell to the town's card says so, by name, beside the card's completeness.
   if (card.note) console.error(`[${site}] share card for "${map}": ${card.note}`)
-  res.headers.set(CARD_HEADER, `${why ? `incomplete; ${why}` : 'complete'}${card.note ? `; ${card.note}` : ''}`.replace(/[^\x20-\x7e]/g, '?'))
+  res.headers.set(CARD_HEADER, `${card.absent ? `absent; ${card.absent}` : why ? `incomplete; ${why}` : 'complete'}${card.note ? `; ${card.note}` : ''}`.replace(/[^\x20-\x7e]/g, '?'))
   return res
 }

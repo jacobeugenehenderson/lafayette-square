@@ -31,6 +31,7 @@ import { writeFileSync, mkdirSync, rmSync } from 'node:fs'
 import { join, dirname, extname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { freshUrl } from '../src/lib/freshUrl.js'
+import { kitWants, kitBundleFiles } from './kit-bundle-set.mjs'
 
 const run = promisify(execFile)
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
@@ -57,30 +58,15 @@ try { git(['cat-file', '-e', `${sha}:src/lib/kitUrl.js`], { stdio: 'ignore' }) }
 catch { fail(`${sha.slice(0, 12)} has no src/lib/kitUrl.js — that commit's renderer does not read a kit base, so a bundle would serve nothing`) }
 let hits = ''
 try { hits = git(['grep', '-n', '-e', 'kitUrl(', sha, '--', 'src'], { encoding: 'utf8' }) } catch { /* no hits → refused below */ }
-const wants = new Map()   // path or directory prefix → call sites
-const unreadable = []
-for (const line of hits.split('\n').filter(Boolean)) {
-  const [, file, ln, text] = line.match(/^[0-9a-f]+:([^:]+):(\d+):(.*)$/) || []
-  if (!file || file === 'src/lib/kitUrl.js' || /^\s*(\*|\/\/)/.test(text)) continue
-  for (const m of text.matchAll(/kitUrl\(\s*(?:'([^']*)'|"([^"]*)"|`([^`$]*)(\$\{)?[^`]*`|([^)]*))/g)) {
-    const lit = m[1] ?? m[2] ?? m[3]
-    if (lit == null || (m[4] && !lit.endsWith('/'))) { unreadable.push(`${file}:${ln}: ${text.trim()}`); continue }
-    const at = `${file}:${ln}`
-    wants.set(lit, [...(wants.get(lit) || []), at])
-  }
-}
+const { wants, unreadable } = kitWants(hits.split('\n').filter(Boolean).map((l) => l.replace(/^[0-9a-f]+:/, '')))
 if (unreadable.length) fail(`these kitUrl() calls have no literal path (or a template prefix that is not a directory), so the bundle cannot know their file:\n  ${unreadable.join('\n  ')}`)
 if (!wants.size) fail(`no kitUrl() call sites under src/ at ${sha.slice(0, 12)}`)
 
 // ── 2. The files git tracks under public/ at those names.
 const tracked = git(['ls-tree', '-r', '-l', sha, '--', 'public'], { encoding: 'utf8' }).split('\n').filter(Boolean)
   .map((l) => { const [meta, path] = l.split('\t'); const [, , blob, size] = meta.trim().split(/\s+/); return { blob, size: Number(size), rel: path.slice('public/'.length) } })
-const files = new Map()
-for (const [want, sites] of wants) {
-  const matched = tracked.filter((f) => (want.endsWith('/') ? f.rel.startsWith(want) : f.rel === want))
-  if (!matched.length) fail(`kitUrl('${want}') (${sites.join(', ')}) names nothing git tracks under public/ at ${sha.slice(0, 12)}`)
-  for (const f of matched) files.set(f.rel, f)
-}
+const { files, unmatched } = kitBundleFiles(wants, tracked)
+if (unmatched.length) fail(unmatched.map(([want, sites]) => `kitUrl('${want}') (${sites.join(', ')}) names nothing git tracks under public/ at ${sha.slice(0, 12)}`).join('\n'))
 const list = [...files.values()].sort((a, b) => a.rel.localeCompare(b.rel))
 const bytes = list.reduce((n, f) => n + f.size, 0)
 

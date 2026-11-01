@@ -1028,6 +1028,8 @@ function TownChooser() {
 
 export default function PreviewApp() {
   const lookId = resolvePreviewLookId()
+  // The tab names the town the address resolved; preview.html's own <title> names none.
+  useEffect(() => { document.title = INSTANCE?.name ? `Preview — ${INSTANCE.name}` : 'Preview — choose a town' }, [])
   return lookId ? <FrozenTown lookId={lookId} /> : <TownChooser />
 }
 

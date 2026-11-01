@@ -91,14 +91,14 @@ the HOSTING app's origin: `basis/` (the KTX2 transcoder), `clouds/{almanac,prese
 `models/lamp-posts/…`, `textures/{moon.jpg,milky_way.jpg,buildings/*}`, and `looks/<town>/design.json`
 (⑥ — a town's authoring file, fetched with `Date.now()`). In the kit's apps that origin is the kit; in
 The Ward it is the Ward, so they miss. **The renderer's assets are the renderer's**: publish them on the
-asset host as a VERSIONED kit bundle (the same release discipline as `BRIEF-codedesk`), read through the
+asset host as a VERSIONED kit bundle (the same release discipline as CodeDesk's, `cartograph/_archive/BRIEF-codedesk-KIT-COPY-RETIRED-2026-11-01.md` §2b), read through the
 asset base, pinned by the host. `design.json` leaves the runtime altogether — what the player needs from it
 is baked into the town's slab or manifest. The Ward proxies these paths to the kit's dev server in
 development only (its OPERATIONS.md says so).
 
 ### ⑦ Shipped and never loaded
 `public/textures/milky_way.jpg` (17 MB; its sphere is commented out), `public/models/lamp-posts/`
-(~255 MB, one file used), `public/trees/` (~5.3 GB, copied into `dist/`), `public/data/landmarks.json`,
+(~255 MB, one file used), `public/trees/` (~5.3 GB, copied into `dist/`),
 PNG twins beside the KTX2 impostor pages. Deploy weight, not visitor weight — but palimpsest.
 - ▶ `du -sh public/trees public/models/lamp-posts dist/trees 2>/dev/null`
 

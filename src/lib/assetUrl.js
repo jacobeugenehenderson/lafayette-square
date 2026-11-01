@@ -9,15 +9,15 @@ const BASE = import.meta.env.BASE_URL
  * NEIGHBORHOOD-INPUTS §5.1.2 — each installation's assets live under its OWN
  * content root:
  *   · `http(s)://…`  → external, pass through.
- *   · `/foo.jpg`     → absolute WEB-ROOT (LS-legacy: assets under public/) →
- *                      resolve against BASE_URL only.
+ *   · `/foo.jpg`     → absolute WEB-ROOT: town data outside the town (LS's and Huron's photos under
+ *                      public/photos, until their move) → resolve against BASE_URL only. ⛔ Refused by
+ *                      ▶ node checks/claims-a-listing-names-only-its-own-assets.mjs; this branch dies with the move.
  *   · `logos/x.jpg`  → INSTANCE-RELATIVE → resolve against this installation's
- *                      `contentRoot` (LS = '' i.e. the web root, byte-identical;
- *                      HPDM = 'content/hipointedemun/', served from its payload).
+ *                      `contentRoot` ('content/<town>/', served from the town's own content/).
  */
 export function assetUrl(url) {
   if (!url) return url
   if (url.startsWith('http')) return url
-  if (url.startsWith('/')) return `${BASE}${url.replace(/^\//, '')}`   // absolute web-root (LS legacy)
+  if (url.startsWith('/')) return `${BASE}${url.replace(/^\//, '')}`   // absolute web-root (outside the town; see above)
   return `${BASE}${INSTANCE.contentRoot || ''}${url}`                  // instance-relative (§5.1.2)
 }

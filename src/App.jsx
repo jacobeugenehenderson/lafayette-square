@@ -14,7 +14,6 @@ import AlmanacEmbed from './components/AlmanacEmbed'
 import { buildings as ALL_BUILDINGS } from './data/buildings'
 import BulletinModal from './components/BulletinModal'
 import ContactModal, { useContact } from './components/ContactModal'
-import CodeDeskModal, { useCodeDesk } from './components/CodeDeskModal'
 import SmsInbox, { useSmsInbox } from './components/SmsInbox'
 import ChatModal from './components/ChatModal'
 import EventTicker from './components/EventTicker'
@@ -305,16 +304,6 @@ function AccountButton() {
             <div className="border-t border-outline-variant pt-2 space-y-1">
               <p className="text-caption text-on-surface-disabled uppercase tracking-widest px-3 pb-1">Admin</p>
               <button
-                onClick={() => { setOpen(false); useCodeDesk.getState().setOpen(true) }}
-                className="w-full py-1.5 rounded-lg text-body-sm text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors text-left px-3 flex items-center gap-2"
-              >
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5z" />
-                </svg>
-                QR Generator
-              </button>
-              <button
                 onClick={() => { setOpen(false); useSmsInbox.getState().setOpen(true) }}
                 className="w-full py-1.5 rounded-lg text-body-sm text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors text-left px-3 flex items-center gap-2"
               >
@@ -344,14 +333,13 @@ function ModeOverlay() {
   const viewMode = useCamera((s) => s.viewMode)
   const showCard = useSelectedBuilding((s) => s.showCard)
   const bulletinOpen = useBulletin((s) => s.modalOpen)
-  const codeDeskOpen = useCodeDesk((s) => s.open)
   const contactOpen = useContact((s) => s.open)
   const infoOpen = useInfo((s) => s.open)
   const isLive = useTimeOfDay((s) => s.isLive)
 
   const panelFull = useCamera((s) => s.panelState) === 'full'
   // Full-height panels cover everything — hide overlay buttons
-  if (codeDeskOpen || showCard || bulletinOpen || contactOpen || infoOpen || panelFull) return null
+  if (showCard || bulletinOpen || contactOpen || infoOpen || panelFull) return null
 
   // Browse mode: BrowseHeader handles both live and home buttons
   if (viewMode === 'browse') return null
@@ -763,7 +751,6 @@ function App() {
       {!isGround && moduleOn('events') && <div className="fade-in" style={{ animationDelay: '0.8s' }}><FeatureBoundary name="EventTicker"><EventTicker /></FeatureBoundary></div>}
       {!isGround && moduleOn('bulletin') && <FeatureBoundary name="Bulletin"><BulletinModal /></FeatureBoundary>}
       {!isGround && moduleOn('contact') && <FeatureBoundary name="Contact"><ContactModal /></FeatureBoundary>}
-      {!isGround && moduleOn('codedesk') && <FeatureBoundary name="CodeDesk"><CodeDeskModal /></FeatureBoundary>}
       {!isGround && moduleOn('sms') && <FeatureBoundary name="SMS"><SmsInbox /></FeatureBoundary>}
       {!isGround && moduleOn('chat') && <FeatureBoundary name="Chat"><ChatModal /></FeatureBoundary>}
       {!isGround && <div className="fade-in" style={{ animationDelay: '1.4s' }}><ModeOverlay /></div>}

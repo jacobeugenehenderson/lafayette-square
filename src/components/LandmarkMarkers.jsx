@@ -9,6 +9,7 @@
  * `shot` gates the pins exactly as the street labels are gated (browse-only content, staggered in
  * by the phone profile); `forceContentReady` shows them in every shot (an authoring surface).
  */
+import { assetUrl } from '../lib/assetUrl.js'
 import { useEffect, useMemo, useState } from 'react'
 import { Html } from '@react-three/drei'
 import * as THREE from 'three'
@@ -131,7 +132,7 @@ function MapPin({ listing, building, position, xOffset = 0, zOffset = 0 }) {
         >
           {thumbnail && !logoFailed ? (
             <img
-              src={`${import.meta.env.BASE_URL}${thumbnail.replace(/^\//, '')}`}
+              src={assetUrl(thumbnail)}
               alt={listing.name}
               style={{
                 maxWidth: '100%', maxHeight: '100%', objectFit: 'contain',

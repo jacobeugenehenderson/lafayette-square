@@ -76,7 +76,6 @@ export default {
       zoneDescription: null,
     },
     contact: true,
-    codedesk: true,
     sms: true,
     chat: true,
     info: true,

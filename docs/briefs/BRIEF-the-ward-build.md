@@ -150,8 +150,6 @@ registers rewritten for what shipped (README §10), and a commit that says what 
   and never refreshed, so a revoked keyholder kept the tools. The Ward uses the claim response honestly and
   clears it on the server's refusal. ⚠️ **For Jacob:** a one-action Apps Script read (`my-role`) is the
   right design and needs a deploy.
-- **CodeDesk builds card URLs from `location.origin`** (`public/codedesk/`), so a card printed on staging
-  carries the staging address. It should use the town's domain (Operations), and refuse without one.
 - **`postEvent` keeps only type, title, description, start and end dates.** The old form's recurrence and
   time fields were dropped silently. The Ward asks only for what is kept.
 - **A town has no currency.** The manifest's `identity.commerce` carries only `salesTaxRate`; the old player

@@ -15,7 +15,7 @@ gated without anyone remembering to gate it, which is what makes this work on to
 
 A non-zero exit is a **finding for the board**, not a runner fault. The suite reports; it does not fix.
 
-## ⛔ live — 139. Never in a default run.
+## ⛔ live — 141. Never in a default run.
 
 Two reason classes, and they are not the same thing. **outbound** — a demonstrated call out.
 **unreadable** — runs code the parser cannot read, so it *may* contact nothing but cannot be shown
@@ -54,7 +54,7 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `checks/claims-a-perpendicular-landing-runs-straight-on.mjs` | unreadable | computed import() of a path an argument or the environment can supply — arbitrary |
 | `checks/claims-a-pinched-face-is-two-faces.mjs` | unreadable | writeFileSync · deletes files · computed import() with no readable target — runs arbitrary modules · computed import() with no readable target — runs arbitrary modules |
 | `checks/claims-a-place-link-sends-its-own-card.mjs` | unreadable | imports checks/_miniflare.mjs, which can: computed import() with no readable target — runs arbitrary modules, runs `npm` — not a known-local command |
-| `checks/claims-a-production-town-plays-the-player-promote-pinned.mjs` | outbound | imports a network module · imports checks/_miniflare.mjs, which can: computed import() with no readable target — runs arbitrary modules, runs `npm` — not a known-local command |
+| `checks/claims-a-production-town-plays-the-player-promote-pinned.mjs` | outbound | imports a network module · writeFileSync · deletes files · importSource of scripts/promote-player-to-prod.mjs, which can: calls fetch(), runs `npx` — reaches out · imports checks/_sourceFile.mjs, which can: writeFileSync, deletes files · imports checks/_miniflare.mjs, which can: computed import() with no readable target — runs arbitrary modules, runs `npm` — not a known-local command |
 | `checks/claims-a-reimport-keeps-curation.mjs` | unreadable | deletes files · copies/renames files · child_process with a non-literal command — cannot be read |
 | `checks/claims-a-salon-save-keeps-provenance.mjs` | unreadable | writeFileSync · mkdirSync · deletes files · imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command, imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files |
 | `checks/claims-a-scrub-never-writes-the-keys.mjs` | outbound | calls fetch() · opens a WebSocket · deletes files — only under its own temp dir · runs `/Applications/Google Chrome.app/Contents` — not a known-local command |
@@ -90,6 +90,7 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `checks/claims-hero-focuses-the-object.mjs` | unreadable | imports vite — its server resolves localhost over DNS (caught by the no-network guard) · imports package(s) vite — not read from source |
 | `checks/claims-neon-picks-its-building.mjs` | outbound | calls fetch() · opens a WebSocket · deletes files — only under its own temp dir · runs `/Applications/Google Chrome.app/Contents` — not a known-local command · runs `pkill -9 -f 'user-data-dir=${profile}'` — not a known-local command |
 | `checks/claims-no-edge-is-drawn-twice.mjs` | unreadable | installs a loader hook (node:module register) — can swap any module's source · writeFileSync · imports cartograph/bake-ground.js, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/terrainLoad.js, which can: imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync |
+| `checks/claims-no-host-carries-a-codedesk-copy.mjs` | unreadable | writeFileSync · mkdirSync · deletes files · runs `git` — not a known-local command |
 | `checks/claims-no-step-reads-what-a-later-step-writes.mjs` | unreadable | writeFileSync · deletes files · imports cartograph/pour-code.mjs, which can: runs `git` — not a known-local command, runs `git` — not a known-local command · imports cartograph/pourSteps.mjs, which can: writeFileSync |
 | `checks/claims-no-view-reaches-the-sky-at-the-shore.mjs` | outbound | imports scripts/lib/headless.mjs, which can: calls fetch(), opens a WebSocket, deletes files — only under its own temp dir, child_process with a non-literal command — cannot be read |
 | `checks/claims-one-way-into-stage.mjs` | outbound | calls fetch() · computed import() of a path an argument or the environment can supply — arbitrary |
@@ -119,6 +120,7 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `checks/claims-the-floor-is-read-only-from-a-permitted-survey.mjs` | outbound | imports cartograph/fetch-bathymetry.mjs, which can: writeFileSync, mkdirSync, deletes files, imports cartograph/io.js, which can: writeFileSync, imports cartograph/elevationSources.mjs, which can: calls fetch() |
 | `checks/claims-the-focus-object-is-everything-hung-on-it.mjs` | unreadable | imports vite — its server resolves localhost over DNS (caught by the no-network guard) · imports package(s) vite — not read from source |
 | `checks/claims-the-kerb-along-the-water-is-the-coast-line.mjs` | unreadable | writeFileSync · deletes files · computed import of a temp-dir module, and not every write is shown to stay in its temp dir · computed import() with no readable target — runs arbitrary modules · declares @args --slot=<granted> |
+| `checks/claims-the-kit-bundle-names-no-town.mjs` | unreadable | importSource of scripts/kit-bundle-set.mjs — read, safe · computed import of src/instances/registry.js — read, safe · runs `git` — not a known-local command |
 | `checks/claims-the-legacy-look-table-dies-at-ls-cutover.mjs` | outbound | calls fetch() |
 | `checks/claims-the-morning-is-observed.mjs` | unreadable | imports vite — its server resolves localhost over DNS (caught by the no-network guard) · imports package(s) vite — not read from source |
 | `checks/claims-the-movie-is-continuous.mjs` | unreadable | imports vite — its server resolves localhost over DNS (caught by the no-network guard) · writeFileSync — only under its own temp dir · deletes files — only under its own temp dir · computed import of src/preview/heroAnim.js — read, safe · imports a mutated copy of src/preview/heroAnim.js from its own temp dir — read as src/preview/heroAnim.js, safe · imports a mutated copy of src/preview/heroAnim.js from its own temp dir — read as src/preview/heroAnim.js, safe · imports package(s) vite — not read from source |
@@ -206,7 +208,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 380. This is `npm test`.
+## safe — 381. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -247,6 +249,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-a-level-body-has-one-surface.mjs` | IS THE LAKE FLAT IN OUR OWN HEIGHTFIELD? |
 | `checks/claims-a-light-show-runs-dusk-to-dawn-on-the-hour.mjs` | "DOES THE LIGHT SHOW GLOW DUSK TO DAWN AND PLAY ON THE HOUR?" (r-the-lights-run-dusk-to-dawn-and-the-show-plays-on- |
 | `checks/claims-a-listing-keeps-its-id.mjs` | a business keeps its display id across every bake, whatever else |
+| `checks/claims-a-listing-names-only-its-own-assets.mjs` | every file a listing names (its photos and its logo) is published in its |
 | `checks/claims-a-look-authors-its-curb-width.mjs` | DOES EVERY LOOK RESOLVE ONE CURB, FROM ONE HOME, AND SAY WHICH RUNG DECIDED? |
 | `checks/claims-a-look-keyed-tool-is-called-with-its-look.mjs` | every spawn of a Look-strict tool passes `--look`. |
 | `checks/claims-a-look-runs-on-its-own-clock.mjs` | "DOES EVERY LOOK START FROM ITS OWN BEGINNING?" (BRIEF-the-monument-lights-up; Jacob, 2026-10-31: the Red Ribbon's |
@@ -413,7 +416,6 @@ Writes into the repo or a scratch dir.
 | `checks/claims-no-corner-at-a-true-geometry-edge.mjs` | CLAIM — ② MAKES AT MOST ONE CORNER WHERE THE EXACT INK HAS A SUB-INK EDGE, AND ONLY IF THE GROUND THERE TURNS. Where two |
 | `checks/claims-no-dossier-rests-on-a-wrong-species.mjs` | DOES ANY DOSSIER CITE A SOURCE THAT ANSWERED FOR ANOTHER SPECIES? |
 | `checks/claims-no-hairline-ring-reaches-the-operator.mjs` | CLAIM: every ring the operator is shown — ① and the ②/③ ped bands — has a real |
-| `checks/claims-no-host-carries-a-codedesk-copy.mjs` | CodeDesk has one source, and hosts pin its releases (BRIEF-codedesk). |
 | `checks/claims-no-label-is-a-made-up-name.mjs` | ⭐ IS ANY BAKED STREET LABEL A NAME THE SKELETON MADE UP? — `ROADMAP A19`. |
 | `checks/claims-no-listing-links-to-a-hijacked-domain.mjs` | a URL a researcher condemned may not ship. |
 | `checks/claims-no-photo-loads-from-someone-elses-server.mjs` | every listing photograph is ours, and |
@@ -539,6 +541,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-the-overhead-band-is-two-triangles.mjs` | IS EVERY OVERHEAD BAND A 2-TRIANGLE QUAD, AND DOES ITS FLUTTER SLIDE THE PICTURE? |
 | `checks/claims-the-overhead-core-is-baked.mjs` | DOES THE GROVE BAKE THE OVERHEAD IMPOSTOR'S DEEP CORE, AND IS ITS ABSENCE LOUD? |
 | `checks/claims-the-pad-is-the-size-of-the-corner.mjs` | ⭐⭐⭐ THE ADA PAD IS THE SIZE OF THE CORNER — the gate on the canary Jacob marked 2026-09-07. |
+| `checks/claims-the-plan-frames-a-point.mjs` | "CAN THE PLAN FRAME A SPOT, AND WHEN NOTHING IS PLACED DOES IT HOLD?" (Boz, 2026-10-31: an event's { name, point } venue |
 | `checks/claims-the-plan-frames-all-it-is-given.mjs` | "WHEN THE PLAN IS ASKED TO FRAME ALL OF A SET, IS EVERY PLACED MEMBER INSIDE THE FREE REGION?" |
 | `checks/claims-the-plan-opens-on-its-places.mjs` | "DOES THE PLAN MAP OPEN ON THE TOWN'S PLACES — THEIR DENSEST CLUSTER, INSIDE THE EXTENT, WITH NOTHING HIDDEN?" |
 | `checks/claims-the-plan-shot-ends-at-the-rim.mjs` | "IN PLAN VIEW, IS THE TOWN ONE CLOSED CIRCLE WITH A SOFT EDGE?" |

@@ -44,9 +44,8 @@ export default {
   // "localize the almanac"). Every date, time, temperature and price the Ward shows is formatted from this.
   locale: { language: 'en-US', temperature: 'fahrenheit', currency: 'USD', length: 'feet' },
 
-  // Content asset root (§5.1.2), relative to BASE_URL. LS is the legacy install —
-  // its logos/photos live at the web root (public/logos, public/photos), so ''.
-  contentRoot: '',
+  // Content asset root (§5.1.2), relative to BASE_URL: its own content/, like every town.
+  contentRoot: 'content/lafayettesquare/',
 
   // Branding assets (the reader's chrome). copy: the Legal/Info prose bundle is
   // DEFERRED to Phase 4 — it stays literal in the components until then.
@@ -96,7 +95,6 @@ export default {
       zoneDescription: 'Chouteau Avenue to Interstate 44, Jefferson Avenue to Truman Parkway',
     },
     contact: true,
-    codedesk: true,
     sms: true,
     chat: true,
     info: true,

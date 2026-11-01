@@ -1,27 +1,24 @@
-// claims-no-host-carries-a-codedesk-copy.mjs — CodeDesk has one source, and hosts pin its releases (BRIEF-codedesk).
+// claims-no-host-carries-a-codedesk-copy.mjs — CodeDesk has one source, and hosts pin its releases (cartograph/_archive/BRIEF-codedesk-KIT-COPY-RETIRED-2026-11-01.md).
 //
 // ⭐ THE CLAIM: CodeDesk lives in ONE repo (dev.nosync/codedesk) and reaches its hosts as a pinned, published release
-// (its README § "Hosts", § "Releasing"). No host serves a copy of its own: a copy drifts — the kit's did, all seven
-// shared files — and the kit's copy builds card addresses from its own origin, so a card printed on staging encodes
-// staging, and a printed card cannot be updated.
+// (its README § "Hosts", § "Releasing"). No host serves a copy of its own: a copy drifts (the kit's did, all seven shared
+// files), and the kit's copy built card addresses from its own origin and carried one town's places.
+// ⭐ The kit's copy is RETIRED (Jacob, 2026-11-01: "retire it"; and of the place card's guardian QR button, "yes, remove the
+// guardian QR button too"): public/codedesk, CodeDeskModal, its mounts and the `codedesk` module flag. This check now holds
+// that line: no copy in the tree, and nothing in src/ that frames, opens or switches one on.
 //
-// ⛔ EXPECTED RED UNTIL CUTOVER (Warden's ruling R1, 2026-09-28): the kit's copy (`public/codedesk/`) is mounted by the
-// FROZEN old player's CodeDeskModal — the Guardian-card flow. Both retire WITH the old player, not before. This check
-// stays red, saying so, until they are gone; it is the brief's evict-when.
-//
-// Reads: the kit's tree; and The Ward's tree when it sits beside the kit (dev.nosync/theward) — else it says it
-// could not look there, never "clean".
-//   node checks/claims-no-host-carries-a-codedesk-copy.mjs
-import fs from 'fs'
-import path from 'path'
-
-let failures = 0
-const fail = (m) => { failures++; console.log(`  ✗ ${m}`) }
-const pass = (m) => console.log(`  ✓ ${m}`)
+// The Ward: measured when its tree sits beside the kit (dev.nosync/theward); otherwise the row is Ward's own cited grep,
+// said as a citation, never as a reading.
+//   node checks/claims-no-host-carries-a-codedesk-copy.mjs [--mutants]
+//   --mutants: a copy restored under public/ · CodeDeskModal restored · the module flag back in an instance.
+import { execFileSync } from 'node:child_process'
+import fs from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
 
 // A copy: a directory holding CodeDesk's own engine files.
 const ENGINE = ['qr_render_engine.js', 'qr_sync_pipeline.js', 'qr_ui_toolkit.js']
-const SKIP = new Set(['.git', 'node_modules', 'dist', '.claude', '_archive', 'scratch'])
+const SKIP = new Set(['.git', 'node_modules', 'dist', '.claude', '_archive', 'scratch', 'baked', 'photos'])
 function copiesUnder(root) {
   const out = []
   ;(function walk(d, depth) {
@@ -32,27 +29,55 @@ function copiesUnder(root) {
     for (const n of names) {
       if (SKIP.has(n)) continue
       const p = path.join(d, n)
-      try { if (fs.statSync(p).isDirectory()) walk(p, depth + 1) } catch { /* unreadable: not a copy */ }
+      try { if (fs.lstatSync(p).isDirectory()) walk(p, depth + 1) } catch { /* unreadable: not a copy */ }
     }
   })(root, 0)
   return out
 }
+// What in src/ frames, opens or switches on a CodeDesk: the modal, its store, the module flag.
+const FRAMES = /CodeDeskModal|useCodeDesk|\bcodedesk\s*:/
+function framesIn(lines) { return lines.filter((l) => FRAMES.test(l.replace(/^[^:]+:\d+:/, '')) && !/:\d+:\s*(\/\/|\*)/.test(l)) }
+const srcLines = () => { try { return execFileSync('git', ['grep', '-n', '-I', '-e', 'odeDesk', '-e', 'codedesk', '--', 'src', 'cartograph/scaffold-instance.mjs'], { encoding: 'utf8' }).split('\n').filter(Boolean) } catch { return [] } }
 
+function verdict(m = {}) {
+  const fails = []
+  const copies = [...copiesUnder('.'), ...(m.copyAt ? copiesUnder(m.copyAt).map((c) => `${m.copyAt}/${c}`) : [])]
+  if (copies.length) fails.push(`the kit carries a CodeDesk copy: ${copies.join(', ')}`)
+  if (fs.existsSync('src/components/CodeDeskModal.jsx') || m.modal) fails.push('src/components/CodeDeskModal.jsx is back')
+  const frames = framesIn([...srcLines(), ...(m.lines || [])])
+  if (frames.length) fails.push(`src/ frames, opens or switches on a CodeDesk: ${frames.slice(0, 3).join(' · ')}`)
+  return fails
+}
+
+let failures = 0
 console.log('\nthe kit')
-const kitCopies = copiesUnder('.')
-const modal = fs.existsSync('src/components/CodeDeskModal.jsx')
-if (kitCopies.length) fail(`carries a CodeDesk copy: ${kitCopies.join(', ')}`)
-if (modal) fail('src/components/CodeDeskModal.jsx still frames it')
-if (kitCopies.length || modal) console.log('    ⏳ expected until cutover: retired with the frozen old player (BRIEF-codedesk R1)')
-else pass('no copy, and nothing frames one')
+const kit = verdict()
+for (const f of kit) { failures++; console.log(`  ✗ ${f}`) }
+if (!kit.length) console.log('  ✓ no copy, and nothing in src/ frames, opens or switches one on')
 
 console.log('\nThe Ward')
 const ward = path.resolve('..', 'dev.nosync', 'theward')
-if (!fs.existsSync(ward)) console.log(`  ·  NOT MEASURED — The Ward is not beside the kit (${ward})`)
-else {
+if (fs.existsSync(ward)) {
   const wardCopies = copiesUnder(ward)
-  if (wardCopies.length) fail(`The Ward carries a CodeDesk copy: ${wardCopies.join(', ')}`)
-  else pass('no copy')
+  if (wardCopies.length) { failures++; console.log(`  ✗ The Ward carries a CodeDesk copy: ${wardCopies.join(', ')}`) }
+  else console.log('  ✓ no copy (measured)')
+} else console.log("  ·  none, per Ward's grep at theward d71662d (2026-11-01); not re-read by this check (its tree is not beside the kit)")
+
+if (process.argv.includes('--mutants')) {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'codedesk-mutant-'))
+  fs.mkdirSync(path.join(tmp, 'codedesk'))
+  for (const f of ENGINE) fs.writeFileSync(path.join(tmp, 'codedesk', f), '')
+  const mutants = [
+    ['a copy restored under public/', { copyAt: tmp }],
+    ['CodeDeskModal restored', { modal: true }],
+    ['the module flag back in an instance', { lines: ['src/instances/huron.js:94:    codedesk: true,'] }],
+  ]
+  for (const [name, m] of mutants) {
+    const f = verdict(m)
+    console.log(`${f.length ? '🔴' : '⚪ SURVIVED'} mutant: ${name}`)
+    if (!f.length) failures++
+  }
+  fs.rmSync(tmp, { recursive: true, force: true })
 }
 
 console.log(`\n${failures ? `❌ ${failures} FAILURE(S)` : '✅ PASS'}`)
