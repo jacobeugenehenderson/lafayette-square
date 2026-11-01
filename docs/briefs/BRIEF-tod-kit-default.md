@@ -56,7 +56,7 @@ and **what it should do at each slot**.
   commits (`git log --grep=Loupe`) and build on them.
 - ⭐ **The dramatic tools, by name**, because Jacob wants them used: neon (`NEON_*`, open-by-hours ×
   time-of-day intensity), lamp glow and pools (`LANTERN_*`, `LAMPGLOW_*`), set-piece uplights, bloom, halo, mist,
-  stars, constellations, the Milky Way (`BRIEF-milky-way.md`), clouds and weather. For each, say where in the day it
+  stars, constellations, the Milky Way (procedural band; its old brief retired: `cartograph/_archive/BRIEF-milky-way-RETIRED-2026-11-01.md`), clouds and weather. For each, say where in the day it
   should carry the picture.
 - ⛔ **Known open defects this work runs into, with homes:** `ROADMAP H-34`: the ground's night darkness has no
   owner (`floorWhite` has no time-of-day term, and the ambient term *rises* toward night). That is an unbuilt

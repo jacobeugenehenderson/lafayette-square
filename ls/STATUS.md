@@ -42,7 +42,6 @@ The backend is **sound**: all 25+ privileged-write endpoints re-verify `device_h
 
 ## Completeness gaps (small, known)
 
-- Milky Way mount is **disabled** (`CelestialBodies.jsx` ~1194, "hidden 2026-05-02") — **KEEP → re-enable** (Jacob), one-line uncomment, *not* cruft.
 - `HERO_CENTER`/`HERO_TARGET` — vestigial fallback, **removable** at cleanup (hero framing is slab-authored now).
 - `EventForm` guest-list field — **unwired** (UI absent). Low priority.
 - **No event-delete / review-edit / review-delete** UI — guardian edits via Sheet. Low.

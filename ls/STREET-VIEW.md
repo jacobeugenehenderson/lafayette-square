@@ -118,7 +118,7 @@ The overlay (`PlanetariumOverlay.jsx`) draws, for the 88 IAU constellations in `
 
 **Open follow-ups (not blocking):**
 - **Smooth opacity fade** vs. today's **binary mount** (the toggle switches at 0.5 between keys).
-- **Milky Way** authored-but-disabled — the seam into the larger planetarium build-out (§3.4).
+- **Milky Way** — a procedural band in the sky dome (`skyGradient.js#MILKY_WAY_GLSL`), at the real galactic pole, on the `milkyWay` channel; its Stage control is hidden (`CartographSkyLight.jsx`, open).
 
 ### 3.3 Where the sky is authored
 The whole celestial envelope is **SC.1 channels** authored in Cartograph Stage (`CartographSkyLight.jsx`), keyframed across time-of-day, baked into `scene.json`, and consumed per-frame by `CelestialBodies` (the *same component* Stage and Meteorologist mount — one-consumer doctrine). Channels: `sky`, `ambient`, `hemi`, `dirSun`, `dirMoon`, `constellations`, `milkyWay`, `skyGain`. Home: `cartograph/STAGE.md §SC.1`.
@@ -128,7 +128,7 @@ The whole celestial envelope is **SC.1 channels** authored in Cartograph Stage (
 
 The name `planetarium` is earned, not ironic — the sky is real astronomy already (SunCalc sun/moon, sidereal star transform). The build-out makes the looking-up experience a destination in its own right. Roughly in dependency order:
 
-1. **Animate the Milky Way in** — the entry move. The `milkyWay` channel + texture exist (§3.2); the work is re-enabling it, animating its rise/arc with sidereal time, and weighing the ~17 MB mobile cost (stream/compress, or gate by tier).
+1. **Animate the Milky Way in** — the entry move. The band is drawn and turns with sidereal time (§3.2); the photo panorama is retired.
 2. **Planets** — `src/data/planetarium/planets.json` (orbital elements) already exists and `PlanetariumOverlay` has planet-marker scaffolding; the work is ephemeris → on-dome positioning at true place/time, rendered as bright wanderers (ideally distinguishable from stars).
 3. **Meteors** — procedural streaks (Perseid/Geminid-style showers keyed to real dates, plus sporadics). Pure runtime effect; no data dependency. A natural "wow" that rewards lingering in the look-up view.
 4. **Northern lights / aurora** — a rare, authored atmospheric effect (shader curtains low on the northern horizon). Off by default; a special-occasion / weather-tied flourish — couples naturally to the Meteorologist almanac.
