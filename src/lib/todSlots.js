@@ -18,6 +18,7 @@
  */
 import SunCalc from 'suncalc'
 import { townMinuteOf } from './townClock.js'
+import { Refusal } from './refusal.js'
 
 /** The slot ids, in the day's order. Labels and colours are the editor's (`animatedParam.js#NAMED_TOD_SLOTS`). */
 export const TOD_SLOT_IDS = ['dawn', 'sunrise', 'noon', 'golden', 'sunset', 'dusk', 'night', 'deep']
@@ -26,7 +27,7 @@ const SUNCALC_TIME = { dawn: 'dawn', sunrise: 'sunrise', noon: 'solarNoon', gold
 
 // Each crossing slot's angle, from SunCalc's own table (noon and the nadir are extrema, always reached).
 const ANGLE = Object.fromEntries(SunCalc.times.flatMap(([deg, rise, set]) => [[rise, deg], [set, deg]]))
-for (const id of TOD_SLOT_IDS) if (id !== 'noon' && id !== 'deep' && !(SUNCALC_TIME[id] in ANGLE)) throw new Error(`[todSlots] ⛔ SunCalc has no angle for ${SUNCALC_TIME[id]}`)
+for (const id of TOD_SLOT_IDS) if (id !== 'noon' && id !== 'deep' && !(SUNCALC_TIME[id] in ANGLE)) throw new Refusal(`[todSlots] ⛔ SunCalc has no angle for ${SUNCALC_TIME[id]}`)
 const altDeg = (d, lat, lon) => SunCalc.getPosition(d, lat, lon).altitude * 180 / Math.PI
 function slotsAt(when, { lat, lon, tz }) {
   const times = SunCalc.getTimes(when, lat, lon), noon = times.solarNoon, nadir = times.nadir

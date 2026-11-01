@@ -50,13 +50,18 @@ async function runStep(mutate, plant) {
     writeFileSync(join(contentOut, 'listings.json'), '[]')   // a canary: the content this same run wrote, never emptied
     const drawer = plant === 'missing-drawer' ? 'displays/none/looks.json' : plant === 'root-drawer' ? 'looks.json' : 'displays/show/looks.json'
     const prefix = `const ROOT = ${JSON.stringify(root)}, town = 't', contentSrc = ${JSON.stringify(contentSrc)}, contentOut = ${JSON.stringify(contentOut)}
-const identity = { displays: [{ id: 'show', drawer: ${JSON.stringify(drawer)} }] }
+const identity = { geography: { lat: 42.05, lon: -70.19, timezone: 'America/New_York' }, displays: [{ id: 'show', drawer: ${JSON.stringify(drawer)}, run: [{ look: 'a', seconds: 60 }] }] }
 const process = { exit: (c) => { throw Object.assign(new Error('exit ' + c), { exitCode: c }) } }
 const console = { error: () => {}, log: () => {} }
 import { readFileSync, writeFileSync, existsSync, mkdirSync, rmSync } from 'node:fs'
 import { createHash } from 'node:crypto'
 import { resolve, relative, dirname } from 'node:path'
 import { drawerDir, frameRel } from '../src/displays/drawerPath.js'
+import { indexListingAssets } from './listing-assets.mjs'
+import { compileRun, showSeconds, refuseCrowdedShows } from '../src/displays/lightShow/engine.js'
+import { displayAt, defaultDisplayChannel } from '../src/displays/showChannel.js'
+import { todSlotMinutesAt } from '../src/lib/todSlots.js'
+const bakedScene = { displays: { show: defaultDisplayChannel() } }
 `
     // bake-manifest's own text, from its copier through its displays step (photos run between them, and find no listings)
     let exited = null, displays = null
@@ -89,8 +94,8 @@ async function verdict({ step, names, sweep, url, show, files = {}, mirror, rule
   const fr = { w: 4, h: 3, pinH: 1, faces: 4 }
   F(!!(() => { try { E.validateDrawer({ frame: fr, looks: [{ id: 'a', layers: [{ motion: { kind: 'still' }, frames: ['../../x.svg'] }] }] }, 'w') } catch (e) { return /inside the drawer/.test(e.message) } })(), 'the engine (Stage) accepts a frame escaping the drawer')
   F(!!(() => { try { E.validateDrawer({ frame: fr, looks: [{ id: 'a', layers: [{ motion: { kind: 'still' }, frames: ['%2e%2e/x.svg'] }] }] }, 'w') } catch (e) { return /inside the drawer/.test(e.message) } })(), 'the engine (Stage) accepts a percent-encoded escape')
-  const bm = code(sourceOf('cartograph/bake-manifest.mjs'))
-  F((bm.match(/publishBeside\(/g) || []).length >= 3 && /photos\[url\] = publishBeside\(/.test(bm), 'photos and drawers do not share one copier (publishBeside)')
+  const bm = code(step ? step(sourceOf('cartograph/bake-manifest.mjs')) : sourceOf('cartograph/bake-manifest.mjs'))
+  F(/publish: publishBeside \}\)/.test(bm) && /const put = \(rel\) => \{ const f = publishBeside\(/.test(bm), 'photos and drawers do not share one copier (publishBeside: indexListingAssets is handed it, the drawer\'s put calls it)')
   F(/^\s*displays,$/m.test(bm), 'the manifest does not carry `displays`')
   // 2. the resolver and the sweep
   const N = await importSource('src/lib/slabNames.js', names ? { transform: names } : {})
@@ -133,6 +138,7 @@ else console.log("✅ the bake carries its displays: every frame published and i
 
 if (process.argv.includes('--mutants')) {
   const mutants = [
+    ['the photos handed a copier of their own', { step: (s) => s.replace('exists: existsSync, publish: publishBeside })', 'exists: existsSync, publish: (a, b) => publishBeside(a, b) })') }],
     ['a stale frame left published', { step: (s) => s.replace('rmSync(resolve(contentOut, dir), { recursive: true, force: true })', 'void 0') }],
     ['a drawer at the content root accepted', { step: (s) => s.replace('try { dir = drawerDir(d.drawer, where) } catch (e) { console.error(e.message); process.exit(2) }', 'dir = dirname(d.drawer)') }],
     ['a frame escaping its folder accepted', { step: (s) => s.replace('try { frameRel(frame, `${where} look "${L.id}"`) } catch (e) { console.error(e.message); process.exit(2) }', '') }],

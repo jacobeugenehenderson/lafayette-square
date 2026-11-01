@@ -50,8 +50,8 @@ export function validateDrawer(drawer, where) {
 }
 
 /**
- * A whole display record against its drawer, before it ships: the strands, the season, the schedule and the running
- * order. Throws by name. (The first line; DisplayBoundary is the last.)
+ * A whole display record against its drawer, before it ships: the strands, the season and the running order. Throws
+ * by name. (The first line; DisplayBoundary is the last.) The schedule is the Look's channel: refuseCrowdedShows.
  */
 export function validateDisplay(display, drawer, where) {
   validateDrawer(drawer, where)
@@ -62,9 +62,7 @@ export function validateDisplay(display, drawer, where) {
   if (st.show % st.glow) throw new Refusal(`[lightShow] ⛔ ${where}: strands.show (${st.show}) must be a whole multiple of strands.glow (${st.glow}): the glow strands are show strands`)
   if (!(st.footHeightM >= 0)) throw new Refusal(`[lightShow] ⛔ ${where}: strands.footHeightM, the ring's height above the set-piece's base, is not authored`)
   if (typeof display.season !== 'string' || !display.season) throw new Refusal(`[lightShow] ⛔ ${where}: the display names no season`)
-  if ('shows' in display) throw new Refusal(`[lightShow] ⛔ ${where}: the display authors \`shows\`, and the Light Show has no such field: its schedule is the plugin's, dusk to dawn with a show on every hour (r-the-lights-run-dusk-to-dawn-and-the-show-plays-on-the-hour)`)
-  const compiled = compileRun(display.run, Object.fromEntries(drawer.looks.map(L => [L.id, L])), where)
-  if (showSeconds(compiled) > 3600) throw new Refusal(`[lightShow] ⛔ ${where}: the show runs ${Math.round(showSeconds(compiled))} s, longer than the hour between showtimes; it would be clipped, so it is refused`)
+  compileRun(display.run, Object.fromEntries(drawer.looks.map(L => [L.id, L])), where)
 }
 
 /**
@@ -171,40 +169,61 @@ export const runSeconds = (run) => OPEN_SECONDS * 2 + run.reduce((a, s) => {
 }, 0)
 
 /**
- * THE SCHEDULE (r-the-lights-run-dusk-to-dawn-and-the-show-plays-on-the-hour; Jacob, 2026-10-31: "Hourly on the hour,
- * dusk until dawn is fine"). The plugin's, not the record's: no knobs until a second town has displays.
- * `night` is { dusk, dawn }: the town's civil dusk and dawn as minutes on ITS clock (from its position, never typed), or
- * null where the sun does not reach them: dusk null, it never gets dark (white nights), so no glow; dawn null, it never
- * gets light (polar night), so the glow runs the whole town day.
- * `glowSpan`: the glow as { from, len } minutes (len 1440 = all day), or null.
+ * THE SCHEDULE IS THE DISPLAY'S OWN LOOK CHANNEL (r-a-display-is-authored-on-its-own-look-channel; Boz's rulings and Zob's
+ * conditions, 2026-11-01). `at(minute)` is the channel on the town's day, { glow, show, kelvin, showEvery }
+ * (../showChannel.js#displayAt over that day's slot minutes); the engine keeps no clock and no sun of its own.
+ *   · A SHOWTIME is a minute m of the town's clock with m % showEvery = 0 (from the town's midnight; showEvery is the
+ *     one in force at m) at which the WHOLE run has show > 0: a show is never clipped, so a run the channel's show would
+ *     fall to 0 under is no showtime. Inside a run, its level follows the channel.
+ *   · Off the shows it GLOWS while the channel's glow > 0, and is off otherwise.
+ * `showtimesOn` reads one day; a run that starts late crosses midnight on that day's channel (the next day's slots differ
+ * by a minute or two).
  */
 const DAY_MIN = 1440
-export function glowSpan(night) {
-  if (night.dusk == null) return null
-  if (night.dawn == null) return { from: 0, len: DAY_MIN }
-  return { from: night.dusk, len: ((night.dawn - night.dusk) % DAY_MIN + DAY_MIN) % DAY_MIN }
-}
-const offsetIn = (span, minute) => ((minute - span.from) % DAY_MIN + DAY_MIN) % DAY_MIN
-/** Tonight's showtimes: every whole hour of the town's clock inside the glow at which the WHOLE show ends before the
- *  glow does (a show it cannot finish is no showtime: never clipped). Minutes of the day, in clock order. */
-export function showtimes(night, seconds) {
-  const span = glowSpan(night); if (!span) return []
-  const out = []
-  for (let h = 0; h < 24; h++) if (span.len === DAY_MIN || offsetIn(span, h * 60) + seconds / 60 <= span.len) out.push(h * 60)
+export function showtimesOn(at, seconds) {
+  const out = [], len = seconds / 60
+  for (let m = 0; m < DAY_MIN; m++) {
+    const { showEvery, show } = at(m)
+    if (m % showEvery || !(show > 0)) continue
+    let whole = true
+    for (let k = 1; k < len && whole; k++) if (!(at((m + k) % DAY_MIN).show > 0)) whole = false
+    if (whole && !(at((m + len - 1e-6) % DAY_MIN).show > 0)) whole = false
+    if (whole) out.push(m)
+  }
   return out
 }
 /**
- * LIVE: what the display is doing at a town instant. `clock` is townClockOf(instant), so a whole hour is the town's own
- * :00, through a change of clocks. Off out of season or outside the glow; a show from each showtime for as long as it
- * runs; the glow otherwise. Returns { mode: 'off' | 'glow' | 'show', t, up }: t the seconds since the show began, `up`
- * whether the strands hang at all: in season (by day they hang dark), never out of it (Jacob, 2026-10-31).
+ * ⛔ A cadence that crowds its own show is refused (Zob's C2): two successive showtimes of a day, the last and the next
+ * day's first included, closer than the show runs. `days` is [[label, at], …], every day the season can play (the bake
+ * passes every day of the year at the town's position), so a step in showEvery that only overlaps in June is caught.
  */
-export function liveState(display, compiled, clock, calendar, night, where) {
-  const up = inSeason(calendar, display.season, clock.date, where), span = glowSpan(night)
-  if (!up || !span || offsetIn(span, clock.hours * 60 + clock.minutes) >= span.len) return { mode: 'off', t: 0, up }
-  const t = clock.minutes * 60 + clock.seconds, seconds = showSeconds(compiled)
-  if (t < seconds && showtimes(night, seconds).includes(clock.hours * 60)) return { mode: 'show', t, up }
-  return { mode: 'glow', t: 0, up }
+export function refuseCrowdedShows(days, seconds, where) {
+  const len = seconds / 60
+  for (const [label, at] of days) {
+    const t = showtimesOn(at, seconds)
+    for (let i = 0; i < t.length; i++) {
+      const next = i + 1 < t.length ? t[i + 1] : t[0] + DAY_MIN
+      if (t.length > 1 && next - t[i] < len) throw new Refusal(`[lightShow] ⛔ ${where}: on ${label} the shows at ${hhmm(t[i])} and ${hhmm(next)} are ${next - t[i]} minutes apart, and a show runs ${len.toFixed(1)}: a show would cut into the next`)
+    }
+  }
+}
+const hhmm = (m) => `${String(Math.floor(m / 60) % 24).padStart(2, '0')}:${String(Math.round(m % 60)).padStart(2, '0')}`
+/**
+ * LIVE: what the display is doing at a town instant. `clock` is townClockOf(instant); `at` the channel on the town's
+ * day; `times` showtimesOn(at, the show's seconds) for that day (the renderer computes it once a day). Off out of
+ * season; a show from each showtime for as long as it runs (t, the seconds since it began); else the glow while the
+ * channel's glow > 0; else off. Returns { mode: 'off' | 'glow' | 'show', t, up }: `up` whether the strands hang at all,
+ * in season (by day they hang dark), never out of it (Jacob, 2026-10-31).
+ */
+export function liveState(display, compiled, clock, calendar, at, times, where) {
+  const up = inSeason(calendar, display.season, clock.date, where)
+  if (!up) return { mode: 'off', t: 0, up }
+  const minute = clock.hours * 60 + clock.minutes + clock.seconds / 60, seconds = showSeconds(compiled)
+  for (const m of times) {
+    const since = ((minute - m) % DAY_MIN + DAY_MIN) % DAY_MIN * 60
+    if (since < seconds) return { mode: 'show', t: since, up }
+  }
+  return at(minute).glow > 0 ? { mode: 'glow', t: 0, up } : { mode: 'off', t: 0, up }
 }
 
 /**

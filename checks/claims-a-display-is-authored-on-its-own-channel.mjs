@@ -15,7 +15,7 @@
  *   5. the default is the old Light Show's: show = the old SHOW_GAIN, glow = the old GLOW_GAIN × the old shimmer's
  *      time-averaged mean, read from LightShow.jsx and engine.js#glowColour (never typed here); kelvin is the
  *      temperature whose kelvinToRgb is nearest the old glow's colour; and over every day of a year at a test point,
- *      the default glows exactly inside the old dusk-to-dawn span (engine.js#glowSpan) at every fifth minute;
+ *      the default glows exactly inside the old dusk-to-dawn span (the pinned engine.js#glowSpan) at every fifth minute;
  *   6. the scene bake carries every registered town's displays, each its Look's channel or the default, through
  *      displayChannelsFor (so a display the town lacks fails the bake), read from the town's own instance records.
  * Usage: node checks/claims-a-display-is-authored-on-its-own-channel.mjs [--mutants] [--kelvin]
@@ -25,14 +25,29 @@
  *      channel's level) with the old relative swing; no gain constant left in LightShow.jsx. <Displays> passes each
  *      display its channel from scene.json#displays, and refuses by name a scene that carries none, and a scene that
  *      could not be read (useSceneJson.js#sceneReadFailure: a 404 or bad JSON a Refusal, a 5xx or no answer a Transient).
+ *   8. THE SCHEDULE is the channel's (engine.js#showtimesOn, #liveState, #refuseCrowdedShows):
+ *      · under the default, the showtimes are the old schedule's (the pinned engine.js#showtimes over the old night) on
+ *        every day of 2026 at 25°, 35°, 42° and 48.5° (just under the first slot the sun can miss, Night's −18°);
+ *      · a showtime is m % showEvery = 0 with show > 0 over the WHOLE run (never clipped): a run the show falls to 0 under
+ *        is no showtime; show 0 is no show; showEvery steps (Boz's worked example: 120 through an evening window gives
+ *        two-hourly shows only there);
+ *      · a step that crowds the show is refused by name (Zob's C2), and bake-manifest refuses it over every day of a year
+ *        at the town's position, naming the window;
+ *      · live: a show from each showtime, t from its start, on the town's clock through the change of clocks
+ *        (2026-11-01); the glow while the channel glows; off otherwise and out of season; LightShow asks liveState with
+ *        the town's clock and the day's channel, refusing a crowded day, and never the sun's altitude;
+ *      · runSeconds (the Tonight strip's) refuses an unknown transition by name; Stage's Tonight strip reads the same
+ *        channel and showtimesOn.
  * "The old" is the code as it was at PIN (1b833418, the integration tip the channel was built on), read with `git show`:
  * the pinned blob is the source, so it cannot drift (Zob, 2026-11-01). Without that history git fails, loudly.
  */
-import { importSource, sourceOf } from './_importSource.mjs'
+import { importSource, sourceOf, spanOf } from './_importSource.mjs'
 import { execFileSync } from 'node:child_process'
 
 const PIN = '1b833418'
 const atPin = (rel) => execFileSync('git', ['show', `${PIN}:${rel}`], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] })
+// The old schedule's own functions (glowSpan, showtimes), run from the pinned blob: they use nothing but DAY_MIN.
+const OLD = await import('data:text/javascript;base64,' + Buffer.from(spanOf(atPin('src/displays/lightShow/engine.js'), { from: 'const DAY_MIN = 1440', to: 'export function liveState' }).replace(/^export /gm, '') + '\nexport { glowSpan, showtimes }').toString('base64'))
 
 const DAY = 1440
 const TEST_POINT = { lat: 42.05, lon: -70.19, tz: 'America/New_York' }   // a mid-latitude test point, not a town
@@ -40,7 +55,7 @@ const key = (o = {}) => ({ glow: 1, show: 2, kelvin: 3000, showEvery: 60, ...o }
 const refuses = (f, re) => { try { f(); return false } catch (e) { return re.test(e.message) } }
 const near = (a, b, e = 1e-6) => Math.abs(a - b) <= e
 
-async function verdict({ chan, param, view, bake, eng, mount, pin, hook } = {}) {
+async function verdict({ chan, param, view, bake, eng, mount, pin, hook, manifest, stage } = {}) {
   const fails = [], F = (c, m) => { if (!c) fails.push(m) }
   const redirect = param ? { 'src/cartograph/animatedParam.js': { transform: param } } : undefined
   const S = await importSource('src/displays/showChannel.js', { ...(chan ? { transform: chan } : {}), ...(redirect ? { redirect } : {}) })
@@ -103,7 +118,7 @@ async function verdict({ chan, param, view, bake, eng, mount, pin, hook } = {}) 
   let miss = null
   for (let day = 0; day < 365 && !miss; day++) {
     const date = new Date(Date.UTC(2026, 0, 1 + day, 17)), sm = todSlotMinutesAt(date, TEST_POINT)
-    const span = E.glowSpan({ dusk: sm.dusk, dawn: sm.dawn })
+    const span = OLD.glowSpan({ dusk: sm.dusk, dawn: sm.dawn })
     for (let m = 0; m < DAY && !miss; m += 5) {
       const inside = !!span && (span.len === DAY || ((m - span.from) % DAY + DAY) % DAY < span.len)
       if ((S.displayAt(d, m, sm).glow > 0) !== inside) miss = `${date.toISOString().slice(0, 10)} minute ${m}: the default ${inside ? 'is dark inside' : 'glows outside'} the old dusk-to-dawn span`
@@ -117,7 +132,7 @@ async function verdict({ chan, param, view, bake, eng, mount, pin, hook } = {}) 
   F(near(nSum / nn / 200, 1.36, 0.01), `the glow's time-average (${(nSum / nn / 200).toFixed(3)}) is not the channel's level (1.36): the shimmer is not centred on 1`)
   const ls = view ? view(sourceOf('src/displays/lightShow/LightShow.jsx')) : sourceOf('src/displays/lightShow/LightShow.jsx')
   F(/show\.colour\(c, row\)\.map\(v => v \* lit\.show\) : real && mode !== 'off' \? glowColour\(warm, lit\.glow, c, j, now\)/.test(ls), 'LightShow does not light the show by the channel\'s show and the glow by its kelvin and glow')
-  F(/lit = displayAt\(channel, tod\.getMinuteOfDay\(\), getTodSlotMinutes\(instant\)\), warm = kelvinToRgb\(lit\.kelvin\)/.test(ls), 'LightShow does not read the channel at the town\'s minute')
+  F(/const sm = getTodSlotMinutes\(instant\), at = \(m\) => displayAt\(channel, m, sm\)/.test(ls) && /lit = day\.current\.at\(useTimeOfDay\.getState\(\)\.getMinuteOfDay\(\)\), warm = kelvinToRgb\(lit\.kelvin\)/.test(ls), 'LightShow does not read the channel at the town\'s minute')
   F(!/_GAIN\b/.test(ls.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '')), 'a gain constant is left in LightShow.jsx')
   const dj = mount ? mount(sourceOf('src/displays/Displays.jsx')) : sourceOf('src/displays/Displays.jsx')
   F(/<P\.Renderer display=\{d\} channel=\{scene\.displays\[d\.id\]\}/.test(dj) && /: !scene\.displays\?\.\[d\.id\] \? `\$\{where\}: the Look's scene\.json carries no channel for it/.test(dj), '<Displays> does not pass each display its baked channel, or does not refuse a scene with none')
@@ -138,6 +153,51 @@ async function verdict({ chan, param, view, bake, eng, mount, pin, hook } = {}) 
   await H.fetchSceneOnce('l-ok', 0)
   F(H.sceneReadFailure('l-ok', 0) === null, 'a scene.json that was read is recorded as failed')
   console.warn = realWarn
+  // 8. the schedule
+  for (const lat of [25, 35, 42.05, 48.5]) {
+    let diff = null, n = 0
+    for (let dd = 0; dd < 365 && !diff; dd += 1) {
+      const date = new Date(Date.UTC(2026, 0, 1 + dd, 17)), place = { lat, lon: -70.19, tz: 'America/New_York' }, sm = todSlotMinutesAt(date, place)
+      const want = OLD.showtimes({ dusk: sm.dusk, dawn: sm.dawn }, 300), got = E.showtimesOn((m) => S.displayAt(d, m, sm), 300)
+      n++
+      if (JSON.stringify(want) !== JSON.stringify(got)) diff = `${lat}° ${date.toISOString().slice(0, 10)}: showtimes ${got.map(m => m / 60)} under the default, not the old ${want.map(m => m / 60)}`
+    }
+    F(!diff, diff)
+  }
+  const fl = (vals, edges) => ({ animated: 'tod', values: Object.fromEntries(Object.entries(vals).map(([k, v]) => [k, key(v)])), edges })
+  const atOf = (ch) => (m) => S.displayAt(ch, m, SM)
+  // never clipped: show falls to 0 at Night (hard) — a run that crosses it is no showtime
+  const clip = fl({ dusk: { show: 2, showEvery: 60 }, night: { show: 0, showEvery: 60 }, dawn: { show: 0, showEvery: 60 } }, { dusk: { fade: 'up', minutes: 0 }, night: { fade: 'down', minutes: 0 } })
+  const ct = E.showtimesOn(atOf(clip), 40 * 60)
+  F(JSON.stringify(ct) === JSON.stringify([1080]), `with show falling to 0 at Night (${SM.night}), a 40-minute show plays at ${ct}, not only 18:00 (a 19:00 run would be clipped)`)
+  const clip10 = fl({ dusk: { show: 2, showEvery: 10 }, night: { show: 0, showEvery: 10 }, dawn: { show: 0, showEvery: 10 } }, { dusk: { fade: 'up', minutes: 0 }, night: { fade: 'down', minutes: 0 } })
+  const c10 = E.showtimesOn(atOf(clip10), 50 * 60)
+  F(JSON.stringify(c10) === JSON.stringify([1080, 1090, 1100]), `a 50-minute show every 10 minutes until show falls to 0 at ${SM.night} plays at ${c10}, not 18:00, 18:10 and 18:20 (a run that ENDS as the show falls to 0 is whole, as the old schedule's "ends before dawn")`)
+  F(E.showtimesOn(atOf(fl({ dusk: { show: 0 }, dawn: { show: 0 } })), 300).length === 0, 'a channel with show 0 still has showtimes')
+  const win = fl({ dusk: { show: 1, showEvery: 120 }, deep: { show: 0, showEvery: 120 } }, { dusk: { fade: 'up', minutes: 0 }, deep: { fade: 'down', minutes: 0 } })
+  const wt = E.showtimesOn(atOf(win), 300)
+  F(JSON.stringify(wt) === JSON.stringify([1080, 1200, 1320]), `showEvery 120 through an evening window plays at ${wt.map(m => m / 60)}, not 18, 20 and 22`)
+  // crowding (C2): 40-minute show, 60 then 45 from a key at 01:10 → 01:00 and 01:30
+  const SMc = { ...SM, deep: 70 }, crowd = fl({ dusk: { show: 1, showEvery: 60 }, deep: { show: 1, showEvery: 45 } })
+  F(refuses(() => E.refuseCrowdedShows([['day', (m) => S.displayAt(crowd, m, SMc)]], 40 * 60, 'check'), /on day the shows at 01:00 and 01:30 are 30 minutes apart, and a show runs 40\.0/), 'a step in showEvery that crowds the show is not refused by name')
+  F(!refuses(() => E.refuseCrowdedShows([['day', atOf(d)]], 300, 'check'), /./), 'the default schedule is refused as crowded')
+  const bm = manifest ? manifest(sourceOf('cartograph/bake-manifest.mjs')) : sourceOf('cartograph/bake-manifest.mjs')
+  F(/refuseCrowdedShows\(days, secs, `\$\{where\}, the year \$\{days\[0\]\[0\]\} … \$\{days\.at\(-1\)\[0\]\}`\)/.test(bm) && /const days = yearOfDays\(channel, place\)/.test(bm), 'bake-manifest does not refuse a crowded schedule over a year at the town\'s position, naming the window')
+  // live
+  const { townClockOf } = await importSource('src/lib/townClock.js')
+  const DISP = { season: 'lights' }, CAL = [{ id: 'lights', start_date: '2026-10-31', end_date: '2027-01-01' }], C = { segs: [], seconds: 300 - 2 * 3.8 }
+  const atD = atOf(d), times = E.showtimesOn(atD, E.showSeconds(C))
+  const st = (iso) => E.liveState(DISP, C, townClockOf(new Date(iso), 'America/New_York'), CAL, atD, times, 'check')
+  const sh = st('2026-11-01T23:00:30Z')                                        // 18:00:30 EST, the day the clocks went back
+  F(sh.mode === 'show' && Math.abs(sh.t - 30) < 1e-6, `at the town's 18:00:30 on the day of the change of clocks the show is not 30 s in (${JSON.stringify(sh)})`)
+  F(st('2026-11-01T23:30:00Z').mode === 'glow', 'between shows inside the glow it does not glow')
+  F(st('2026-11-01T17:00:00Z').mode === 'off', 'by day (12:00) it is not off')
+  F(E.liveState(DISP, C, townClockOf(new Date('2026-10-01T23:00:30Z'), 'America/New_York'), CAL, atD, times, 'check').mode === 'off', 'out of season it is not off')
+  F(/liveState\(display, compiled, clock, calendar, day\.current\.at, day\.current\.times, where\)/.test(ls) && /refuseCrowdedShows\(\[\[clock\.date, at\]\], secs, where\)/.test(ls) && !/sunAltitude/.test(ls), "LightShow's live path does not ask the schedule with the town's clock and the day's channel (refusing a crowded day), or reads the sun's altitude")
+  let named = false; try { E.runSeconds([{ look: 'a', seconds: 5 }, { transition: 'no-such' }, { look: 'a', seconds: 5 }]) } catch (e) { named = /transition "no-such"/.test(e.message) }
+  F(named, "runSeconds (Stage's Tonight strip) does not refuse an unknown transition by name")
+  const sa = stage ? stage(sourceOf('src/stage/StageApp.jsx')) : sourceOf('src/stage/StageApp.jsx')
+  F(/schedule = scene\?\.displays\?\.\[display\.id\]/.test(sa) && /at = \(m\) => displayAt\(schedule, m, sm\), secs = runSeconds\(display\.run\), times = showtimesOn\(at, secs\)/.test(sa), "Stage's Tonight strip does not read the display's channel through showtimesOn")
   // 6. the scene bake carries the displays
   const bs = bake ? bake(sourceOf('cartograph/bake-scene.js')) : sourceOf('cartograph/bake-scene.js')
   F(/^\s*displays: displayChannelsFor\(displayRecordsOf\(look\), design\.displays, `bake-scene \$\{look\}`\),$/m.test(bs), 'bake-scene does not write displays through displayChannelsFor with the town\'s records')
@@ -178,6 +238,17 @@ if (process.argv.includes('--mutants')) {
     ['the shimmer not centred on 1', { eng: (s) => s.replace('w = level * (1 + GLOW_SHIMMER * Math.sin(', 'w = level * (0.8 + 0.2 * Math.sin(') }],
     ['the shimmer swing changed', { eng: (s) => s.replace('export const GLOW_SHIMMER = 0.25', 'export const GLOW_SHIMMER = 0.2') }],
     ['<Displays> passing no channel', { mount: (s) => s.replace(' channel={scene.displays[d.id]}', '') }],
+    ['a run clipped (the whole-run test dropped)', { eng: (s) => s.replace('for (let k = 1; k < len && whole; k++) if (!(at((m + k) % DAY_MIN).show > 0)) whole = false\n    if (whole && !(at((m + len - 1e-6) % DAY_MIN).show > 0)) whole = false\n', '') }],
+    ['a run allowed to end where show is 0', { eng: (s) => s.replace('if (whole && !(at((m + len - 1e-6) % DAY_MIN).show > 0)) whole = false', 'if (whole && !(at((m + len) % DAY_MIN).show > 0)) whole = false') }],
+    ['showtimes on a fixed hour, not the channel\'s step', { eng: (s) => s.replace('if (m % showEvery || !(show > 0)) continue', 'if (m % 60 || !(show > 0)) continue') }],
+    ['shows where show is 0', { eng: (s) => s.replace('if (m % showEvery || !(show > 0)) continue', 'if (m % showEvery) continue') }],
+    ['a crowded schedule accepted', { eng: (s) => s.replace('if (t.length > 1 && next - t[i] < len) throw', 'if (false) throw') }],
+    ['bake-manifest not refusing a crowded year', { manifest: (s) => s.replace('refuseCrowdedShows(days, secs,', 'void (days, secs,') }],
+    ['live never showing', { eng: (s) => s.replace("if (since < seconds) return { mode: 'show', t: since, up }", '') }],
+    ['live glowing regardless of the channel', { eng: (s) => s.replace("return at(minute).glow > 0 ? { mode: 'glow', t: 0, up } : { mode: 'off', t: 0, up }", "return { mode: 'glow', t: 0, up }") }],
+    ['the live path on the sun\'s altitude', { view: (s) => s.replace('day.current.at, day.current.times, where)', 'day.current.at, useTimeOfDay.getState().getLightingPhase().sunAltitude < 0 ? day.current.times : [], where)') }],
+    ['runSeconds silent on an unknown transition', { eng: (s) => s.replace('if (!TRANSITION[s.transition]) throw', 'if (false) throw') }],
+    ['the Tonight strip on its own schedule', { stage: (s) => s.replace('times = showtimesOn(at, secs)', 'times = [1080]') }],
     ['<Displays> silent on a failed read', { mount: (s) => s.replace('if (!list.length || (!scene && !failed)) return null', 'if (!list.length || !scene) return null') }],
     ['a failed read not recorded', { hook: (s) => s.replace('_failed.set(key,', 'void (key,') }],
     ['a 404 taken for the network', { hook: (s) => s.replace("if (!r.ok) throw httpFailure(r,", "if (!r.ok) throw new Transient(") }],

@@ -455,15 +455,11 @@ export function resolveGroupAtMinute(channel, minute, slotMinutes, fieldKeys, de
  * tweened (a count, e.g. a display's minutes between shows: a tweened 45 between keys of 30 and 60 is a value nobody
  * keyed). Before the day's first key, the day's last key holds across midnight. Fades do not touch it. Keys on one
  * minute keep the day's sequence about it (byDay). Every slot has a minute every day (src/lib/todSlots.js), so every key
- * occurs. A flat channel returns its one value. ⛔ A key without the field, or on a slot that is not one, throws by name.
+ * occurs. ⛔ A channel not keyed on the day, a key without the field, or one on no slot throws by name.
  * ▶ node checks/claims-a-display-is-authored-on-its-own-channel.mjs
  */
 export function keyedStepAt(channel, field, minute, slotMinutes) {
-  if (!channel?.animated) {
-    const v = channel?.values?.[field]
-    if (v == null) throw new Refusal(`[keyedStepAt] ⛔ the flat channel has no "${field}"`)
-    return v
-  }
+  if (channel?.animated !== 'tod') throw new Refusal(`[keyedStepAt] ⛔ a step is read off a channel keyed on the day`)
   const pts = Object.entries(channel.values || {}).map(([id, tuple]) => {
     if (!Number.isFinite(slotMinutes[id])) throw new Refusal(`[keyedStepAt] ⛔ the key at "${id}" is on no slot with a minute`)
     if (tuple?.[field] == null) throw new Refusal(`[keyedStepAt] ⛔ the key at "${id}" has no "${field}"`)

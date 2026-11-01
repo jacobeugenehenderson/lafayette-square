@@ -41,7 +41,7 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `checks/claims-a-dead-tile-is-named.mjs` | outbound | imports a network module · imports cartograph/elevationSources.mjs, which can: calls fetch() · imports package(s) geotiff — not read from source |
 | `checks/claims-a-dem-is-chosen-by-its-data.mjs` | outbound | imports cartograph/fetch-dem.mjs, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/elevationSources.mjs, which can: calls fetch() |
 | `checks/claims-a-dike-is-one-line-with-the-coast.mjs` | unreadable | writeFileSync · computed import() with no readable target — runs arbitrary modules |
-| `checks/claims-a-display-is-authored-on-its-own-channel.mjs` | unreadable | importSource of src/displays/showChannel.js — read, safe · importSource of src/displays/lightShow/engine.js — read, safe · importSource of src/lib/todSlots.js — read, safe · importSource of src/lib/useSceneJson.js (its span: fetchSceneOnce, sceneReadFailure) — read, safe · importSource of cartograph/bake-scene.js (its span: displayRecordsOf) — read, safe · importSource of src/instances/registry.js — read, safe · runs `git` — not a known-local command |
+| `checks/claims-a-display-is-authored-on-its-own-channel.mjs` | unreadable | importSource of src/displays/showChannel.js — read, safe · importSource of src/displays/lightShow/engine.js — read, safe · importSource of src/lib/todSlots.js — read, safe · importSource of src/lib/useSceneJson.js (its span: fetchSceneOnce, sceneReadFailure) — read, safe · importSource of src/lib/townClock.js — read, safe · importSource of cartograph/bake-scene.js (its span: displayRecordsOf) — read, safe · importSource of src/instances/registry.js — read, safe · import of a data: module built at run time — its body cannot be read (use checks/_importSource.mjs) · runs `git` — not a known-local command |
 | `checks/claims-a-failed-read-names-its-cause.mjs` | outbound | imports a network module · importSource of cartograph/elevationSources.mjs, which can: calls fetch() · imports package(s) geotiff — not read from source |
 | `checks/claims-a-hashed-town-loads-end-to-end.mjs` | outbound | calls fetch() · opens a WebSocket · writeFileSync · deletes files · runs `npx` — reaches out · runs `/Applications/Google Chrome.app/Contents` — not a known-local command |
 | `checks/claims-a-label-change-ends-no-leg.mjs` | unreadable | writeFileSync · computed import() with no readable target — runs arbitrary modules |
@@ -210,7 +210,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 383. This is `npm test`.
+## safe — 382. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -250,7 +250,6 @@ Writes into the repo or a scratch dir.
 | `checks/claims-a-keyframe-carries-its-aim.mjs` | IS EVERY SHOT THE OPERATOR'S OWN? |
 | `checks/claims-a-kink-recovers-but-a-corner-does-not.mjs` | WHY THIS EXISTS. Jacob, 2026-09-08: "streets should continue their predominant direction into an |
 | `checks/claims-a-level-body-has-one-surface.mjs` | IS THE LAKE FLAT IN OUR OWN HEIGHTFIELD? |
-| `checks/claims-a-light-show-runs-dusk-to-dawn-on-the-hour.mjs` | "DOES THE LIGHT SHOW GLOW DUSK TO DAWN AND PLAY ON THE HOUR?" (r-the-lights-run-dusk-to-dawn-and-the-show-plays-on- |
 | `checks/claims-a-listing-keeps-its-id.mjs` | a business keeps its display id across every bake, whatever else |
 | `checks/claims-a-listing-names-only-its-own-assets.mjs` | every file a listing names (its photos and its logo) is published in its |
 | `checks/claims-a-look-authors-its-curb-width.mjs` | DOES EVERY LOOK RESOLVE ONE CURB, FROM ONE HOME, AND SAY WHICH RUNG DECIDED? |

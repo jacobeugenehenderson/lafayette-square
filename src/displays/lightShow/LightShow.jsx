@@ -17,8 +17,8 @@
  *     its `show`, the glow at its `kelvin` × its `glow`. No gain of our own (r-a-display-is-authored-on-its-own-look-channel).
  * The strands end at a ring `strands.footHeightM` above the set-piece's base (the display's authored value: on the
  * Pilgrim Monument, about 20 ft up, Jacob 2026-10-31), never on the terrain.
- * The clock: LIVE reads the town's one clock (useTimeOfDay.currentTime) and the plugin's schedule (dusk to dawn, a show
- * on every hour: engine.js#liveState, the night from ../night.js); Stage's preview
+ * The clock: LIVE reads the town's one clock (useTimeOfDay.currentTime) and the display's own channel for the schedule
+ * (engine.js#liveState, #showtimesOn: worked out once a town day, its crowding refused that day too); Stage's preview
  * (./preview.js) plays the glow or the show from the moment it is pressed, on the page's own time, Stage only.
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -26,12 +26,11 @@ import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import useTimeOfDay from '../../hooks/useTimeOfDay'
 import { townClockOf } from '../../lib/townClock.js'
-import { validateDrawer, compileRun, showAt, showSeconds, glowColour, liveState, uplightTarget } from './engine.js'
+import { validateDrawer, compileRun, showAt, showSeconds, glowColour, liveState, showtimesOn, refuseCrowdedShows, uplightTarget } from './engine.js'
 import { displayAt, kelvinToRgb, validateDisplayChannel } from '../showChannel.js'
 import { getTodSlotMinutes } from '../../cartograph/animatedParam.js'
 import { checkFaces, strandEnds, pinnacleFace, pinnacleWash, bulbRadius, cordRadius, SOCKET_OF_BULB, avgGlow } from './geometry.js'
 import useDisplayPreview from '../preview.js'
-import { nightAt } from '../night.js'
 import { drawerUrls } from '../drawerUrl.js'
 import { Refusal, Transient, httpFailure } from '../../lib/refusal.js'
 
@@ -109,6 +108,7 @@ export default function LightShow({ display, channel, extent, calendar, contentR
 
   const root = useRef(), glassRef = useRef(), coreRef = useRef(), socketRef = useRef(), cordRef = useRef(), pinRef = useRef(), lightRef = useRef()
   const hung = useRef(null)                                     // which strands hang now: 'none' | 'glow' | 'all'
+  const day = useRef(null)                                      // the town day's channel and showtimes, once a day
 
   const pinFaces = useMemo(() => {
     if (!F) return null
@@ -133,17 +133,22 @@ export default function LightShow({ display, channel, extent, calendar, contentR
     try {
     if (!F || !compiled || !root.current || !glassRef.current || !coreRef.current || !socketRef.current || !cordRef.current) return
     // ── when: live by the town's clock and schedule, or Stage's preview from the moment it was pressed ───────────────
-    const instant = useTimeOfDay.getState().currentTime
+    const instant = useTimeOfDay.getState().currentTime, clock = townClockOf(instant)
+    if (day.current?.date !== clock.date || day.current.channel !== channel || day.current.compiled !== compiled) {
+      const sm = getTodSlotMinutes(instant), at = (m) => displayAt(channel, m, sm), secs = showSeconds(compiled)
+      refuseCrowdedShows([[clock.date, at]], secs, where)
+      day.current = { date: clock.date, channel, compiled, at, times: showtimesOn(at, secs) }
+    }
     let mode, t, now, up = true                                                         // Stage's preview hangs them
     if (preview) {
       const since = (performance.now() - preview.at) / 1000
       mode = preview.mode; now = instant.getTime() / 1000 + since; t = since % (showSeconds(compiled) + 4)
       if (mode === 'show' && t > showSeconds(compiled)) mode = 'glow'                   // a breath of glow between plays
     } else {
-      ;({ mode, t, up } = liveState(display, compiled, townClockOf(instant), calendar, nightAt(instant), where)); now = instant.getTime() / 1000
+      ;({ mode, t, up } = liveState(display, compiled, clock, calendar, day.current.at, day.current.times, where)); now = instant.getTime() / 1000
     }
     // ── how bright, what colour: the display's own Look channel at the town's minute (levels HDR, so the bulbs bloom) ─
-    const tod = useTimeOfDay.getState(), lit = displayAt(channel, tod.getMinuteOfDay(), getTodSlotMinutes(instant)), warm = kelvinToRgb(lit.kelvin)
+    const lit = day.current.at(useTimeOfDay.getState().getMinuteOfDay()), warm = kelvinToRgb(lit.kelvin)
     const show = mode === 'show' ? showAt(F, compiled, drawer.byId, t, now) : null
     if (pinRef.current) pinRef.current.visible = !!show
     // ── where: hang the strands (ridge to foot ring): none out of season, the glow's by day and at glow, all in a show ─

@@ -17,14 +17,17 @@
 import { importSource, sourceOf } from './_importSource.mjs'
 
 const code = (src) => src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '')
-const D = { season: 'lights' }, C = { segs: [], seconds: 60 }, NIGHT = { dusk: 17 * 60, dawn: 6 * 60 }
+const D = { season: 'lights' }, C = { segs: [], seconds: 60 }
+const SM = { dawn: 360, sunrise: 390, noon: 720, golden: 960, sunset: 990, dusk: 1020, night: 1100, deep: 1430 }   // a night from 17:00 to 06:00
 const CAL = [{ id: 'lights', start_date: '2026-11-11', end_date: '2027-01-01' }]
 const at = (date, hours) => ({ date, hours, minutes: 30, seconds: 0 })
 
 async function verdict({ engine, view, stageMut } = {}) {
   const fails = []
   const E = await importSource('src/displays/lightShow/engine.js', engine ? { transform: engine } : {})
-  const ask = (cal, clock) => E.liveState(D, C, clock, cal, NIGHT, 'check')
+  const { displayAt, defaultDisplayChannel } = await importSource('src/displays/showChannel.js'), ch = defaultDisplayChannel()
+  const lit = (m) => displayAt(ch, m, SM), times = E.showtimesOn(lit, E.showSeconds(C))
+  const ask = (cal, clock) => E.liveState(D, C, clock, cal, lit, times, 'check')
   if (ask(null, at('2026-11-20', 18)).up !== false) fails.push('with no calendar read, the strands are up: they must not be')
   if (ask(CAL, at('2026-10-31', 18)).up !== false) fails.push('out of season (Oct 31), the strands are up')
   const day = ask(CAL, at('2026-11-20', 12))
@@ -50,7 +53,7 @@ else console.log('✅ the strands hang only in season (dark by day, lit after da
 
 if (process.argv.includes('--mutants')) {
   const mutants = [
-    ['strands up out of season', { engine: (s) => s.replace('const up = inSeason(calendar, display.season, clock.date, where), span', 'const up = true, span') }],
+    ['strands up out of season', { engine: (s) => s.replace('const up = inSeason(calendar, display.season, clock.date, where)\n', 'const up = true\n') }],
     ['strands hung regardless of the season', { view: (s) => s.replace("const hang = !up ? 'none' : show ? 'all' : 'glow'", "const hang = show ? 'all' : 'glow'") }],
     ['the glow faded out under the show, not overtaken', { view: (s) => s.replace(": real && mode !== 'off' ? glowColour(", ": real && mode === 'glow' ? glowColour(") }],
     ['Stage without the Off preview', { stageMut: (s) => s.replace("['live', 'off', 'glow', 'show'].map", "['live', 'glow', 'show'].map") }],
