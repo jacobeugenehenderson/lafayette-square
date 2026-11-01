@@ -9199,7 +9199,28 @@
       "date": "2026-10-31",
       "quote": "\"Hourly on the hour, dusk until dawn is fine\"",
       "canon": "docs/briefs/BRIEF-the-monument-lights-up.md (ROADMAP H-36)",
-      "notes": "Boz proposed it (hourly makes an appointment a visitor can keep, the ticker's next showtime; nightly is too rare; a loop is never must-see). The refusal is Boz's reading under CLAUDE.md Layer 0, not Jacob's words. UNBUILT: today Stage offers only the preview buttons."
+      "notes": "Boz proposed it (hourly makes an appointment a visitor can keep, the ticker's next showtime; nightly is too rare; a loop is never must-see). The refusal is Boz's reading under CLAUDE.md Layer 0, not Jacob's words. UNBUILT: today Stage offers only the preview buttons.",
+      "supersededBy": "r-a-display-is-authored-on-its-own-look-channel (2026-11-01)"
+    },
+    {
+      "id": "r-a-display-is-authored-on-its-own-look-channel",
+      "question": "q-how-a-town-authors-a-display",
+      "kind": "ruling",
+      "supersedes": "r-the-lights-run-dusk-to-dawn-and-the-show-plays-on-the-hour",
+      "value": {
+        "scope": "each display a town has added; a town without displays gets no schedule",
+        "channel": "a display has its OWN Look channel, the same time-of-day keyframe faders and fade edges as the lamps, controlling EVERYTHING: glow brightness, show brightness, glow colour temperature, and the showtimes",
+        "showtimes": "AUTHORED: the operator sets the show's cadence in the channel; no hard-coded hourly beat",
+        "hardSwitch": "a fade of 0 minutes is a hard switch-off (or on) at the key",
+        "season": "the town's authored calendar season still gates: out of season nothing hangs",
+        "default": "a town that has not authored the channel gets a stated neutral default (Boz, 2026-11-01, Layer 0's authored-value-with-neutral-default pattern); named in OPERATIONS",
+        "noHeuristic": "an authored value is never scaled by a heuristic: no sun ramp, no gain constant multiplies a keyed level (Jacob, 2026-11-01). This applies to the street lamps' keyed level too"
+      },
+      "by": "Jacob",
+      "date": "2026-11-01",
+      "quote": "\"1 yes 2 b 3 ... There's no point in an authored value being tied to a heuristic\"",
+      "canon": "docs/briefs/BRIEF-the-monument-lights-up.md (ROADMAP H-36)",
+      "notes": "Jacob chose option 3 in Tinsel's window (the channel controls everything) and confirmed to Boz. Retires the computed dusk-to-dawn window and the hourly rule. UNBUILT: Tinsel's plan, co-signed pending Zob; the StreetLights sun ramp on the keyed level is to be deleted (cause of its presence not established)."
     },
     {
       "id": "r-an-event-has-a-host-and-a-venue-and-opens-at-the-venue",
