@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 553,
+  "total": 554,
   "counts": {
-    "safe": 380,
+    "safe": 381,
     "local-effect": 32,
     "live": 141
   },
@@ -3633,6 +3633,13 @@
         "writeFileSync",
         "child_process with a non-literal command — cannot be read",
         "imports cartograph/bake-ground.js, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/terrainLoad.js, which can: imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync"
+      ]
+    },
+    {
+      "file": "checks/claims-the-plan-frames-a-point.mjs",
+      "tier": "safe",
+      "why": [
+        "importSource of src/lib/frameDensest.js — read, safe"
       ]
     },
     {

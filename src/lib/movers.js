@@ -14,6 +14,7 @@
  * throws until it is designed.
  */
 import { Refusal } from './refusal.js'
+import { projectorOf } from './townPlace.js'
 
 /** Each kind and what it needs. The looks live in src/components/Movers.jsx. */
 export const MOVER_KINDS = {
@@ -40,8 +41,7 @@ export function placeMovers(movers, place, disc) {
     for (const f of UNDESIGNED) if (f in m) throw new Refusal(`[Town] ⛔ mover "${m.id}" carries \`${f}\` — no look draws it yet, so it would do nothing`)
     if (!Number.isFinite(m.lat) || !Number.isFinite(m.lon)) throw new Refusal(`[Town] ⛔ mover "${m.id}": lat/lon must be numbers (got ${m.lat}, ${m.lon})`)
     if (kind.needsActive && typeof m.active !== 'boolean') throw new Refusal(`[Town] ⛔ courier "${m.id}" needs \`active\` (true on a delivery, false idle)`)
-    const x = (m.lon - place.lon) * place.lonToMeters
-    const z = (place.lat - m.lat) * place.latToMeters
+    const [x, z] = projectorOf(place)(m.lon, m.lat)   // THE one projector (townPlace.js), never a copy of its formula
     const inside = !!disc && Math.hypot(x - disc.center[0], z - disc.center[1]) <= disc.radius
     return { id: m.id, kind: m.kind, active: kind.needsActive ? m.active : null, x, z, inside }
   })
