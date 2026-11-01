@@ -42,9 +42,13 @@ run, standing reds only). Merge it. ⛔ It refuses every `links_to` row, so it s
 - **A missing content index:** `src/town/manifest.js#contentUrl` does `name in manifest.content`, a bare TypeError when
   `manifest.content` is absent. Make it refuse by name ("the manifest carries no content index for <name> (re-run
   bake-manifest)").
-- `eventsKnown` keeps meaning "the published read answered": `{absent}` is known, `{error}` isn't. So Ticker and
-  Place never say "no events" on a failed read. ⛔ Don't mount the kit's `useTownCalendar`: that's a second reader
-  of the same file. ⛔ Only the published rows go in, never the merged set with Guardians' posts (the agreement with Tinsel).
+- **`eventsKnown` splits in two** (Ward's ruling, 2026-11-01, on Kalends' stop: today it means "ANY source answered",
+  and init sets it true whatever the published read did). `calendarKnown` = the published read answered (rows or
+  `{absent}`). `postsKnown` = init answered. `eventsKnown` is deleted. Ticker says "Nothing is happening" only when both
+  are known and empty. On a calendar `{error}`, Ticker shows the error's own words, never "nothing" and never an endless
+  "Loading". Place's `gone` is per ref: `town:` waits on `calendarKnown`, `post:` on `postsKnown`. Society's "nothing
+  lights" line needs both. ⛔ Don't mount the kit's `useTownCalendar`: that's a second reader of the same file. ⛔ Only
+  the published rows go in, never the merged set with Guardians' posts (the agreement with Tinsel).
 - **The check:** a check that reads the kit's contract from source (the four shapes, by name, from
   `useTownCalendar.js`), never a copy, and asserts the Ward hands `<Town>` each one, plus `displaySource="published"`.
   Use fixtures for absent, no content index, missing from the index, a 404, a bare array and `{events}`. **Mutation-test:** restore the `|| []` and the absent and failed cases must turn it RED.
