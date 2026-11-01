@@ -173,7 +173,7 @@
         "opens a WebSocket",
         "deletes files — only under its own temp dir",
         "runs `/Applications/Google Chrome.app/Contents` — not a known-local command",
-        "runs `pkill -9 -f 'user-data-dir=${profile}'` — not a known-local command"
+        "runs `pkill -9 -f 'user-data-dir=${profile}'` — a ${…} spliced in before the shell parses: its stages cannot be read"
       ]
     },
     {
@@ -514,7 +514,7 @@
         "opens a WebSocket",
         "deletes files — only under its own temp dir",
         "runs `/Applications/Google Chrome.app/Contents` — not a known-local command",
-        "runs `pkill -9 -f 'user-data-dir=${profile}'` — not a known-local command"
+        "runs `pkill -9 -f 'user-data-dir=${profile}'` — a ${…} spliced in before the shell parses: its stages cannot be read"
       ]
     },
     {
@@ -913,7 +913,7 @@
         "opens a WebSocket",
         "deletes files — only under its own temp dir",
         "runs `/Applications/Google Chrome.app/Contents` — not a known-local command",
-        "runs `pkill -9 -f 'user-data-dir=${profile}'` — not a known-local command"
+        "runs `pkill -9 -f 'user-data-dir=${profile}'` — a ${…} spliced in before the shell parses: its stages cannot be read"
       ]
     },
     {
@@ -1958,7 +1958,7 @@
         "opens a WebSocket",
         "deletes files — only under its own temp dir",
         "runs `/Applications/Google Chrome.app/Contents` — not a known-local command",
-        "runs `pkill -9 -f 'user-data-dir=${profile}'` — not a known-local command"
+        "runs `pkill -9 -f 'user-data-dir=${profile}'` — a ${…} spliced in before the shell parses: its stages cannot be read"
       ]
     },
     {
@@ -2230,7 +2230,7 @@
         "opens a WebSocket",
         "deletes files — only under its own temp dir",
         "runs `/Applications/Google Chrome.app/Contents` — not a known-local command",
-        "runs `pkill -9 -f 'user-data-dir=${profile}'` — not a known-local command"
+        "runs `pkill -9 -f 'user-data-dir=${profile}'` — a ${…} spliced in before the shell parses: its stages cannot be read"
       ]
     },
     {
@@ -2297,13 +2297,12 @@
     },
     {
       "file": "checks/claims-no-host-carries-a-codedesk-copy.mjs",
-      "tier": "live",
-      "reasonClass": "unreadable",
+      "tier": "local-effect",
       "why": [
         "writeFileSync",
         "mkdirSync",
         "deletes files",
-        "runs `git` — not a known-local command"
+        "runs `git grep -n -I -e odeDesk -e c` — local, read-only"
       ]
     },
     {
@@ -2589,7 +2588,7 @@
         "opens a WebSocket",
         "deletes files — only under its own temp dir",
         "runs `/Applications/Google Chrome.app/Contents` — not a known-local command",
-        "runs `pkill -9 -f 'user-data-dir=${profile}'` — not a known-local command"
+        "runs `pkill -9 -f 'user-data-dir=${profile}'` — a ${…} spliced in before the shell parses: its stages cannot be read"
       ]
     },
     {
@@ -2764,17 +2763,19 @@
     },
     {
       "file": "checks/claims-references-are-sound.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "runs `git ls-files --error-unmatch $` — local, read-only"
+        "runs `git ls-files --error-unmatch ${script}` — a ${…} spliced in before the shell parses: its stages cannot be read"
       ]
     },
     {
       "file": "checks/claims-repour-changes-nothing.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
         "runs `git ls-files \"cartograph/data/` — local, read-only",
-        "runs `git show HEAD:${P}` — local, read-only"
+        "runs `git show HEAD:${P}` — a ${…} spliced in before the shell parses: its stages cannot be read"
       ]
     },
     {
@@ -2953,7 +2954,7 @@
         "opens a WebSocket",
         "deletes files — only under its own temp dir",
         "runs `/Applications/Google Chrome.app/Contents` — not a known-local command",
-        "runs `pkill -9 -f 'user-data-dir=${profile}'` — not a known-local command"
+        "runs `pkill -9 -f 'user-data-dir=${profile}'` — a ${…} spliced in before the shell parses: its stages cannot be read"
       ]
     },
     {
@@ -3335,7 +3336,7 @@
         "opens a WebSocket",
         "deletes files — only under its own temp dir",
         "runs `/Applications/Google Chrome.app/Contents` — not a known-local command",
-        "runs `pkill -9 -f 'user-data-dir=${profile}'` — not a known-local command"
+        "runs `pkill -9 -f 'user-data-dir=${profile}'` — a ${…} spliced in before the shell parses: its stages cannot be read"
       ]
     },
     {
@@ -3537,7 +3538,7 @@
         "computed import of src/hooks/useSkyState.js — read, safe",
         "computed import of src/hooks/useAtmosphere.js — read, safe",
         "computed import of src/lib/almanac-eval.js — read, safe",
-        "runs `grep -rlE \"setState\\\\(\\\\{[^}]*` — local, read-only"
+        "runs `grep -rlE \"setState\\\\(\\\\{[^}]*` — every stage local, read-only"
       ]
     },
     {
@@ -4011,7 +4012,7 @@
         "opens a WebSocket",
         "deletes files — only under its own temp dir",
         "runs `/Applications/Google Chrome.app/Contents` — not a known-local command",
-        "runs `pkill -9 -f 'user-data-dir=${profile}'` — not a known-local command"
+        "runs `pkill -9 -f 'user-data-dir=${profile}'` — a ${…} spliced in before the shell parses: its stages cannot be read"
       ]
     },
     {
@@ -4204,10 +4205,9 @@
     },
     {
       "file": "checks/claims-writers-name-the-scene.mjs",
-      "tier": "live",
-      "reasonClass": "unreadable",
+      "tier": "safe",
       "why": [
-        "runs `git` — not a known-local command"
+        "runs `git ls-files *.js *.mjs` — local, read-only"
       ]
     },
     {
@@ -4347,10 +4347,9 @@
     },
     {
       "file": "scratch/claims-every-declared-page-ships.mjs",
-      "tier": "live",
-      "reasonClass": "unreadable",
+      "tier": "safe",
       "why": [
-        "runs `git` — not a known-local command"
+        "runs `git ls-files -- public/baked` — local, read-only"
       ]
     },
     {
@@ -4383,7 +4382,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "runs `grep -rl junctionMap src carto` — local, read-only",
+        "runs `grep -rl junctionMap src carto` — every stage local, read-only",
         "child_process with a non-literal command — cannot be read"
       ]
     },
@@ -4503,10 +4502,11 @@
     },
     {
       "file": "scratch/claims-wind-tier-extraction.mjs",
-      "tier": "local-effect",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
         "deletes files",
-        "runs `git show ${BASE}:src/component` — local, read-only",
+        "runs `git show ${BASE}:src/components/Instance` — a ${…} spliced in before the shell parses: its stages cannot be read",
         "imports package(s) three, esbuild — not read from source"
       ]
     }
