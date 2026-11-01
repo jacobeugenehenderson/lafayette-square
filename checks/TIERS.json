@@ -1,10 +1,10 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 550,
+  "total": 552,
   "counts": {
     "safe": 379,
     "local-effect": 32,
-    "live": 139
+    "live": 141
   },
   "checks": [
     {
@@ -533,6 +533,14 @@
       ]
     },
     {
+      "file": "checks/claims-a-listing-names-only-its-own-assets.mjs",
+      "tier": "safe",
+      "why": [
+        "importSource of cartograph/listing-assets.mjs — read, safe",
+        "computed import of src/instances/registry.js — read, safe"
+      ]
+    },
+    {
       "file": "checks/claims-a-look-authors-its-curb-width.mjs",
       "tier": "safe",
       "why": [
@@ -712,6 +720,10 @@
       "reasonClass": "outbound",
       "why": [
         "imports a network module",
+        "writeFileSync",
+        "deletes files",
+        "importSource of scripts/promote-player-to-prod.mjs, which can: calls fetch(), runs `npx` — reaches out",
+        "imports checks/_sourceFile.mjs, which can: writeFileSync, deletes files",
         "imports checks/_miniflare.mjs, which can: computed import() with no readable target — runs arbitrary modules, runs `npm` — not a known-local command"
       ]
     },
@@ -2257,9 +2269,13 @@
     },
     {
       "file": "checks/claims-no-host-carries-a-codedesk-copy.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "reads repo files only"
+        "writeFileSync",
+        "mkdirSync",
+        "deletes files",
+        "runs `git` — not a known-local command"
       ]
     },
     {
@@ -3431,6 +3447,16 @@
       "tier": "safe",
       "why": [
         "imports package(s) suncalc, three — not read from source"
+      ]
+    },
+    {
+      "file": "checks/claims-the-kit-bundle-names-no-town.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "importSource of scripts/kit-bundle-set.mjs — read, safe",
+        "computed import of src/instances/registry.js — read, safe",
+        "runs `git` — not a known-local command"
       ]
     },
     {
