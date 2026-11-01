@@ -42,16 +42,24 @@ run, standing reds only). Merge it. ⛔ It refuses every `links_to` row, so it s
 - **A missing content index:** `src/town/manifest.js#contentUrl` does `name in manifest.content`, a bare TypeError when
   `manifest.content` is absent. Make it refuse by name ("the manifest carries no content index for <name> (re-run
   bake-manifest)").
-- **`eventsKnown` splits in two** (Ward's ruling, 2026-11-01, on Kalends' stop: today it means "ANY source answered",
-  and init sets it true whatever the published read did). `calendarKnown` = the published read answered (rows or
-  `{absent}`). `postsKnown` = init answered. `eventsKnown` is deleted. Ticker says "Nothing is happening" only when both
-  are known and empty. On a calendar `{error}`, Ticker shows the error's own words, never "nothing" and never an endless
-  "Loading". Place's `gone` is per ref: `town:` waits on `calendarKnown`, `post:` on `postsKnown`. Society's "nothing
-  lights" line needs both. ⛔ Don't mount the kit's `useTownCalendar`: that's a second reader of the same file. ⛔ Only
-  the published rows go in, never the merged set with Guardians' posts (the agreement with Tinsel).
+- **`eventsKnown` is replaced by two source states** (Ward's ruling, 2026-11-01, on Kalends' stop; Zob's change 1). Today
+  it means "ANY source answered": init and `refreshAnnouncements` set it true whatever the published read did. Each
+  source now holds its own state, and ⛔ an `{error}` is never pending:
+  - calendar: `null` (pending) → rows | `{absent}` | `{error}`, readTownCalendar's own shapes, not flattened to a boolean.
+  - posts: pending → known | `{error}` (init's catch sets the error; a later `refreshAnnouncements` success may set known).
+    Refresh reads posts only and never touches the calendar state.
+  - Ticker: pending says "Loading"; an `{error}` shows its own words; "Nothing is happening" only when both are known
+    with nothing live.
+  - Place's `gone`, per ref prefix (`town:` → calendar, `post:` → posts): pending waits; `{error}` says that source
+    couldn't be read, in its own words (as `Gone` does); known and not found is gone.
+  - Society's "nothing lights" line fires only when both are known; an `{error}` is the report instead.
+  ⛔ Don't mount the kit's `useTownCalendar`: that's a second reader of the same file. ⛔ Only the published rows go in,
+  never the merged set with Guardians' posts (the agreement with Tinsel).
 - **The check:** a check that reads the kit's contract from source (the four shapes, by name, from
   `useTownCalendar.js`), never a copy, and asserts the Ward hands `<Town>` each one, plus `displaySource="published"`.
-  Use fixtures for absent, no content index, missing from the index, a 404, a bare array and `{events}`. **Mutation-test:** restore the `|| []` and the absent and failed cases must turn it RED.
+  Use fixtures for absent, no content index, missing from the index, a 404, a bare array and `{events}`. **Mutation-test:** each must turn it RED: restore the `|| []` (absent and failed cases); init sets posts known whatever
+  happened; a calendar `{error}` read as known (Ticker says "Nothing is happening"); init's catch leaving posts pending
+  (a `post:` ref waits instead of naming the failure); refresh writing the calendar state.
 
 ## The pin (OPERATIONS §"Pin", and WARD §6)
 
@@ -88,3 +96,6 @@ contradict this brief, stop and flag.
 Zob, 2026-10-31: co-signed. Changes: <Town displaySource="published"> beside calendar (integration requires it since
 dea49735); rows accepted as a bare array or {events}, as readTownCalendar does, with contentUrl naming a missing content
 index; the merge dry-run in a throwaway worktree.
+
+Zob, 2026-11-01: co-signed with changes 1 (three-valued source state; an {error} is never pending) and 2 (three more
+mutants).
