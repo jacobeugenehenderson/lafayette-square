@@ -15,14 +15,23 @@
  * ▶ node checks/claims-the-plan-opens-on-its-places.mjs [--table]
  *
  * Pure (no three.js, no React): places = Map(id → { x, z, radius }) (Town's useBuildingPlaces), ids = iterable of
- * ids (null/undefined allowed and disclosed), stencil = { center: [x, z], radius }. Returns
- * { x, z, radius, count, placed, of, outside: [ids], unplaced: [ids], also }, or null when no id has a place in the disc.
+ * ids (null/undefined allowed and disclosed), stencil = { center: [x, z], radius }, points = [{ id, x, z }] (Town's
+ * framePoints, already projected: a venue that is a SPOT, not a building). Returns
+ * { x, z, radius, count, placed, of, outside: [ids], unplaced: [ids], points: { placed, of, outside: [ids] }, also },
+ * or null when nothing of the set (no id, no point) is placed in the disc.
  *
  * ⭐ `also` — points framed WITH the set (Jacob, 2026-10-07: "if the person has an 'active dot' in the neighborhood
  * already, the map could move to frame them AND the place"): [{ x, z }], e.g. the reader's own dot. Same floor, same
- * Extent bound. A point outside the Extent is not in the neighbourhood and is left out without a word — the place is
- * framed alone (`also` in the result counts the points that were framed). They never stand in for the set: no placed id,
- * no frame.
+ * Extent bound. A point outside the Extent is not in the neighbourhood and is left out without a word — the set is
+ * framed alone (`also` in the result counts the points that were framed). `also` never stands in for the set: with no
+ * placed member, no frame.
+ *
+ * ⭐ `points` ARE the set (Boz, 2026-10-31: an event's spot venue): members like the places, zero-footprint, through the
+ * same partition, Extent bound and floor; a lone point is framed. ⛔ They are carried BESIDE the town's places, never
+ * merged into them: the floor reads the town's BUILDINGS (k = ⌈√N⌉), and a point counted as one would move it. Their
+ * disclosure is their own (`points`); a point outside the Extent is DISCLOSED there (never `also`'s silence). A duplicate
+ * point id, or one that is also a requested place id, is refused by name: one must never shadow the other.
+ * ▶ node checks/claims-the-plan-frames-a-point.mjs
  */
 import { Refusal } from './refusal.js'
 /** The `also` points inside the Extent, as zero-footprint places. */
@@ -31,8 +40,8 @@ function alsoIn(also, stencil) {
   return (also || []).filter((p) => Number.isFinite(p?.x) && Number.isFinite(p?.z) && Math.hypot(p.x - cx, p.z - cz) <= stencil.radius)
     .map((p) => ({ x: p.x, z: p.z, radius: 0 }))
 }
-/** The partition every frame shares: placed inside the Extent, beyond it, or with no place. */
-function partition(places, ids, stencil, who) {
+/** The partition every frame shares: placed inside the Extent, beyond it, or with no place; and the set's points. */
+function partition(places, ids, stencil, who, points = []) {
   if (!(stencil?.radius > 0) || !Array.isArray(stencil.center)) throw new Refusal(`[${who}] ⛔ needs the Extent — the slab's stencil { center, radius }`)
   const [cx, cz] = stencil.center
   const all = [...ids]
@@ -43,8 +52,21 @@ function partition(places, ids, stencil, who) {
     else if (Math.hypot(p.x - cx, p.z - cz) > stencil.radius) outside.push(id)
     else pts.push(p)
   }
-  return { pts, disclosure: { placed: pts.length, of: all.length, outside, unplaced } }
+  const ptSeen = new Set(), ptOutside = []
+  let ptPlaced = 0
+  for (const q of points || []) {
+    if (q?.id == null || q.id === '') throw new Refusal(`[${who}] ⛔ a point has no id`)
+    if (ptSeen.has(q.id)) throw new Refusal(`[${who}] ⛔ two points share the id "${q.id}"`)
+    if (all.includes(q.id)) throw new Refusal(`[${who}] ⛔ "${q.id}" is both a place and a point in one frame`)
+    ptSeen.add(q.id)
+    if (!Number.isFinite(q.x) || !Number.isFinite(q.z)) throw new Refusal(`[${who}] ⛔ point "${q.id}" is not placed (x, z)`)
+    if (Math.hypot(q.x - cx, q.z - cz) > stencil.radius) ptOutside.push(q.id)
+    else { pts.push({ x: q.x, z: q.z, radius: 0 }); ptPlaced++ }
+  }
+  return { pts, disclosure: { placed: pts.length - ptPlaced, of: all.length, outside, unplaced, points: { placed: ptPlaced, of: ptSeen.size, outside: ptOutside } } }
 }
+/** What a frame of this set would disclose, frame or not: for the plan that holds when nothing is placed. */
+export function discloseFrame(places, ids, stencil, points) { return partition(places, ids, stencil, 'discloseFrame', points).disclosure }
 
 /**
  * ⭐ THE SMALLEST FRAME (Boz for the Ward's pin, 2026-10-07): a set this small still shows WHERE it is, not one roof filling
@@ -79,8 +101,8 @@ function circleIn(chosen, stencil, [x, z], town) {
  * bound as frameDensest; bounded by the Extent, so a set wider than the town frames the whole town and says which
  * members lie beyond it (`outside`). Same return shape.
  */
-export function frameAll(places, ids, stencil, also) {
-  const { pts, disclosure } = partition(places, ids, stencil, 'frameAll')
+export function frameAll(places, ids, stencil, also, points) {
+  const { pts, disclosure } = partition(places, ids, stencil, 'frameAll', points)
   if (!pts.length) return null
   const extra = alsoIn(also, stencil), held = [...pts, ...extra]
   // Centred on the members' extent (footprints included), so the circle is as tight as it simply can be.
@@ -90,14 +112,14 @@ export function frameAll(places, ids, stencil, also) {
 }
 
 /** The one switch Town's `frameMode` names: 'densest' (the default) | 'all'. ⛔ Anything else throws by name. */
-export function framePlaces(places, ids, stencil, mode = 'densest', also) {
-  if (mode === 'all') return frameAll(places, ids, stencil, also)
-  if (mode === 'densest') return frameDensest(places, ids, stencil, also)
+export function framePlaces(places, ids, stencil, mode = 'densest', also, points) {
+  if (mode === 'all') return frameAll(places, ids, stencil, also, points)
+  if (mode === 'densest') return frameDensest(places, ids, stencil, also, points)
   throw new Refusal(`[framePlaces] ⛔ frameMode "${mode}" — the plan frames 'densest' or 'all'`)
 }
 
-export function frameDensest(places, ids, stencil, also) {
-  const { pts, disclosure } = partition(places, ids, stencil, 'frameDensest')
+export function frameDensest(places, ids, stencil, also, points) {
+  const { pts, disclosure } = partition(places, ids, stencil, 'frameDensest', points)
   const n = pts.length
   if (!n) return null
 

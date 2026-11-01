@@ -38,9 +38,16 @@
  *   frameIds         what the plan frames on ENTERING and on a frameKey change, apart from what it lights — an iterable
  *                    of building ids. Given, the plan's entry flies straight to their frame in one move (Society's
  *                    arrival: "frame all, light open"). Absent: the entry opens on the Browse frame, and a frameKey
- *                    change frames litIds, else every listing. Lights nothing. Given but empty (or with no id placed),
- *                    the plan goes back to its Browse frame with a warning, as for any set with nothing placed, and
- *                    onFramed says so (placed 0) — never another set of places.
+ *                    change frames litIds, else every listing. Lights nothing. ⭐ NOTHING PLACED (given but empty, or no
+ *                    id or point in the town): the plan HOLDS the camera where it is, warns once, and onFramed says so
+ *                    (placed 0, the disclosure) — never the Browse frame as a stand-in, never another set (Boz's ruling
+ *                    (a), 2026-10-31). A cold mount still OPENS on the Browse frame: that is the designed opening shot,
+ *                    not a substitute, and if the entry then finds nothing placed there is no second move.
+ *   framePoints      SPOTS the plan frames as members of the set (an event's { name, point } venue): [{ id, lat, lon }],
+ *                    projected once through townPlace.js#projectorOf. Alone (frameIds absent → the set is the points)
+ *                    or with frameIds. Same floor and Extent; a point outside the town is DISCLOSED in onFramed.points
+ *                    (never flown to). ⛔ A new framePoints moves the camera only on a frameKey change (or on entry): bump
+ *                    frameKey on a spot click. ▶ node checks/claims-the-plan-frames-a-point.mjs
  *   frameMode        how the plan frames its places: 'densest' (default — the densest cluster, frameDensest; Jacob, 2026-09-28)
  *                    | 'all' — EVERY placed member, footprints and all, fitted into viewInset with the town's browse
  *                    padding (frameAll; Jacob, 2026-09-29: "Dining should frame all the bars and restaurants"). Bounded
@@ -627,7 +634,7 @@ function TownOptics({ quality, shot, movieActive }) {
 export default function Town({
   town, lookId, quality, shot, paused = false, idle = false, selectedId = null, onSelectBuilding, litIds, liveIds, listings,
   interactive = true, bakeLastMs, layers, postFx, overrides = {}, weatherMode = 'live',
-  holdScrubbedTime = false, time, movie, flight = true, streetAt, viewInset, flightRef, onFlightEnd, frameKey, frameIds, frameMode = 'densest', frameMover = null, onFramed, planHeading = 'town', bearingRef,
+  holdScrubbedTime = false, time, movie, flight = true, streetAt, viewInset, flightRef, onFlightEnd, frameKey, frameIds, frameMode = 'densest', frameMover = null, framePoints = null, onFramed, planHeading = 'town', bearingRef,
   controls = false, movers, onMovers, children, towerLight = false, onTowerLight, calendar, displaySource,
 }) {
   if (time !== undefined && holdScrubbedTime) throw new Refusal('[Town] ⛔ `time` and `holdScrubbedTime` both drive the clock — pass one (the app owns its time, or Stage holds a scrub)')
@@ -678,8 +685,10 @@ export default function Town({
   // The frameKey as of Town's FIRST render: the plan flies a key that changed while the town was still loading (a Ward
   // pin link opened cold — Hinge, 2026-10-07), which ShotFlight, mounted only once the town has loaded, cannot see itself.
   const frameKeyAtMount = useRef(frameKey).current
-  const placeIds = useMemo(() => (frameIds != null ? [...frameIds]
-    : litIds?.size ? [...litIds] : listings.map((l) => l.building_id ?? null)), [frameIds, litIds, listings])
+  const placeIds = useMemo(() => (frameIds != null ? [...frameIds] : framePoints != null ? []   // points alone: the set is the points
+    : litIds?.size ? [...litIds] : listings.map((l) => l.building_id ?? null)), [frameIds, framePoints, litIds, listings])
+  if (framePoints != null && !(Array.isArray(framePoints) && framePoints.every((p) => p && typeof p.id === 'string' && p.id && Number.isFinite(p.lat) && Number.isFinite(p.lon))))
+    throw new Refusal(`[Town] ⛔ framePoints must be [{ id, lat, lon }] (got ${JSON.stringify(framePoints)?.slice(0, 120)})`)
   const ownHandle = useRef(null)
   const flightHold = useRef(() => false)
   const movieHandle = movie?.handle ?? ownHandle
@@ -717,8 +726,8 @@ export default function Town({
       {/* ⭐ A SHOT CHANGE FLIES (BRIEF-town-shot-flight): the town knows where each shot puts the camera and flies
           there with the one tween, holding the movie while it does. ▶ node checks/claims-one-shot-flight.mjs */}
       <ShotFlight shot={shot} flight={flight} streetAt={streetAt} viewInset={viewInset} flightRef={flightRef}
-        onFlightEnd={onFlightEnd} movieHandle={movieHandle} holdRef={flightHold} scene={scene} places={places} placeIds={placeIds} frameMode={frameMode} entryFrames={frameIds != null}
-        frameKey={frameKey} frameKeyAtMount={frameKeyAtMount} onFramed={onFramed} planHeading={planHeading} bearingRef={bearingRef} movers={movers} frameMover={frameMover} />
+        onFlightEnd={onFlightEnd} movieHandle={movieHandle} holdRef={flightHold} scene={scene} places={places} placeIds={placeIds} frameMode={frameMode} entryFrames={frameIds != null || framePoints != null}
+        frameKey={frameKey} frameKeyAtMount={frameKeyAtMount} onFramed={onFramed} planHeading={planHeading} bearingRef={bearingRef} movers={movers} frameMover={frameMover} framePoints={framePoints} />
       {controls && <RegimeControls regime={shot === 'plan' ? 'overhead' : shot === 'street' ? 'street' : 'playback'} />}
       <FrameLimiter paused={paused} idle={idle} everyFrame={quality.movieEveryFrame && shot === 'movie'} flying={flightHold} />
       {!(time instanceof Date) && <TimeTicker holdScrubbedTime={holdScrubbedTime} paused={paused} />}

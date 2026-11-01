@@ -40,9 +40,9 @@ import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { createCameraTween } from './cameraTween.js'
 import { transitionMs } from './transitions.js'
-import { framePlaces } from '../lib/frameDensest.js'
+import { framePlaces, discloseFrame } from '../lib/frameDensest.js'
 import { placeMovers } from '../lib/movers.js'
-import { townPlace } from '../lib/townPlace.js'
+import { townPlace, projectorOf } from '../lib/townPlace.js'
 import { planAltitude, insetOffset } from './planPose.js'
 import { browseUpFromHeading, bearingOf } from '../lib/browseHeading.js'
 import { getSceneStencil } from '../components/sceneStencilState.js'
@@ -62,7 +62,7 @@ const _p = new THREE.Vector3(), _t = new THREE.Vector3(), _fwd = new THREE.Vecto
 const _warned = new Set()
 
 export default function ShotFlight({ shot, flight = true, streetAt, viewInset, flightRef, onFlightEnd, movieHandle, holdRef, scene, places, placeIds, frameMode = 'densest',
-  entryFrames = false, frameKey, frameKeyAtMount = frameKey, onFramed, planHeading = 'town', bearingRef, movers, frameMover = null }) {
+  entryFrames = false, frameKey, frameKeyAtMount = frameKey, onFramed, planHeading = 'town', bearingRef, movers, frameMover = null, framePoints = null }) {
   if (flight !== true && flight !== false && flight !== 'cut') throw new Refusal(`[Town] ⛔ flight must be true, 'cut' or false (got ${flight})`)
   const following = planHeading && typeof planHeading === 'object'
   if (following ? !(planHeading.follow && 'current' in planHeading.follow) : planHeading !== 'town' && planHeading !== 'north') {
@@ -80,7 +80,7 @@ export default function ShotFlight({ shot, flight = true, streetAt, viewInset, f
   const tween = useRef(null)
   if (!tween.current) tween.current = createCameraTween()
   const live = useRef({})
-  live.current = { shot, flight, streetAt, viewInset, flightRef, onFlightEnd, scene, places, placeIds, frameMode, entryFrames, size, onFramed, planHeading, movers, frameMover, frameKey }
+  live.current = { shot, flight, streetAt, viewInset, flightRef, onFlightEnd, scene, places, placeIds, frameMode, entryFrames, size, onFramed, planHeading, movers, frameMover, frameKey, framePoints }
   const prev = useRef(null)            // the last shot this component saw
   const pending = useRef(null)         // { shot, landed }: a cut whose destination is not known yet — landed when placed
   const unheld = useRef(null)          // { s, d }: a landing made before the app's controls existed — re-landed when they do
@@ -144,17 +144,19 @@ export default function ShotFlight({ shot, flight = true, streetAt, viewInset, f
       // absent from the movers (no dot shown) or outside the disc, the places are framed alone (Town's frameMover).
       const fm = live.current.frameMover
       const you = fm == null ? null : placeMovers(live.current.movers || [], townPlace(), stencil).find((m) => m.id === fm && m.inside)
-      const frame = live.current.places ? framePlaces(live.current.places, ids, stencil, live.current.frameMode, you ? [you] : []) : null
+      // The app's spot venues (framePoints), projected ONCE through the one projector (townPlace.js#projectorOf: (lon, lat)).
+      const toLocal = projectorOf(townPlace())
+      const pts = (live.current.framePoints || []).map((p) => { const [x, z] = toLocal(p.lon, p.lat); return { id: p.id, x, z } })
+      const frame = live.current.places ? framePlaces(live.current.places, ids, stencil, live.current.frameMode, you ? [you] : [], pts) : null
       if (frame) frame.mover = you ? fm : null
       if (!frame) {
-        const why = `${stencil.center}:${ids.length}`
-        if (!_warned.has(why)) { _warned.add(why); console.warn(`[Town] plan: no listed place has a building in this town (${ids.length} ids) — the plan goes back to its Browse frame`) }
-        // The disclosure still names every id: none has a place inside the disc (the frames' own partition).
-        const at = (id) => (id == null ? null : live.current.places?.get(id))
-        const outside = ids.filter((id) => at(id) && Math.hypot(at(id).x - stencil.center[0], at(id).z - stencil.center[1]) > stencil.radius)
-        const d = home()
-        return d && { ...d, frame: { x: d.target[0], z: d.target[2], radius: 0, placed: 0, of: ids.length,
-          outside, unplaced: ids.filter((id) => !at(id)).map((id) => id ?? null) } }
+        const why = `${stencil.center}:${ids.length}:${pts.length}`
+        if (!_warned.has(why)) { _warned.add(why); console.warn(`[Town] plan: nothing of the set is placed in this town (${ids.length} ids, ${pts.length} points) — the plan holds where it is`) }
+        // ⭐ NOTHING PLACED: the plan HOLDS the camera and discloses (Boz's ruling (a), 2026-10-31; the Ward's brief: "the
+        // camera stays where it is"). ⛔ Never the Browse frame as a stand-in. This is its own result, not "not loaded":
+        // the landing ENDS (a pending cut would hang). The frame's centre is where the camera already looks.
+        const t = controls()?.target
+        return { hold: true, frame: { x: t ? t.x : null, z: t ? t.z : null, radius: 0, ...discloseFrame(live.current.places, ids, stencil, pts) } }
       }
       const alt = planAltitude(frame.radius, { fov, pad, W, H, inset: i })
       return { pos: [frame.x, alt, frame.z + 1], target: [frame.x, 0, frame.z], fov, up: planUp(), overhead: true, frame }
@@ -193,6 +195,7 @@ export default function ShotFlight({ shot, flight = true, streetAt, viewInset, f
     const d = destination(s)
     if (!d) { pending.current = { shot: s, landed }; if (landed) report({ ...landed, t: 0, eased: 0, landed: false }); return false }
     pending.current = null
+    if (d.hold) { framed(d); if (landed) end(landed); return true }   // nothing placed: the camera stays, the landing ends
     if (s !== PLAYBACK) { camera.position.set(...d.pos); land(s, d) }   // the movie places itself (MovieCamera)
     applyOffset(offsetFor(s))
     framed(d)
@@ -203,13 +206,14 @@ export default function ShotFlight({ shot, flight = true, streetAt, viewInset, f
   const framed = (d) => {
     const f = d?.frame
     if (!f) return
-    live.current.onFramed?.({ x: f.x, z: f.z, radius: f.radius, placed: f.placed, of: f.of, outside: f.outside, unplaced: f.unplaced })
+    live.current.onFramed?.({ x: f.x, z: f.z, radius: f.radius, placed: f.placed, of: f.of, outside: f.outside, unplaced: f.unplaced, points: f.points ?? null })
   }
 
   // ONE flight, whatever asked for it: a shot change, a re-frame (frameKey), a turn (planHeading). Under "reduce
   // motion" it is a cut. `d` is the destination; `duration` comes from transitions.js.
   const fly = (from, to, d, duration) => {
     const landed = { from, to, t: 1, eased: 1, duration: 0, landed: true, interrupted: false }
+    if (d.hold) { framed(d); end(landed); return }   // nothing placed: the camera stays, the landing ends, no move
     if (prefersReducedMotion()) {
       if (to !== PLAYBACK) { camera.position.set(...d.pos); land(to, d) }
       applyOffset(offsetFor(to)); framed(d); end(landed)
