@@ -380,6 +380,35 @@
       }
     }
   },
+  "displays": {
+    "monument-lights": {
+      "animated": "tod",
+      "values": {
+        "dawn": {
+          "glow": 1.36,
+          "show": 2.4,
+          "kelvin": 3810,
+          "showEvery": 60
+        },
+        "sunset": {
+          "glow": 1.36,
+          "show": 2,
+          "kelvin": 2700,
+          "showEvery": 60
+        }
+      },
+      "edges": {
+        "dawn": {
+          "fade": "down",
+          "minutes": 15
+        },
+        "sunset": {
+          "fade": "up",
+          "minutes": 15
+        }
+      }
+    }
+  },
   "clouds": {
     "values": {
       "preset": "auto",
