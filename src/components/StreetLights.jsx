@@ -297,7 +297,7 @@ function StreetLights({ lamps: lampsProp, reach, lantern: lanternChannel, model:
           '#include <dithering_fragment>',
           `#include <dithering_fragment>
           float glassMask = texture2D(uTxMap, vMapUv).r;
-          // Lit glass shows as much as the Bulb is on — keys × daylight — and reads clear when it is off.
+          // Lit glass shows as much as the Bulb is on — its keys — and reads clear when it is off.
           float glassVisible = clamp(uBulbOn, 0.0, 1.0);
           gl_FragColor.a *= mix(1.0, glassVisible, glassMask);`
         )
@@ -388,16 +388,16 @@ function StreetLights({ lamps: lampsProp, reach, lantern: lanternChannel, model:
   // into the ground FX map now, not a per-lamp disc.)
 
   // ── Per-frame time-of-day animation ─────────────────────────────────────────
-  // Transition starts at golden hour (sunAlt=0.15) for a gradual warm-up
   useFrame(() => {
     const { sunAltitude } = getLightingPhase()
 
     sunAltUniform.current.value = sunAltitude
 
-    // ⭐ DAYLIGHT DROWNS THE LAMPS (Jacob, 2026-09-26: "the multiplier is the more realistic effect"). The keys set
-    // every value; this ramp scales them by how dark it is — 0 at sunAlt ≥ 0.15, 1 at ≤ −0.3 — so a lamp keyed on at
-    // noon is simply outshone by the sun. (Removed and restored the same evening: it is not an editorial limit.)
-    const t = Math.min(1, Math.max(0, (0.15 - sunAltitude) / 0.45))
+    // ⭐ THE KEYS ALONE DECIDE (Jacob, 2026-11-01: "There's no point in an authored value being tied to a heuristic";
+    // shown the 2026-09-26 ruling first, and confirmed). Bulb, Glow, pools and trees are exactly what the Look keys,
+    // its fade-up and fade-down included; a lamp keyed on by day glows by day. ⛔ No sun-altitude multiplier on a keyed
+    // value. (The iron's night-darkening in the material below reads the sun: a look of the lamp body, not a keyed value.)
+    // ▶ node checks/claims-a-keyed-lamp-is-its-keys.mjs
     // ⭐ EACH KNOB MOVES ONE THING (Jacob, 2026-09-26):
     //   Lantern › Bulb → glass panes + bulb dot + tiny orb · Lantern › Glow → the soft gradient
     //   Lamp Glow › Light pools → ground + walls · Pool radius → the wipe · Trees → the canopy
@@ -416,17 +416,17 @@ function StreetLights({ lamps: lampsProp, reach, lantern: lanternChannel, model:
       if (lampMatRef.current?.emissive) lampMatRef.current.emissive.set(lampCol)
       _lampGlow.colorUniform.value.set(lampCol)    // the pools, trees and walls: the lantern's light, same colour
     }
-    const bulb = t * Math.max(0, lant.intensity ?? 0)
+    const bulb = Math.max(0, lant.intensity ?? 0)
     if (lampMatRef.current) lampMatRef.current.emissiveIntensity = bulb
     bulbOnUniform.current.value = Math.min(1, bulb)
     if (glowMatRef.current?.uniforms?.uIntensity) glowMatRef.current.uniforms.uIntensity.value = bulb
     bulbMat.opacity = Math.min(1, bulb)
-    const glow = t * Math.max(0, lant.glow ?? 0)
+    const glow = Math.max(0, lant.glow ?? 0)
     haloMat.uniforms.uIntensity.value = glow
     // Clamped to the control's own range — a Look saved when Glow size ran to 10 m reads as the largest glow now.
     haloMat.uniforms.uHaloSize.value = Math.min(GLOW_SIZE_FIELD.max, Math.max(GLOW_SIZE_FIELD.min, lant.glowSize ?? LANTERN_FLAT_DEFAULTS.glowSize))
-    _lampGlow.poolUniform.value  = t * Math.max(0, _lampGlow.share.pool)
-    _lampGlow.treesUniform.value = t * Math.max(0, _lampGlow.share.trees)
+    _lampGlow.poolUniform.value  = Math.max(0, _lampGlow.share.pool)
+    _lampGlow.treesUniform.value = Math.max(0, _lampGlow.share.trees)
     _lampGlow.poolRadiusUniform.value = Math.min(1, Math.max(0, _lampGlow.share.radius))   // the ground's circle
     _lampGlow.poolCentreUniform.value = Math.max(0, _lampGlow.share.centre)                 // its dark centre, metres
     _lampGlow.poolCentreSoftUniform.value = Math.min(1, Math.max(0, _lampGlow.share.centreSoft))   // that centre's edge, 0 crisp … 1 soft
