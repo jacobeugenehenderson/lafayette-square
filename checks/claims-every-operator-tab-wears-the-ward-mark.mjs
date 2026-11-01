@@ -11,6 +11,8 @@
 //   1 · THE ONE MARK — the vendored file's sha256 equals the one source.json records. ⛔ Theward-online itself is NOT
 //       read: it lives outside the project and a town #2 machine won't have it (Zob, 2026-11-01).
 //   2 · NO SECOND COPY — no other tracked text file carries the mark's ring path, and src/operator holds one .svg.
+//       ⚠ Named limit (Zob, 2026-11-01): it matches the ring path LITERALLY, so a percent-encoded data: copy slips past
+//       it; judge 3 still rejects a data: icon on any operator tab. No decoder until someone inlines the mark.
 //   3 · EVERY OPERATOR TAB — each derived operator page has exactly one rel~=icon link, and it is the mark.
 //   4 · THE PLAYER UNTOUCHED — no player page names the mark, and no src/ code imports it (the build then keeps it out
 //       of the player's graph; measured 2026-11-01: scripts/player-graph.mjs#notThePlayers classes it operator).
