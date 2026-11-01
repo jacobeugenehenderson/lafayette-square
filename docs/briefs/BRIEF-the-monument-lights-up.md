@@ -88,10 +88,6 @@ Provincetown is first to use, never a Provincetown patch.
   hangs the strands again (today new instancedMeshes would sit every bulb, socket and cord at the origin).
 - **Before a calendar is passed (cost, not measured):** with nothing hung, or by day, all zero-scaled instances still draw
   and the colouring loop runs. Hide the root when nothing hangs; skip colouring while the display is off.
-- **Mixed-null nights (Zob, 2026-10-31; inferred, high latitudes only):** `glowSpan` reads { dusk, dawn null } as glowing
-  from 00:00 (the morning before the dusk included) and { dusk null, dawn } as no glow, though it is dark until that dawn.
-  These are the days into polar night and white nights; the schedule check owes a synthetic case for each, and for
-  night.js's both-null branch (untested today).
 - **No render instrument (2026-10-31):** `display:light-show` never mounts in headless Preview; gate not identified (the
   preview store, the drawer and the lazy chunk all check out). Until it does, the bleed-through and the pinnacle are
   judged by Jacob's eye in Stage. The probe, `scratch/displays-bleed/probe.mjs`, is uncommitted.
