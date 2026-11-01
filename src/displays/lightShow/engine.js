@@ -207,8 +207,13 @@ export function liveState(display, compiled, clock, calendar, night, where) {
   return { mode: 'glow', t: 0, up }
 }
 
-/** The white glow's colour for one bulb (warm white, a gentle shimmer). */
-export function glowColour(c, row, now) { const h = hash(c * 131 + row), w = 0.8 + 0.2 * Math.sin(now * 1.5 + h * 30); return [255 * w, 214 * w, 150 * w] }
+/**
+ * The glow's light in one bulb: `base` the colour of the channel's temperature (showChannel.js#kelvinToRgb, 0…255),
+ * `level` the channel's glow, and a gentle shimmer (a motion, centred on 1, so `level` is the glow's time-averaged
+ * level: Boz, 2026-11-01). ▶ node checks/claims-a-display-is-authored-on-its-own-channel.mjs
+ */
+export const GLOW_SHIMMER = 0.25
+export function glowColour(base, level, c, row, now) { const h = hash(c * 131 + row), w = level * (1 + GLOW_SHIMMER * Math.sin(now * 1.5 + h * 30)); return [base[0] * w, base[1] * w, base[2] * w] }
 
 /**
  * Is the town's season on at `instant`? `calendar` is the town's PUBLISHED calendar (rows with id, start_date,

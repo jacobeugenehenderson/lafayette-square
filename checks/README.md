@@ -15,7 +15,7 @@ gated without anyone remembering to gate it, which is what makes this work on to
 
 A non-zero exit is a **finding for the board**, not a runner fault. The suite reports; it does not fix.
 
-## ⛔ live — 142. Never in a default run.
+## ⛔ live — 143. Never in a default run.
 
 Two reason classes, and they are not the same thing. **outbound** — a demonstrated call out.
 **unreadable** — runs code the parser cannot read, so it *may* contact nothing but cannot be shown
@@ -41,6 +41,7 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `checks/claims-a-dead-tile-is-named.mjs` | outbound | imports a network module · imports cartograph/elevationSources.mjs, which can: calls fetch() · imports package(s) geotiff — not read from source |
 | `checks/claims-a-dem-is-chosen-by-its-data.mjs` | outbound | imports cartograph/fetch-dem.mjs, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/elevationSources.mjs, which can: calls fetch() |
 | `checks/claims-a-dike-is-one-line-with-the-coast.mjs` | unreadable | writeFileSync · computed import() with no readable target — runs arbitrary modules |
+| `checks/claims-a-display-is-authored-on-its-own-channel.mjs` | unreadable | importSource of src/displays/showChannel.js — read, safe · importSource of src/displays/lightShow/engine.js — read, safe · importSource of src/lib/todSlots.js — read, safe · importSource of cartograph/bake-scene.js (its span: displayRecordsOf) — read, safe · importSource of src/instances/registry.js — read, safe · runs `git` — not a known-local command |
 | `checks/claims-a-failed-read-names-its-cause.mjs` | outbound | imports a network module · importSource of cartograph/elevationSources.mjs, which can: calls fetch() · imports package(s) geotiff — not read from source |
 | `checks/claims-a-hashed-town-loads-end-to-end.mjs` | outbound | calls fetch() · opens a WebSocket · writeFileSync · deletes files · runs `npx` — reaches out · runs `/Applications/Google Chrome.app/Contents` — not a known-local command |
 | `checks/claims-a-label-change-ends-no-leg.mjs` | unreadable | writeFileSync · computed import() with no readable target — runs arbitrary modules |
@@ -209,7 +210,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 383. This is `npm test`.
+## safe — 382. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -233,7 +234,6 @@ Writes into the repo or a scratch dir.
 | `checks/claims-a-deck-is-every-object-that-covers-it.mjs` | IS EVERY POINT A DECK OBJECT COVERS ON THE DECK? |
 | `checks/claims-a-display-dims-its-set-piece-only-while-lit.mjs` | "DO A SET-PIECE'S UPLIGHTS DIM ONLY WHILE ITS DISPLAY IS LIT?" (Jacob, 2026-10-31: "it's only during the show/glow that |
 | `checks/claims-a-display-hangs-only-in-season.mjs` | "ARE THE STRANDS THERE ONLY WHEN THEY WOULD BE?" (Jacob, 2026-10-31: "hide the strands out of season"; "All cords |
-| `checks/claims-a-display-is-authored-on-its-own-channel.mjs` | "IS A DISPLAY AUTHORED ON ITS OWN LOOK CHANNEL, AND DOES THE DEFAULT DO WHAT THE SHOW DID?" (Jacob, 2026-11-01, |
 | `checks/claims-a-display-is-the-same-for-every-viewer.mjs` | "DOES EVERY VIEWER SEE THE SAME LIGHT AT THE SAME INSTANT?" (BRIEF-the-monument-lights-up §4, gate 1) |
 | `checks/claims-a-display-scales-with-its-set-piece.mjs` | "DOES A DISPLAY LOOK RIGHT ON A SET-PIECE NOBODY TUNED IT FOR?" (Zob's review and Boz's ruling, 2026-10-31; Layer 0's |
 | `checks/claims-a-district-is-the-towns-own.mjs` | DOES A TOWN'S ROSTER NAME ITS OWN HISTORIC DISTRICT, OR HI-POINTE–DEMUN'S? |

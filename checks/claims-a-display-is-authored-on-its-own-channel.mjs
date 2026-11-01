@@ -20,9 +20,18 @@
  *      displayChannelsFor (so a display the town lacks fails the bake), read from the town's own instance records.
  * Usage: node checks/claims-a-display-is-authored-on-its-own-channel.mjs [--mutants] [--kelvin]
  *   --kelvin: prints the nearest temperature and its residual against the old glow colour.
- * ⚠️ Item 3 of the plan deletes SHOW_GAIN / GLOW_GAIN and the old shimmer; 5 then moves to a pinned reading.
+ *   7. the renderer lights the bulbs from the channel: the show's colour × the channel's show, the glow from the
+ *      channel's kelvin and glow through engine.js#glowColour, whose shimmer is centred on 1 (its time-average is the
+ *      channel's level) with the old relative swing; no gain constant left in LightShow.jsx. <Displays> passes each
+ *      display its channel from scene.json#displays, and refuses by name a scene that carries none.
+ * "The old" is the code as it was at PIN (1b833418, the integration tip the channel was built on), read with `git show`:
+ * the pinned blob is the source, so it cannot drift (Zob, 2026-11-01). Without that history git fails, loudly.
  */
 import { importSource, sourceOf } from './_importSource.mjs'
+import { execFileSync } from 'node:child_process'
+
+const PIN = '1b833418'
+const atPin = (rel) => execFileSync('git', ['show', `${PIN}:${rel}`], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] })
 
 const DAY = 1440
 const TEST_POINT = { lat: 42.05, lon: -70.19, tz: 'America/New_York' }   // a mid-latitude test point, not a town
@@ -30,7 +39,7 @@ const key = (o = {}) => ({ glow: 1, show: 2, kelvin: 3000, showEvery: 60, ...o }
 const refuses = (f, re) => { try { f(); return false } catch (e) { return re.test(e.message) } }
 const near = (a, b, e = 1e-6) => Math.abs(a - b) <= e
 
-async function verdict({ chan, param, view, bake } = {}) {
+async function verdict({ chan, param, view, bake, eng, mount, pin } = {}) {
   const fails = [], F = (c, m) => { if (!c) fails.push(m) }
   const redirect = param ? { 'src/cartograph/animatedParam.js': { transform: param } } : undefined
   const S = await importSource('src/displays/showChannel.js', { ...(chan ? { transform: chan } : {}), ...(redirect ? { redirect } : {}) })
@@ -71,18 +80,20 @@ async function verdict({ chan, param, view, bake } = {}) {
   F(got.arch && JSON.stringify(got.arch) === JSON.stringify(S.defaultDisplayChannel()), 'a display with no channel does not get the default')
   const a = S.defaultDisplayChannel(); a.values.dusk.glow = 99
   F(S.defaultDisplayChannel().values.dusk.glow !== 99, 'the default is shared, not a fresh copy')
-  // 5. the default is the old show
-  const ls = view ? view(sourceOf('src/displays/lightShow/LightShow.jsx')) : sourceOf('src/displays/lightShow/LightShow.jsx')
-  const g = ls.match(/const SHOW_GAIN = ([\d.]+), GLOW_GAIN = ([\d.]+)/)
-  F(g, 'LightShow.jsx no longer states SHOW_GAIN / GLOW_GAIN: re-aim 5 at a pinned reading')
-  const E = await importSource('src/displays/lightShow/engine.js')
-  let wSum = 0, n = 0
-  for (let s = 0; s < 600; s += 0.05) { const c = E.glowColour(3, 7, s); wSum += c[0] / 255; n++ }
-  const wMean = wSum / n, old = E.glowColour(3, 7, 0).map((v, _i, a) => v / a[0] * 255)
+  // 5. the default is the old show (read at PIN)
+  const oldLs = pin ? pin(atPin('src/displays/lightShow/LightShow.jsx')) : atPin('src/displays/lightShow/LightShow.jsx')
+  const g = oldLs.match(/const SHOW_GAIN = ([\d.]+), GLOW_GAIN = ([\d.]+)/)
+  const og = atPin('src/displays/lightShow/engine.js').match(/w = ([\d.]+) \+ ([\d.]+) \* Math\.sin\(now \* 1\.5 \+ h \* 30\); return \[(\d+) \* w, (\d+) \* w, (\d+) \* w\]/)
+  F(g && og, `the old gains or the old glowColour are not found at ${PIN}`)
+  const [oa, ob] = og ? [Number(og[1]), Number(og[2])] : [NaN, NaN], old = og ? [3, 4, 5].map(i => Number(og[i]) / Number(og[3]) * 255) : [NaN, NaN, NaN]
+  let oSum = 0, on = 0
+  for (let t = 0; t < 600; t += 0.05) { oSum += oa + ob * Math.sin(t * 1.5); on++ }
+  const wMean = oSum / on
   if (g) {
     F(near(d.values.dusk.show, Number(g[1])) && near(d.values.dawn.show, Number(g[1])), `the default show (${d.values.dusk.show}) is not the old SHOW_GAIN (${g[1]})`)
-    F(near(d.values.dusk.glow, Number(g[2]) * wMean, 0.01), `the default glow (${d.values.dusk.glow}) is not the old GLOW_GAIN × the shimmer's mean (${(Number(g[2]) * wMean).toFixed(3)})`)
+    F(near(d.values.dusk.glow, Number(g[2]) * wMean, 0.01), `the default glow (${d.values.dusk.glow}) is not the old GLOW_GAIN × the old shimmer's mean (${(Number(g[2]) * wMean).toFixed(3)})`)
   }
+  const E = await importSource('src/displays/lightShow/engine.js', eng ? { transform: eng } : {})
   let best = null
   for (let K = 1000; K <= 40000; K += 10) { const c = S.kelvinToRgb(K), m = Math.max(...c), r = Math.hypot(...c.map((v, i) => v / m * 255 - old[i])); if (!best || r < best.r) best = { K, r } }
   F(d.values.dusk.kelvin === best.K && d.values.dawn.kelvin === best.K, `the default kelvin (${d.values.dusk.kelvin}) is not the nearest to the old glow (${best.K} K, residual ${best.r.toFixed(1)})`)
@@ -98,6 +109,17 @@ async function verdict({ chan, param, view, bake } = {}) {
     }
   }
   F(!miss, miss)
+  // 7. the renderer lights from the channel
+  F(near(E.GLOW_SHIMMER, ob / oa), `the glow's shimmer swing (${E.GLOW_SHIMMER}) is not the old relative swing (${(ob / oa).toFixed(3)})`)
+  let nSum = 0, nn = 0
+  for (let t = 0; t < 600; t += 0.05) { nSum += E.glowColour([200, 100, 50], 1.36, 3, 7, t)[0]; nn++ }
+  F(near(nSum / nn / 200, 1.36, 0.01), `the glow's time-average (${(nSum / nn / 200).toFixed(3)}) is not the channel's level (1.36): the shimmer is not centred on 1`)
+  const ls = view ? view(sourceOf('src/displays/lightShow/LightShow.jsx')) : sourceOf('src/displays/lightShow/LightShow.jsx')
+  F(/show\.colour\(c, row\)\.map\(v => v \* lit\.show\) : real && mode !== 'off' \? glowColour\(warm, lit\.glow, c, j, now\)/.test(ls), 'LightShow does not light the show by the channel\'s show and the glow by its kelvin and glow')
+  F(/lit = displayAt\(channel, tod\.getMinuteOfDay\(\), getTodSlotMinutes\(instant\)\), warm = kelvinToRgb\(lit\.kelvin\)/.test(ls), 'LightShow does not read the channel at the town\'s minute')
+  F(!/_GAIN\b/.test(ls.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '')), 'a gain constant is left in LightShow.jsx')
+  const dj = mount ? mount(sourceOf('src/displays/Displays.jsx')) : sourceOf('src/displays/Displays.jsx')
+  F(/<P\.Renderer display=\{d\} channel=\{scene\.displays\[d\.id\]\}/.test(dj) && /: !scene\.displays\?\.\[d\.id\] \? `\$\{where\}: the Look's scene\.json carries no channel for it/.test(dj), '<Displays> does not pass each display its baked channel, or does not refuse a scene with none')
   // 6. the scene bake carries the displays
   const bs = bake ? bake(sourceOf('cartograph/bake-scene.js')) : sourceOf('cartograph/bake-scene.js')
   F(/^\s*displays: displayChannelsFor\(displayRecordsOf\(look\), design\.displays, `bake-scene \$\{look\}`\),$/m.test(bs), 'bake-scene does not write displays through displayChannelsFor with the town\'s records')
@@ -131,7 +153,13 @@ if (process.argv.includes('--mutants')) {
     ['the default kelvin at 2200', { chan: (s) => s.replace('export const DEFAULT_KELVIN = 3810', 'export const DEFAULT_KELVIN = 2200') }],
     ['the bake writing the Look\'s displays raw', { bake: (s) => s.replace('displays: displayChannelsFor(displayRecordsOf(look), design.displays, `bake-scene ${look}`),', 'displays: design.displays || {},') }],
     ['the bake reading no town', { bake: (s) => s.replace("return Object.fromEntries((town?.displays || []).map(d => [d.id, d]))", "return {}") }],
-    ['the old gains changed under the default', { view: (s) => s.replace('const SHOW_GAIN = 2.4,', 'const SHOW_GAIN = 3,') }],
+    ['the old gains read differently', { pin: (s) => s.replace('const SHOW_GAIN = 2.4,', 'const SHOW_GAIN = 3,') }],
+    ['a gain put back on the show', { view: (s) => s.replace('v => v * lit.show)', 'v => v * lit.show * SHOW_GAIN)').replace("import { getTodSlotMinutes }", "const SHOW_GAIN = 1.2\nimport { getTodSlotMinutes }") }],
+    ['the glow at a fixed level', { view: (s) => s.replace('glowColour(warm, lit.glow, c, j, now)', 'glowColour(warm, 1.7, c, j, now)') }],
+    ['the shimmer not centred on 1', { eng: (s) => s.replace('w = level * (1 + GLOW_SHIMMER * Math.sin(', 'w = level * (0.8 + 0.2 * Math.sin(') }],
+    ['the shimmer swing changed', { eng: (s) => s.replace('export const GLOW_SHIMMER = 0.25', 'export const GLOW_SHIMMER = 0.2') }],
+    ['<Displays> passing no channel', { mount: (s) => s.replace(' channel={scene.displays[d.id]}', '') }],
+    ['<Displays> not refusing a scene with none', { mount: (s) => s.replace(": !scene.displays?.[d.id] ? `${where}: the Look's scene.json carries no channel for it", ": false ? `${where}: the Look's scene.json carries no channel for it") }],
   ]
   let bad = 0
   for (const [name, m] of mutants) { const f = await verdict(m); console.log(`${f.length ? '🔴' : '⚪ SURVIVED'} mutant: ${name}${f.length ? ` (${f.length})` : ''}`); if (!f.length) bad++ }
