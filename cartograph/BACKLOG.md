@@ -11,35 +11,33 @@ Active trunk `curb-offset-draw` (→ staging via `staging.yml`; the old `cartogr
 ### ✅ 2026-10-30 RELEASE DONE: PTown + HPDM live on Ward 4334c64 / kit 2a44e317 (compressed slabs, the phone water fix, place share cards,
 one place per building, the docks). The step list is in the Diary: `cartograph/_archive/BACKLOG-morning-release-2026-10-30-DONE.md`.
 NO ROUTINE PURGE: content names give a changed file a fresh name, and our readers bypass the edge (src/lib/freshUrl.js).
-### ⭐ STATE, 2026-10-31 NIGHT (Boz). Read this first. The day's layered notes: `cartograph/_archive/BACKLOG-state-2026-10-31-evening-SUPERSEDED.md`.
-- **LS CUTOVER DONE.** lafayettesquare.online (+www) serves LS on Ward 4334c64 / kit 2a44e317; lafayette-square.com 301s there
-  (Jacob's Cloudflare rule; runbook §6's gates pass); Jacob's eye ✅. Open: Ward's phone eye · the §6 retirements.
-- **MERGED ON integration TODAY** (`git log --merges --since=2026-10-31`): Displays through the DoF subtree (Tinsel) · the bake carries
-  displays (dea49735; PTown's manifest step ran clean, Jacob, nothing uploaded) · a refusal is never swallowed (249d7658, Fuse) ·
-  a town has one icon, the arch gone (24b23a73, Sigil).
-- **IN FLIGHT** (each: Zob PASS → Boz dry-runs the merge in a throwaway worktree, re-tiers, merges; ⛔ never merge-test in the live worktree):
-  · **Tinsel** `tinsel/displays`: the calendar route + Huron's 16 event rows + PTown season start 2026-10-31 → one Zob pass, then merge.
-    Then: brightness (Edison glow, ratio to the town's lamp level; SHOW_GAIN deleted) → back dim (facing falloff, 0.3) → cone matte
-    (interiorMatte, 0 default) → point framing for spot venues. All ruled; plans approved.
-  · **Ward**: Usher (scene error screen) and Herald (event card) building; Ward holds the heavy slot for their checks.
-  · **Sigil** idle: the operator tabs' Ward-logo favicon waits on Jacob naming where the Ward logo file lives.
-- **NEXT WARD PIN (the calendar pin), preconditions:** ① kit refusal fix — DONE (249d7658 · 51c2211e · 57aac5fb; brief retired to `cartograph/_archive/`) · ② the Ward's boundary for
-  unwrapped throws — Usher · ③ Scene.jsx passes the published calendar with readTownCalendar's four values from its own read
-  (today `content.js#loadContent` flattens absent and failed to []). ② is built (Herald 96097ea); ③ is briefed as the whole pin,
-  `docs/briefs/BRIEF-ward-the-calendar-pin.md` (Ward commits it on Zob's co-sign; dispatches when tinsel/displays merges). Then staging → Promote, Jacob's presses.
-  Season is ON from 10-31.
-- **JACOB'S PRESSES, owed:** the favicon release (staging publish → re-Promote each production town → deploy both Workers) · Huron's
-  bake after the calendar route merges · the backend sittings (`scratch/backend-deploy-runbook.md`; sitting 2 waits on patch eight's
-  tally `date` → `weekday`, ruled).
-- **FOLLOW-UP BRIEFS OWED (named, not written):** terrain's floated `reloadTerrain` promise + useFrame throws (silent) · ⛔ console-only
-  refusals (154 lines, 28 in Town's wrapped layers) to classify and route · R3FErrorBoundary's retryCount never resets ·
-  LightShow's two Stage-only mislabels (a malformed drawer / a 404 frame read "failed") · useSceneJson#fetchSceneOnce caches a failed scene read as null
-  forever, warn only (Zob; now expressible with httpFailure) · `/stage/lafayette-square/hero` blank (useTownPlace throws
-  outside any boundary) · the "legacy" player acceptance is dead wiring (remove after an R2 read of the records) · the 130 safe-tier
-  reds have no baseline (Zob's triage: two stale towns abort 34 checks; a ribbonScenes refusal + a checks/BOARD.json are proposed).
-- **FINDINGS FOR OTHER BANDS:** Arborist — PTown trees near the Monument drawn 37–40 m (upper bound), truly occluding the strands ·
-  Intake — Huron building msbf-209 is named "The Huron Historical Society" but is the library (OSM way 346992145) · HPDM phone is a
-  standing red on society-flight-has-no-long-frame (Herald's A/B).
+### ⭐ STATE, 2026-11-01 EARLY (Boz). Read this first. Last night's block: `cartograph/_archive/BACKLOG-state-2026-10-31-night-SUPERSEDED.md`.
+- **MERGED ON integration** (`git log --merges --since=2026-10-31` + fast-forwards): the calendar route, Huron's 14 rows, PTown season
+  2026-10-31 (tinsel/displays 3c65b296, ff) · the operator tabs wear the Ward mark (sigil c74bc454, ff) · registry
+  `r-a-display-is-authored-on-its-own-look-channel` (f35c6f72; supersedes the dusk-to-dawn/hourly ruling; the cadence is authored; no
+  heuristic scales an authored value, so the StreetLights sun ramp goes).
+- **IN FLIGHT** (each: Zob PASS → Boz dry-runs the merge in a throwaway worktree, re-tiers, merges):
+  · **Fuse** `fuse/ls-bleed` (a) @89a3e10d with Zob: listing logos indexed in every town's bake (`cartograph/listing-assets.mjs`;
+    none had ever been) · codedesk + PlaceCard's guardian QR retired (Jacob: "retire it", "yes, remove the guardian QR button too") ·
+    dead LS public files gone · pre-reset out of public/ · preview title from the town · an absent asset root refuses the bake.
+    (b) after (a)'s Workers deploy: retire the legacy player everywhere (`/_player/` still serves LS files publicly on staging), then an
+    R2 delete of staging/player/** + player/provincetown/** (Jacob presses).
+  · **Tinsel**: point framing (Zob's 6 conditions + ruling (a): nothing placed holds the camera and discloses, never `home()`) → the
+    sun-ramp delete (own commit) → the show channel (re-plan the authored cadence; Zob co-signs).
+- **CALENDAR PIN READY:** theward d71662d on ward-pin/2026-11-01, ward-kit 3c65b296; Ward GREEN, Boz GREEN. Press order (Jacob):
+  ⓪ Huron's slab to staging (staging's events.json is still the old shape: 16 rows with links_to, 0 venue; the Ward would refuse all
+  16) → kit bundle → `publish:staging --town=…` → eye → back up + Promote each production town.
+- **JACOB'S PRESSES, owed:** the calendar pin (above) · the favicon release · after Fuse (a): its Workers, then LS's and HPDM's content
+  republished (logos) · Fuse (b) and its R2 delete · the backend sittings · his eye on the show channel when it lands.
+- **FOLLOW-UP BRIEFS OWED (named, not written):** the photos data move (LS 249 + Huron 59 root `/photos/` paths, Huron's off-host
+  logo, LS's 5 missing photos `modern-dollar/03`, `lsrc/01,02,03,06`; first rule OPERATIONS § Photographs ROT vs plan) · floated
+  `reloadTerrain` + useFrame throws · console-only ⛔ refusals (154) · retryCount never resets · LightShow's two Stage mislabels ·
+  `fetchSceneOnce` caches a failed read as null · `/stage/lafayette-square/hero` blank · the 130 safe-tier reds have no baseline ·
+  the Ward: `useFailures` not shown to visitors.
+- **STANDING REDS (Ward):** society-frames-what-it-lights + society-flight-has-no-long-frame fail identically before and after the
+  pin (Kalends' A/B; frames went green once on the base); cause not established.
+- **FINDINGS FOR OTHER BANDS:** Arborist: PTown trees near the Monument (37–40 m, upper bound) occlude the strands · Intake: Huron
+  msbf-209 named "The Huron Historical Society" is the library (OSM way 346992145).
 - Older OPEN: hours (56/447) · the preview-photo licence (parked) · the dock object + tide ride (unbuilt).
 
 ### ⭐ HANDOFF — 2026-10-28 (the sprint closed; Swash for Boz). Read this block first; everything below is detail.
