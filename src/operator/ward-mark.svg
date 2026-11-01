@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+  <!-- THE MARK'S 16px COUSIN. NOT the band mark shrunk.
+       The band mark carries a faint street grid inside its ring; below about
+       20px that grid turns to mud and the whole thing stops reading as a gate.
+       So this drops the grid and spends the pixels on the two things that
+       survive at tab size: a THICK RING and a BRIGHT NOTCH.
+       The notch is the reserved amber, and that is the rule's definition rather
+       than an exception to it: a light in a gateway means you are here, and this
+       place is running (README section 3, rule 5).
+       Colours are the site's own token values, not new ones. Theme aware,
+       because a tab bar is dark as often as light and one flat ink loses half. -->
+  <style>
+    .ring { stroke: #1C1815; }
+    .notch { fill: #B96A12; }
+    @media (prefers-color-scheme: dark) {
+      .ring { stroke: #E9E1CE; }
+      .notch { fill: #F2B44E; }
+    }
+  </style>
+  <path class="ring" d="M76.8 14 A 49 49 0 1 1 43.2 14"
+        fill="none" stroke-width="17" stroke-linecap="butt"/>
+  <circle class="notch" cx="60" cy="14" r="13"/>
+</svg>

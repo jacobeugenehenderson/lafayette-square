@@ -1,0 +1,8 @@
+{
+  "what": "The Ward's tab mark, worn by every operator tab the kit serves (every tracked .html except what the town player ships). Copied byte-for-byte, never redrawn.",
+  "from": "theward-online/assets/favicon.svg (Jacob's theward-online repo, ~/Desktop/dev.nosync/theward-online), \"THE MARK'S 16px COUSIN\"",
+  "sha256": "e0bd059b9fd1fd30c588facdb83af76c64ba1fe62e7dce5006fb23f8a1b41bec",
+  "copied": "2026-11-01",
+  "recopy": "cp <theward-online>/assets/favicon.svg src/operator/ward-mark.svg, then write its sha256 here",
+  "check": "node checks/claims-every-operator-tab-wears-the-ward-mark.mjs --mutants"
+}

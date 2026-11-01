@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 550,
+  "total": 551,
   "counts": {
-    "safe": 379,
+    "safe": 380,
     "local-effect": 32,
     "live": 139
   },
@@ -1765,6 +1765,13 @@
       "tier": "safe",
       "why": [
         "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-every-operator-tab-wears-the-ward-mark.mjs",
+      "tier": "safe",
+      "why": [
+        "runs `git ls-files` — local, read-only"
       ]
     },
     {
