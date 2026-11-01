@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 554,
+  "total": 555,
   "counts": {
-    "safe": 381,
+    "safe": 382,
     "local-effect": 32,
     "live": 141
   },
@@ -448,6 +448,13 @@
     },
     {
       "file": "checks/claims-a-highway-block-keeps-its-corners.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-a-keyed-lamp-is-its-keys.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"

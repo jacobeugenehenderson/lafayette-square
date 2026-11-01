@@ -208,7 +208,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 381. This is `npm test`.
+## safe — 382. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -244,6 +244,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-a-focus-object-resolves-in-its-own-slab.mjs` | "CAN THE OPERATOR PICK A FOCUS OBJECT THAT ISN'T THERE?" — A11/A00, the authoring-UI surface. |
 | `checks/claims-a-frontage-can-ask-for-no-ped-band.mjs` | CLAIM: a frontage that carries no pedestrian realm can say so. |
 | `checks/claims-a-highway-block-keeps-its-corners.mjs` | CLAIM — A BLOCK BESIDE A HIGHWAY KEEPS ITS TOWN CORNERS (H-3 step 3; Jacob's ruling "B"). |
+| `checks/claims-a-keyed-lamp-is-its-keys.mjs` | "IS A KEYED LAMP EXACTLY ITS KEYS?" (Jacob, 2026-11-01: "There's no point in an authored value being tied to a |
 | `checks/claims-a-keyframe-carries-its-aim.mjs` | IS EVERY SHOT THE OPERATOR'S OWN? |
 | `checks/claims-a-kink-recovers-but-a-corner-does-not.mjs` | WHY THIS EXISTS. Jacob, 2026-09-08: "streets should continue their predominant direction into an |
 | `checks/claims-a-level-body-has-one-surface.mjs` | IS THE LAKE FLAT IN OUR OWN HEIGHTFIELD? |
