@@ -22,6 +22,14 @@ import { TOD_SLOT_IDS } from '../lib/todSlots.js'
 import { Refusal } from '../lib/refusal.js'
 
 export const DISPLAY_CHANNEL_FIELDS = ['glow', 'show', 'kelvin', 'showEvery']
+/** The editor's faders (Stage › Displays, cartograph/TodChannel.jsx). showEvery steps in whole hours, every one a
+ *  divisor of the day; a Look may author any divisor (validateDisplayChannel). */
+export const DISPLAY_FIELDS = [
+  { key: 'glow',      label: 'Glow',        min: 0,    max: 4,    step: 0.02, title: 'The warm glow between shows' },
+  { key: 'show',      label: 'Show',        min: 0,    max: 4,    step: 0.02, title: 'The show\'s brightness; 0 is no show' },
+  { key: 'kelvin',    label: 'Glow colour', min: 1800, max: 6500, step: 50,   unit: ' K', title: 'The glow\'s colour temperature' },
+  { key: 'showEvery', label: 'Show every',  min: 60,   max: 240,  step: 60,   unit: ' min', title: 'Minutes between shows, from the town\'s midnight' },
+]
 const DAY_MIN = 1440
 export const DEFAULT_KELVIN = 3810
 const KEY = Object.freeze({ glow: 1.36, show: 2.4, kelvin: DEFAULT_KELVIN, showEvery: 60 })

@@ -317,6 +317,7 @@
         "importSource of src/lib/todSlots.js — read, safe",
         "importSource of src/lib/useSceneJson.js (its span: fetchSceneOnce, sceneReadFailure) — read, safe",
         "importSource of src/lib/townClock.js — read, safe",
+        "importSource of src/cartograph/stores/useCartographStore.js (its span: displayChannelActions) — read, safe",
         "importSource of cartograph/bake-scene.js (its span: displayRecordsOf) — read, safe",
         "importSource of src/instances/registry.js — read, safe",
         "import of a data: module built at run time — its body cannot be read (use checks/_importSource.mjs)",

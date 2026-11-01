@@ -14,6 +14,7 @@ import { lazy, Suspense } from 'react'
 import DisplayBoundary from './DisplayBoundary.js'
 import { Refusal, Transient } from '../lib/refusal.js'
 import { useSceneJson, sceneReadFailure } from '../lib/useSceneJson.js'
+import { displayChannelsFor } from './showChannel.js'
 
 export const PLUGINS = {
   'light-show': { label: 'Light Show', attaches: ['setPiece'], Renderer: lazy(() => import('./lightShow/LightShow.jsx')) },
@@ -24,14 +25,18 @@ export const PLUGINS = {
  * <SetPiece>): null not read yet (off) · rows · { absent } · { error }. ⛔ REQUIRED: an app that passes none (undefined), a
  * town that publishes none while a display names a season, and a calendar that could not be read are each REFUSED by
  * name, inside the display's boundary, so a display that could never go live cannot ship silently.
- * Each display is lit by its Look's own channel (./showChannel.js), as the scene bake carried it (scene.json#displays):
- * nothing mounts until the scene is read; a scene that could not be read (useSceneJson.js#sceneReadFailure) is refused by
+ * Each display is lit by its Look's own channel (./showChannel.js). In Stage, `channels` is the live store's (the Look's
+ * authored channels; the rest get the default, through displayChannelsFor, as the bake does), so an edit shows without a
+ * bake. Elsewhere it is what the scene bake carried (scene.json#displays): nothing mounts until the scene is read; a scene that could not be read (useSceneJson.js#sceneReadFailure) is refused by
  * name, keeping its kind (a Transient for the network), and so is a scene that carries no channel for a display (re-bake).
  */
-export default function Displays({ town, lookId, attach, extent, dim, calendar, drawerSource }) {
-  const scene = useSceneJson(lookId), failed = scene ? null : sceneReadFailure(lookId)
+export default function Displays({ town, lookId, attach, extent, dim, calendar, drawerSource, channels: live }) {
+  const scene = useSceneJson(lookId), failed = live || scene ? null : sceneReadFailure(lookId)
   const list = (town?.displays || []).filter(d => d.attach === attach)
-  if (!list.length || (!scene && !failed)) return null
+  if (!list.length || (!live && !scene && !failed)) return null
+  let lit = null, liveErr = null
+  if (live) { try { lit = displayChannelsFor(Object.fromEntries((town.displays || []).map(d => [d.id, d])), live, `"${lookId}" in Stage`) } catch (e) { liveErr = e } }
+  else lit = scene?.displays ?? null
   return list.map(d => {
     const P = PLUGINS[d.kind]
     const where = `"${lookId}" display "${d.id}"`
@@ -42,19 +47,20 @@ export default function Displays({ town, lookId, attach, extent, dim, calendar, 
       : calendar?.error ? `${where}: the town's calendar could not be read: ${calendar.error}`
       : calendar?.absent && d.season ? `${where}: the town publishes no calendar (content/events.json), so its season "${d.season}" can never start`
       : drawerSource !== 'authoring' && drawerSource !== 'published' ? `${where}: the app names no drawer source to <Town> (displaySource: 'authoring' in Stage, 'published' in Preview and the player)`
+      : liveErr ? liveErr
       : failed ? failed
-      : !scene.displays?.[d.id] ? `${where}: the Look's scene.json carries no channel for it (baked before displays had one): re-bake the Look's scene`
+      : !lit?.[d.id] ? `${where}: the Look's scene.json carries no channel for it (baked before displays had one): re-bake the Look's scene`
       : null
     return (
       <DisplayBoundary key={d.id} lookId={lookId} id={d.id}>
-        {refusal ? <Refuse reason={refusal} /> : <Suspense fallback={null}><P.Renderer display={d} channel={scene.displays[d.id]} extent={extent} calendar={Array.isArray(calendar) ? calendar : null} contentRoot={town.contentRoot} lookId={lookId} drawerSource={drawerSource} dim={dim} where={where} /></Suspense>}
+        {refusal ? <Refuse reason={refusal} /> : <Suspense fallback={null}><P.Renderer display={d} channel={lit[d.id]} extent={extent} calendar={Array.isArray(calendar) ? calendar : null} contentRoot={town.contentRoot} lookId={lookId} drawerSource={drawerSource} dim={dim} where={where} /></Suspense>}
       </DisplayBoundary>
     )
   })
 }
 
 function Refuse({ reason }) {
-  if (reason instanceof Transient) throw new Transient(`[Displays] ⛔ the Look's scene.json: ${reason.message}`)
-  if (reason instanceof Refusal) throw new Refusal(`[Displays] ⛔ the Look's scene.json: ${reason.message}`)
+  if (reason instanceof Transient) throw new Transient(`[Displays] ⛔ ${reason.message}`)
+  if (reason instanceof Refusal) throw new Refusal(`[Displays] ⛔ ${reason.message}`)
   throw new Refusal(`[Displays] ⛔ ${reason}`)
 }

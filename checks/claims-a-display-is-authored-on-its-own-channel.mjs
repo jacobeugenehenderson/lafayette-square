@@ -38,13 +38,21 @@
  *        the town's clock and the day's channel, refusing a crowded day, and never the sun's altitude;
  *      · runSeconds (the Tonight strip's) refuses an unknown transition by name; Stage's Tonight strip reads the same
  *        channel and showtimesOn.
+ *   9. STAGE EDITS IT (item 4): the store keeps only what the Look authored (design.json#displays), and its actions —
+ *      run here, the real displayChannelActions — copy the default on the first edit, seed a new key with the channel's
+ *      value there (showEvery step-held), never remove the last key, keep a 0-minute fade, refuse an invalid write by
+ *      name and leave the store as it was, save on every write, and revert to the default; Stage's card is wired to
+ *      them, and Stage lights the display from the store (STAGE_CHANNELS → <Town overrides.displays> → <SetPiece> →
+ *      <Displays channels>), the Tonight strip from the same channel;
+ *  10. a minute is printed HH:MM from the WHOLE minute (engine.js#hhmm): every tenth of a minute of a day prints the
+ *      rounded minute, never :60 or 24:xx (Jacob saw "19:60" in Stage, 2026-11-01).
  * "The old" is the code as it was at PIN (1b833418, the integration tip the channel was built on), read with `git show`:
  * the pinned blob is the source, so it cannot drift (Zob, 2026-11-01). Without that history git fails, loudly.
  */
 import { importSource, sourceOf, spanOf } from './_importSource.mjs'
 import { execFileSync } from 'node:child_process'
 
-const PIN = '1b833418'
+const PIN = '1b833418b98ce845c53ec22f0618d172b36725e3'
 const atPin = (rel) => execFileSync('git', ['show', `${PIN}:${rel}`], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] })
 // The old schedule's own functions (glowSpan, showtimes), run from the pinned blob: they use nothing but DAY_MIN.
 const OLD = await import('data:text/javascript;base64,' + Buffer.from(spanOf(atPin('src/displays/lightShow/engine.js'), { from: 'const DAY_MIN = 1440', to: 'export function liveState' }).replace(/^export /gm, '') + '\nexport { glowSpan, showtimes }').toString('base64'))
@@ -55,7 +63,7 @@ const key = (o = {}) => ({ glow: 1, show: 2, kelvin: 3000, showEvery: 60, ...o }
 const refuses = (f, re) => { try { f(); return false } catch (e) { return re.test(e.message) } }
 const near = (a, b, e = 1e-6) => Math.abs(a - b) <= e
 
-async function verdict({ chan, param, view, bake, eng, mount, pin, hook, manifest, stage } = {}) {
+async function verdict({ chan, param, view, bake, eng, mount, pin, hook, manifest, stage, store, wire } = {}) {
   const fails = [], F = (c, m) => { if (!c) fails.push(m) }
   const redirect = param ? { 'src/cartograph/animatedParam.js': { transform: param } } : undefined
   const S = await importSource('src/displays/showChannel.js', { ...(chan ? { transform: chan } : {}), ...(redirect ? { redirect } : {}) })
@@ -135,8 +143,9 @@ async function verdict({ chan, param, view, bake, eng, mount, pin, hook, manifes
   F(/const sm = getTodSlotMinutes\(instant\), at = \(m\) => displayAt\(channel, m, sm\)/.test(ls) && /lit = day\.current\.at\(useTimeOfDay\.getState\(\)\.getMinuteOfDay\(\)\), warm = kelvinToRgb\(lit\.kelvin\)/.test(ls), 'LightShow does not read the channel at the town\'s minute')
   F(!/_GAIN\b/.test(ls.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '')), 'a gain constant is left in LightShow.jsx')
   const dj = mount ? mount(sourceOf('src/displays/Displays.jsx')) : sourceOf('src/displays/Displays.jsx')
-  F(/<P\.Renderer display=\{d\} channel=\{scene\.displays\[d\.id\]\}/.test(dj) && /: !scene\.displays\?\.\[d\.id\] \? `\$\{where\}: the Look's scene\.json carries no channel for it/.test(dj), '<Displays> does not pass each display its baked channel, or does not refuse a scene with none')
-  F(/if \(!list\.length \|\| \(!scene && !failed\)\) return null/.test(dj) && /: failed \? failed\n/.test(dj), '<Displays> goes silent on a scene.json that could not be read (it must refuse it by name)')
+  F(/<P\.Renderer display=\{d\} channel=\{lit\[d\.id\]\}/.test(dj) && /: !lit\?\.\[d\.id\] \? `\$\{where\}: the Look's scene\.json carries no channel for it/.test(dj), '<Displays> does not pass each display its channel, or does not refuse a scene with none')
+  F(/if \(live\) \{ try \{ lit = displayChannelsFor\(Object\.fromEntries\(\(town\.displays \|\| \[\]\)\.map\(d => \[d\.id, d\]\)\), live, /.test(dj) && /else lit = scene\?\.displays \?\? null/.test(dj) && /: liveErr \? liveErr\n/.test(dj), "<Displays> does not light from Stage's live channels through displayChannelsFor (the default for the rest, a refusal named), or the baked scene elsewhere")
+  F(/if \(!list\.length \|\| \(!live && !scene && !failed\)\) return null/.test(dj) && /: failed \? failed\n/.test(dj), '<Displays> goes silent on a scene.json that could not be read (it must refuse it by name)')
   const H = await importSource('src/lib/useSceneJson.js', { span: { functions: ['fetchSceneOnce', 'sceneReadFailure'] },
     prefix: "import { Refusal, Transient, httpFailure } from './refusal.js'\nconst _cache = new Map(), _failed = new Map(), _fetchOpts = undefined\nlet slabFetch = null\nexport const setFetch = (f) => { slabFetch = f }\nexport { Refusal, Transient }\n",
     suffix: '\nexport { fetchSceneOnce, sceneReadFailure }', ...(hook ? { transform: hook } : {}) })
@@ -197,7 +206,49 @@ async function verdict({ chan, param, view, bake, eng, mount, pin, hook, manifes
   let named = false; try { E.runSeconds([{ look: 'a', seconds: 5 }, { transition: 'no-such' }, { look: 'a', seconds: 5 }]) } catch (e) { named = /transition "no-such"/.test(e.message) }
   F(named, "runSeconds (Stage's Tonight strip) does not refuse an unknown transition by name")
   const sa = stage ? stage(sourceOf('src/stage/StageApp.jsx')) : sourceOf('src/stage/StageApp.jsx')
-  F(/schedule = scene\?\.displays\?\.\[display\.id\]/.test(sa) && /at = \(m\) => displayAt\(schedule, m, sm\), secs = runSeconds\(display\.run\), times = showtimesOn\(at, secs\)/.test(sa), "Stage's Tonight strip does not read the display's channel through showtimesOn")
+  F(/authored = useCartographStore\(s => s\.displays\?\.\[display\.id\]\)/.test(sa) && /const schedule = useMemo\(\(\) => authored \|\| defaultDisplayChannel\(\), \[authored\]\)/.test(sa) && /at = \(m\) => displayAt\(schedule, m, sm\), secs = runSeconds\(display\.run\), times = showtimesOn\(at, secs\)/.test(sa), "Stage's Tonight strip does not read the display's channel through showtimesOn")
+  // 9. Stage edits it
+  const ST = await importSource('src/cartograph/stores/useCartographStore.js', { span: { functions: ['displayChannelActions'] },
+    prefix: "import { defaultDisplayChannel, validateDisplayChannel } from '../../displays/showChannel.js'\nimport { resolveGroupAtMinute, keyedStepAt, todEdgePatch, NAMED_TOD_SLOTS_BY_ID } from '../animatedParam.js'\nexport let SM = null\nexport const setSM = (m) => { SM = m }\nconst getTodSlotMinutes = () => SM\nconst useTimeOfDay = { getState: () => ({ currentTime: new Date(0) }) }\n",
+    suffix: '\nexport { displayChannelActions }', ...(store ? { transform: store } : {}) })
+  ST.setSM(SM)
+  let state = { displays: {} }, saves = 0
+  const set = (f) => { const r = f(state); if (r !== state) state = { ...state, ...r } }
+  const A = ST.displayChannelActions(set, () => ({ _saveDesignDebounced: () => { saves++ } }))
+  A.setDisplayValue('m', 'glow', 0.5, 'dusk')
+  F(state.displays.m?.values?.dusk?.glow === 0.5 && state.displays.m.values.dawn.glow === d.values.dawn.glow && state.displays.m.edges?.dawn?.minutes === 0, `the first edit does not copy the default with the change (${JSON.stringify(state.displays.m)})`)
+  A.setDisplayValue('m', 'showEvery', 120, 'dusk')
+  const was = S.displayAt(state.displays.m, SM.night, SM)
+  A.addDisplaySlot('m', 'night')
+  const nk = state.displays.m.values.night
+  F(nk && nk.showEvery === 120 && Math.abs(nk.glow - was.glow) < 1e-9 && Math.abs(nk.kelvin - was.kelvin) < 1e-9, `a new key is not seeded with the channel there (${JSON.stringify(was)}), showEvery step-held (${JSON.stringify(nk)})`)
+  A.setDisplayTransition('m', 'night', 'down', 0)
+  F(state.displays.m.edges?.night?.fade === 'down' && state.displays.m.edges.night.minutes === 0, 'a 0-minute fade (a switch) is not kept')
+  A.removeDisplaySlot('m', 'night')
+  F(!('night' in state.displays.m.values) && !state.displays.m.edges?.night, 'removing a key leaves it, or its fade mark')
+  A.removeDisplaySlot('m', 'dawn'); A.removeDisplaySlot('m', 'dusk')
+  F(Object.keys(state.displays.m.values).length === 1, `the last key was removed (${Object.keys(state.displays.m.values)})`)
+  const before = JSON.stringify(state)
+  F(refuses(() => A.setDisplayValue('m', 'showEvery', 50, 'dusk'), /showEvery \(50\) must be a whole number of minutes that divides the day/) && JSON.stringify(state) === before, 'an invalid write is not refused by name, or it changed the store')
+  F(saves >= 6, `a write did not save (${saves} saves)`)
+  A.revertDisplay('m')
+  F(!('m' in state.displays), 'revert does not drop the Look\'s channel (back to the default)')
+  const storeSrc = sourceOf('src/cartograph/stores/useCartographStore.js')
+  F(/\{ key: 'displays', hydrate: \(d\) => \(_isObj\(d\.displays\) \? JSON\.parse\(JSON\.stringify\(d\.displays\)\) : \{\}\) \}/.test(storeSrc) && /\.\.\.displayChannelActions\(set, get\)/.test(storeSrc), 'the store does not keep design.json#displays (hydrated and saved), or does not mount the actions')
+  const w = (rel) => (wire ? wire(rel, sourceOf(rel)) : sourceOf(rel))
+  F(/'labels', 'displays',\n\]/.test(w('src/cartograph/CartographApp.jsx')), "Stage's STAGE_CHANNELS does not carry displays to <Town>")
+  const tw = w('src/components/Town.jsx')
+  F(/'setPieceLight', 'displays',/.test(tw) && /displaysOverride=\{o\.displays\}/.test(tw), '<Town> does not take overrides.displays to <SetPiece>')
+  F(/channels=\{displaysOverride\}/.test(w('src/components/SetPiece.jsx')), '<SetPiece> does not hand Stage\'s channels to <Displays>')
+  F(/<DisplayChannel id=\{d\.id\} \/>/.test(sa) && /onSetValue=\{\(key, value, slotId\) => setValue\(id, key, value, slotId\)\}/.test(sa) && /fields=\{DISPLAY_FIELDS\}/.test(sa), "Stage's Displays section has no channel card per display, or it is not wired to the store")
+  // 10. HH:MM
+  let badClock = null
+  for (let t = -1; t <= 1441 && !badClock; t += 0.1) {
+    const txt = E.hhmm(t), m = txt.match(/^(\d\d):(\d\d)$/), want = ((Math.round(t) % 1440) + 1440) % 1440
+    if (!m || +m[1] > 23 || +m[2] > 59 || +m[1] * 60 + +m[2] !== want) badClock = `${t.toFixed(1)} prints "${txt}"`
+  }
+  F(!badClock, `a minute is printed wrong: ${badClock}`)
+  F(/import \{ showtimesOn, runSeconds, hhmm \} from '\.\.\/displays\/lightShow\/engine\.js'/.test(sa) && !/const hhmm = /.test(sa), "Stage's Tonight strip does not print through the engine's one hhmm")
   // 6. the scene bake carries the displays
   const bs = bake ? bake(sourceOf('cartograph/bake-scene.js')) : sourceOf('cartograph/bake-scene.js')
   F(/^\s*displays: displayChannelsFor\(displayRecordsOf\(look\), design\.displays, `bake-scene \$\{look\}`\),$/m.test(bs), 'bake-scene does not write displays through displayChannelsFor with the town\'s records')
@@ -210,7 +261,9 @@ async function verdict({ chan, param, view, bake, eng, mount, pin, hook, manifes
   return fails
 }
 
-const fails = await verdict()
+// A run that throws (a Refusal from the code under a mutant) is a failure, never a crash of the check.
+const run = async (m) => { try { return await verdict(m) } catch (e) { return [`it threw: ${String(e.message).slice(0, 200)}`] } }
+const fails = await run()
 if (fails.length) { console.log('⛔ a display is not authored on its own channel:\n  · ' + fails.join('\n  · ')); process.exitCode = 1 }
 else console.log("✅ a display is authored on its own channel: showEvery step-held, fades with 0 a hard switch, kelvin unfaded, refused by name, the default is the old show")
 
@@ -237,7 +290,7 @@ if (process.argv.includes('--mutants')) {
     ['the glow at a fixed level', { view: (s) => s.replace('glowColour(warm, lit.glow, c, j, now)', 'glowColour(warm, 1.7, c, j, now)') }],
     ['the shimmer not centred on 1', { eng: (s) => s.replace('w = level * (1 + GLOW_SHIMMER * Math.sin(', 'w = level * (0.8 + 0.2 * Math.sin(') }],
     ['the shimmer swing changed', { eng: (s) => s.replace('export const GLOW_SHIMMER = 0.25', 'export const GLOW_SHIMMER = 0.2') }],
-    ['<Displays> passing no channel', { mount: (s) => s.replace(' channel={scene.displays[d.id]}', '') }],
+    ['<Displays> passing no channel', { mount: (s) => s.replace(' channel={lit[d.id]}', '') }],
     ['a run clipped (the whole-run test dropped)', { eng: (s) => s.replace('for (let k = 1; k < len && whole; k++) if (!(at((m + k) % DAY_MIN).show > 0)) whole = false\n    if (whole && !(at((m + len - 1e-6) % DAY_MIN).show > 0)) whole = false\n', '') }],
     ['a run allowed to end where show is 0', { eng: (s) => s.replace('if (whole && !(at((m + len - 1e-6) % DAY_MIN).show > 0)) whole = false', 'if (whole && !(at((m + len) % DAY_MIN).show > 0)) whole = false') }],
     ['showtimes on a fixed hour, not the channel\'s step', { eng: (s) => s.replace('if (m % showEvery || !(show > 0)) continue', 'if (m % 60 || !(show > 0)) continue') }],
@@ -249,12 +302,19 @@ if (process.argv.includes('--mutants')) {
     ['the live path on the sun\'s altitude', { view: (s) => s.replace('day.current.at, day.current.times, where)', 'day.current.at, useTimeOfDay.getState().getLightingPhase().sunAltitude < 0 ? day.current.times : [], where)') }],
     ['runSeconds silent on an unknown transition', { eng: (s) => s.replace('if (!TRANSITION[s.transition]) throw', 'if (false) throw') }],
     ['the Tonight strip on its own schedule', { stage: (s) => s.replace('times = showtimesOn(at, secs)', 'times = [1080]') }],
-    ['<Displays> silent on a failed read', { mount: (s) => s.replace('if (!list.length || (!scene && !failed)) return null', 'if (!list.length || !scene) return null') }],
+    ['HH:MM split before rounding (19:60)', { eng: (s) => s.replace("export const hhmm = (minute) => { const m = (Math.round(minute) % DAY_MIN + DAY_MIN) % DAY_MIN; return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}` }", "export const hhmm = (m) => `${String(Math.floor(m / 60) % 24).padStart(2, '0')}:${String(Math.round(m % 60)).padStart(2, '0')}`") }],
+    ['an edit written without validation', { store: (s) => s.replace("validateDisplayChannel(next, `Stage › Displays › ${id}`)", '') }],
+    ['the last key removable', { store: (s) => s.replace(' || Object.keys(ch.values).length < 2) return null', ') return null') }],
+    ['revert keeping the channel', { store: (s) => s.replace('const next = { ...(s.displays || {}) }; delete next[id]; return { displays: next }', 'return s') }],
+    ['a new key seeded at a fixed cadence', { store: (s) => s.replace("showEvery: keyedStepAt(ch, 'showEvery', m, sm) }", 'showEvery: 60 }') }],
+    ['Stage not carrying displays to <Town>', { wire: (rel, s) => rel.endsWith('CartographApp.jsx') ? s.replace("'labels', 'displays',\n]", "'labels',\n]") : s }],
+    ['<SetPiece> not handing Stage\'s channels on', { wire: (rel, s) => rel.endsWith('SetPiece.jsx') ? s.replace(' channels={displaysOverride}', '') : s }],
+    ['<Displays> silent on a failed read', { mount: (s) => s.replace('if (!list.length || (!live && !scene && !failed)) return null', 'if (!list.length || (!live && !scene)) return null') }],
     ['a failed read not recorded', { hook: (s) => s.replace('_failed.set(key,', 'void (key,') }],
     ['a 404 taken for the network', { hook: (s) => s.replace("if (!r.ok) throw httpFailure(r,", "if (!r.ok) throw new Transient(") }],
-    ['<Displays> not refusing a scene with none', { mount: (s) => s.replace(": !scene.displays?.[d.id] ? `${where}: the Look's scene.json carries no channel for it", ": false ? `${where}: the Look's scene.json carries no channel for it") }],
+    ['<Displays> not refusing a scene with none', { mount: (s) => s.replace(": !lit?.[d.id] ? `${where}: the Look's scene.json carries no channel for it", ": false ? `${where}: the Look's scene.json carries no channel for it") }],
   ]
   let bad = 0
-  for (const [name, m] of mutants) { const f = await verdict(m); console.log(`${f.length ? '🔴' : '⚪ SURVIVED'} mutant: ${name}${f.length ? ` (${f.length})` : ''}`); if (!f.length) bad++ }
+  for (const [name, m] of mutants) { const f = await run(m); console.log(`${f.length ? '🔴' : '⚪ SURVIVED'} mutant: ${name}${f.length ? ` (${f.length})` : ''}`); if (!f.length) bad++ }
   if (bad) process.exitCode = 1
 }

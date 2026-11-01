@@ -39,10 +39,9 @@ import { StoreChannel } from '../cartograph/CartographSkyLight.jsx'
 import { setPieceOf, townForLook } from '../instance.js'
 import useDisplayPreview from '../displays/preview.js'
 import useFailures, { failuresFor } from '../lib/failures.js'
-import { showtimesOn, runSeconds } from '../displays/lightShow/engine.js'
-import { displayAt } from '../displays/showChannel.js'
+import { showtimesOn, runSeconds, hhmm } from '../displays/lightShow/engine.js'
+import { displayAt, defaultDisplayChannel, DISPLAY_FIELDS } from '../displays/showChannel.js'
 import { getTodSlotMinutes } from '../cartograph/animatedParam.js'
-import { useSceneJson } from '../lib/useSceneJson.js'
 import { PLUGINS as DISPLAY_PLUGINS } from '../displays/Displays.jsx'
 import { keyframeFocusIds } from '../lib/focusObject.js'
 import useListings from '../hooks/useListings'
@@ -193,7 +192,8 @@ function DisplaysSection() {
               ))}
             </div>
           </div>
-          {d.kind === 'light-show' && <TonightStrip display={d} lookId={lookId} />}
+          {d.kind === 'light-show' && <DisplayChannel id={d.id} />}
+          {d.kind === 'light-show' && <TonightStrip display={d} />}
         </div>)
       })}
     </Collapsible>
@@ -203,15 +203,13 @@ function DisplaysSection() {
 /**
  * Tonight, read-only: the display's schedule as the live show runs it, from the same functions (its Look's own channel,
  * ../displays/showChannel.js#displayAt, and engine.js#showtimesOn), so the strip and the show agree. Noon to noon, so the
- * night is one band: where the channel glows, and a tick at each showtime. The channel is the one the scene bake carried
- * (scene.json#displays), as <Displays> lights it.
+ * night is one band: where the channel glows, and a tick at each showtime. The channel is the one Stage is editing (the
+ * Look's, else the default), as <Displays> lights it in Stage.
  */
-function TonightStrip({ display, lookId }) {
-  const now = useTimeOfDay(s => s.currentTime), scene = useSceneJson(lookId), schedule = scene?.displays?.[display.id]
-  if (!scene) return null
-  if (!schedule) return <div className="text-caption" style={{ color: 'var(--on-surface-variant)' }}>Tonight: this Look's scene was baked before displays had a channel. Bake it to see the schedule.</div>
+function TonightStrip({ display }) {
+  const now = useTimeOfDay(s => s.currentTime), authored = useCartographStore(s => s.displays?.[display.id])
+  const schedule = useMemo(() => authored || defaultDisplayChannel(), [authored])
   const sm = getTodSlotMinutes(now), at = (m) => displayAt(schedule, m, sm), secs = runSeconds(display.run), times = showtimesOn(at, secs)
-  const hhmm = (m) => `${String(Math.floor(m / 60) % 24).padStart(2, '0')}:${String(Math.round(m % 60)).padStart(2, '0')}`
   const x = (m) => ((m - 720 + 1440) % 1440) / 1440 * 100
   const lit = []                                                     // the glow, as runs of minutes, noon to noon
   for (let i = 0, from = null; i <= 1440; i += 5) {
@@ -231,6 +229,33 @@ function TonightStrip({ display, lookId }) {
       </div>
       <div className="flex justify-between text-caption" style={{ color: 'var(--on-surface-variant)' }}><span>noon</span><span>midnight</span><span>noon</span></div>
     </div>
+  )
+}
+
+/**
+ * A display's own channel, edited (Jacob, 2026-11-01: the show gets "its own in-look scheduler with the same kind of
+ * faders"): Glow, Show, Glow colour and Show every, keyed on the day with the ▲/▼ fades, where a fade of 0 is a switch.
+ * The first edit gives this Look its own copy of the default; ↺ drops it, back to the default. Lights the display live
+ * (<Town overrides.displays>), and the bake carries it (scene.json#displays).
+ */
+function DisplayChannel({ id }) {
+  const authored = useCartographStore(s => s.displays?.[id])
+  const channel = useMemo(() => authored || defaultDisplayChannel(), [authored])
+  const setValue = useCartographStore(s => s.setDisplayValue), addSlot = useCartographStore(s => s.addDisplaySlot)
+  const removeSlot = useCartographStore(s => s.removeDisplaySlot), setTransition = useCartographStore(s => s.setDisplayTransition)
+  const revert = useCartographStore(s => s.revertDisplay)
+  return (
+    <TodChannel
+      label="Lit"
+      fields={DISPLAY_FIELDS}
+      flatDefaults={defaultDisplayChannel().values.dusk}
+      channel={channel}
+      onSetValue={(key, value, slotId) => setValue(id, key, value, slotId)}
+      onFillSlot={(slotId) => addSlot(id, slotId)}
+      onRemoveSlot={(slotId) => removeSlot(id, slotId)}
+      onSetTransition={(slotId, fade, minutes) => setTransition(id, slotId, fade, minutes)}
+      onRevert={() => revert(id)}
+    />
   )
 }
 

@@ -218,7 +218,7 @@ const LAYERS = ['ground', 'buildings', 'trees', 'park', 'lamps', 'setPieces', 'n
 // override would otherwise do nothing, silently, while the operator drags a slider.
 export const OVERRIDE_KEYS = [
   'buildingPalette', 'materialPhysics', 'materialColors', 'neonForceOn', 'neonDensity', 'neon', 'lampGlow',
-  'lantern', 'lampsOn', 'canopy', 'treeWind', 'arch', 'archLight', 'setPieceLight', 'landscape', 'shadow', 'mist', 'edgeRuffle',
+  'lantern', 'lampsOn', 'canopy', 'treeWind', 'arch', 'archLight', 'setPieceLight', 'displays', 'landscape', 'shadow', 'mist', 'edgeRuffle',
   'sky', 'ambient', 'hemi', 'dirSun', 'dirMoon', 'constellations', 'milkyWay', 'skyGain', 'stars',
   'bloom', 'ao', 'exposure', 'warmth', 'fill', 'halo', 'grade', 'grain', 'dof', 'litTint', 'wallPalettes', 'surfaces', 'labels', 'setPieceTitles', 'heroKeyframes', 'heroMotion',
 ]
@@ -801,7 +801,7 @@ export default function Town({
         </group>
         <group name="town:setPieces" visible={on('setPieces')}>
           {heavy && <R3FErrorBoundary name="GatewayArch"><GatewayArch lookId={lookId} bakeLastMs={bake} archOverride={o.arch} archLightOverride={o.archLight} /></R3FErrorBoundary>}
-          <R3FErrorBoundary name="SetPiece"><SetPiece town={town} lookId={lookId} lightOverride={o.setPieceLight} calendar={calendar} displaySource={displaySource} /></R3FErrorBoundary>
+          <R3FErrorBoundary name="SetPiece"><SetPiece town={town} lookId={lookId} lightOverride={o.setPieceLight} displaysOverride={o.displays} calendar={calendar} displaySource={displaySource} /></R3FErrorBoundary>
         </group>
         {/* The ground past the rim, out to the horizon — the movie and the street only. In PLAN the town is one closed
             circle ending at its soft rim (Jacob, 2026-09-28; ▶ claims-the-plan-shot-ends-at-the-rim). */}

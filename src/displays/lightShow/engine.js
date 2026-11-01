@@ -207,7 +207,9 @@ export function refuseCrowdedShows(days, seconds, where) {
     }
   }
 }
-const hhmm = (m) => `${String(Math.floor(m / 60) % 24).padStart(2, '0')}:${String(Math.round(m % 60)).padStart(2, '0')}`
+/** A minute of the town's day as HH:MM: the whole minute first, then split, so 1199.6 is 20:00, never 19:60 (Jacob saw it
+ *  in Stage, 2026-11-01). ▶ node checks/claims-a-display-is-authored-on-its-own-channel.mjs */
+export const hhmm = (minute) => { const m = (Math.round(minute) % DAY_MIN + DAY_MIN) % DAY_MIN; return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}` }
 /**
  * LIVE: what the display is doing at a town instant. `clock` is townClockOf(instant); `at` the channel on the town's
  * day; `times` showtimesOn(at, the show's seconds) for that day (the renderer computes it once a day). Off out of

@@ -682,7 +682,7 @@ const STAGE_CHANNELS = [
   'buildingPalette', 'wallPalettes', 'materialPhysics', 'materialColors', 'neon', 'lampGlow', 'lantern', 'canopy', 'treeWind', 'arch',
   'archLight', 'setPieceLight', 'landscape', 'shadow', 'mist', 'edgeRuffle', 'sky', 'ambient', 'hemi', 'dirSun', 'dirMoon',
   'constellations', 'milkyWay', 'skyGain', 'stars', 'bloom', 'ao', 'exposure', 'warmth', 'fill', 'halo',
-  'grade', 'grain', 'dof', 'surfaces', 'labels',
+  'grade', 'grain', 'dof', 'surfaces', 'labels', 'displays',
 ]
 function useStageOverrides(heroKeyframes, heroMotion) {
   const channels = useCartographStore(s => Object.fromEntries(STAGE_CHANNELS.map(k => [k, activeChannel(s, k)])), shallow)
