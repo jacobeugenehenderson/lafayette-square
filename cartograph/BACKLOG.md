@@ -11,23 +11,35 @@ Active trunk `curb-offset-draw` (→ staging via `staging.yml`; the old `cartogr
 ### ✅ 2026-10-30 RELEASE DONE: PTown + HPDM live on Ward 4334c64 / kit 2a44e317 (compressed slabs, the phone water fix, place share cards,
 one place per building, the docks). The step list is in the Diary: `cartograph/_archive/BACKLOG-morning-release-2026-10-30-DONE.md`.
 NO ROUTINE PURGE: content names give a changed file a fresh name, and our readers bypass the edge (src/lib/freshUrl.js).
-### ⭐ STATE AT JACOB'S BEDTIME, 2026-10-31 (Boz). Read this first.
-- **LS PROMOTED 2026-10-31** (`scratch/ls-cutover-runbook.md`): lafayettesquare.online + www serve LS on Ward 4334c64 / kit 2a44e317;
-  backup `scratch/promote-rollback/lafayettesquare-prod-20261031`. NEXT, Jacob: the .com → .online 301 (§5), then the gates (§6).
-- **Backend: two sittings after the cutover, all built and Zob-PASSed, none deployed.** Sitting 1: hotfix + recovery B + fortify
-  (`scratch/backend-deploy-runbook.md`). Sitting 2 (§E): patches ④–⑫ as ONE set (theward plumb/fortify) + Ward's client
-  (ward/ladder-client) + Operations signers + kit plumb/ladder-docs (merge on deploy only). Deploy-day hands: predeploy-audit items 6–12.
-  The rulings: registry `r-the-host-verifies-eye-to-eye` (the four QRs, the Rep as a non-expiring mark, Host office hours, noListOfAPerson).
-- **OWED before sitting 2:** patch eight's tally column `date` → `weekday` (ruled 2026-10-31, registry `noListOfAPerson`).
-- **⛔ NEXT WARD PIN (the one taking Tinsel's calendar route), three preconditions:**
-  ① **Kit (Boz's, owed, fresh builder):** `R3FErrorBoundary` wraps 15 of Town's layers (SetPiece, so Displays, included) and
-  turns ANY throw into null after 7 retries, so a refusal VANISHES silently and never reaches the Ward (Zob, read in source).
-  A refusal must be told from a transient, never retried, and surfaced with its reason. No refusal type exists: ~206
-  `[tag] ⛔` throws in 53 files; one sink with `src/displays/failures.js`, not two. ② **Ward (in dispatch, co-signed):** a
-  boundary for throws outside those layers. ③ **Ward:** Scene.jsx passes the published calendar.
-  Event card: Ward briefs it (registry `r-an-event-has-a-host-and-a-venue-and-opens-at-the-venue`); the kit validator goes to Tinsel.
-- **Displays (Tinsel):** the Light Show is on integration through 2e408e9a; the ground-ring radius stands as is (Jacob, 2026-10-31,
-  "fine for now"). 65f8438f + 7d242849 await Zob. Owed: brief §2a. Jacob's revision list → Tinsel, coordinated through Boz.
+### ⭐ STATE, 2026-10-31 NIGHT (Boz). Read this first. The day's layered notes: `cartograph/_archive/BACKLOG-state-2026-10-31-evening-SUPERSEDED.md`.
+- **LS CUTOVER DONE.** lafayettesquare.online (+www) serves LS on Ward 4334c64 / kit 2a44e317; lafayette-square.com 301s there
+  (Jacob's Cloudflare rule; runbook §6's gates pass); Jacob's eye ✅. Open: Ward's phone eye · the §6 retirements.
+- **MERGED ON integration TODAY** (`git log --merges --since=2026-10-31`): Displays through the DoF subtree (Tinsel) · the bake carries
+  displays (dea49735; PTown's manifest step ran clean, Jacob, nothing uploaded) · a refusal is never swallowed (249d7658, Fuse) ·
+  a town has one icon, the arch gone (24b23a73, Sigil).
+- **IN FLIGHT** (each: Zob PASS → Boz dry-runs the merge in a throwaway worktree, re-tiers, merges; ⛔ never merge-test in the live worktree):
+  · **Tinsel** `tinsel/displays`: the calendar route + Huron's 16 event rows + PTown season start 2026-10-31 → one Zob pass, then merge.
+    Then: brightness (Edison glow, ratio to the town's lamp level; SHOW_GAIN deleted) → back dim (facing falloff, 0.3) → cone matte
+    (interiorMatte, 0 default) → point framing for spot venues. All ruled; plans approved.
+  · **Ward**: Usher (scene error screen) and Herald (event card) building; Ward holds the heavy slot for their checks.
+  · **Sigil** idle: the operator tabs' Ward-logo favicon waits on Jacob naming where the Ward logo file lives.
+- **NEXT WARD PIN (the calendar pin), preconditions:** ① kit refusal fix — DONE (249d7658 · 51c2211e · 57aac5fb; brief retired to `cartograph/_archive/`) · ② the Ward's boundary for
+  unwrapped throws — Usher · ③ Scene.jsx passes the published calendar with readTownCalendar's four values from its own read
+  (today `content.js#loadContent` flattens absent and failed to []). ② is built (Herald 96097ea); ③ is briefed as the whole pin,
+  `docs/briefs/BRIEF-ward-the-calendar-pin.md` (Ward commits it on Zob's co-sign; dispatches when tinsel/displays merges). Then staging → Promote, Jacob's presses.
+  Season is ON from 10-31.
+- **JACOB'S PRESSES, owed:** the favicon release (staging publish → re-Promote each production town → deploy both Workers) · Huron's
+  bake after the calendar route merges · the backend sittings (`scratch/backend-deploy-runbook.md`; sitting 2 waits on patch eight's
+  tally `date` → `weekday`, ruled).
+- **FOLLOW-UP BRIEFS OWED (named, not written):** terrain's floated `reloadTerrain` promise + useFrame throws (silent) · ⛔ console-only
+  refusals (154 lines, 28 in Town's wrapped layers) to classify and route · R3FErrorBoundary's retryCount never resets ·
+  LightShow's two Stage-only mislabels (a malformed drawer / a 404 frame read "failed") · useSceneJson#fetchSceneOnce caches a failed scene read as null
+  forever, warn only (Zob; now expressible with httpFailure) · `/stage/lafayette-square/hero` blank (useTownPlace throws
+  outside any boundary) · the "legacy" player acceptance is dead wiring (remove after an R2 read of the records) · the 130 safe-tier
+  reds have no baseline (Zob's triage: two stale towns abort 34 checks; a ribbonScenes refusal + a checks/BOARD.json are proposed).
+- **FINDINGS FOR OTHER BANDS:** Arborist — PTown trees near the Monument drawn 37–40 m (upper bound), truly occluding the strands ·
+  Intake — Huron building msbf-209 is named "The Huron Historical Society" but is the library (OSM way 346992145) · HPDM phone is a
+  standing red on society-flight-has-no-long-frame (Herald's A/B).
 - Older OPEN: hours (56/447) · the preview-photo licence (parked) · the dock object + tide ride (unbuilt).
 
 ### ⭐ HANDOFF — 2026-10-28 (the sprint closed; Swash for Boz). Read this block first; everything below is detail.

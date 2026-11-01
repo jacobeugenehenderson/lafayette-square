@@ -1,4 +1,5 @@
 // extentRadius.js — the Extent page's two radius decisions, pure, so a check can plant them (ExtentApp.jsx calls both; there is
+import { Refusal } from '../lib/refusal.js'
 // no other copy). ▶ checks/claims-extent-never-seeds-a-committed-radius.mjs
 //
 // ⛔ 2026-10-28, LS: a failed neighborhood load left a COMMITTED town looking fresh, the seed put 1689 m over its applied 892 m,
@@ -15,7 +16,7 @@ export function committedDraftRadius(nb, b, scene) {
   if (!nb?.committed) return null
   if (nb.draftRadius > 0) return Math.round(nb.draftRadius)
   if (b && b.radius > 0) return Math.round(b.radius)
-  throw new Error(`[Extent] ⛔ '${scene}' is committed, but neither its draft radius nor its applied radius (the boundary's) could be read. Nothing is shown or saved — reload when the server is back.`)
+  throw new Refusal(`[Extent] ⛔ '${scene}' is committed, but neither its draft radius nor its applied radius (the boundary's) could be read. Nothing is shown or saved — reload when the server is back.`)
 }
 
 /**

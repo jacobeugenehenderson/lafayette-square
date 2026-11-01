@@ -48,13 +48,15 @@
  * ⛔ A layer whose unit is not the one converted from THROWS — the 2026-09-26 km/h-read-as-m/s defect, closed at the
  * parse. ▶ node checks/claims-the-weather-feed-arrives-in-the-units-we-read.mjs
  */
+import { Refusal, httpFailure } from './refusal.js'
 
 export const NWS_ROOT = 'https://api.weather.gov'
 // NWS asks every caller to identify itself. A browser may not send this (Chrome drops a script-set User-Agent); the
 // node callers do. No contact address here — that is the operator's to add.
 export const NWS_HEADERS = { 'User-Agent': 'the-ward-kit (lafayette-square.com)', Accept: 'application/geo+json' }
 
-export class OutsideCoverageError extends Error {}
+/** A town NWS does not cover: the same answer every time, so a Refusal (src/lib/refusal.js). */
+export class OutsideCoverageError extends Refusal {}
 
 const F = (c) => c * 9 / 5 + 32
 const MS = (kmh) => kmh / 3.6
@@ -117,10 +119,10 @@ export function skyCode(cloudCoverPct) {
 export function wmoOf(entries, cloudCoverPct) {
   const e = (entries || []).find((x) => x?.weather)
   if (!e) return skyCode(cloudCoverPct)
-  if (!(e.weather in WMO_OF)) throw new Error(`[nws] ⛔ NWS weather type "${e.weather}" has no WMO mapping — add it to WMO_OF`)
+  if (!(e.weather in WMO_OF)) throw new Refusal(`[nws] ⛔ NWS weather type "${e.weather}" has no WMO mapping — add it to WMO_OF`)
   const codes = WMO_OF[e.weather]
   if (!codes) return skyCode(cloudCoverPct)
-  if (e.intensity != null && !(e.intensity in TIER)) throw new Error(`[nws] ⛔ NWS intensity "${e.intensity}" is not known`)
+  if (e.intensity != null && !(e.intensity in TIER)) throw new Refusal(`[nws] ⛔ NWS intensity "${e.intensity}" is not known`)
   return codes[e.intensity == null ? 1 : TIER[e.intensity]]
 }
 
@@ -129,18 +131,18 @@ export function periodOf(validTime) {
   const [s, d] = String(validTime).split('/')
   const m = /^P(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?)?$/.exec(d || '')
   const start = Date.parse(s)
-  if (!m || !Number.isFinite(start)) throw new Error(`[nws] ⛔ unreadable validTime "${validTime}"`)
+  if (!m || !Number.isFinite(start)) throw new Refusal(`[nws] ⛔ unreadable validTime "${validTime}"`)
   const ms = ((+m[1] || 0) * 24 * 60 + (+m[2] || 0) * 60 + (+m[3] || 0)) * 60000
-  if (!(ms > 0)) throw new Error(`[nws] ⛔ validTime "${validTime}" has no duration`)
+  if (!(ms > 0)) throw new Refusal(`[nws] ⛔ validTime "${validTime}" has no duration`)
   return [start, start + ms]
 }
 
 /** A grid layer → its periods, in the reading's unit. ⛔ Throws on a missing layer or an unexpected unit. */
 export function layerOf(grid, name) {
   const layer = grid[name]
-  if (!layer || !Array.isArray(layer.values)) throw new Error(`[nws] ⛔ the grid forecast carries no "${name}" layer`)
+  if (!layer || !Array.isArray(layer.values)) throw new Refusal(`[nws] ⛔ the grid forecast carries no "${name}" layer`)
   const [uom, conv] = GRID_UNITS[name]
-  if (layer.values.length && layer.uom !== uom) throw new Error(`[nws] ⛔ grid "${name}" arrives in ${layer.uom}, the kit reads ${uom}`)
+  if (layer.values.length && layer.uom !== uom) throw new Refusal(`[nws] ⛔ grid "${name}" arrives in ${layer.uom}, the kit reads ${uom}`)
   return layer.values.map(({ validTime, value }) => {
     const [a, b] = periodOf(validTime)
     let v = value == null ? null : conv(value)
@@ -177,20 +179,20 @@ async function getJson(url, fetchImpl) {
  */
 export async function nwsWeather({ lat, lon, name, from, now = new Date(), hoursAhead = 48, fetchImpl = fetch }) {
   if (!(from instanceof Date) || !Number.isFinite(from.getTime()) || from > now) {
-    throw new Error(`[weather] ⛔ "${name}": nwsWeather needs \`from\`, the earliest instant its readers ask for (at or before now) — got ${from}`)
+    throw new Refusal(`[weather] ⛔ "${name}": nwsWeather needs \`from\`, the earliest instant its readers ask for (at or before now) — got ${from}`)
   }
   const pt = await getJson(`${NWS_ROOT}/points/${lat.toFixed(4)},${lon.toFixed(4)}`, fetchImpl)
   if (pt.res.status === 404 && /InvalidPoint/.test(pt.body?.type || '')) {
     throw new OutsideCoverageError(`[weather] ⛔ "${name}" (${lat}, ${lon}) is outside the US National Weather Service's coverage — the kit has no weather provider for this town`)
   }
-  if (!pt.res.ok) throw new Error(`[weather] ⛔ NWS /points answered ${pt.res.status} for "${name}": ${pt.body?.detail ?? ''}`)
+  if (!pt.res.ok) throw httpFailure(pt.res, `[weather] ⛔ NWS /points answered ${pt.res.status} for "${name}": ${pt.body?.detail ?? ''}`)
   const p = pt.body.properties
   const g = await getJson(p.forecastGridData, fetchImpl)
-  if (!g.res.ok) throw new Error(`[weather] ⛔ NWS grid ${p.gridId}/${p.gridX},${p.gridY} answered ${g.res.status} for "${name}"`)
+  if (!g.res.ok) throw httpFailure(g.res, `[weather] ⛔ NWS grid ${p.gridId}/${p.gridX},${p.gridY} answered ${g.res.status} for "${name}"`)
   const grid = g.body.properties
 
   const layers = Object.fromEntries(Object.keys(GRID_UNITS).map((n) => [n, layerOf(grid, n)]))
-  if (!Array.isArray(grid.weather?.values)) throw new Error('[nws] ⛔ the grid forecast carries no "weather" layer')
+  if (!Array.isArray(grid.weather?.values)) throw new Refusal('[nws] ⛔ the grid forecast carries no "weather" layer')
   const weather = grid.weather.values.map(({ validTime, value }) => { const [a, b] = periodOf(validTime); return { a, b, v: value } })
 
   const H = 3600000, nowMs = now.getTime()
@@ -309,7 +311,7 @@ function observed(o, field, id) {
   const q = o[field]
   if (q?.value == null) return null
   const [uom, conv] = OBS_UNITS[field]
-  if (q.unitCode !== uom) throw new Error(`[nws] ⛔ ${id} ${field} arrives in ${q.unitCode}, the kit reads ${uom}`)
+  if (q.unitCode !== uom) throw new Refusal(`[nws] ⛔ ${id} ${field} arrives in ${q.unitCode}, the kit reads ${uom}`)
   return conv(q.value)
 }
 

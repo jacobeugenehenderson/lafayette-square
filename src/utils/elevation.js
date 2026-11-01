@@ -5,6 +5,7 @@
 // that already-decoded Float32Array so the binary isn't parsed twice.
 import { currentTerrain, onTerrainReload, sceneExag } from './terrainShader.js'
 import { makeElevationSampler } from '../lib/terrainCommon.js'
+import { Refusal } from '../lib/refusal.js'
 
 // Terrain is now loaded per-lookId and can be re-pointed live (authoring Stage
 // switching installations), so the CPU sampler must rebuild on reload. Held in
@@ -53,8 +54,8 @@ export function drawnGroundParts(x, z) {
 // ▶ node checks/claims-the-street-eye-stands-on-the-ground.mjs
 export function streetEyeY(x, z, eyeHeight) {
   const g = drawnGroundY(x, z, 1)   // the street view draws the ground at exag 1: the eye stands on the ground as drawn
-  if (!Number.isFinite(g)) throw new Error(`[street] ⛔ no ground under the eye at (${x}, ${z})`)
-  if (!Number.isFinite(eyeHeight)) throw new Error(`[street] ⛔ no eye height (got ${eyeHeight})`)
+  if (!Number.isFinite(g)) throw new Refusal(`[street] ⛔ no ground under the eye at (${x}, ${z})`)
+  if (!Number.isFinite(eyeHeight)) throw new Refusal(`[street] ⛔ no eye height (got ${eyeHeight})`)
   return g + eyeHeight
 }
 

@@ -23,6 +23,7 @@ import { join } from 'node:path'
 import { workerInMiniflare, mint, hex } from './_miniflare.mjs'
 import { CARD_TAGS, CARD_HEADER, SHARE_IMAGE_RELS, cardFor } from '../src/lib/shareCard.js'
 import { HASHED, contentName } from '../src/lib/slabNames.js'
+import { iconFor } from '../src/lib/townIdentity.js'
 
 const ROOT = new URL('..', import.meta.url).pathname
 const SHARE = join(ROOT, 'src/lib/shareCard.js')
@@ -36,7 +37,7 @@ const manifest = (map, withShare) => {
   return { town: map, names: HASHED, identity: { geography: GEO }, files }
 }
 const WARD_DOC = (w) => `<!doctype html><html><head>\n<meta charset="UTF-8" />\n<meta name="ward-build" content="${w}">\n<title>The Ward</title>\n<script type="module" src="/_ward/${w}/assets/index.js"></script></head><body>WARD</body></html>`
-const KIT_DOC = '<!doctype html><html><head><meta charset="UTF-8" /><link rel="icon" type="image/svg+xml" href="https://lafayette-square.com/favicon.svg" /><link rel="shortcut icon" href="/favicon.ico" /><title>Lafayette Square</title>\n'
+const KIT_DOC = '<!doctype html><html><head><meta charset="UTF-8" /><link rel="icon" type="image/svg+xml" href="/favicon.svg" /><link rel="shortcut icon" href="/favicon.ico" /><title>Lafayette Square</title>\n'
   + '<meta property="og:title" content="Lafayette Square" /><meta property="og:image" content="" /><meta property="og:type" content="website" />'
   + '<meta property="og:url" content="https://lafayette-square.com/" /><meta name="twitter:card" content="summary_large_image" />'
   + '<meta name="twitter:title" content="Lafayette Square" /><meta name="twitter:image" content="" /></head><body>LEGACY</body></html>'
@@ -57,8 +58,8 @@ async function run(site, mutate) {
   const W = hex(), K = hex()
   const [ward, legacy, bare] = ['ward', 'legacy', 'bare'].map(mint)
   const towns = {
-    [ward]: { title: 'Ward "Town" & <Co>', description: 'A town on the Ward.', faviconUrl: 'https://icons.example/ward.svg?a=1&b=2' },
-    [legacy]: { title: 'Kit Town', mark: '🦞' },
+    [ward]: { title: 'Ward "Town" & <Co>', description: 'A town on the Ward.', icon: 'data:image/svg+xml,%3Csvg%3E%3C/svg%3E?a=1&b=2', iconFrom: 'look.mark' },
+    [legacy]: { title: 'Kit Town', icon: iconFor({ mark: '🦞' }), iconFrom: 'look.mark' },
     [bare]: { title: 'No Picture Town', description: 'Published before its capture.' },
   }
   const mans = { [ward]: manifest(ward, true), [legacy]: manifest(legacy, true), [bare]: manifest(bare, false) }

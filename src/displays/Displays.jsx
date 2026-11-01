@@ -12,6 +12,7 @@
  */
 import { lazy, Suspense } from 'react'
 import DisplayBoundary from './DisplayBoundary.js'
+import { Refusal } from '../lib/refusal.js'
 
 export const PLUGINS = {
   'light-show': { label: 'Light Show', attaches: ['setPiece'], Renderer: lazy(() => import('./lightShow/LightShow.jsx')) },
@@ -33,9 +34,9 @@ export default function Displays({ town, lookId, attach, extent, dim, calendar, 
     const refusal = !P ? `${where} is of kind "${d.kind}", and no plugin exists for it (have: ${Object.keys(PLUGINS).join(', ')})`
       : !P.attaches.includes(attach) ? `${where}: a ${P.label} cannot attach to a ${attach} (it attaches to: ${P.attaches.join(', ')})`
       : calendar === undefined ? `${where}: the app passes no calendar to <Town>, so the display's season can never be read`
-      : drawerSource !== 'authoring' && drawerSource !== 'published' ? `${where}: the app names no drawer source to <Town> (displaySource: 'authoring' in Stage, 'published' in Preview and the player)`
       : calendar?.error ? `${where}: the town's calendar could not be read: ${calendar.error}`
       : calendar?.absent && d.season ? `${where}: the town publishes no calendar (content/events.json), so its season "${d.season}" can never start`
+      : drawerSource !== 'authoring' && drawerSource !== 'published' ? `${where}: the app names no drawer source to <Town> (displaySource: 'authoring' in Stage, 'published' in Preview and the player)`
       : null
     return (
       <DisplayBoundary key={d.id} lookId={lookId} id={d.id}>
@@ -45,4 +46,4 @@ export default function Displays({ town, lookId, attach, extent, dim, calendar, 
   })
 }
 
-function Refuse({ reason }) { throw new Error(`[Displays] ⛔ ${reason}`) }
+function Refuse({ reason }) { throw new Refusal(`[Displays] ⛔ ${reason}`) }

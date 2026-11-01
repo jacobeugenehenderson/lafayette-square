@@ -33,6 +33,7 @@
  * exact vertex identity `skeleton.js#carryWays` already records — never by geometry.
  */
 import { CLASSES } from './streetClass.js'
+import { Refusal } from '../lib/refusal.js'
 
 export const CENTRE_KINDS = ['none', 'broken', 'double-solid', 'solid-broken']
 export const EDGE_KINDS = ['yellow', 'white', 'parking']
@@ -107,7 +108,7 @@ export function chainMarkings(segmentWays, waysTags, dirOf) {
 export function selectMarkings(street, { norm = null, authored = null } = {}) {
   if (street.gradeSeparated) return { excluded: 'grade-separated' }
   const style = CLASSES[street.class]?.marking
-  if (!style) throw new Error(`⛔ selectMarkings: ${street.skelId} is class "${street.class}", which has no \`marking\` style in the vocabulary (streetClass.js) — refusing to guess its paint`)
+  if (!style) throw new Refusal(`⛔ selectMarkings: ${street.skelId} is class "${street.class}", which has no \`marking\` style in the vocabulary (streetClass.js) — refusing to guess its paint`)
   const m = street.markings || {}
   const oneway = !!street.oneway
   const unmarked = m.laneMarkings === 'no' ? 'lane_markings=no'
@@ -129,7 +130,7 @@ export function selectMarkings(street, { norm = null, authored = null } = {}) {
     if (!style.marked) return { kind: MARKED_DEFAULT, rung: 'data', why: 'lane_markings=yes on an unmarked type' }
     return { kind: style.centre, rung: 'house', why: `type ${street.class}` }
   })()
-  if (!CENTRE_KINDS.includes(centre.kind)) throw new Error(`⛔ selectMarkings: ${street.skelId}'s centre kind "${centre.kind}" (${centre.rung}) is not one of ${CENTRE_KINDS.join(' · ')}`)
+  if (!CENTRE_KINDS.includes(centre.kind)) throw new Refusal(`⛔ selectMarkings: ${street.skelId}'s centre kind "${centre.kind}" (${centre.rung}) is not one of ${CENTRE_KINDS.join(' · ')}`)
   const edges = (() => {
     if (authored?.edges !== undefined) return { kind: authored.edges, rung: 'authored', why: 'Survey' }
     if (!oneway) return { kind: null, rung: 'house', why: 'two-way' }

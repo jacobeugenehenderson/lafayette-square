@@ -1,10 +1,10 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 546,
+  "total": 548,
   "counts": {
-    "safe": 375,
-    "local-effect": 32,
-    "live": 139
+    "safe": 379,
+    "local-effect": 31,
+    "live": 138
   },
   "checks": [
     {
@@ -385,7 +385,7 @@
       "tier": "safe",
       "why": [
         "importSource of src/displays/DisplayBoundary.js — read, safe",
-        "computed import of src/displays/failures.js — read, safe"
+        "computed import of src/lib/failures.js — read, safe"
       ]
     },
     {
@@ -738,6 +738,21 @@
       ]
     },
     {
+      "file": "checks/claims-a-refusal-is-never-swallowed.mjs",
+      "tier": "safe",
+      "why": [
+        "importSource of src/lib/refusal.js — read, safe",
+        "importSource of src/components/R3FErrorBoundary.jsx — read, safe",
+        "importSource of src/components/R3FErrorBoundary.jsx redirects src/lib/startupMarks.js — read, safe",
+        "importSource of src/lib/startupMarks.js — read, safe",
+        "computed import of src/lib/failures.js — read, safe",
+        "computed import of src/lib/refusal.js — read, safe",
+        "computed import of src/lib/startupMarks.js — read, safe",
+        "computed import of src/lib/refusal.js — read, safe",
+        "runs `git ls-files --cached --others` — local, read-only"
+      ]
+    },
+    {
       "file": "checks/claims-a-reimport-keeps-curation.mjs",
       "tier": "live",
       "reasonClass": "unreadable",
@@ -771,6 +786,13 @@
         "mkdirSync",
         "deletes files",
         "imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command, imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files"
+      ]
+    },
+    {
+      "file": "checks/claims-a-scene-is-its-own-looks.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
       ]
     },
     {
@@ -987,6 +1009,13 @@
       ]
     },
     {
+      "file": "checks/claims-a-town-has-one-icon.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
       "file": "checks/claims-a-town-has-one-sealed-id.mjs",
       "tier": "live",
       "reasonClass": "unreadable",
@@ -1066,15 +1095,6 @@
       "tier": "safe",
       "why": [
         "reads repo files only"
-      ]
-    },
-    {
-      "file": "checks/claims-a-towns-calendar-reaches-its-displays.mjs",
-      "tier": "live",
-      "reasonClass": "outbound",
-      "why": [
-        "importSource of src/hooks/useTownCalendar.js, which can: imports src/lib/slabUrl.js, which can: calls fetch()",
-        "importSource of src/hooks/useTownCalendar.js redirects src/lib/slabUrl.js — read, safe"
       ]
     },
     {
@@ -1229,13 +1249,6 @@
       "tier": "safe",
       "why": [
         "reads repo files only"
-      ]
-    },
-    {
-      "file": "checks/claims-an-event-names-its-venue.mjs",
-      "tier": "local-effect",
-      "why": [
-        "importSource of cartograph/bake-content.js, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync"
       ]
     },
     {
@@ -2318,6 +2331,7 @@
       "file": "checks/claims-no-town-wears-another-towns-mark.mjs",
       "tier": "safe",
       "why": [
+        "computed import of src/lib/townIdentity.js — read, safe",
         "computed import of src/instances/registry.js — read, safe"
       ]
     },
@@ -2839,6 +2853,13 @@
       ]
     },
     {
+      "file": "checks/claims-stage-boots-the-address-town.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
       "file": "checks/claims-stage-controls-are-live.mjs",
       "tier": "safe",
       "why": [
@@ -2960,6 +2981,8 @@
         "mkdirSync",
         "deletes files",
         "importSource of cartograph/bake-manifest.mjs (its span: /** Copy one file beside the content and index it → // ── board: the town), which can: writeFileSync, mkdirSync, deletes files",
+        "importSource of src/displays/lightShow/engine.js — read, safe",
+        "importSource of src/displays/lightShow/engine.js redirects src/displays/drawerPath.js — read, safe",
         "importSource of src/lib/slabNames.js — read, safe",
         "importSource of scripts/sweep-retired-slab-keys.mjs (its span: namesOf) — read, safe",
         "importSource of src/displays/drawerUrl.js, which can: imports src/lib/slabUrl.js, which can: calls fetch()",

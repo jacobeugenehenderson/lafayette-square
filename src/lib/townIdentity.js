@@ -83,3 +83,32 @@ export function resolveIdentity(authored) {
   }
   return out
 }
+
+/**
+ * ⭐ THE TOWN'S ICON (the tab, a crawler's share card): the mark as an inline SVG, or, for a town with no mark, its
+ * initial on ◉'s dark field (Jacob, 2026-10-07: "the identity emoji is the favicon"; 2026-10-31: "Get rid of the
+ * arch"). A data: URI, never a file and never a URL, so no town's icon can be served from another town's host.
+ * ⛔ Drawn exactly as theward src/town/favicon.js#iconFor draws it, so the card and the tab show one icon.
+ */
+const svgIcon = (body) => `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">${body}</svg>`)}`
+const escSvg = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+export function iconFor({ mark, initial }) {
+  if (mark) return svgIcon(`<text y=".9em" font-size="90">${escSvg(mark)}</text>`)
+  return svgIcon(`<rect width="100" height="100" rx="22" fill="#141519"/><text x="50" y="72" font-size="64" text-anchor="middle" font-family="Georgia, serif" fill="#F2EFE9">${escSvg(initial)}</text>`)
+}
+
+/** A title's initial: its first character, upper-cased (as the Ward's favicon.js takes it). */
+export const initialOf = (title) => [...String(title ?? '').trim()][0]?.toUpperCase() || ''
+
+/**
+ * A town's icon from its BAKED Look: `look` is the manifest's `look` block (resolveIdentity of the baked scene's
+ * identity, cartograph/bake-manifest.mjs). → { icon, from }: 'look.mark', or 'initial: its baked Look authors no mark'.
+ * ⛔ The initial means only that: a town with no bake or a stale one is its caller's to refuse (scripts/towns-record.mjs).
+ */
+export function townIcon({ look, title }) {
+  if (!look || typeof look !== 'object') throw new Error('townIcon: no baked look block — an unbaked or stale town has no icon to draw')
+  if (look.mark) return { icon: iconFor({ mark: look.mark }), from: 'look.mark' }
+  const initial = initialOf(title)
+  if (!initial) throw new Error('townIcon: no mark and no title to take an initial from')
+  return { icon: iconFor({ initial }), from: 'initial: its baked Look authors no mark' }
+}

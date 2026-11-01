@@ -4,27 +4,32 @@
  *
  * ⛔ THE CLASS: a town wearing another town's identity. A map with no `src/instances/<map>.js`
  * boots as LAFAYETTE SQUARE (`src/instance.js`), so its tab, loader, badge and legal pages were
- * LS's (provincetown, until 2026-09-25). And a module with no mark shows only an initial.
+ * LS's (provincetown, until 2026-09-25). And a town whose Look has no mark shows only an initial.
  *
  * Asserts, reading public/looks/index.json and the registry:
  *   · every map a Look points at has a registered instance module;
- *   · every registered module authors a mark (`branding.mark` emoji or `branding.markSvg`).
+ *   · every registered town's Look authors a mark (`public/looks/<map>/design.json` `identity.mark`, its one source —
+ *     src/lib/townIdentity.js; the instances' old-player copy was deleted 2026-10-31).
  * Fix a red: `node cartograph/scaffold-instance.mjs --scene=<map> --mark=<emoji>`, or author
- * the mark in the module.
+ * the mark in Cartograph's Identity panel.
  *
  *     node checks/claims-every-town-has-a-mark.mjs [--self-test]
  */
-import { readFileSync } from 'fs'
+import { readFileSync, existsSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
-const { registeredMaps, instanceForMap } = await import(join(ROOT, 'src/instances/registry.js'))
+const { registeredMaps } = await import(join(ROOT, 'src/instances/registry.js'))
 
 function loadSources() {
   const looks = JSON.parse(readFileSync(join(ROOT, 'public/looks/index.json'), 'utf8')).looks || []
   const maps = [...new Set(looks.map(l => l.scene).filter(Boolean))]
-  const towns = Object.fromEntries(registeredMaps().map(m => [m, instanceForMap(m)?.branding || {}]))
+  const lookMark = (m) => {
+    const p = join(ROOT, 'public/looks', m, 'design.json')
+    return existsSync(p) ? JSON.parse(readFileSync(p, 'utf8')).identity?.mark ?? null : null
+  }
+  const towns = Object.fromEntries(registeredMaps().map(m => [m, { mark: lookMark(m) }]))
   return { maps, towns }
 }
 
@@ -34,15 +39,15 @@ function run(S) {
   const missing = S.maps.filter(m => !(m in S.towns))
   assert('every-map-has-a-module', missing.length === 0,
     `map(s) with a Look but no src/instances module — they have no identity (Stage opens no town, the player refuses): ${missing.join(', ')} — node cartograph/scaffold-instance.mjs --scene=<map> --mark=<emoji>`)
-  const unmarked = Object.entries(S.towns).filter(([, b]) => !b.mark && !b.markSvg).map(([m]) => m)
-  assert('every-module-has-a-mark', unmarked.length === 0,
-    `module(s) with no authored mark (they show an initial): ${unmarked.join(', ')}`)
+  const unmarked = Object.entries(S.towns).filter(([, t]) => !t.mark).map(([m]) => m)
+  assert('every-town-look-has-a-mark', unmarked.length === 0,
+    `town(s) whose Look authors no identity.mark (they show an initial): ${unmarked.join(', ')}`)
   return out
 }
 
 const MUTATIONS = [
   { name: 'every-map-has-a-module', apply: (S) => ({ ...S, maps: [...S.maps, 'a-town-with-no-module'] }) },
-  { name: 'every-module-has-a-mark', apply: (S) => { const [m] = Object.keys(S.towns); return { ...S, towns: { ...S.towns, [m]: {} } } } },
+  { name: 'every-town-look-has-a-mark', apply: (S) => { const [m] = Object.keys(S.towns); return { ...S, towns: { ...S.towns, [m]: { mark: null } } } } },
 ]
 
 const S = loadSources()
@@ -57,7 +62,7 @@ if (process.argv.includes('--self-test')) {
   console.log(bad ? `\n⛔ ${bad} mutation(s) did not fail.` : '\n✅ every mutation produced its named failure.')
   process.exit(bad ? 1 : 0)
 }
-for (const [m, b] of Object.entries(S.towns)) console.log(`  ${m.padEnd(18)} ${b.markSvg ? `markSvg ${b.markSvg}` : b.mark ? `mark ${b.mark}` : '— no mark'}`)
+for (const [m, t] of Object.entries(S.towns)) console.log(`  ${m.padEnd(18)} ${t.mark ? `mark ${t.mark}` : '— no mark in its Look'}`)
 const res = run(S)
 for (const r of res) console.log(`${r.ok ? '  ✓' : '  ✗'} ${r.name}${r.ok ? '' : ` — ${r.detail}`}`)
 const failed = res.filter(r => !r.ok)

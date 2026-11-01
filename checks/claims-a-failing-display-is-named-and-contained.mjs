@@ -3,8 +3,8 @@
  * "WHEN A DISPLAY FAILS AT RUNTIME, IS IT CONTAINED AND NAMED?" (Boz's ruling, 2026-10-31.)
  *
  * The last line, src/displays/DisplayBoundary.js, driven directly:
- *   1. NAMED: a throwing display emits one console error naming the display and the reason, and lands in
- *      src/displays/failures.js (Stage's banner reads it);
+ *   1. NAMED: a throwing display emits one console error naming the display and the reason, and lands in the kit's one
+ *      sink, src/lib/failures.js, as layer `display:<id>` (Stage's banner reads it);
  *   2. CONTAINED: the failed display renders nothing, without throwing on, so what it hangs on keeps rendering; a
  *      healthy one renders its children;
  *   3. WIRED: Displays.jsx renders every plugin, AND its own refusals (unknown kind, bad attach), inside the display's own
@@ -24,7 +24,7 @@ import { ROOT } from './_scenes.mjs'
 import { importSource, sourceOf } from './_importSource.mjs'
 
 const code = (src) => src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '')
-const failures = (await import(pathToFileURL(join(ROOT, 'src/displays/failures.js')))).default
+const failures = (await import(pathToFileURL(join(ROOT, 'src/lib/failures.js')))).default
 
 async function verdict({ boundary, displays, frame } = {}) {
   const fails = []
@@ -43,19 +43,19 @@ async function verdict({ boundary, displays, frame } = {}) {
     try { rendered = b.render() } catch (e) { fails.push(`a failed display throws on when it renders (${e.message}): it would take what it hangs on down with it`) }
   } finally { console.error = was }
   if (!logged.some(l => l.includes('monument-lights') && l.includes('the drawer answered 404'))) fails.push('a failed display is not named in the console (its id and the reason)')
-  if (failures.getState().failed['a-town/monument-lights'] !== 'the drawer answered 404') fails.push('a failed display is not recorded for Stage\'s banner under its town and id')
+  if (failures.getState().failed['a-town/display:monument-lights']?.reason !== 'not retried: the drawer answered 404') fails.push('a failed display is not recorded for Stage\'s banner under its town and id')
   if (rendered !== null && rendered !== undefined) fails.push('a failed display still renders its children')
   // 3. wired
   const disp = code(displays ? displays(sourceOf('src/displays/Displays.jsx')) : sourceOf('src/displays/Displays.jsx'))
   if (!/<DisplayBoundary\s+key=\{d\.id\}\s+lookId=\{lookId\}\s+id=\{d\.id\}>[\s\S]*?<Refuse[\s\S]*?<P\.Renderer[\s\S]*?<\/DisplayBoundary>/.test(disp)) fails.push('Displays.jsx does not render each plugin, and its refusals, inside the display\'s own DisplayBoundary')
-  if (/throw new Error\(`\[Displays\][^`]*\$\{where\}/.test(disp.slice(0, disp.indexOf('function Refuse')))) fails.push('Displays.jsx throws a refusal outside the display\'s boundary')
+  if (/throw new (?:Error|Refusal)\(`\[Displays\][^`]*\$\{where\}/.test(disp.slice(0, disp.indexOf('function Refuse')))) fails.push('Displays.jsx throws a refusal outside the display\'s boundary')
   let ls = code(sourceOf('src/displays/lightShow/LightShow.jsx')); if (frame) ls = frame(ls)
   const loop = ls.slice(ls.search(/useFrame\(\([^)]*\) => \{/), ls.indexOf('if (frameErr) throw'))
   if (!/useFrame\(\([^)]*\) => \{\s*if \(frameDead\.current\) return\s*try \{[\s\S]*\} catch \(e\) \{ frameDead\.current = true; setFrameErr\(e\) \}\s*\}\)\s*$/.test(loop)) fails.push('LightShow.jsx: the frame loop does not catch its throws (an uncaught throw there freezes the whole canvas and never reaches the boundary)')
   if (!/if \(frameErr\) throw/.test(ls)) fails.push('LightShow.jsx does not rethrow a frame-loop failure at render, so the boundary never sees it')
   const sp = code(sourceOf('src/components/SetPiece.jsx'))
   if (!/<SetPieceUplights[^>]*\/>\s*\{?[\s\S]{0,200}?<Displays\b[^>]*\/>/.test(sp)) fails.push('SetPiece.jsx does not mount <Displays> beside the uplights, inside the renderer')
-  if (!/failures\.js/.test(sourceOf('src/stage/StageApp.jsx')) || !/failed:\s*\{failed\[`\$\{lookId\}\/\$\{d\.id\}`\]/.test(sourceOf('src/stage/StageApp.jsx'))) fails.push('Stage\'s Displays section does not show a display\'s failure under its town and id')
+  if (!/lib\/failures\.js/.test(sourceOf('src/stage/StageApp.jsx')) || !/failed:\s*\{failed\[`\$\{lookId\}\/display:\$\{d\.id\}`\]\.reason\}/.test(sourceOf('src/stage/StageApp.jsx'))) fails.push('Stage\'s Displays section does not show a display\'s failure under its town and id')
   return fails
 }
 

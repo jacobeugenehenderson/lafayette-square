@@ -1,9 +1,10 @@
+import { Refusal, httpFailure } from '../lib/refusal.js'
 const BASE = '/api/cartograph'
 
 // Scene-aware route helper: /<scene>/<verb>. ⛔ There is no default town — the server refuses a scene-less /<verb>,
 // and this refuses first, naming the call, so a page with no town open never asks for one.
 function sceneUrl(scene, verb) {
-  if (!scene) throw new Error(`[cartograph api] ⛔ ${verb}: no scene — a town's data is asked by name (there is no default town)`)
+  if (!scene) throw new Refusal(`[cartograph api] ⛔ ${verb}: no scene — a town's data is asked by name (there is no default town)`)
   return `${BASE}/${encodeURIComponent(scene)}/${verb}`
 }
 
@@ -46,13 +47,13 @@ export async function fetchGeography(scene) {
   // cached copy would put the aerial in a different frame than the fresh skeleton.
   const res = await fetch(`${sceneUrl(scene, 'geography')}?t=${Date.now()}`, { cache: 'no-store' })
   // ⛔ a failed load is not "no geography" (a missing one is a 404 by name, a failure any other way): refused by name (2026-10-28)
-  if (!res.ok) throw new Error(`[Extent] ⛔ '${scene}': its geography could not be loaded (HTTP ${res.status}).`)
+  if (!res.ok) throw httpFailure(res, `[Extent] ⛔ '${scene}': its geography could not be loaded (HTTP ${res.status}).`)
   return res.json()
 }
 export async function fetchBoundary(scene) {
   const res = await fetch(sceneUrl(scene, 'boundary'))
   // ⛔ a failed load is not "no boundary" (a missing one is a 404 by name, a failure any other way): refused by name (2026-10-28)
-  if (!res.ok) throw new Error(`[Extent] ⛔ '${scene}': its boundary could not be loaded (HTTP ${res.status}).`)
+  if (!res.ok) throw httpFailure(res, `[Extent] ⛔ '${scene}': its boundary could not be loaded (HTTP ${res.status}).`)
   return res.json()
 }
 
@@ -188,7 +189,7 @@ export async function fetchBoundaryFromStreets(scene, names) {
 // and the page neither hydrates nor autosaves over a load it did not make. ▶ checks/claims-extent-never-seeds-a-committed-radius.mjs
 export async function fetchNeighborhood(scene) {
   const res = await fetch(`${sceneUrl(scene, 'neighborhood')}?t=${Date.now()}`, { cache: 'no-store' })
-  if (!res.ok) throw new Error(`[Extent] ⛔ '${scene}': its neighborhood could not be loaded (HTTP ${res.status}). Nothing is shown or saved until it loads — reload when the server is back.`)
+  if (!res.ok) throw httpFailure(res, `[Extent] ⛔ '${scene}': its neighborhood could not be loaded (HTTP ${res.status}). Nothing is shown or saved until it loads — reload when the server is back.`)
   return res.json()
 }
 export async function saveNeighborhood(scene, data) {

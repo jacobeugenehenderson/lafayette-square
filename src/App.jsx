@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 import { townClockOf, townDateAtMinute } from './lib/townClock.js'
-import { moduleOn, TOWN_PATH_PREFIX } from './instance.js'
+import { INSTANCE, moduleOn, TOWN_PATH_PREFIX } from './instance.js'
 import { currentSiteUrl } from './lib/townOrigin.js'
 import Scene from './components/Scene'
 import SceneBoundary from './components/SceneBoundary'
@@ -18,7 +18,7 @@ import CodeDeskModal, { useCodeDesk } from './components/CodeDeskModal'
 import SmsInbox, { useSmsInbox } from './components/SmsInbox'
 import ChatModal from './components/ChatModal'
 import EventTicker from './components/EventTicker'
-import { applyTownBranding } from './lib/townMark.js'
+import { titleOf } from './lib/townRecord.js'
 import BrowseHeader from './components/BrowseHeader'
 import FeatureBoundary from './components/FeatureBoundary'
 import AdminPrompt from './components/AdminPrompt'
@@ -487,9 +487,13 @@ function SmsUnreadBadge() {
   )
 }
 
-// ⛔ Runtime, not build-time: ONE player build serves every town, so only the running
-// app knows which town this is. See `applyTownBranding`.
-applyTownBranding()
+// ⛔ Runtime, not build-time: ONE player build serves every town, so only the running app knows which town this is.
+// The TITLE only: the tab icon is the one the site Worker writes from the town's baked Look (src/lib/shareCard.js).
+if (typeof document !== 'undefined') {
+  const title = titleOf(INSTANCE)
+  document.title = title
+  for (const sel of ['meta[property="og:title"]', 'meta[name="twitter:title"]']) document.querySelector(sel)?.setAttribute('content', title)
+}
 
 function App() {
   const route = parseRoute()

@@ -13,6 +13,7 @@
  * ⛔ No `heading`, no `accuracy`: no look draws them yet, and a field nothing draws is a silent no-op — passing one
  * throws until it is designed.
  */
+import { Refusal } from './refusal.js'
 
 /** Each kind and what it needs. The looks live in src/components/Movers.jsx. */
 export const MOVER_KINDS = {
@@ -28,17 +29,17 @@ const UNDESIGNED = ['heading', 'accuracy']
  * @returns [{ id, kind, active, x, z, inside }] — every mover, in order; none vanish
  */
 export function placeMovers(movers, place, disc) {
-  if (!Array.isArray(movers)) throw new Error(`[Town] ⛔ movers must be an array (got ${typeof movers})`)
+  if (!Array.isArray(movers)) throw new Refusal(`[Town] ⛔ movers must be an array (got ${typeof movers})`)
   const seen = new Set()
   return movers.map((m, i) => {
-    if (m?.id == null || m.id === '') throw new Error(`[Town] ⛔ mover #${i} has no id`)
-    if (seen.has(m.id)) throw new Error(`[Town] ⛔ two movers share the id "${m.id}"`)
+    if (m?.id == null || m.id === '') throw new Refusal(`[Town] ⛔ mover #${i} has no id`)
+    if (seen.has(m.id)) throw new Refusal(`[Town] ⛔ two movers share the id "${m.id}"`)
     seen.add(m.id)
     const kind = MOVER_KINDS[m.kind]
-    if (!kind) throw new Error(`[Town] ⛔ mover "${m.id}": unknown kind "${m.kind}" — one of ${Object.keys(MOVER_KINDS).join(' · ')}`)
-    for (const f of UNDESIGNED) if (f in m) throw new Error(`[Town] ⛔ mover "${m.id}" carries \`${f}\` — no look draws it yet, so it would do nothing`)
-    if (!Number.isFinite(m.lat) || !Number.isFinite(m.lon)) throw new Error(`[Town] ⛔ mover "${m.id}": lat/lon must be numbers (got ${m.lat}, ${m.lon})`)
-    if (kind.needsActive && typeof m.active !== 'boolean') throw new Error(`[Town] ⛔ courier "${m.id}" needs \`active\` (true on a delivery, false idle)`)
+    if (!kind) throw new Refusal(`[Town] ⛔ mover "${m.id}": unknown kind "${m.kind}" — one of ${Object.keys(MOVER_KINDS).join(' · ')}`)
+    for (const f of UNDESIGNED) if (f in m) throw new Refusal(`[Town] ⛔ mover "${m.id}" carries \`${f}\` — no look draws it yet, so it would do nothing`)
+    if (!Number.isFinite(m.lat) || !Number.isFinite(m.lon)) throw new Refusal(`[Town] ⛔ mover "${m.id}": lat/lon must be numbers (got ${m.lat}, ${m.lon})`)
+    if (kind.needsActive && typeof m.active !== 'boolean') throw new Refusal(`[Town] ⛔ courier "${m.id}" needs \`active\` (true on a delivery, false idle)`)
     const x = (m.lon - place.lon) * place.lonToMeters
     const z = (place.lat - m.lat) * place.latToMeters
     const inside = !!disc && Math.hypot(x - disc.center[0], z - disc.center[1]) <= disc.radius

@@ -24,6 +24,7 @@ import { createContext, createElement, useContext } from 'react'
 import { ACESFilmicToneMapping } from 'three'
 import { IS_MOBILE } from './isMobile.js'
 import { RUNTIME_PHONE_SURFACE, surfacePolicy } from './deployment.js'
+import { Refusal } from './refusal.js'
 
 export const QUALITY = {
   desktop: {
@@ -90,8 +91,8 @@ export const QUALITY = {
 // the town camera's near plane, m — the canvas's, and the floor under every shot's (Town.jsx#TownOptics; the plan's is derived above it): nothing nearer is drawn, so it bounds how close any shot shows the ground (Stage's coast card reads it)
 export const TOWN_CAMERA_NEAR_M = 1
 export function townCanvasProps(quality, { composer } = {}) {
-  if (!quality?.id) throw new Error('[quality] ⛔ townCanvasProps needs a profile from src/lib/qualityProfile.js')
-  if (typeof composer !== 'boolean') throw new Error('[quality] ⛔ townCanvasProps needs { composer: true | false } — does every frame this canvas shows go through <Town>\'s composer?')
+  if (!quality?.id) throw new Refusal('[quality] ⛔ townCanvasProps needs a profile from src/lib/qualityProfile.js')
+  if (typeof composer !== 'boolean') throw new Refusal('[quality] ⛔ townCanvasProps needs { composer: true | false } — does every frame this canvas shows go through <Town>\'s composer?')
   return {
     gl: {
       alpha: false,
@@ -121,22 +122,22 @@ export function townCanvasProps(quality, { composer } = {}) {
  * redundant: Cartograph's canvas is also the Designer's, so its Stage shots pay ~1 ms for it (accepted). → message | null
  */
 export function canvasAAMismatch(quality, { contextAntialias, composer } = {}) {
-  if (!quality?.id) throw new Error('[quality] ⛔ canvasAAMismatch needs a profile from src/lib/qualityProfile.js')
-  if (typeof contextAntialias !== 'boolean' || typeof composer !== 'boolean') throw new Error('[quality] ⛔ canvasAAMismatch needs { contextAntialias, composer } as booleans')
+  if (!quality?.id) throw new Refusal('[quality] ⛔ canvasAAMismatch needs a profile from src/lib/qualityProfile.js')
+  if (typeof contextAntialias !== 'boolean' || typeof composer !== 'boolean') throw new Refusal('[quality] ⛔ canvasAAMismatch needs { contextAntialias, composer } as booleans')
   if (composer || contextAntialias || !quality.antialias) return null
   return '[Town] ⛔ this canvas was made with NO anti-aliasing (townCanvasProps(…, { composer: true })), and <Town> draws no composer '
     + '(layers.post is off): every edge is aliased. ▶ the host passes townCanvasProps(quality, { composer: false }) whenever it turns post off.'
 }
 
 export function canvasAntialias(quality, { composer } = {}) {
-  if (!quality?.id) throw new Error('[quality] ⛔ canvasAntialias needs a profile from src/lib/qualityProfile.js')
-  if (typeof composer !== 'boolean') throw new Error('[quality] ⛔ canvasAntialias needs { composer: true | false } — whether this canvas mounts the composer')
+  if (!quality?.id) throw new Refusal('[quality] ⛔ canvasAntialias needs a profile from src/lib/qualityProfile.js')
+  if (typeof composer !== 'boolean') throw new Refusal('[quality] ⛔ canvasAntialias needs { composer: true | false } — whether this canvas mounts the composer')
   return composer ? false : !!quality.antialias
 }
 
 /** Does this profile run the post-FX pass `id` (renderPipeline.jsx's manifest id)? The one question, asked here. */
 export function includesPass(quality, id) {
-  if (!Array.isArray(quality?.postFxOff)) throw new Error(`[quality] ⛔ profile "${quality?.id}" has no postFxOff — which post-effects it runs is unknown`)
+  if (!Array.isArray(quality?.postFxOff)) throw new Refusal(`[quality] ⛔ profile "${quality?.id}" has no postFxOff — which post-effects it runs is unknown`)
   return !quality.postFxOff.includes(id)
 }
 
@@ -155,7 +156,7 @@ export function deviceSurface() { return IS_MOBILE ? RUNTIME_PHONE_SURFACE : 'de
 
 /** The profile a PLAYER runs on this device, under its town's deployment (`manifest.deployment`). ⛔ No record, no profile. */
 export function deviceQuality(deployment) {
-  if (deployment === undefined) throw new Error('[quality] ⛔ deviceQuality needs the town\'s deployment (manifest.deployment) — which passes a surface ships is the town\'s policy')
+  if (deployment === undefined) throw new Refusal('[quality] ⛔ deviceQuality needs the town\'s deployment (manifest.deployment) — which passes a surface ships is the town\'s policy')
   return surfaceQuality(deviceSurface(), deployment)
 }
 
@@ -169,13 +170,13 @@ const QualityContext = createContext(null)
 
 /** Provides a profile to renderer pieces mounted outside <Town> (a sky-only embed). <Town> provides its own. */
 export function QualityProvider({ quality, children }) {
-  if (!quality?.id) throw new Error('[quality] ⛔ QualityProvider needs a profile from src/lib/qualityProfile.js')
+  if (!quality?.id) throw new Refusal('[quality] ⛔ QualityProvider needs a profile from src/lib/qualityProfile.js')
   return createElement(QualityContext.Provider, { value: quality }, children)
 }
 
 /** The profile the renderer was given. Throws outside a provider: a piece never guesses the device. */
 export function useQuality() {
   const q = useContext(QualityContext)
-  if (!q) throw new Error('[quality] ⛔ a renderer piece is mounted outside <Town> and outside <QualityProvider> — it has no quality profile')
+  if (!q) throw new Refusal('[quality] ⛔ a renderer piece is mounted outside <Town> and outside <QualityProvider> — it has no quality profile')
   return q
 }

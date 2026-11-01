@@ -15,6 +15,7 @@
  */
 
 import * as THREE from 'three'
+import { Refusal } from './refusal.js'
 
 // -------------------------------------------------------------------------
 // Noise — small deterministic value-noise. No three.js / no external dep.
@@ -102,7 +103,7 @@ export function gustLengths(ws) {
  * change of shape or speed never makes the pattern jump and float32 never runs out of precision.
  */
 export function windAtAdvect(advect, pos, windState, out) {
-  if (!windState) throw new Error('[wind-field] ⛔ windAtAdvect needs the one cable\'s windState — there is no default wind')
+  if (!windState) throw new Refusal('[wind-field] ⛔ windAtAdvect needs the one cable\'s windState — there is no default wind')
   const ws = windState
   const dst = out || { force: new THREE.Vector3(), intensity: 0 }
   // 1. DRIFT

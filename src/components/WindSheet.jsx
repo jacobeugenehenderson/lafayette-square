@@ -30,6 +30,7 @@ import { UNIFORMS as TERRAIN_UNIFORMS, TERRAIN_DECL } from '../utils/terrainShad
 import { useQuality } from '../lib/qualityProfile.js'
 import useSkyState from '../hooks/useSkyState.js'
 import useTimeOfDay from '../hooks/useTimeOfDay.js'
+import { Refusal } from '../lib/refusal.js'
 
 /** The sheet's state (arrays) as wind-field.js reads it (Vector3s) — the same object both sides evaluate. */
 function wsOf(a) {
@@ -72,9 +73,9 @@ const passFrag = /* glsl */`
 
 export default function WindSheet({ extent, wind }) {
   if (extent !== 'town' && !(extent && Number.isFinite(extent.radius))) {
-    throw new Error('[WindSheet] ⛔ needs extent="town" or a named specimen extent {center:[x,z], radius} — there is no default world to cover')
+    throw new Refusal('[WindSheet] ⛔ needs extent="town" or a named specimen extent {center:[x,z], radius} — there is no default world to cover')
   }
-  if (extent === 'town' && wind !== undefined) throw new Error('[WindSheet] ⛔ a town\'s wind is its weather (weatherAt) — a wind prop is for a specimen extent only')
+  if (extent === 'town' && wind !== undefined) throw new Refusal('[WindSheet] ⛔ a town\'s wind is its weather (weatherAt) — a wind prop is for a specimen extent only')
   // A specimen under the REAL weather (the Meteorologist's canary, the tree diorama) says wind="weather": its own extent,
   // the town's air through the one cable — so it never reads the weather itself.
   const specimenWind = extent === 'town' || wind === 'weather' ? null : windStateOfSpecimen(wind)
@@ -113,7 +114,7 @@ export default function WindSheet({ extent, wind }) {
     const ctx = gl.getContext()
     // ⛔ Rendering to half-float needs the extension; without it the sheet cannot exist on this device — said, never faked.
     if (!ctx.getExtension('EXT_color_buffer_half_float') && !ctx.getExtension('EXT_color_buffer_float')) {
-      throw new Error('[WindSheet] ⛔ this device cannot render to a half-float target (EXT_color_buffer_half_float) — the wind sheet cannot be drawn here')
+      throw new Refusal('[WindSheet] ⛔ this device cannot render to a half-float target (EXT_color_buffer_half_float) — the wind sheet cannot be drawn here')
     }
     const L = windSheetLayout(extentRef.current, quality.windTexelsPerCorrelation, ctx.getParameter(ctx.MAX_TEXTURE_SIZE))
     targets.current?.forEach((t) => t.dispose())
@@ -249,7 +250,7 @@ export default function WindSheet({ extent, wind }) {
       /** The texel at world (x, z): { felt:[x,z] m/s, rate:[x,z] }. */
       read(x, z) {
         const L = layoutRef.current
-        if (!L || !targets.current) throw new Error('[windSheet] ⛔ unallocated')
+        if (!L || !targets.current) throw new Refusal('[windSheet] ⛔ unallocated')
         const px = Math.floor(((x - L.origin[0]) / L.span) * L.size), pz = Math.floor(((z - L.origin[1]) / L.span) * L.size)
         gl.readRenderTargetPixels(targets.current[0], px, pz, 1, 1, half)
         const f = Array.from(half, (h) => THREE.DataUtils.fromHalfFloat(h))
@@ -261,7 +262,7 @@ export default function WindSheet({ extent, wind }) {
        */
       probeAir(points) {
         const L = layoutRef.current
-        if (!L) throw new Error('[windSheet] ⛔ unallocated')
+        if (!L) throw new Refusal('[windSheet] ⛔ unallocated')
         const u = pass.material.uniforms
         const tmp = new THREE.WebGLRenderTarget(L.size, L.size, { type: THREE.HalfFloatType, format: THREE.RGBAFormat, depthBuffer: false, generateMipmaps: false })
         const was = u.uSpring.value

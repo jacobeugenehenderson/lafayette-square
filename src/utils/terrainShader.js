@@ -35,6 +35,7 @@ import { slabFetch, slabManifest } from '../lib/slabUrl.js'
 export { DEFAULT_V_EXAG } from '../lib/terrainCommon.js'
 import { DEFAULT_V_EXAG, terrainIdentity, assertHeightfield, sceneExagOf } from '../lib/terrainCommon.js'
 import { DRAWN_RAW_GLSL, pinsMissingUnder } from '../lib/drawnGround.js'
+import { Refusal, httpFailure } from '../lib/refusal.js'
 
 // ── Per-installation terrain, loaded by lookId ───────────────────
 //
@@ -97,18 +98,18 @@ async function fetchTerrain(lookId) {
       console.log(`[terrain] look "${lookId}" has no terrain by intake (ground.json groundShape.terrain = false) — drawn flat`)
       return FLAT_TERRAIN
     }
-    throw new Error(`[terrain] ⛔ look "${lookId}": terrain.json ${r.status}, and ${said === true ? 'its ground was baked ON a terrain (groundShape.terrain = true) — the terrain is missing from the slab'
+    throw httpFailure(r, `[terrain] ⛔ look "${lookId}": terrain.json ${r.status}, and ${said === true ? 'its ground was baked ON a terrain (groundShape.terrain = true) — the terrain is missing from the slab'
       : g.ok ? 'its ground.json names no groundShape.terrain — an unknown state is not a flat one' : `its ground.json ${g.status} — no record of whether it has a terrain`}`)
   }
   const meta = await r.json()
   // ⛔ the one bad mix (drawnGround.js#pinsMissingUnder): a bed-only terrain under a ground with no pins is refused here, so
   // the town stays on its splash rather than draw its shore off ①'s line
   if (meta.stamp) { const g = await slabFetch(lookId, 'ground.json')
-    if (!g.ok) throw new Error(`[terrain] ⛔ look "${lookId}": terrain.json carries a shore stamp and ground.json ${g.status} — whether the ground carries its pins is unknown`)
+    if (!g.ok) throw httpFailure(g, `[terrain] ⛔ look "${lookId}": terrain.json carries a shore stamp and ground.json ${g.status} — whether the ground carries its pins is unknown`)
     const why = pinsMissingUnder(await g.json(), meta)
-    if (why) throw new Error(`[terrain] ⛔ look "${lookId}": ${why}`) }
+    if (why) throw new Refusal(`[terrain] ⛔ look "${lookId}": ${why}`) }
   const b = await slabFetch(lookId, 'terrain.bin')
-  if (!b.ok) throw new Error(`[terrain] ⛔ look "${lookId}": terrain.json is there but terrain.bin ${b.status}`)
+  if (!b.ok) throw httpFailure(b, `[terrain] ⛔ look "${lookId}": terrain.json is there but terrain.bin ${b.status}`)
   const data = new Float32Array(await b.arrayBuffer())
   // The town's tide clock rides its manifest (bake-manifest `tide`, tidal towns only) — absent, never zero.
   const tide = meta.water?.tidal
@@ -127,7 +128,7 @@ let _terrain = FLAT_TERRAIN
 let _sceneExag = null
 /** The ACTIVE look's authored vertical exaggeration (the hero ceiling). Re-points on reload. Throws before a town's terrain is loaded. */
 export function sceneExag() {
-  if (_sceneExag == null) throw new Error('[terrain] ⛔ no town\'s terrain is loaded yet — <Town> loads it (reloadTerrain) before it draws')
+  if (_sceneExag == null) throw new Refusal('[terrain] ⛔ no town\'s terrain is loaded yet — <Town> loads it (reloadTerrain) before it draws')
   return _sceneExag
 }
 /** The Look whose terrain is loaded, or null. <Town> draws once this is its own. */
@@ -402,7 +403,7 @@ const TERRAIN_DISPLACE_PERVERTEX = `
 // slope there. Made FROM the two snippets above, never a copy of them: each edit names the text it replaces and throws
 // if that text is gone. ▶ node checks/claims-the-drawn-raw-is-one-function.mjs
 const drawnFrom = (snippet, from, to, name) => {
-  if (!snippet.includes(from)) throw new Error(`[terrainShader] ⛔ ${name} no longer contains \`${from}\` — the drawn variant cannot be made from it`)
+  if (!snippet.includes(from)) throw new Refusal(`[terrainShader] ⛔ ${name} no longer contains \`${from}\` — the drawn variant cannot be made from it`)
   return snippet.replace(from, to)
 }
 export const TERRAIN_DISPLACE_PERVERTEX_DRAWN = drawnFrom(TERRAIN_DISPLACE_PERVERTEX,
@@ -505,7 +506,7 @@ export function patchTerrainAtCentroidRaw(mat, centroidRaw) {
 }
 
 export function patchTerrain(mat, { terrainNormals = false, perVertex = false, drawn = false } = {}) {
-  if (drawn && !perVertex) throw new Error('[terrainShader] ⛔ patchTerrain: a drawn ground (pins) is lifted per vertex — a rigid lift has no vertex to pin')
+  if (drawn && !perVertex) throw new Refusal('[terrainShader] ⛔ patchTerrain: a drawn ground (pins) is lifted per vertex — a rigid lift has no vertex to pin')
   const displaceSnippet = drawn ? TERRAIN_DISPLACE_PERVERTEX_DRAWN : perVertex ? TERRAIN_DISPLACE_PERVERTEX : TERRAIN_DISPLACE_RIGID
   const prev = mat.onBeforeCompile
   mat.onBeforeCompile = (shader) => {

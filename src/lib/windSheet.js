@@ -29,6 +29,7 @@ import * as THREE from 'three'
 import { WIND_FIELD } from './wind-field.js'
 import { weatherAt, needFields } from './weatherAt.js'
 import { deriveStorminess } from './weatherPresets.js'
+import { Refusal } from './refusal.js'
 
 // ── Sizing — derived from the field's own physics and the scene's disc ───────────────────────────────────────────
 /** The gust's correlation length, metres — what the sheet's texels are counted against (wind-field.js). */
@@ -40,14 +41,14 @@ export const WIND_CORRELATION_M = 1 / WIND_FIELD.SPATIAL_NOISE_SCALE
  * means the size is unknown, and the caller must say so.
  */
 export function windSheetLayout(extent, texelsPerCorrelation, maxTextureSize) {
-  if (!extent || !Number.isFinite(extent.radius) || extent.radius <= 0) throw new Error('[windSheet] ⛔ no extent — the town\'s stencil (or a specimen\'s named extent) is required; there is no default size')
-  if (!Number.isFinite(texelsPerCorrelation) || texelsPerCorrelation <= 0) throw new Error('[windSheet] ⛔ the quality profile has no windTexelsPerCorrelation — the sheet\'s resolution is a per-surface rung')
+  if (!extent || !Number.isFinite(extent.radius) || extent.radius <= 0) throw new Refusal('[windSheet] ⛔ no extent — the town\'s stencil (or a specimen\'s named extent) is required; there is no default size')
+  if (!Number.isFinite(texelsPerCorrelation) || texelsPerCorrelation <= 0) throw new Refusal('[windSheet] ⛔ the quality profile has no windTexelsPerCorrelation — the sheet\'s resolution is a per-surface rung')
   const mPerTexel = WIND_CORRELATION_M / texelsPerCorrelation
   const cx = extent.center?.[0] ?? 0, cz = extent.center?.[1] ?? 0
   // One texel of margin each side, so a bilinear read at the rim never clamps into the edge.
   const span = 2 * extent.radius + 2 * mPerTexel
   const size = Math.ceil(span / mPerTexel)
-  if (maxTextureSize && size > maxTextureSize) throw new Error(`[windSheet] ⛔ a ${Math.round(span)} m town at ${mPerTexel.toFixed(2)} m/texel needs a ${size}² sheet, over this device's ${maxTextureSize}² limit — lower the rung for this surface`)
+  if (maxTextureSize && size > maxTextureSize) throw new Refusal(`[windSheet] ⛔ a ${Math.round(span)} m town at ${mPerTexel.toFixed(2)} m/texel needs a ${size}² sheet, over this device's ${maxTextureSize}² limit — lower the rung for this surface`)
   return { origin: [cx - span / 2, cz - span / 2], span, size, mPerTexel, center: [cx, cz], radius: extent.radius }
 }
 
@@ -105,7 +106,7 @@ const STORM_LINES_AT = 0.8
  * windStateOfWeather, status 'specimen'. ⛔ Every field is required — a specimen that does not say its wind throws.
  */
 export function windStateOfSpecimen(wind) {
-  if (!wind || !['speedMps', 'dirDeg', 'gustsMps'].every((k) => Number.isFinite(wind[k]))) throw new Error('[windSheet] ⛔ a specimen extent needs a named wind {speedMps, dirDeg, gustsMps} — it has no weather to read, and there is no default breeze')
+  if (!wind || !['speedMps', 'dirDeg', 'gustsMps'].every((k) => Number.isFinite(wind[k]))) throw new Refusal('[windSheet] ⛔ a specimen extent needs a named wind {speedMps, dirDeg, gustsMps} — it has no weather to read, and there is no default breeze')
   const from = (wind.dirDeg * Math.PI) / 180
   const dir = [-Math.sin(from), Math.cos(from)]
   const speed = Math.max(0, wind.speedMps)
@@ -145,7 +146,7 @@ export const windSheetUniforms = {
 
 /** Wire a material's compiled shader to the sheet. Call in onBeforeCompile, beside injecting WIND_SHEET_GLSL. */
 export function bindWindSheet(shader) {
-  if (!_mounted) throw new Error('[windSheet] ⛔ bindWindSheet with no <WindSheet> mounted — the field this material reads would never be drawn. Mount <WindSheet extent=…> (Town does) before the material compiles.')
+  if (!_mounted) throw new Refusal('[windSheet] ⛔ bindWindSheet with no <WindSheet> mounted — the field this material reads would never be drawn. Mount <WindSheet extent=…> (Town does) before the material compiles.')
   for (const k in windSheetUniforms) shader.uniforms[k] = windSheetUniforms[k]
 }
 let _mounted = 0
@@ -250,7 +251,7 @@ export const WIND_PILLS = Object.freeze({
 export function setWindPill(name) {
   if (name === 'weather') return clearWindOverride()
   const p = WIND_PILLS[name]
-  if (!p) throw new Error(`[windSheet] ⛔ unknown wind pill '${name}' (have: weather, ${Object.keys(WIND_PILLS).join(', ')})`)
+  if (!p) throw new Refusal(`[windSheet] ⛔ unknown wind pill '${name}' (have: weather, ${Object.keys(WIND_PILLS).join(', ')})`)
   _override = { speedMps: p.speedMps, fromDeg: null, gustsMps: p.gustsMps, gustShape: p.gustShape }
   _notify()
 }

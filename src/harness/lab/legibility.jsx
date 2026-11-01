@@ -40,6 +40,7 @@ import { browseSquareAltitude } from '../../camera/browseFrame.js'
 import { slabFetch } from '../../lib/slabUrl.js'
 import { INSTANCE, townForLook } from '../../instance.js'
 import { reloadTerrain } from '../../utils/terrainShader.js'
+import { Refusal } from '../../lib/refusal.js'
 import useTownCalendar from '../../hooks/useTownCalendar.js'
 
 // Chrome pauses rAF in a hidden tab (a headless run is one): run the REAL frame anyway (the surface lab's cure).
@@ -69,7 +70,7 @@ function whenFor(at) {
   const { lat, lon } = INSTANCE.geography
   const t = SunCalc.getTimes(new Date(), lat, lon)
   const d = { noon: t.solarNoon, midnight: t.nadir, dusk: t.dusk }[at]
-  if (!(d instanceof Date) || !Number.isFinite(d.getTime())) throw new Error(`[legibility] ⛔ no ${at} at ${lat},${lon} today`)
+  if (!(d instanceof Date) || !Number.isFinite(d.getTime())) throw new Refusal(`[legibility] ⛔ no ${at} at ${lat},${lon} today`)
   return d
 }
 

@@ -28,11 +28,14 @@
  * hooks/useWeather.js#fetchWeather parses them for both `current` and every `hourly` entry (`time` on the hours).
  * ▶ node checks/claims-one-weather-per-instant.mjs
  */
+import { Refusal, Transient } from './refusal.js'
 
 const SMOOTH = ['temperatureF', 'cloudCover', 'precipitation', 'visibility', 'windSpeedMs', 'windGustsMs', 'humidity', 'pressureMb', 'directRadiation', 'diffuseRadiation']
 const NEAREST = ['weatherCode', 'windDirDeg']
 
-export class WeatherRangeError extends Error {}
+/** "Not now", never "never": the forecast has not reached this instant. A Transient (src/lib/refusal.js): its readers
+ * hold the last state and say so, and it heals when the forecast refreshes. */
+export class WeatherRangeError extends Transient {}
 /** The instant is inside the forecast, but its reading lacks a field the reader needs (named in the message and `fields`). */
 export class WeatherFieldMissingError extends WeatherRangeError {}
 /** The instant falls between two readings further apart than the series' cadence: no reading was taken there. */
@@ -53,7 +56,8 @@ export function needFields(r, fields, who) {
 /** The weather at instant `t` (a Date): the current reading when `live`, else the forecast's. */
 export function weatherAt(t, { live, now, hourly }) {
   if (live) {
-    if (!now) throw new Error('[weatherAt] ⛔ the clock is live but there is no current reading yet')
+    // A Transient: the reading arrives with the next poll (a boundary may retry it), never a refusal of the town.
+    if (!now) throw new Transient('[weatherAt] ⛔ the clock is live but there is no current reading yet')
     return now
   }
   return forecastAt(t, hourly)
@@ -61,7 +65,7 @@ export function weatherAt(t, { live, now, hourly }) {
 
 /** The hourly forecast at `t`. Throws a WeatherRangeError outside it. */
 export function forecastAt(t, hourly) {
-  if (!(t instanceof Date) || !Number.isFinite(t.getTime())) throw new Error(`[weatherAt] ⛔ not an instant: ${t}`)
+  if (!(t instanceof Date) || !Number.isFinite(t.getTime())) throw new Refusal(`[weatherAt] ⛔ not an instant: ${t}`)
   // ⛔ Empty FIRST: a standing preset sets an empty, unstamped series (WeatherPoller), and that is a range refusal
   // the readers hold and say — never the cadence's throw, which they would rethrow.
   if (!hourly?.length) throw new WeatherRangeError('[weatherAt] ⛔ there is no forecast to read')
@@ -102,7 +106,7 @@ function hermite(hourly, f, i, k, span) {
 
 /** The series' own cadence (ms), as its producer stamped it. A longer step is a hole. ⛔ Throws when unstamped. */
 function cadence(hourly) {
-  if (!(hourly.cadence > 0)) throw new Error(`[weatherAt] ⛔ the series carries no cadence (hourly.cadence, ms) — its producer must stamp its step; a hole cannot be told from a step without it`)
+  if (!(hourly.cadence > 0)) throw new Refusal(`[weatherAt] ⛔ the series carries no cadence (hourly.cadence, ms) — its producer must stamp its step; a hole cannot be told from a step without it`)
   return hourly.cadence
 }
 

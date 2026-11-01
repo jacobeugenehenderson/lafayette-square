@@ -50,6 +50,7 @@ import { browseSquare, browseSquareAltitude } from './browseFrame.js'
 import { streetEyeY } from '../utils/elevation'
 import { SHOTS_FLAT_DEFAULTS } from '../cartograph/skyLightChannels.js'
 import { prefersReducedMotion } from '../lib/reducedMotion.js'
+import { Refusal } from '../lib/refusal.js'
 
 // transitions.js is keyed by the production vocabulary (the shot ENTERED).
 const ENTRY = { movie: 'hero', plan: 'browse', street: 'street' }
@@ -62,17 +63,17 @@ const _warned = new Set()
 
 export default function ShotFlight({ shot, flight = true, streetAt, viewInset, flightRef, onFlightEnd, movieHandle, holdRef, scene, places, placeIds, frameMode = 'densest',
   entryFrames = false, frameKey, frameKeyAtMount = frameKey, onFramed, planHeading = 'town', bearingRef, movers, frameMover = null }) {
-  if (flight !== true && flight !== false && flight !== 'cut') throw new Error(`[Town] ⛔ flight must be true, 'cut' or false (got ${flight})`)
+  if (flight !== true && flight !== false && flight !== 'cut') throw new Refusal(`[Town] ⛔ flight must be true, 'cut' or false (got ${flight})`)
   const following = planHeading && typeof planHeading === 'object'
   if (following ? !(planHeading.follow && 'current' in planHeading.follow) : planHeading !== 'town' && planHeading !== 'north') {
-    throw new Error(`[Town] ⛔ planHeading must be 'town', 'north' or { follow: headingRef } (got ${JSON.stringify(planHeading)})`)
+    throw new Refusal(`[Town] ⛔ planHeading must be 'town', 'north' or { follow: headingRef } (got ${JSON.stringify(planHeading)})`)
   }
   // The heading mode, as a value: a new { follow } object each render is the same mode while it names the same ref.
   const headingMode = following ? planHeading.follow : planHeading
   // streetAt null = the app's point is not known yet (Preview's stand point waits for the disc): the shot waits, as the
   // plan does for its disc. Absent or malformed throws — an app that forgot it.
   if (shot === 'street' && flight !== false && streetAt !== null && !(Array.isArray(streetAt) && streetAt.length === 2 && streetAt.every(Number.isFinite))) {
-    throw new Error('[Town] ⛔ shot="street" needs streetAt={[x, z]} — the eye stands at a point the app chooses (a tap, a place); null while it is not known yet')
+    throw new Refusal('[Town] ⛔ shot="street" needs streetAt={[x, z]} — the eye stands at a point the app chooses (a tap, a place); null while it is not known yet')
   }
   const { camera, size, gl } = useThree()
   const getControls = useThree((s) => s.get)

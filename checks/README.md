@@ -15,7 +15,7 @@ gated without anyone remembering to gate it, which is what makes this work on to
 
 A non-zero exit is a **finding for the board**, not a runner fault. The suite reports; it does not fix.
 
-## ⛔ live — 139. Never in a default run.
+## ⛔ live — 138. Never in a default run.
 
 Two reason classes, and they are not the same thing. **outbound** — a demonstrated call out.
 **unreadable** — runs code the parser cannot read, so it *may* contact nothing but cannot be shown
@@ -71,7 +71,6 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `checks/claims-a-town-lists-each-place-once.mjs` | unreadable | import of a data: module built at run time — its body cannot be read (use checks/_importSource.mjs) · import of a data: module built at run time — its body cannot be read (use checks/_importSource.mjs) |
 | `checks/claims-a-town-page-fetches-no-authoring.mjs` | outbound | calls fetch() · opens a WebSocket · deletes files — only under its own temp dir · runs `/Applications/Google Chrome.app/Contents` — not a known-local command |
 | `checks/claims-a-town-page-writes-its-own-card.mjs` | unreadable | imports checks/_miniflare.mjs, which can: computed import() with no readable target — runs arbitrary modules, runs `npm` — not a known-local command |
-| `checks/claims-a-towns-calendar-reaches-its-displays.mjs` | outbound | importSource of src/hooks/useTownCalendar.js, which can: imports src/lib/slabUrl.js, which can: calls fetch() · importSource of src/hooks/useTownCalendar.js redirects src/lib/slabUrl.js — read, safe |
 | `checks/claims-a-tree-well-plants-only-standing-trees.mjs` | outbound | imports cartograph/fetch-trees.mjs, which can: writeFileSync, mkdirSync, imports cartograph/socrata-fetch.mjs, which can: deletes files, runs `curl` — reaches out |
 | `checks/claims-a-worker-deploy-darkens-no-town.mjs` | outbound | calls fetch() · importSource of checks/claims-a-worker-deploy-darkens-no-town.mjs (its span: start → // ── mutants: each this file), which can: calls fetch(), runs `npx` — reaches out · runs `npx` — reaches out |
 | `checks/claims-an-early-frame-key-is-held.mjs` | outbound | imports scripts/lib/headless.mjs, which can: calls fetch(), opens a WebSocket, deletes files — only under its own temp dir, child_process with a non-literal command — cannot be read |
@@ -104,7 +103,7 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `checks/claims-stage-preview-parity.mjs` | unreadable | writeFileSync · mkdirSync · computed import() of a path an argument or the environment can supply — arbitrary · computed import() of a path an argument or the environment can supply — arbitrary |
 | `checks/claims-startup-marks-fire-in-order.mjs` | outbound | calls fetch() · opens a WebSocket · deletes files — only under its own temp dir · runs `/Applications/Google Chrome.app/Contents` — not a known-local command · runs `pkill -9 -f 'user-data-dir=${profile}'` — not a known-local command |
 | `checks/claims-the-aimer-turns-in-place.mjs` | outbound | calls fetch() · opens a WebSocket · deletes files · runs `/Applications/Google Chrome.app/Contents` — not a known-local command · imports package(s) three, three-stdlib — not read from source |
-| `checks/claims-the-bake-carries-its-displays.mjs` | outbound | writeFileSync · mkdirSync · deletes files · importSource of cartograph/bake-manifest.mjs (its span: /** Copy one file beside the content and index it → // ── board: the town), which can: writeFileSync, mkdirSync, deletes files · importSource of src/lib/slabNames.js — read, safe · importSource of scripts/sweep-retired-slab-keys.mjs (its span: namesOf) — read, safe · importSource of src/displays/drawerUrl.js, which can: imports src/lib/slabUrl.js, which can: calls fetch() · importSource of src/displays/drawerUrl.js redirects src/lib/slabUrl.js — read, safe |
+| `checks/claims-the-bake-carries-its-displays.mjs` | outbound | writeFileSync · mkdirSync · deletes files · importSource of cartograph/bake-manifest.mjs (its span: /** Copy one file beside the content and index it → // ── board: the town), which can: writeFileSync, mkdirSync, deletes files · importSource of src/displays/lightShow/engine.js — read, safe · importSource of src/displays/lightShow/engine.js redirects src/displays/drawerPath.js — read, safe · importSource of src/lib/slabNames.js — read, safe · importSource of scripts/sweep-retired-slab-keys.mjs (its span: namesOf) — read, safe · importSource of src/displays/drawerUrl.js, which can: imports src/lib/slabUrl.js, which can: calls fetch() · importSource of src/displays/drawerUrl.js redirects src/lib/slabUrl.js — read, safe |
 | `checks/claims-the-bake-re-skeletons-a-stale-town.mjs` | unreadable | writeFileSync · mkdirSync · deletes files · computed import of a temp-dir module, and not every write is shown to stay in its temp dir · child_process with a non-literal command — cannot be read · imports cartograph/pourSteps.mjs, which can: writeFileSync, imports cartograph/pour-code.mjs, which can: runs `git` — not a known-local command, runs `git` — not a known-local command |
 | `checks/claims-the-bake-watches-its-code.mjs` | unreadable | writeFileSync · deletes files · computed import() of a path an argument or the environment can supply — arbitrary · computed import of cartograph/coastFile.mjs — read, safe · computed import of cartograph/geography.mjs — read, safe · computed import of src/cartograph/streetProfiles.js — read, safe · runs `git` — not a known-local command · runs `git` — not a known-local command |
 | `checks/claims-the-beach-band-is-the-towns-own.mjs` | unreadable | computed import() of a path an argument or the environment can supply — arbitrary |
@@ -167,7 +166,7 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `scratch/claims-the-roster-light-tells-the-truth.mjs` | unreadable | imports arborist/roster-coverage.js, which can: imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command, imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files |
 | `scratch/claims-unpainted-arcs.mjs` | unreadable | writeFileSync · mkdirSync · computed import of scratch/.arc-probe/tileGround.arc.mjs, a module it writes itself — made at run time, cannot be read |
 
-## local-effect — 32. `npm run test:all`, never CI.
+## local-effect — 31. `npm run test:all`, never CI.
 
 Writes into the repo or a scratch dir.
 
@@ -182,7 +181,6 @@ Writes into the repo or a scratch dir.
 | `checks/claims-a-road-marking-lies-inside-its-road.mjs` | EVERY ROAD MARKING THE GROUND PAINTS LIES ON THE ROAD. |
 | `checks/claims-a-scene-is-named-not-numbered.mjs` | a neighborhood's scene id is the slug |
 | `checks/claims-a-town-owns-its-raw-inputs.mjs` | DOES ANY TOWN READ ANOTHER TOWN'S RAW INPUT? |
-| `checks/claims-an-event-names-its-venue.mjs` | "DOES EVERY EVENT NAME WHERE IT HAPPENS, AND OPEN THERE?" (r-an-event-has-a-host-and-a-venue-and-opens-at-the-venue; |
 | `checks/claims-coast-distance-is-the-coast.mjs` | IS THE COAST-DISTANCE CHANNEL THE DISTANCE TO THIS TOWN'S COAST? |
 | `checks/claims-every-junction-corner-has-a-curb-cut-source.mjs` | ⭐⭐ EVERY JUNCTION CORNER'S CURB CUTS COME FROM SOMEWHERE NAMED — AND EVERY CROSSWALK ENDS AT A CURB CUT ON BOTH SIDES — `BRIEF-corner-ramps-and-kerb § |
 | `checks/claims-every-listing-keeps-its-building.mjs` | DOES EVERY LISTING'S BUILDING STAY IN THE NEIGHBORHOOD? |
@@ -206,7 +204,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 375. This is `npm test`.
+## safe — 379. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -264,7 +262,9 @@ Writes into the repo or a scratch dir.
 | `checks/claims-a-published-edit-reaches-the-map.mjs` | a Host's published correction is what the map shows. |
 | `checks/claims-a-re-fetch-keeps-its-envelope-and-names-what-it-changes.mjs` | A RE-FETCHED raw/osm.json, BEFORE IT REPLACES THE |
 | `checks/claims-a-recommit-changes-nothing.mjs` | DOES THE EXTENT COMMIT CARRY EVERY KEY IT DOES NOT OWN, AND DOES A RE-COMMIT OF |
+| `checks/claims-a-refusal-is-never-swallowed.mjs` | "IS A REFUSAL EVER RETRIED, OR DRAWN AS NOTHING IN SILENCE?" (BRIEF-a-refusal-is-never-swallowed, Boz, 2026-10-31.) |
 | `checks/claims-a-roundabout-is-one-ring.mjs` | CLAIM — EVERY ROUNDABOUT OSM DECLARES ARRIVES AS ONE CLOSED CHAIN (cartograph/_archive/BRIEF-roundabout-is-one-ring-DELIVERED-2026-10-03.md). |
+| `checks/claims-a-scene-is-its-own-looks.mjs` | DOES THE SCENE HOOK HAND OUT ONLY THE ASKED LOOK'S SCENE, NEVER THE PREVIOUS ONE'S? |
 | `checks/claims-a-scene-switch-drops-the-old-town.mjs` | CLAIM — A SCENE SWITCH DROPS THE OLD TOWN, AND ITS DESIGN SAVES TO THE NEW TOWN'S OWN LOOK. |
 | `checks/claims-a-shore-is-not-traced-twice.mjs` | ⭐⭐ TWO INVARIANTS, one cure and one guard: |
 | `checks/claims-a-slab-ships-under-content-names.mjs` | every slab upload names its files by their content, and every read of what an |
@@ -279,6 +279,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-a-town-chooses-its-lamp.mjs` | the lamp post is the town's AUTHORED choice, never its name. |
 | `checks/claims-a-town-draws-the-trees-its-atlas-was-built-for.mjs` | "DOES A TOWN DRAW THE TREES ITS ATLAS WAS BUILT FOR — READ FROM ITS SLAB?" |
 | `checks/claims-a-town-event-is-not-clock-dependent.mjs` | a dated event with no times runs all day, |
+| `checks/claims-a-town-has-one-icon.mjs` | IS EVERY TOWN'S ICON ITS OWN BAKED LOOK'S MARK, AS A data: URI, FROM ONE SOURCE? |
 | `checks/claims-a-town-is-live-by-its-manifest.mjs` | "DOES EACH WORKER DECIDE A TOWN IS LIVE BY THE ONE FILE WHOSE NAME NEVER CHANGES?" |
 | `checks/claims-a-town-never-bakes-from-the-whole-library.mjs` | CAN A TREE BAKE PLANT A SPECIES FROM OUTSIDE THE TOWN'S GROVE? |
 | `checks/claims-a-town-shares-its-own-picture.mjs` | a shared link shows the town's own picture, at the time of day it is |
@@ -420,7 +421,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-no-town-in-display-code.mjs` | "IS THERE A TOWN IN THE DISPLAYS' CODE?" (BRIEF-the-monument-lights-up §4, gate 2; CLAUDE.md Layer 0) |
 | `checks/claims-no-town-name-gates-the-kit.mjs` | "DOES ANY KIT CODE STILL DECIDE BY A TOWN'S NAME?" — BRIEF-ls-bleed-excision (Jacob, 2026-10-07: "fix the LS |
 | `checks/claims-no-town-rides-in-the-bundle.mjs` | "DOES ONE TOWN'S DATA SHIP TO EVERY TOWN?" — the stowaway, made impossible. |
-| `checks/claims-no-town-wears-another-towns-mark.mjs` | no LS asset is hardcoded into a shared surface. |
+| `checks/claims-no-town-wears-another-towns-mark.mjs` | no LS asset is hardcoded into a shared surface, and no town wears a mark it |
 | `checks/claims-no-tree-stands-on-drawn-hardscape.mjs` | NO TREE MAY STAND ON A SURFACE THE MAP DRAWS AS HARDSCAPE. |
 | `checks/claims-node-pair-key-parity.mjs` | SLICE 1 of "fix the key". PROVE, DON'T SWITCH. |
 | `checks/claims-objects-dissolve-with-the-ground.mjs` | CLAIM: trees, lamps and labels thin out over the SAME band the ground fades on — |
@@ -477,6 +478,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-sky-follows-its-town.mjs` | IS THE SKY PAINTED ON THIS TOWN'S SCHEDULE? |
 | `checks/claims-species-map-routes-are-composed.mjs` | Every COMMON a scene routes must resolve to a COMPOSED species. |
 | `checks/claims-spur-leg-offset.mjs` | READ-ONLY. ⭐ SCOPE, and it is the whole point of this file: |
+| `checks/claims-stage-boots-the-address-town.mjs` | DOES STAGE'S FIRST RENDER DRAW THE TOWN ITS ADDRESS NAMES, NEVER A REMEMBERED ONE? |
 | `checks/claims-stage-controls-are-live.mjs` | CLAIM — EVERY STAGE CONTROL MOVES SOMETHING ON A TOWN NOBODY HAS LOOKED AT. |
 | `checks/claims-stamp-follows-the-edge.mjs` | ⭐⭐⭐ DOES A ② CONTOUR EDGE CARRY THE OWNER OF THE ① EDGE IT LIES ALONG? |
 | `checks/claims-stat-scope.mjs` | A DISPLAYED FIGURE MUST DECLARE, AND MATCH, ITS SCOPE. |

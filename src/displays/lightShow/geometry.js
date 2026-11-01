@@ -6,6 +6,7 @@
  * The ridge and the pinnacle are REGULAR POLYGONS the set-piece declares: `sides` and `halfWidthM` (the apothem, centre
  * to the middle of a face). The frame's faces must equal the ridge's sides: a count the geometry cannot place THROWS.
  */
+import { Refusal } from '../../lib/refusal.js'
 
 // A bulb's radius is this fraction of its own strand's bulb spacing, so bulbs keep their look at any size and never
 // merge into a tube. (0.31 is how the Pilgrim Monument's first bulbs read.)
@@ -18,9 +19,9 @@ export const AVG_GLOW_HEIGHT_OF_RIDGE = 0.45
 /** The frame's faces must be the ridge's sides. Throws by name otherwise. */
 export function checkFaces(faces, extent, where) {
   const sides = extent?.ridge?.sides
-  if (!(sides >= 3)) throw new Error(`[LightShow] ⛔ ${where}: the set-piece's ridge declares no sides, so the strands cannot be placed`)
-  if (faces !== sides) throw new Error(`[LightShow] ⛔ ${where}: the drawer's frame has ${faces} faces and the set-piece's ridge has ${sides} sides; a look's faces must be the ridge's`)
-  if (extent.pinnacle && extent.pinnacle.sides !== sides) throw new Error(`[LightShow] ⛔ ${where}: the pinnacle has ${extent.pinnacle.sides} sides and the ridge ${sides}`)
+  if (!(sides >= 3)) throw new Refusal(`[LightShow] ⛔ ${where}: the set-piece's ridge declares no sides, so the strands cannot be placed`)
+  if (faces !== sides) throw new Refusal(`[LightShow] ⛔ ${where}: the drawer's frame has ${faces} faces and the set-piece's ridge has ${sides} sides; a look's faces must be the ridge's`)
+  if (extent.pinnacle && extent.pinnacle.sides !== sides) throw new Refusal(`[LightShow] ⛔ ${where}: the pinnacle has ${extent.pinnacle.sides} sides and the ridge ${sides}`)
 }
 
 /** Face k of a regular `sides`-gon of apothem `a`: the point at u ∈ [-1, 1] along it, in the base frame (x, z). */

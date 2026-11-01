@@ -7,11 +7,10 @@
  *   · its identity block is well-formed (the module's own validator — a malformed channel is named);
  *   · its baked scene.json carries exactly that block — ABSENT (baked before the identity block) or STALE is a failure,
  *     never a pass: the manifest would publish neutral values the town did not choose;
- *   · ⛔ OLD PLAYER ONLY, UNTIL CUTOVER (Warden, 2026-09-28): the town's instance `branding.mark` is a copy the frozen old
- *     player still reads. It must EQUAL the Look's mark — the Look is the source, the copy follows — so the two cannot
- *     drift. The copy (and `markSvg`) is deleted when the new Ward cuts over;
- *   · no instance file carries any other identity channel (accent, litTint belong to the Look).
- * ⭐ MUTATION-TESTED EVERY RUN: one town's mark is flipped in memory and the drift test must then fail.
+ *   · no instance file carries ANY identity channel, the mark included: the instances' old-player copy of the mark (and
+ *     `markSvg`, the arch) was deleted 2026-10-31 (BRIEF-a-town-has-one-icon), so a mark in an instance is a second
+ *     source returning.
+ * ⭐ MUTATION-TESTED EVERY RUN: a mark is planted in one town's instance in memory and the test must then fail.
  *
  *   node checks/claims-a-towns-identity-is-its-own.mjs
  * Read-only. Exit 1 on a failure.
@@ -46,32 +45,22 @@ for (const id of looks) {
   else if (JSON.stringify(baked) !== JSON.stringify(block)) fails.push(`${s} carries ${JSON.stringify(baked)} but the Look authors ${JSON.stringify(block)} — re-bake the scene`)
 }
 
-// The instance side: the old player's copy of the mark, and nothing else of the Look's.
-const drift = (maps, markOf) => {
-  const out = []
-  for (const town of maps) {
-    if (!(town in identities)) continue                          // a town with no Look of its own is claims-every-town-has-a-mark's
-    const copy = markOf(town) ?? null, source = identities[town].mark ?? null
-    if (copy !== source) out.push(`town "${town}"'s instance branding.mark ${JSON.stringify(copy)} ≠ the Look's identity.mark ${JSON.stringify(source)} — the Look is the source; make the copy follow it`)
-  }
-  return out
-}
+// The instance side: no identity channel at all, the mark included (and no `markSvg`, the old player's arch).
 const maps = registeredMaps().filter((m) => !isRetired(m))
-const markOf = (t) => instanceForMap(t)?.branding?.mark
-fails.push(...drift(maps, markOf))
-const others = IDENTITY_CHANNELS.filter((k) => k !== 'mark')
+const FORBIDDEN = [...IDENTITY_CHANNELS, 'markSvg']
 const keysIn = (o, path = '', out = []) => {
   if (o && typeof o === 'object') for (const [k, v] of Object.entries(o)) { out.push([k, path + k]); keysIn(v, path + k + '.', out) }
   return out
 }
-for (const town of maps) {
-  for (const [k, at] of keysIn(instanceForMap(town))) if (others.includes(k)) fails.push(`town "${town}"'s instance carries ${at} — an identity channel belongs to the Look's design.json identity block`)
-}
+const channelsIn = (town, inst) => keysIn(inst).filter(([k]) => FORBIDDEN.includes(k))
+  .map(([, at]) => `town "${town}"'s instance carries ${at} — an identity channel belongs to the Look's design.json identity block`)
+for (const town of maps) fails.push(...channelsIn(town, instanceForMap(town)))
 
-// Mutation: flip one town's copy of its mark; the drift test must catch it.
-const victim = maps.find((t) => t in identities)
-const caught = victim && drift([victim], () => (markOf(victim) === '🧪' ? '🔬' : '🧪')).length === 1
-if (!caught) fails.push(`MUTATION NOT CAUGHT: flipping ${victim ?? '(no town with a Look)'}'s mark did not fail the drift test — the check is blind`)
+// Mutation: plant the deleted copy back in one town's instance; the test must catch it.
+const victim = maps[0]
+const planted = victim && { ...instanceForMap(victim), branding: { ...instanceForMap(victim).branding, mark: '🧪' } }
+const caught = !!victim && channelsIn(victim, planted).length === 1
+if (!caught) fails.push(`MUTATION NOT CAUGHT: a mark planted in ${victim ?? '(no town)'}'s instance did not fail the test — the check is blind`)
 
 // ⭐ MARK STYLE (Jacob, 2026-09-29; Boz: "a validator nobody has seen fail is a claim, not a check"). Every run:
 //   · a value outside MARK_STYLES is REFUSED by name (an unknown style must never reach the Ward's ◉);
@@ -95,7 +84,7 @@ console.log(`   markStyle: unknown value ${refusedUnknown ? 'refused ✓' : 'ACC
 
 if (retired.length) console.log(`   retired (their own RETIRED.md), not towns: ${retired.join(', ')}`)
 console.log(`Looks ${Object.keys(identities).length} · towns ${maps.length} · authored: ${Object.entries(identities).map(([k, v]) => `${k}{${Object.keys(v).join(',') || '—'}}`).join(' ')}`)
-console.log(`   mutation (flip ${victim}'s mark) ${caught ? 'caught ✓' : 'NOT caught'}`)
+console.log(`   mutation (a mark planted in ${victim}'s instance) ${caught ? 'caught ✓' : 'NOT caught'}`)
 for (const f of fails) console.log(`⛔ ${f}`)
 console.log(fails.length ? '\n⛔ FAIL' : '\n✅ PASS — every town\'s identity is its Look\'s, carried whole')
 process.exit(fails.length ? 1 : 0)
