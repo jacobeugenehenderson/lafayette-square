@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 557,
+  "total": 558,
   "counts": {
-    "safe": 382,
+    "safe": 383,
     "local-effect": 32,
     "live": 143
   },
@@ -1847,6 +1847,18 @@
       "tier": "safe",
       "why": [
         "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-every-slot-has-a-time-every-day.mjs",
+      "tier": "safe",
+      "why": [
+        "importSource of src/lib/todSlots.js — read, safe",
+        "importSource of src/cartograph/animatedParam.js — read, safe",
+        "importSource of src/displays/showChannel.js — read, safe",
+        "importSource of src/displays/showChannel.js redirects src/cartograph/animatedParam.js — read, safe",
+        "importSource of src/cartograph/skyLightChannels.js — read, safe",
+        "importSource of src/lib/todSlots.js — read, safe"
       ]
     },
     {

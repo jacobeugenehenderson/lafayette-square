@@ -24,7 +24,7 @@ import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSkyState from '../hooks/useSkyState'
 import useAtmosphere from '../hooks/useAtmosphere.js'
 import useCartographStore from './stores/useCartographStore.js'
-import { getTodSlotMinutes, getTodSlotLabel } from './animatedParam.js'
+import { getTodSlotMinutes, getTodSlotReached, getTodSlotLabel } from './animatedParam.js'
 import { TOD_SLOT_IDS } from '../lib/todSlots.js'
 import { townDateAtMinute, townClockOf, townMinuteOf } from '../lib/townClock.js'
 import { slabUrl, slabFetch } from '../lib/slabUrl.js'
@@ -136,7 +136,7 @@ async function captureSet(lookId) {
   const tod = useTimeOfDay.getState()
   const was = { time: tod.currentTime, live: tod.isLive, paused: tod.isPaused }
   const mins = getTodSlotMinutes(was.time)
-  const absent = TOD_SLOT_IDS.filter((id) => mins[id] == null)
+  const reached = getTodSlotReached(was.time), absent = TOD_SLOT_IDS.filter((id) => !reached[id])
   if (absent.length) throw new Error(`${absent.map(getTodSlotLabel).join(', ')} does not happen on ${townClockOf(was.time).date} here — pick another date`)
   const cart = useCartographStore.getState()
   const wasWeather = cart.weatherMode

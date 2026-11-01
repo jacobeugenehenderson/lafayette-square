@@ -210,7 +210,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 382. This is `npm test`.
+## safe — 383. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -366,6 +366,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-every-proto-edge-lies-on-its-owner.mjs` | CLAIM — EVERY ① EDGE LIES ON THE CHAIN THAT OWNS IT (one owner per edge, and it is the right one). |
 | `checks/claims-every-shadowed-placement-renders.mjs` | EVERY PLACEMENT THE GROUND SHADOWS MUST RENDER A TREE. |
 | `checks/claims-every-slab-url-is-resolved.mjs` | "DOES EVERY SLAB URL IN THE PLAYER COME FROM THE ONE RESOLVER?" |
+| `checks/claims-every-slot-has-a-time-every-day.mjs` | "DOES EVERY TIME-OF-DAY SLOT HAVE A TIME, EVERY DAY, EVERYWHERE, AND DO THE LIGHTS DO TODAY'S THING WHERE THE SUN DOES NOT |
 | `checks/claims-every-tile-edge-names-its-owner.mjs` | EACH ① EDGE OF A TILE CARRIES THE OWNER ① STRUCK IT WITH (`tile.ringOwner`). |
 | `checks/claims-every-town-has-a-mark.mjs` | boots as LAFAYETTE SQUARE (`src/instance.js`), so its tab, loader, badge and legal pages were |
 | `checks/claims-every-turn-in-the-protopolygon-gets-an-arc.mjs` | ⭐⭐⭐ THE COMPLEMENT OF `claims-the-ease-is-the-corner`, AND THE HALF THAT WAS NEVER BUILT. |
