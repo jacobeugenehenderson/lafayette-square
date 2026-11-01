@@ -1,10 +1,10 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 555,
+  "total": 556,
   "counts": {
     "safe": 382,
     "local-effect": 32,
-    "live": 141
+    "live": 142
   },
   "checks": [
     {
@@ -945,6 +945,20 @@
       "tier": "safe",
       "why": [
         "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-a-step-keys-every-input-that-shapes-it.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "importSource of cartograph/pourSteps.mjs, which can: writeFileSync, imports cartograph/pour-code.mjs, which can: runs `git` — not a known-local command, runs `git` — not a known-local command",
+        "computed import of cartograph/pour-code.mjs — read, safe",
+        "computed import of cartograph/pourSteps.mjs — read, safe",
+        "computed import of src/instances/registry.js — read, safe",
+        "computed import of cartograph/authoredKeys.mjs — read, safe",
+        "computed import of cartograph/scene.js — read, safe",
+        "computed import() with no readable target — runs arbitrary modules"
       ]
     },
     {

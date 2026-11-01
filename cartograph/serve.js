@@ -18,12 +18,12 @@ import { slugifyName, isNumericId } from '../src/lib/sceneSlug.js'
 import { registryReadChanged } from '../src/cartograph/streetProfiles.js'
 import { curbedMinWidthOf, REGISTRY_PATH } from './curbedMinWidthOf.mjs'
 import { labelMajor } from '../src/cartograph/streetClass.js'
-import { pourCodeClosure, pourCodeChanged, geographyReadChanged, contentChanged, pourDataReads, judgeStale } from './pour-code.mjs'
+import { pourCodeClosure, pourCodeChanged, geographyReadChanged, contentChanged, pourDataReads, pourArgvReads, judgeStale } from './pour-code.mjs'
 import { treeBakeInputsForMap, treeLibraryFiles } from './tree-bake-inputs.mjs'
 import { terrainValueReads } from './terrainReads.mjs'
 import { COAST_FILE } from './coastFile.mjs'
 import { pendingPathOf, tolerancePathOf, recordIdentity, coastReadsOf } from './bake-coast.mjs'   // the coast's residual record: one home
-import { pourSteps, skeletonStep, runSkeleton, stepReads, recordStep, readBakeReads, runPour, groundForReaders, sceneForReaders } from './pourSteps.mjs'
+import { pourSteps, skeletonStep, runSkeleton, stepReads, recordStep, readBakeReads, runPour, groundForReaders, sceneForReaders, townPourElevation, pourGuardRefusals, townRecordFor } from './pourSteps.mjs'
 import { readBakeDesign, SEED_STRIPPED_FIELDS } from './lookDesign.mjs'
 import { productionDomainFor, askOperations } from './operations-domain.mjs'
 import { lookIdFor, isDeclaredOnly, planJoin, executeJoin } from './scene-address.mjs'
@@ -338,11 +338,11 @@ const _bakesInFlight = new Set()
 // ingestion / authored input; clean = derived).
 // ⭐ THE POUR OUTSIDE THE BAKE (Extent's re-apply and its first pour) runs the Bake's own steps (pourSteps.mjs) and RECORDS each one
 // it runs, under every Look of the scene, so the next Bake judges them done (2026-10-28: LS's Extent Bake asked to re-pour right
-// after its own pour). The pipeline's elevation is the town's own `pour.elevation`, read as the Bake reads it; a scene with no Look
-// yet declares none, which is the Bake's answer too (`--skip-elevation`).
+// after its own pour). The pipeline's elevation is the town's own `pour.elevation`, agreed across its Looks or refused, read as the
+// Bake reads it (pourSteps.mjs#townPourElevation).
 function extentPour(scene) {
   const looks = readLooksIndex().looks.filter(l => l.scene === scene).map(l => l.id)
-  const elevation = looks.length ? readBakeDesign(looks[0], scene, `extent pour ${scene}`).pour?.elevation === true : false
+  const elevation = townPourElevation(scene, looks, (lid) => readBakeDesign(lid, scene, `extent pour ${scene}`))
   return { steps: pourSteps(scene, mapDataPaths(scene), ribbonsPathOf(scene), { elevation }), looks }
 }
 function runExtentPour(scene, { cwd, env }) {
@@ -2677,7 +2677,7 @@ createServer(async (req, res) => {
           if (P.plan) { P.plan.stale.push({ step: label, why: ['an authoring input is newer than its output'] }); return }
           await runStep(P, label, cmd, opts); ran(label); return
         }
-        const { code, data } = stepReads(inputs, bakeScene)   // the step's import closure, its data and the town's record (pourSteps.mjs)
+        const { code, data } = stepReads(inputs)   // the step's import closure and its data, the record's declared fields among them (pourSteps.mjs)
         const was = bakeReads[`${id}:${label}`], who = `step "${label}"`
         const why = was ? [...contentChanged(was.code, code, who), ...contentChanged(was.data, data, who)] : contentChanged(undefined, [], who)
         const missing = outputs.filter(o => !existsSync(o) && !(was && absentOk.includes(o)))
@@ -2689,7 +2689,7 @@ createServer(async (req, res) => {
         if (stage) stage.published = await stagedSlabStep({ ...stage, step: (dir) => runStep(P, label, `${cmd} --out-dir="${dir}"`, opts) })
         else await runStep(P, label, cmd, opts)
         // recorded AFTER the run: an input that is also an output (ground-ao's ground.json) is recorded as it left it
-        recordStep(MAP_JSON, [id], label, inputs, bakeScene)   // the one recorder (pourSteps.mjs), as Extent's pours record
+        recordStep(MAP_JSON, [id], label, inputs)   // the one recorder (pourSteps.mjs), as Extent's pours record
         ran(label)
       }
       // Bake only ACTIVATED content: a hidden layer (layerVis=false) doesn't get
@@ -2718,7 +2718,15 @@ createServer(async (req, res) => {
       // the flag a town with no cache FETCHES from USGS — never inside a Bake.
       // Whether poured towns should carry pipeline elevation is its own decision.
       // ⭐ the pour's three steps, declared ONCE (pourSteps.mjs): the Bake, Extent's re-apply and its first pour all run and record these
-      const POUR = Object.fromEntries(pourSteps(bakeScene, bakePaths, RIBBONS, { elevation: bakeDesign.pour?.elevation === true }).map(st => [st.label, st]))
+      // ⛔ the town's elevation is ONE value across its Looks, or the Bake refuses by name (pourSteps.mjs#townPourElevation); a plan lists it
+      // in a plan, a disagreement is the pipeline's one line (a blocker): no value is substituted into anything it compares
+      let townElevation, elevationBlocked = false
+      try { townElevation = townPourElevation(bakeScene, idx.looks.filter(l => l.scene === bakeScene).map(l => l.id), (lid) => readBakeDesign(lid, bakeScene, 'bake')) }
+      catch (e) { if (!P.plan) throw e; P.plan.stale.push({ step: 'pipeline', blocker: true, why: [e.message] }); elevationBlocked = true }
+      const POUR = Object.fromEntries(pourSteps(bakeScene, bakePaths, RIBBONS, { elevation: townElevation }).map(st => [st.label, st]))
+      // ⛔ THE POUR'S GUARDS RUN ON EVERY BAKE RUN (pourSteps.mjs#pourGuardRefusals; Boz's ruling 2026-11-01), not only when a step
+      // re-runs: the authoring they read is in no key. Not on the plan, which only lists.
+      if (!P.plan) { const g = pourGuardRefusals(bakeScene); if (g.length) throw new Error(`[bake] ⛔ ${bakeScene}'s authoring is refused before anything runs: ${g.join(' ‖ ')}`) }
       if (hasOsm) {
         // ⭐ THE SKELETON BEFORE EVERYTHING (BRIEF-the-bake-re-skeletons-a-stale-town, 2026-10-28): a committed town's skeleton is
         // re-made when what it is made of changed (its code, the street-class vocabulary included, or raw OSM / the survey), never
@@ -2779,8 +2787,11 @@ createServer(async (req, res) => {
         // ⭐ the pour's other DATA reads (`pourDataReads`, stamped as map.json.dataRead) — the operator was never told
         // these drive the pour, so a re-pour they cause asks first, naming them (Boz's ruling Q1, 2026-09-26)
         const dataChanged = lastPour ? contentChanged(lastPour.dataRead, pourDataReads(bakeScene), 'the pour') : []
+        // ⭐ what the pour was GIVEN that shapes it (map.json.argvRead, pour-code.mjs#pourArgvReads): the same question
+        const argvChanged = lastPour && !elevationBlocked ? contentChanged(lastPour.argvRead, pourArgvReads({ elevation: townElevation }), 'the pour') : []
         const codeNewer = [...codeChanged,
                            ...dataChanged.map(p => `${p} — the pour reads it`),
+                           ...argvChanged.map(p => `${p} — the pour is given it`),
                            ...(geoChanged ? [`geography → ${geoChanged}`] : []),
                            ...regChanged.map(i => `references/registry.json → ${i}`)]
         // ⛔ LS is HELD (no LS re-pour, and nothing rewrites its committed runtime files unasked — Boz's ruling Q3).
@@ -2946,7 +2957,8 @@ createServer(async (req, res) => {
            ...declaredAddressPointPaths(bakeScene), ...declaredParcelPaths(bakeScene), sourcesPath(bakeScene),
            join(here, 'bake-buildings.js'), join(here, 'building-address.mjs'), join(here, 'address-points.mjs'),
            groundForReaders(LOOK_DIR), join(LOOK_DIR, 'ground.bin'),   // each building's groundY is sampled off the drawn ground (a raised kerb)
-           join(SCENE_DIR, 'clean', 'skeleton.json')],   // the named streets each building fronts, for its neon faces (bake-buildings.js)
+           join(SCENE_DIR, 'clean', 'skeleton.json'),   // the named streets each building fronts, for its neon faces (bake-buildings.js)
+           townRecordFor(bakeScene, ['setPiece.buildingId'])],   // the town's set-piece building (bake-buildings.js), the one field it reads
           [join(LOOK_DIR, 'buildings.json'), join(LOOK_DIR, 'buildings.bin')],
           `node bake-buildings.js --look=${id} ${sceneFlag}`,
           { cwd: here, timeout: 300000 })
@@ -3165,7 +3177,9 @@ createServer(async (req, res) => {
       await runIfDirty('ground-ao',
         [MAP_JSON, join(SCENE_DIR, 'buildings.json'), join(LOOK_DIR, 'ground.json'), join(LOOK_DIR, 'ground.bin'),
          join(LOOK_DIR, 'lamps.json'), join(LOOK_DIR, 'trees.json'), join(LOOK_DIR, 'trees-atlas.json'),
-         join(here, 'bake-ground-ao.js')],
+         join(here, 'bake-ground-ao.js'),
+         // its code imports bake-buildings.js (loadBuildings), whose file reads this field: declared, the safe direction
+         townRecordFor(bakeScene, ['setPiece.buildingId'])],
         // it also WRITES ground.json (its four maps, pourSteps.mjs#GROUND_AO_FIELDS): the steps above read that by value
         [join(LOOK_DIR, 'ground.lightmap.png'), join(LOOK_DIR, 'ground.json')],
         `node bake-ground-ao.js --look=${id} ${sceneFlag}`,
@@ -3492,6 +3506,12 @@ createServer(async (req, res) => {
       // that town's trees or lamps by name, and a visitor would see none. The player's own verdict, on these files.
       const unanchored = slabAnchorRefusals(join(REPO_ROOT, 'public', 'baked', id), id)
       if (unanchored.length) throw new Error(`"${id}": its ${unanchored.map(u => `${u.what} anchors are refused (${u.why}; ▶ ${u.step})`).join(' · ')}. Nothing was committed or uploaded.`)
+      // ⛔ THE POUR'S GUARDS RUN AT PUBLISH TOO (Boz's ruling, 2026-11-01): this is where a town leaves the machine, so authoring that
+      // now refuses (a dangling key, a join that re-keys) never ships because no Bake happened to be owed (pourSteps.mjs#pourGuardRefusals).
+      const pubScene = readLooksIndex().looks.find(l => l.id === id)?.scene
+      if (!pubScene) throw new Error(`Look "${id}" has no scene, so its authoring cannot be guarded. Nothing was committed or uploaded.`)
+      const guarded = pourGuardRefusals(pubScene, { requirePoured: true })
+      if (guarded.length) throw new Error(`"${id}": its authoring is refused — ${guarded.join(' ‖ ')}. Nothing was committed or uploaded.`)
       // Only pass pathspecs that actually exist — `git commit -- <path>` errors
       // ("pathspec did not match any file(s)") on a spec that matches nothing.
       const specs = slabPathspecs(id).filter(p => existsSync(join(REPO_ROOT, p)))

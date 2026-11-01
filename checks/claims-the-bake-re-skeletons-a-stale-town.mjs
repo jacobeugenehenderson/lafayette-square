@@ -38,7 +38,7 @@ const paths = { raw, clean, map: join(clean, 'map.json'), skeleton: join(clean, 
 writeFileSync(join(raw, 'osm.json'), '{"ways":[]}')
 const SCENE = 'lafayettesquare', LOOK = 'lafayettesquare'
 try {
-  const st = P.skeletonStep(SCENE, paths), { code, data } = P.stepReads(st.inputs, SCENE)
+  const st = P.skeletonStep(SCENE, paths), { code, data } = P.stepReads(st.inputs)
   const codeRel = code.map(rel), dataRel = data.filter(d => typeof d === 'string').map(f => f.replace(dir0 + '/', ''))
   const wantCode = ['cartograph/skeleton.js', 'src/cartograph/streetClass.js'].every(f => codeRel.includes(f))
   const noExtent = !st.inputs.some(f => f === paths.boundary || f === paths.geography)
@@ -47,7 +47,7 @@ try {
     `(1) the skeleton step reads ${dataRel.join(', ')} and ${code.length} code file(s), streetClass.js among them (${wantCode}) · no extent or boundary (${noExtent}) · not in the pour Extent re-applies (${notInPour}) · writes ${st.outputs.map(o => o.replace(dir0 + '/', '')).join(', ')}`)
 
   // (2) the plant: record, then the vocabulary changes
-  P.recordStep(paths.map, [LOOK], st.label, st.inputs, SCENE)
+  P.recordStep(paths.map, [LOOK], st.label, st.inputs)
   const judge = () => { const was = P.readBakeReads(paths.map)[`${LOOK}:${st.label}`], who = `step "${st.label}"`
     return [...PC.contentChanged(was.code, code, who), ...PC.contentChanged(was.data, data, who)] }
   const clean0 = judge()

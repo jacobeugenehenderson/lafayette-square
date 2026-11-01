@@ -119,7 +119,7 @@ export function mintInputsOf(scene, ribbonStreets, homeLook) {
 
 // the town's authored slots, for the chain join's REFUSAL only (never to size anything: the Wall). Whether there is authoring is
 // the town's own DECLARATION of its home Look: its town record's `lookId` (src/instances/<town>.js), handed in BY VALUE —
-// ⛔ the pour never imports a town module (claims-the-bake-watches-its-code; the record is data, pourSteps.mjs#townRecordOf, and
+// ⛔ the pour never imports a town module (claims-the-bake-watches-its-code; the record is data, pourSteps.mjs#townRecordFor, and
 // reaches the pour as pipeline.js's --home-look) (Boz's ruling, 2026-10-28). `homeLook`: undefined → no declaration was passed,
 // refuses by name · null → the town declares none, {} is its truth · a Look id → its design.json's blockCustoms, and a missing
 // design.json refuses by name (readLookDesign). A home Look authoring no blockCustoms has none.

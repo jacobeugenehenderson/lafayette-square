@@ -6,13 +6,21 @@
 // town whose pour is HELD (a Look's `pour.held`) it stopped to ask about re-promoting (LS, twice on 2026-10-28). The Extent pours
 // also ran the pipeline with `--skip-elevation` always, where the Bake reads the town's `pour.elevation`. Now every caller runs
 // these steps and records them here, through one function. ▶ checks/claims-the-pour-records-itself-once.mjs
-import { readFileSync, writeFileSync } from 'fs'
+//
+// ⭐⭐ ONE PRINCIPLE (Boz's ruling, 2026-11-01): A STEP'S KEY RECORDS EVERY INPUT THAT SHAPES ITS OUTPUT, WHATEVER CARRIES IT — a
+// file, a value, or a flag on its command line (pour-code.mjs#pourArgvReads). A GUARD IS NOT KEYED: it shapes nothing, it only
+// refuses, so it runs whenever the town is about to be acted on — every Bake run and every Publish (#pourGuardRefusals), never
+// only when a step happens to re-run. Its inputs (the authoring, the home Look) are therefore never in a key.
+import { readFileSync, writeFileSync, existsSync } from 'fs'
 import { join, dirname } from 'path'
 import { importClosure, contentRecord, TOWN_REGISTRY } from './pour-code.mjs'
 import { terrainValueReads } from './terrainReads.mjs'
 import { COAST_FILE, TOLERANCE_FILE } from './coastFile.mjs'
 import { instanceForMap } from '../src/instances/registry.js'
 import { homeLookOf } from './homeLook.mjs'
+import { mintInputsOf } from './mintInputs.mjs'
+import { authoringOf, authoringReKeys, highwayClasses } from './authoredKeys.mjs'
+import { mapCleanDir, ribbonsPathOf } from './scene.js'
 
 const HERE = import.meta.dirname, REPO_ROOT = join(HERE, '..')
 
@@ -27,9 +35,18 @@ export function saveBakeRead(mapJson, lookId, label, rec) {
   catch (e) { console.warn(`[bake] could not record what ${label} read: ${e.message}`) }   // the next bake re-runs it: the safe direction
 }
 
-// ⭐ THE TOWN'S RECORD IS DATA, NOT CODE (2026-10-04): a step's code closure stops at the town registry, and the step reads THIS
-// town's record by value, so an edit to Huron reaches Huron and no other town.
-export const townRecordOf = (scene) => ({ value: `the town record of "${scene}"`, read: () => instanceForMap(scene) ?? null })
+// ⭐ THE TOWN'S RECORD IS DATA, NOT CODE (2026-10-04), AND A STEP KEYS ONLY THE FIELDS IT READS (2026-11-01). A step's code closure
+// stops at the town registry; a step that reads the record declares the fields, as a projection, among its inputs:
+// `townRecordFor(scene, ['setPiece.buildingId'])` ('*' = the whole record). A step that declares none carries no record, so a
+// branding edit re-runs no geometry. ⛔ Until 2026-11-01 every step carried the WHOLE record (stepReads appended it), so any
+// edit re-poured the town from its skeleton; one judged step read one field. ▶ node checks/claims-a-step-keys-every-input-that-shapes-it.mjs
+/** `rec` projected onto `fields`, in the declared order: a path → its value (a missing one → null, the same on every run). */
+export function pickRecord(rec, fields) {
+  if (fields.includes('*')) return rec
+  return Object.fromEntries(fields.map(f => [f, f.split('.').reduce((o, k) => (o == null ? undefined : o[k]), rec) ?? null]))
+}
+export const townRecordFor = (scene, fields) => ({ value: `the town record of "${scene}": ${fields.join(', ')}`, fields,
+  read: () => { const rec = instanceForMap(scene); return rec ? pickRecord(rec, fields) : null } })
 
 // ⭐ ground.json AS ITS READERS READ IT (2026-10-28, the 10-04 scene.json/bakedAt pattern). bake-ground-ao runs LAST and writes
 // its four maps back into ground.json (`lightmap` with the groundKey it was baked against, `colormap`, `poolmap`, `rulemap`);
@@ -62,16 +79,16 @@ export const sceneForReaders = (sceneDir) => ({
   },
 })
 
-/** A step's reads: its CODE is its declared scripts' whole import closure, its DATA every other declared input plus the town's
- *  record. What the Bake judges a step by, and what is recorded after it runs. */
-export function stepReads(inputs, scene) {
+/** A step's reads: its CODE is its declared scripts' whole import closure, its DATA every other declared input (the record's
+ *  fields among them, when it declares any: #townRecordFor). What the Bake judges a step by, and what is recorded after it runs. */
+export function stepReads(inputs) {
   const isCode = (f) => typeof f === 'string' && /\.m?js$/.test(f)
-  return { code: importClosure(inputs.filter(isCode), { stopAt: [TOWN_REGISTRY] }), data: [...inputs.filter(f => !isCode(f)), townRecordOf(scene)] }
+  return { code: importClosure(inputs.filter(isCode), { stopAt: [TOWN_REGISTRY] }), data: inputs.filter(f => !isCode(f)) }
 }
 
 /** The one recorder: what `label` read, saved for every Look of the scene (the pour's outputs are the town's, not one Look's). */
-export function recordStep(mapJson, lookIds, label, inputs, scene) {
-  const { code, data } = stepReads(inputs, scene), rec = { code: contentRecord(code), data: contentRecord(data) }
+export function recordStep(mapJson, lookIds, label, inputs) {
+  const { code, data } = stepReads(inputs), rec = { code: contentRecord(code), data: contentRecord(data) }
   for (const id of lookIds) saveBakeRead(mapJson, id, label, rec)
 }
 
@@ -93,7 +110,7 @@ export function skeletonStep(scene, paths) {
 /** Run the skeleton step outside the Bake (Extent's commit, its rollback) and record it, so the next Bake judges it done. */
 export async function runSkeleton(step, { scene, mapJson, lookIds, run }) {
   await run(step)
-  recordStep(mapJson, lookIds, step.label, step.inputs, scene)
+  recordStep(mapJson, lookIds, step.label, step.inputs)
 }
 
 /**
@@ -127,6 +144,43 @@ export function pourSteps(scene, paths, ribbons, { elevation }) {
 }
 
 /**
+ * ⛔ THE TOWN'S POUR ELEVATION, ONE VALUE OR A REFUSAL (Boz's ruling, 2026-11-01). The pour's outputs are the TOWN's, shared by every
+ * Look of it (#recordStep), so a field that shapes them must agree across those Looks. It never picks one (the Extent pour took
+ * `looks[0]`, the Bake the Look being baked: two answers whenever they differ). `looks`: the scene's Look ids; `designOf(id)` its
+ * design. Zero Looks → false: a scene with no Look yet declares none, so there is nothing to disagree — a neutral default, not a pick.
+ */
+export function townPourElevation(scene, looks, designOf) {
+  if (!looks.length) return false
+  const vals = looks.map(id => [id, designOf(id)?.pour?.elevation === true])
+  if (new Set(vals.map(([, v]) => v)).size > 1) throw new Error(`[pour] ⛔ ${scene}'s Looks disagree on pour.elevation (${vals.map(([id, v]) => `${id}: ${v}`).join(' · ')}). The pour is the town's, shared by every Look, so one value must hold: set it the same on each, then Bake.`)
+  return vals[0][1]
+}
+
+/**
+ * ⛔ THE POUR'S TWO GUARDS, RUN AT THE QUESTION (Boz's ruling, 2026-11-01: every Bake run and every Publish; not the plan, which only
+ * lists). Each reads the town's CURRENT authoring against what is on disk now, and returns refusals by name ([] = none):
+ *   · the join guard (chainJoins.mjs#refuseAuthoredReKey): the mint's input rebuilt from the scene's ribbons with the town's
+ *     home Look (mintInputsOf, as the pour builds it); any throw is a refusal.
+ *   · the skeleton guard (authoredKeys.mjs#authoringReKeys) on the skeleton on disk against itself: an authored key that names no
+ *     chain in the skeleton it was authored against (DANGLING) is reachable by authoring alone (Zob's read).
+ * `requirePoured`: Publish passes true, so a town with no skeleton or ribbons cannot ship unguarded. A Bake of a town not poured yet
+ * passes false: the pour's own guards run when it is made (reskeleton.mjs, the mint).
+ */
+export function pourGuardRefusals(scene, { requirePoured = false } = {}) {
+  const out = [], skPath = join(mapCleanDir(scene), 'skeleton.json'), rbPath = ribbonsPathOf(scene)
+  if (!existsSync(skPath) || !existsSync(rbPath)) {
+    if (requirePoured) out.push(`${scene} has no ${!existsSync(skPath) ? 'skeleton' : 'ribbons'} on disk, so its authoring cannot be guarded`)
+    return out
+  }
+  try { mintInputsOf(scene, JSON.parse(readFileSync(rbPath, 'utf8')).streets, homeLookOf(scene)) } catch (e) { out.push(e.message) }
+  try {
+    const sk = JSON.parse(readFileSync(skPath, 'utf8')), R = authoringReKeys(sk, sk, authoringOf(scene), highwayClasses())
+    if (R.hits.length) out.push(`[skeleton guard] ⛔ ${scene}: ${R.hits.length} authored key(s) do not hold on the skeleton they were authored against: ${R.hits.join(' ‖ ')}`)
+  } catch (e) { out.push(`[skeleton guard] ⛔ ${scene}: ${e.message}`) }
+  return out
+}
+
+/**
  * Run the pour's steps in order and RECORD each one run (the pipeline records itself in map.json). `run(step)` runs one step's
  * command (serve.js passes runShell); `onLine` sees promote-ribbons' output. → { promoteDiff }, its PROMOTE-DIFF line, or null.
  */
@@ -134,7 +188,7 @@ export async function runPour(steps, { scene, mapJson, lookIds, run }) {
   let promoteDiff = null
   for (const st of steps) {
     await run(st, st.label === 'promote-ribbons' ? (l) => { if (l.startsWith('PROMOTE-DIFF ')) promoteDiff = JSON.parse(l.slice(13)) } : null)
-    if (st.judge !== 'mtime') recordStep(mapJson, lookIds, st.label, st.inputs, scene)
+    if (st.judge !== 'mtime') recordStep(mapJson, lookIds, st.label, st.inputs)
   }
   return { promoteDiff }
 }

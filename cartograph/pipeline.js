@@ -13,7 +13,7 @@ import { join } from 'path'
 import { RAW_DIR, CLEAN_DIR, CARTOGRAPH_DIR, SCENE, requireExplicitMap, GEOGRAPHY_READ, wgs84ToLocal } from './config.js'
 import { declaredBuildingsOf } from './scene.js'
 import { loadCropland } from './cdl.mjs'
-import { pourCodeRecord, contentRecord, pourDataReads } from './pour-code.mjs'
+import { pourCodeRecord, contentRecord, pourDataReads, pourArgvReads } from './pour-code.mjs'
 import { writeIfChanged } from './io.js'
 import { snapAll } from './snap.js'
 import { travelOrdered } from '../src/cartograph/streetClass.js'
@@ -278,6 +278,8 @@ async function main() {
     codeRead: pourCodeRecord(),
     // the pour's other data reads ({ path: sha1 | null }) — a change to one re-pours only after the question
     dataRead: contentRecord(pourDataReads(SCENE)),
+    // what this pour was given on its command line that shapes its output (pour-code.mjs#pourArgvReads)
+    argvRead: contentRecord(pourArgvReads({ elevation: !skipElevation })),
     geographyRead: GEOGRAPHY_READ,
   }
 
