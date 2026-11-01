@@ -12,8 +12,8 @@
  */
 import { lazy, Suspense } from 'react'
 import DisplayBoundary from './DisplayBoundary.js'
-import { Refusal } from '../lib/refusal.js'
-import { useSceneJson } from '../lib/useSceneJson.js'
+import { Refusal, Transient } from '../lib/refusal.js'
+import { useSceneJson, sceneReadFailure } from '../lib/useSceneJson.js'
 
 export const PLUGINS = {
   'light-show': { label: 'Light Show', attaches: ['setPiece'], Renderer: lazy(() => import('./lightShow/LightShow.jsx')) },
@@ -25,12 +25,13 @@ export const PLUGINS = {
  * town that publishes none while a display names a season, and a calendar that could not be read are each REFUSED by
  * name, inside the display's boundary, so a display that could never go live cannot ship silently.
  * Each display is lit by its Look's own channel (./showChannel.js), as the scene bake carried it (scene.json#displays):
- * nothing mounts until the scene is read, and a scene that carries no channel for a display is REFUSED by name (re-bake).
+ * nothing mounts until the scene is read; a scene that could not be read (useSceneJson.js#sceneReadFailure) is refused by
+ * name, keeping its kind (a Transient for the network), and so is a scene that carries no channel for a display (re-bake).
  */
 export default function Displays({ town, lookId, attach, extent, dim, calendar, drawerSource }) {
-  const scene = useSceneJson(lookId)
+  const scene = useSceneJson(lookId), failed = scene ? null : sceneReadFailure(lookId)
   const list = (town?.displays || []).filter(d => d.attach === attach)
-  if (!list.length || !scene) return null
+  if (!list.length || (!scene && !failed)) return null
   return list.map(d => {
     const P = PLUGINS[d.kind]
     const where = `"${lookId}" display "${d.id}"`
@@ -41,6 +42,7 @@ export default function Displays({ town, lookId, attach, extent, dim, calendar, 
       : calendar?.error ? `${where}: the town's calendar could not be read: ${calendar.error}`
       : calendar?.absent && d.season ? `${where}: the town publishes no calendar (content/events.json), so its season "${d.season}" can never start`
       : drawerSource !== 'authoring' && drawerSource !== 'published' ? `${where}: the app names no drawer source to <Town> (displaySource: 'authoring' in Stage, 'published' in Preview and the player)`
+      : failed ? failed
       : !scene.displays?.[d.id] ? `${where}: the Look's scene.json carries no channel for it (baked before displays had one): re-bake the Look's scene`
       : null
     return (
@@ -51,4 +53,8 @@ export default function Displays({ town, lookId, attach, extent, dim, calendar, 
   })
 }
 
-function Refuse({ reason }) { throw new Refusal(`[Displays] ⛔ ${reason}`) }
+function Refuse({ reason }) {
+  if (reason instanceof Transient) throw new Transient(`[Displays] ⛔ the Look's scene.json: ${reason.message}`)
+  if (reason instanceof Refusal) throw new Refusal(`[Displays] ⛔ the Look's scene.json: ${reason.message}`)
+  throw new Refusal(`[Displays] ⛔ ${reason}`)
+}

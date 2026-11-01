@@ -23,7 +23,8 @@
  *   7. the renderer lights the bulbs from the channel: the show's colour × the channel's show, the glow from the
  *      channel's kelvin and glow through engine.js#glowColour, whose shimmer is centred on 1 (its time-average is the
  *      channel's level) with the old relative swing; no gain constant left in LightShow.jsx. <Displays> passes each
- *      display its channel from scene.json#displays, and refuses by name a scene that carries none.
+ *      display its channel from scene.json#displays, and refuses by name a scene that carries none, and a scene that
+ *      could not be read (useSceneJson.js#sceneReadFailure: a 404 or bad JSON a Refusal, a 5xx or no answer a Transient).
  * "The old" is the code as it was at PIN (1b833418, the integration tip the channel was built on), read with `git show`:
  * the pinned blob is the source, so it cannot drift (Zob, 2026-11-01). Without that history git fails, loudly.
  */
@@ -39,7 +40,7 @@ const key = (o = {}) => ({ glow: 1, show: 2, kelvin: 3000, showEvery: 60, ...o }
 const refuses = (f, re) => { try { f(); return false } catch (e) { return re.test(e.message) } }
 const near = (a, b, e = 1e-6) => Math.abs(a - b) <= e
 
-async function verdict({ chan, param, view, bake, eng, mount, pin } = {}) {
+async function verdict({ chan, param, view, bake, eng, mount, pin, hook } = {}) {
   const fails = [], F = (c, m) => { if (!c) fails.push(m) }
   const redirect = param ? { 'src/cartograph/animatedParam.js': { transform: param } } : undefined
   const S = await importSource('src/displays/showChannel.js', { ...(chan ? { transform: chan } : {}), ...(redirect ? { redirect } : {}) })
@@ -120,10 +121,27 @@ async function verdict({ chan, param, view, bake, eng, mount, pin } = {}) {
   F(!/_GAIN\b/.test(ls.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '')), 'a gain constant is left in LightShow.jsx')
   const dj = mount ? mount(sourceOf('src/displays/Displays.jsx')) : sourceOf('src/displays/Displays.jsx')
   F(/<P\.Renderer display=\{d\} channel=\{scene\.displays\[d\.id\]\}/.test(dj) && /: !scene\.displays\?\.\[d\.id\] \? `\$\{where\}: the Look's scene\.json carries no channel for it/.test(dj), '<Displays> does not pass each display its baked channel, or does not refuse a scene with none')
+  F(/if \(!list\.length \|\| \(!scene && !failed\)\) return null/.test(dj) && /: failed \? failed\n/.test(dj), '<Displays> goes silent on a scene.json that could not be read (it must refuse it by name)')
+  const H = await importSource('src/lib/useSceneJson.js', { span: { functions: ['fetchSceneOnce', 'sceneReadFailure'] },
+    prefix: "import { Refusal, Transient, httpFailure } from './refusal.js'\nconst _cache = new Map(), _failed = new Map(), _fetchOpts = undefined\nlet slabFetch = null\nexport const setFetch = (f) => { slabFetch = f }\nexport { Refusal, Transient }\n",
+    suffix: '\nexport { fetchSceneOnce, sceneReadFailure }', ...(hook ? { transform: hook } : {}) })
+  const realWarn = console.warn; console.warn = () => {}
+  const reads = [['a 404', { ok: false, status: 404 }, 'Refusal'], ['a 503', { ok: false, status: 503 }, 'Transient'],
+    ['bad JSON', { ok: true, status: 200, json: async () => { throw new SyntaxError('Unexpected token') } }, 'Refusal'], ['no answer', null, 'Transient']]
+  for (const [what, res, kind] of reads) {
+    H.setFetch(async () => { if (!res) throw new TypeError('Failed to fetch'); return res })
+    await H.fetchSceneOnce(`l-${what}`, 0)
+    const e = H.sceneReadFailure(`l-${what}`, 0)
+    F(e instanceof H[kind] && !(kind === 'Refusal' && e instanceof H.Transient), `a scene.json read that ends in ${what} is not recorded as a ${kind} (${e?.constructor?.name ?? 'nothing'})`)
+  }
+  H.setFetch(async () => ({ ok: true, status: 200, json: async () => ({ displays: {} }) }))
+  await H.fetchSceneOnce('l-ok', 0)
+  F(H.sceneReadFailure('l-ok', 0) === null, 'a scene.json that was read is recorded as failed')
+  console.warn = realWarn
   // 6. the scene bake carries the displays
   const bs = bake ? bake(sourceOf('cartograph/bake-scene.js')) : sourceOf('cartograph/bake-scene.js')
   F(/^\s*displays: displayChannelsFor\(displayRecordsOf\(look\), design\.displays, `bake-scene \$\{look\}`\),$/m.test(bs), 'bake-scene does not write displays through displayChannelsFor with the town\'s records')
-  const B = await importSource('cartograph/bake-scene.js', { span: { functions: ['displayRecordsOf'] }, prefix: "import { instanceForMap, registeredMaps } from '../src/instances/registry.js'\n", suffix: '\nexport { displayRecordsOf }', ...(bake ? { transform: bake } : {}) })
+  const B = await importSource('cartograph/bake-scene.js', { span: { functions: ['displayRecordsOf'] }, prefix: "import { instanceForMap } from '../src/instances/registry.js'\nimport { mapForLook } from './tree-bake-inputs.mjs'\n", suffix: '\nexport { displayRecordsOf }', ...(bake ? { transform: bake } : {}) })
   const REG = await importSource('src/instances/registry.js')
   for (const m of REG.registeredMaps()) {
     const inst = REG.instanceForMap(m), want = (inst.displays || []).map(x => x.id).sort().join(','), got = Object.keys(S.displayChannelsFor(B.displayRecordsOf(inst.lookId), undefined, m)).sort().join(',')
@@ -152,13 +170,17 @@ if (process.argv.includes('--mutants')) {
     ['the default glow without the shimmer (1.7 × 0.9)', { chan: (s) => s.replace('glow: 1.36,', 'glow: 1.53,') }],
     ['the default kelvin at 2200', { chan: (s) => s.replace('export const DEFAULT_KELVIN = 3810', 'export const DEFAULT_KELVIN = 2200') }],
     ['the bake writing the Look\'s displays raw', { bake: (s) => s.replace('displays: displayChannelsFor(displayRecordsOf(look), design.displays, `bake-scene ${look}`),', 'displays: design.displays || {},') }],
-    ['the bake reading no town', { bake: (s) => s.replace("return Object.fromEntries((town?.displays || []).map(d => [d.id, d]))", "return {}") }],
+    ['the bake reading no town', { bake: (s) => s.replace("return Object.fromEntries((displays || []).map(d => [d.id, d]))", "return {}") }],
+    ['the bake matching the town by its Look id, not its scene', { bake: (s) => s.replace('const displays = scene ? instanceForMap(scene)?.displays : undefined', "const displays = instanceForMap(look + '-look')?.displays") }],
     ['the old gains read differently', { pin: (s) => s.replace('const SHOW_GAIN = 2.4,', 'const SHOW_GAIN = 3,') }],
     ['a gain put back on the show', { view: (s) => s.replace('v => v * lit.show)', 'v => v * lit.show * SHOW_GAIN)').replace("import { getTodSlotMinutes }", "const SHOW_GAIN = 1.2\nimport { getTodSlotMinutes }") }],
     ['the glow at a fixed level', { view: (s) => s.replace('glowColour(warm, lit.glow, c, j, now)', 'glowColour(warm, 1.7, c, j, now)') }],
     ['the shimmer not centred on 1', { eng: (s) => s.replace('w = level * (1 + GLOW_SHIMMER * Math.sin(', 'w = level * (0.8 + 0.2 * Math.sin(') }],
     ['the shimmer swing changed', { eng: (s) => s.replace('export const GLOW_SHIMMER = 0.25', 'export const GLOW_SHIMMER = 0.2') }],
     ['<Displays> passing no channel', { mount: (s) => s.replace(' channel={scene.displays[d.id]}', '') }],
+    ['<Displays> silent on a failed read', { mount: (s) => s.replace('if (!list.length || (!scene && !failed)) return null', 'if (!list.length || !scene) return null') }],
+    ['a failed read not recorded', { hook: (s) => s.replace('_failed.set(key,', 'void (key,') }],
+    ['a 404 taken for the network', { hook: (s) => s.replace("if (!r.ok) throw httpFailure(r,", "if (!r.ok) throw new Transient(") }],
     ['<Displays> not refusing a scene with none', { mount: (s) => s.replace(": !scene.displays?.[d.id] ? `${where}: the Look's scene.json carries no channel for it", ": false ? `${where}: the Look's scene.json carries no channel for it") }],
   ]
   let bad = 0

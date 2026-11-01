@@ -314,6 +314,7 @@
         "importSource of src/displays/showChannel.js — read, safe",
         "importSource of src/displays/lightShow/engine.js — read, safe",
         "importSource of src/lib/todSlots.js — read, safe",
+        "importSource of src/lib/useSceneJson.js (its span: fetchSceneOnce, sceneReadFailure) — read, safe",
         "importSource of cartograph/bake-scene.js (its span: displayRecordsOf) — read, safe",
         "importSource of src/instances/registry.js — read, safe",
         "runs `git` — not a known-local command"

@@ -3046,7 +3046,8 @@ createServer(async (req, res) => {
         skip('lamps (layer hidden)')
       }
       await runIfDirty('scene',
-        [DESIGN, join(here, 'bake-scene.js')],
+        [DESIGN, join(here, 'bake-scene.js'),
+         townRecordFor(bakeScene, ['displays'])],   // the town's displays, each lit by this Look's channel (bake-scene.js)
         [join(LOOK_DIR, 'scene.json')],
         `node bake-scene.js --look=${id} ${sceneFlag}`,
         { cwd: here, timeout: 30000 })
