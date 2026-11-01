@@ -206,7 +206,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 379. This is `npm test`.
+## safe — 380. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -538,6 +538,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-the-overhead-band-is-two-triangles.mjs` | IS EVERY OVERHEAD BAND A 2-TRIANGLE QUAD, AND DOES ITS FLUTTER SLIDE THE PICTURE? |
 | `checks/claims-the-overhead-core-is-baked.mjs` | DOES THE GROVE BAKE THE OVERHEAD IMPOSTOR'S DEEP CORE, AND IS ITS ABSENCE LOUD? |
 | `checks/claims-the-pad-is-the-size-of-the-corner.mjs` | ⭐⭐⭐ THE ADA PAD IS THE SIZE OF THE CORNER — the gate on the canary Jacob marked 2026-09-07. |
+| `checks/claims-the-plan-frames-a-point.mjs` | "CAN THE PLAN FRAME A SPOT, AND WHEN NOTHING IS PLACED DOES IT HOLD?" (Boz, 2026-10-31: an event's { name, point } venue |
 | `checks/claims-the-plan-frames-all-it-is-given.mjs` | "WHEN THE PLAN IS ASKED TO FRAME ALL OF A SET, IS EVERY PLACED MEMBER INSIDE THE FREE REGION?" |
 | `checks/claims-the-plan-opens-on-its-places.mjs` | "DOES THE PLAN MAP OPEN ON THE TOWN'S PLACES — THEIR DENSEST CLUSTER, INSIDE THE EXTENT, WITH NOTHING HIDDEN?" |
 | `checks/claims-the-plan-shot-ends-at-the-rim.mjs` | "IN PLAN VIEW, IS THE TOWN ONE CLOSED CIRCLE WITH A SOFT EDGE?" |
