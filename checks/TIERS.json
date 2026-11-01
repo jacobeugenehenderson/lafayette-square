@@ -19,7 +19,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports cartograph/pour-code.mjs, which can: runs `git` — not a known-local command, runs `git` — not a known-local command",
+        "imports cartograph/pour-code.mjs, which can: runs `git` — not a known read-only git subcommand, runs `git` — not a known read-only git subcommand",
         "computed import of cartograph/lookDesign.mjs — read, safe"
       ]
     },
@@ -37,7 +37,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports cartograph/pour-code.mjs, which can: runs `git` — not a known-local command, runs `git` — not a known-local command",
+        "imports cartograph/pour-code.mjs, which can: runs `git` — not a known read-only git subcommand, runs `git` — not a known read-only git subcommand",
         "computed import() with no readable target — runs arbitrary modules",
         "re-runs its own file (process.execPath + its own path) — the same tier as itself"
       ]
@@ -208,7 +208,7 @@
         "deletes files",
         "computed import() with no readable target — runs arbitrary modules",
         "computed import() with no readable target — runs arbitrary modules",
-        "imports cartograph/bake-coast.mjs, which can: writeFileSync, mkdirSync, deletes files, imports cartograph/io.js, which can: writeFileSync, imports cartograph/elevationSources.mjs, which can: calls fetch(), imports cartograph/pour-code.mjs, which can: runs `git` — not a known-local command, runs `git` — not a known-local command, imports cartograph/fetch-lidar-flights.mjs, which can: mkdirSync"
+        "imports cartograph/bake-coast.mjs, which can: writeFileSync, mkdirSync, deletes files, imports cartograph/io.js, which can: writeFileSync, imports cartograph/elevationSources.mjs, which can: calls fetch(), imports cartograph/pour-code.mjs, which can: runs `git` — not a known read-only git subcommand, runs `git` — not a known read-only git subcommand, imports cartograph/fetch-lidar-flights.mjs, which can: mkdirSync"
       ]
     },
     {
@@ -697,7 +697,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports checks/_miniflare.mjs, which can: computed import() with no readable target — runs arbitrary modules, runs `npm` — not a known-local command"
+        "imports checks/_miniflare.mjs, which can: computed import() with no readable target — runs arbitrary modules, runs `npm root -g` — not a known-local command"
       ]
     },
     {
@@ -731,7 +731,7 @@
         "deletes files",
         "importSource of scripts/promote-player-to-prod.mjs, which can: calls fetch(), runs `npx` — reaches out",
         "imports checks/_sourceFile.mjs, which can: writeFileSync, deletes files",
-        "imports checks/_miniflare.mjs, which can: computed import() with no readable target — runs arbitrary modules, runs `npm` — not a known-local command"
+        "imports checks/_miniflare.mjs, which can: computed import() with no readable target — runs arbitrary modules, runs `npm root -g` — not a known-local command"
       ]
     },
     {
@@ -804,7 +804,7 @@
         "writeFileSync",
         "mkdirSync",
         "deletes files",
-        "imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command, imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files"
+        "imports arborist/generate-salon.js, which can: writeFile, runs `node` — node runs the code it is handed, imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files"
       ]
     },
     {
@@ -930,7 +930,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports checks/_miniflare.mjs, which can: computed import() with no readable target — runs arbitrary modules, runs `npm` — not a known-local command"
+        "imports checks/_miniflare.mjs, which can: computed import() with no readable target — runs arbitrary modules, runs `npm root -g` — not a known-local command"
       ]
     },
     {
@@ -953,7 +953,7 @@
       "reasonClass": "unreadable",
       "why": [
         "importSource of cartograph/authoredKeys.mjs — read, safe",
-        "importSource of cartograph/pourSteps.mjs, which can: writeFileSync, imports cartograph/pour-code.mjs, which can: runs `git` — not a known-local command, runs `git` — not a known-local command",
+        "importSource of cartograph/pourSteps.mjs, which can: writeFileSync, imports cartograph/pour-code.mjs, which can: runs `git` — not a known read-only git subcommand, runs `git` — not a known read-only git subcommand",
         "computed import of cartograph/pour-code.mjs — read, safe",
         "computed import of cartograph/pourSteps.mjs — read, safe",
         "computed import of src/instances/registry.js — read, safe",
@@ -986,7 +986,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports arborist/bake-trees.js, which can: writeFile, imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files, imports arborist/roster-coverage.js, which can: imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command"
+        "imports arborist/bake-trees.js, which can: writeFile, imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files, imports arborist/roster-coverage.js, which can: imports arborist/generate-salon.js, which can: writeFile, runs `node` — node runs the code it is handed"
       ]
     },
     {
@@ -1054,7 +1054,7 @@
       "reasonClass": "unreadable",
       "why": [
         "computed import of src/instances/registry.js — read, safe",
-        "runs `git` — not a known-local command"
+        "runs `git` — not a known read-only git subcommand"
       ]
     },
     {
@@ -1120,7 +1120,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports checks/_miniflare.mjs, which can: computed import() with no readable target — runs arbitrary modules, runs `npm` — not a known-local command"
+        "imports checks/_miniflare.mjs, which can: computed import() with no readable target — runs arbitrary modules, runs `npm root -g` — not a known-local command"
       ]
     },
     {
@@ -1231,8 +1231,8 @@
       "reasonClass": "outbound",
       "why": [
         "calls fetch()",
-        "importSource of checks/claims-a-worker-deploy-darkens-no-town.mjs (its span: start → // ── mutants: each this file), which can: calls fetch(), runs `npx` — reaches out",
-        "runs `npx` — reaches out"
+        "importSource of checks/claims-a-worker-deploy-darkens-no-town.mjs (its span: start → // ── mutants: each this file), which can: calls fetch(), runs `npx wrangler auth token` — reaches out",
+        "runs `npx wrangler auth token` — reaches out"
       ]
     },
     {
@@ -1308,7 +1308,7 @@
         "writeFileSync",
         "mkdirSync",
         "deletes files",
-        "runs `node` — not a known-local command"
+        "runs `node` — node runs the code it is handed"
       ]
     },
     {
@@ -1855,7 +1855,7 @@
       "reasonClass": "unreadable",
       "why": [
         "deletes files — only under its own temp dir",
-        "imports arborist/bake-trees.js, which can: writeFile, imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files, imports arborist/roster-coverage.js, which can: imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command"
+        "imports arborist/bake-trees.js, which can: writeFile, imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files, imports arborist/roster-coverage.js, which can: imports arborist/generate-salon.js, which can: writeFile, runs `node` — node runs the code it is handed"
       ]
     },
     {
@@ -2347,7 +2347,7 @@
       "why": [
         "writeFileSync",
         "deletes files",
-        "imports cartograph/pour-code.mjs, which can: runs `git` — not a known-local command, runs `git` — not a known-local command",
+        "imports cartograph/pour-code.mjs, which can: runs `git` — not a known read-only git subcommand, runs `git` — not a known read-only git subcommand",
         "imports cartograph/pourSteps.mjs, which can: writeFileSync"
       ]
     },
@@ -2837,7 +2837,7 @@
         "writeFileSync",
         "deletes files",
         "computed import() with no readable target — runs arbitrary modules",
-        "imports cartograph/bake-coast.mjs, which can: writeFileSync, mkdirSync, deletes files, imports cartograph/io.js, which can: writeFileSync, imports cartograph/elevationSources.mjs, which can: calls fetch(), imports cartograph/pour-code.mjs, which can: runs `git` — not a known-local command, runs `git` — not a known-local command, imports cartograph/fetch-lidar-flights.mjs, which can: mkdirSync"
+        "imports cartograph/bake-coast.mjs, which can: writeFileSync, mkdirSync, deletes files, imports cartograph/io.js, which can: writeFileSync, imports cartograph/elevationSources.mjs, which can: calls fetch(), imports cartograph/pour-code.mjs, which can: runs `git` — not a known read-only git subcommand, runs `git` — not a known read-only git subcommand, imports cartograph/fetch-lidar-flights.mjs, which can: mkdirSync"
       ]
     },
     {
@@ -3060,7 +3060,7 @@
         "deletes files",
         "computed import of a temp-dir module, and not every write is shown to stay in its temp dir",
         "child_process with a non-literal command — cannot be read",
-        "imports cartograph/pourSteps.mjs, which can: writeFileSync, imports cartograph/pour-code.mjs, which can: runs `git` — not a known-local command, runs `git` — not a known-local command"
+        "imports cartograph/pourSteps.mjs, which can: writeFileSync, imports cartograph/pour-code.mjs, which can: runs `git` — not a known read-only git subcommand, runs `git` — not a known read-only git subcommand"
       ]
     },
     {
@@ -3074,8 +3074,8 @@
         "computed import of cartograph/coastFile.mjs — read, safe",
         "computed import of cartograph/geography.mjs — read, safe",
         "computed import of src/cartograph/streetProfiles.js — read, safe",
-        "runs `git` — not a known-local command",
-        "runs `git` — not a known-local command"
+        "runs `git` — not a known read-only git subcommand",
+        "runs `git` — not a known read-only git subcommand"
       ]
     },
     {
@@ -3166,7 +3166,7 @@
       "why": [
         "writeFileSync",
         "deletes files",
-        "imports cartograph/pour-code.mjs, which can: runs `git` — not a known-local command, runs `git` — not a known-local command",
+        "imports cartograph/pour-code.mjs, which can: runs `git` — not a known read-only git subcommand, runs `git` — not a known read-only git subcommand",
         "imports cartograph/elevationSources.mjs, which can: calls fetch()",
         "imports cartograph/bake-coast.mjs, which can: writeFileSync, mkdirSync, deletes files, imports cartograph/io.js, which can: writeFileSync, imports cartograph/fetch-lidar-flights.mjs, which can: mkdirSync",
         "imports package(s) clipper-lib — not read from source"
@@ -3179,7 +3179,7 @@
       "why": [
         "writeFileSync",
         "deletes files",
-        "imports cartograph/bake-coast.mjs, which can: writeFileSync, mkdirSync, deletes files, imports cartograph/io.js, which can: writeFileSync, imports cartograph/elevationSources.mjs, which can: calls fetch(), imports cartograph/pour-code.mjs, which can: runs `git` — not a known-local command, runs `git` — not a known-local command, imports cartograph/fetch-lidar-flights.mjs, which can: mkdirSync",
+        "imports cartograph/bake-coast.mjs, which can: writeFileSync, mkdirSync, deletes files, imports cartograph/io.js, which can: writeFileSync, imports cartograph/elevationSources.mjs, which can: calls fetch(), imports cartograph/pour-code.mjs, which can: runs `git` — not a known read-only git subcommand, runs `git` — not a known read-only git subcommand, imports cartograph/fetch-lidar-flights.mjs, which can: mkdirSync",
         "imports cartograph/pourSteps.mjs, which can: writeFileSync"
       ]
     },
@@ -3485,7 +3485,7 @@
       "why": [
         "importSource of scripts/kit-bundle-set.mjs — read, safe",
         "computed import of src/instances/registry.js — read, safe",
-        "runs `git` — not a known-local command"
+        "runs `git` — not a known read-only git subcommand"
       ]
     },
     {
@@ -3714,7 +3714,7 @@
         "mkdirSync",
         "deletes files",
         "computed import of a temp-dir module, and not every write is shown to stay in its temp dir",
-        "imports cartograph/pour-code.mjs, which can: runs `git` — not a known-local command, runs `git` — not a known-local command",
+        "imports cartograph/pour-code.mjs, which can: runs `git` — not a known read-only git subcommand, runs `git` — not a known read-only git subcommand",
         "imports cartograph/pourSteps.mjs, which can: writeFileSync"
       ]
     },
@@ -3730,7 +3730,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "runs `git` — not a known-local command"
+        "runs `git` — not a known read-only git subcommand"
       ]
     },
     {
@@ -4064,7 +4064,7 @@
       "reasonClass": "unreadable",
       "why": [
         "computed import of src/instances/registry.js — read, safe",
-        "imports cartograph/pour-code.mjs, which can: runs `git` — not a known-local command, runs `git` — not a known-local command"
+        "imports cartograph/pour-code.mjs, which can: runs `git` — not a known read-only git subcommand, runs `git` — not a known read-only git subcommand"
       ]
     },
     {
@@ -4141,7 +4141,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files, imports arborist/roster-coverage.js, which can: imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command",
+        "imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files, imports arborist/roster-coverage.js, which can: imports arborist/generate-salon.js, which can: writeFile, runs `node` — node runs the code it is handed",
         "imports package(s) @gltf-transform/core, @gltf-transform/extensions, meshoptimizer — not read from source"
       ]
     },
@@ -4222,7 +4222,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command, imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files"
+        "imports arborist/generate-salon.js, which can: writeFile, runs `node` — node runs the code it is handed, imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files"
       ]
     },
     {
@@ -4342,7 +4342,7 @@
       "why": [
         "deletes files",
         "copies/renames files",
-        "runs `node` — not a known-local command"
+        "runs `node` — node runs the code it is handed"
       ]
     },
     {
@@ -4357,7 +4357,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files, imports arborist/roster-coverage.js, which can: imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command"
+        "imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files, imports arborist/roster-coverage.js, which can: imports arborist/generate-salon.js, which can: writeFile, runs `node` — node runs the code it is handed"
       ]
     },
     {
@@ -4417,7 +4417,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports arborist/roster-coverage.js, which can: imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command, imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files"
+        "imports arborist/roster-coverage.js, which can: imports arborist/generate-salon.js, which can: writeFile, runs `node` — node runs the code it is handed, imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files"
       ]
     },
     {
@@ -4479,7 +4479,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files, imports arborist/roster-coverage.js, which can: imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command"
+        "imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files, imports arborist/roster-coverage.js, which can: imports arborist/generate-salon.js, which can: writeFile, runs `node` — node runs the code it is handed"
       ]
     },
     {
@@ -4487,7 +4487,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports arborist/roster-coverage.js, which can: imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command, imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files"
+        "imports arborist/roster-coverage.js, which can: imports arborist/generate-salon.js, which can: writeFile, runs `node` — node runs the code it is handed, imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files"
       ]
     },
     {
