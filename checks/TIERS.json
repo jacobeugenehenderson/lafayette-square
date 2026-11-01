@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 546,
+  "total": 548,
   "counts": {
-    "safe": 377,
+    "safe": 379,
     "local-effect": 31,
     "live": 138
   },
@@ -786,6 +786,13 @@
         "mkdirSync",
         "deletes files",
         "imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command, imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files"
+      ]
+    },
+    {
+      "file": "checks/claims-a-scene-is-its-own-looks.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
       ]
     },
     {
@@ -2840,6 +2847,13 @@
     },
     {
       "file": "checks/claims-spur-leg-offset.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-stage-boots-the-address-town.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"

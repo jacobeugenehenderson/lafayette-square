@@ -204,7 +204,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 377. This is `npm test`.
+## safe — 379. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -264,6 +264,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-a-recommit-changes-nothing.mjs` | DOES THE EXTENT COMMIT CARRY EVERY KEY IT DOES NOT OWN, AND DOES A RE-COMMIT OF |
 | `checks/claims-a-refusal-is-never-swallowed.mjs` | "IS A REFUSAL EVER RETRIED, OR DRAWN AS NOTHING IN SILENCE?" (BRIEF-a-refusal-is-never-swallowed, Boz, 2026-10-31.) |
 | `checks/claims-a-roundabout-is-one-ring.mjs` | CLAIM — EVERY ROUNDABOUT OSM DECLARES ARRIVES AS ONE CLOSED CHAIN (cartograph/_archive/BRIEF-roundabout-is-one-ring-DELIVERED-2026-10-03.md). |
+| `checks/claims-a-scene-is-its-own-looks.mjs` | DOES THE SCENE HOOK HAND OUT ONLY THE ASKED LOOK'S SCENE, NEVER THE PREVIOUS ONE'S? |
 | `checks/claims-a-scene-switch-drops-the-old-town.mjs` | CLAIM — A SCENE SWITCH DROPS THE OLD TOWN, AND ITS DESIGN SAVES TO THE NEW TOWN'S OWN LOOK. |
 | `checks/claims-a-shore-is-not-traced-twice.mjs` | ⭐⭐ TWO INVARIANTS, one cure and one guard: |
 | `checks/claims-a-slab-ships-under-content-names.mjs` | every slab upload names its files by their content, and every read of what an |
@@ -477,6 +478,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-sky-follows-its-town.mjs` | IS THE SKY PAINTED ON THIS TOWN'S SCHEDULE? |
 | `checks/claims-species-map-routes-are-composed.mjs` | Every COMMON a scene routes must resolve to a COMPOSED species. |
 | `checks/claims-spur-leg-offset.mjs` | READ-ONLY. ⭐ SCOPE, and it is the whole point of this file: |
+| `checks/claims-stage-boots-the-address-town.mjs` | DOES STAGE'S FIRST RENDER DRAW THE TOWN ITS ADDRESS NAMES, NEVER A REMEMBERED ONE? |
 | `checks/claims-stage-controls-are-live.mjs` | CLAIM — EVERY STAGE CONTROL MOVES SOMETHING ON A TOWN NOBODY HAS LOOKED AT. |
 | `checks/claims-stamp-follows-the-edge.mjs` | ⭐⭐⭐ DOES A ② CONTOUR EDGE CARRY THE OWNER OF THE ① EDGE IT LIES ALONG? |
 | `checks/claims-stat-scope.mjs` | A DISPLAYED FIGURE MUST DECLARE, AND MATCH, ITS SCOPE. |
