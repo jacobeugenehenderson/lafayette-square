@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useTownShot } from '../components/townContext.js'
 import { shotKeyForViewMode, resolveShotScene } from './shotScene.js'
 import { slabFetch } from './slabUrl.js'
+import { sceneFor } from './sceneFor.js'
 
 /**
  * useSceneJson — the production-side slab data adapter.
@@ -44,19 +45,23 @@ function fetchSceneOnce(lookId, reread) {
  * @param {string} lookId — which slab to read: the Look the caller is drawing (never a default town's).
  * @param {string|number} [reread] — change it to read the file again
  *   (Stage passes its last bake time).
- * @returns {object|null} the parsed scene.json, or null until the
- *   first fetch resolves (and on fetch failure).
+ * @returns {object|null} the parsed scene.json OF THIS LOOK, or null until it is read (and on fetch failure) — never
+ *   another Look's while this one loads. A re-read of the SAME Look (`reread`) keeps its previous scene meanwhile.
  */
 export function useSceneJson(lookId, reread) {
   const bust = reread ?? 0
-  const [scene, setScene] = useState(null)
+  // ⛔ The state names the Look it holds, and the hook returns it ONLY for that Look (sceneFor). It held a bare scene,
+  // so on a Look switch it returned the PREVIOUS Look's scene until the new read resolved: Stage drew Provincetown's
+  // mark under Hi-Pointe–DeMun's name, and every consumer drew a frame of the old town (Sigil, 2026-10-31).
+  const [held, setHeld] = useState(null)
   useEffect(() => {
     let cancelled = false
     fetchSceneOnce(lookId, bust).then(s => {
-      if (!cancelled) setScene(s)
+      if (!cancelled) setHeld({ lookId, scene: s })
     })
     return () => { cancelled = true }
   }, [lookId, bust])
+  const scene = sceneFor(held, lookId)
   // Channel-variant cascade (HANDOFF-channel-variant-cascade.md): resolve the
   // per-shot whole-look fork ONCE, here, off the shot the town is drawn in (<Town shot>, from Town's
   // context — the same in every app; outside a <Town>, the base look). resolveShotScene

@@ -12,6 +12,17 @@ import { setSceneMeasureSource, chainMeasure, noMeasureFor } from '../measureMod
 import { mergeSceneStreet } from '../sceneStreets.js'
 import { resolveCurbWidth } from '../streetProfiles.js'
 import { readAddress, resolveTown, lookForScene, isValidMapId, ADDRESS_STORAGE } from '../../lib/authoringAddress.js'
+import looksIndex from '../../../public/looks/index.json' with { type: 'json' }
+
+// ⭐ THE PAGE'S OWN TOWN AT BOOT: the address resolved ONCE by the one resolver (authoringAddress.js#resolveTown) over the
+// SAME bundled index src/instance.js resolved the page's INSTANCE from, so the page and the store cannot disagree at
+// boot. The store's initial `scene` and `activeLookId` both read it; _loadLooks re-resolves over the FETCHED index and
+// stays the authority. ⛔ It replaced two rules of the store's own (`url.look || stored.look`, and a scene rule that
+// ignored ?look=): a fresh /stage/hipointedemun/… with Provincetown remembered drew Provincetown's whole town for ~6 s
+// (Sigil, 2026-10-31). ⚠️ The bundled index is not watched (vite.config.js#looksIndexFresh invalidates it for the NEXT
+// load only), so a Look created after this bundle boots as null or as its scene's older Look and corrects at
+// hydration: the same town, never another's.
+export const BOOT_TOWN = resolveTown(looksIndex.looks || [], readAddress())
 import { feCustomKey } from '../../lib/feCustomKey.js'
 import useTimeOfDay from '../../hooks/useTimeOfDay'
 
@@ -1776,8 +1787,8 @@ const useCartographStore = create((set, get) => ({
   // Geometry (centerlines, measures, caps, couplers) stays in overlay.json
   // and is shared across every Look — Looks vary styling, not shape.
   looks: [],
-  // Provisional until _loadLooks resolves the address against the index: the URL's Look, else the remembered one.
-  activeLookId: (({ url, stored }) => url.look || stored.look)(readAddress()),
+  // The page's own town (BOOT_TOWN, above); _loadLooks confirms it over the fetched index.
+  activeLookId: BOOT_TOWN.lookId,
   // The served 0-state Look id (index.json `default`). null until _loadLooks.
   defaultLookId: null,
   // Set when a ?look= link was refused (it names no Look, or disagrees with ?scene=): no town is resolved, and
@@ -2087,9 +2098,9 @@ const useCartographStore = create((set, get) => ({
   // holds (any installation id). Mirrored from the active Look's
   // `scene` field so selecting a Look determines the scene; setActiveLook is
   // the canonical way to switch.
-  // Provisional until _loadLooks resolves the address: ?scene= wins, then the remembered town, else NO town — the
-  // Look picker offers them all (never a default town).
-  scene: (({ url, stored }) => isValidMapId(url.scene) ? url.scene : isValidMapId(stored.scene) ? stored.scene : null)(readAddress()),
+  // The page's own town (BOOT_TOWN, the one resolver), else NO town — the Look picker offers them all (never a default
+  // town). ⛔ It replaced its own copy of the address rule, which ignored ?look= and booted the remembered scene.
+  scene: BOOT_TOWN.scene,
   // Active installation's data, loaded BY ID (null until fetched). The bundled
   // fast-path scene (the default) leaves sceneRibbons null and reads its
   // static import; every other installation fetches these per-scene.
