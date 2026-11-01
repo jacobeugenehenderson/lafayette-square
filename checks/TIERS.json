@@ -2,9 +2,9 @@
   "generated_by": "node checks/tier.mjs --json",
   "total": 556,
   "counts": {
-    "safe": 382,
+    "safe": 383,
     "local-effect": 32,
-    "live": 142
+    "live": 141
   },
   "checks": [
     {
@@ -952,12 +952,12 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
+        "importSource of cartograph/authoredKeys.mjs — read, safe",
         "importSource of cartograph/pourSteps.mjs, which can: writeFileSync, imports cartograph/pour-code.mjs, which can: runs `git` — not a known-local command, runs `git` — not a known-local command",
         "computed import of cartograph/pour-code.mjs — read, safe",
         "computed import of cartograph/pourSteps.mjs — read, safe",
         "computed import of src/instances/registry.js — read, safe",
         "computed import of cartograph/authoredKeys.mjs — read, safe",
-        "computed import of cartograph/scene.js — read, safe",
         "computed import() with no readable target — runs arbitrary modules"
       ]
     },
@@ -2297,13 +2297,12 @@
     },
     {
       "file": "checks/claims-no-host-carries-a-codedesk-copy.mjs",
-      "tier": "live",
-      "reasonClass": "unreadable",
+      "tier": "local-effect",
       "why": [
         "writeFileSync",
         "mkdirSync",
         "deletes files",
-        "runs `git` — not a known-local command"
+        "runs `git grep -n -I -e odeDesk -e c` — local, read-only"
       ]
     },
     {
@@ -2771,10 +2770,11 @@
     },
     {
       "file": "checks/claims-repour-changes-nothing.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
         "runs `git ls-files \"cartograph/data/` — local, read-only",
-        "runs `git show HEAD:${P}` — local, read-only"
+        "runs `git show HEAD:${P}` — git history at a moving or unpinned rev, or with an option"
       ]
     },
     {
@@ -3537,7 +3537,7 @@
         "computed import of src/hooks/useSkyState.js — read, safe",
         "computed import of src/hooks/useAtmosphere.js — read, safe",
         "computed import of src/lib/almanac-eval.js — read, safe",
-        "runs `grep -rlE \"setState\\\\(\\\\{[^}]*` — local, read-only"
+        "runs `grep -rlE \"setState\\\\(\\\\{[^}]*` — every stage local, read-only"
       ]
     },
     {
@@ -4204,10 +4204,9 @@
     },
     {
       "file": "checks/claims-writers-name-the-scene.mjs",
-      "tier": "live",
-      "reasonClass": "unreadable",
+      "tier": "safe",
       "why": [
-        "runs `git` — not a known-local command"
+        "runs `git ls-files *.js *.mjs` — local, read-only"
       ]
     },
     {
@@ -4347,10 +4346,9 @@
     },
     {
       "file": "scratch/claims-every-declared-page-ships.mjs",
-      "tier": "live",
-      "reasonClass": "unreadable",
+      "tier": "safe",
       "why": [
-        "runs `git` — not a known-local command"
+        "runs `git ls-files -- public/baked` — local, read-only"
       ]
     },
     {
@@ -4383,7 +4381,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "runs `grep -rl junctionMap src carto` — local, read-only",
+        "runs `grep -rl junctionMap src carto` — every stage local, read-only",
         "child_process with a non-literal command — cannot be read"
       ]
     },
@@ -4503,10 +4501,11 @@
     },
     {
       "file": "scratch/claims-wind-tier-extraction.mjs",
-      "tier": "local-effect",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
         "deletes files",
-        "runs `git show ${BASE}:src/component` — local, read-only",
+        "runs `git show ${BASE}:src/components/Instance` — git history at a moving or unpinned rev, or with an option",
         "imports package(s) three, esbuild — not read from source"
       ]
     }

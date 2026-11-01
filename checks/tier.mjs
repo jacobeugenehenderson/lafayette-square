@@ -109,6 +109,86 @@ const NET_CMD = /\b(curl|wget|nc|ssh|scp|supabase|psql|npx|npm\s+(i|install|publ
 /** Local, read-only commands. Anything outside this list is not shown to be local. */
 const LOCAL_CMD = /^\s*(git\s+(ls-files|show|rev-parse|log|diff|cat-file|status|grep|merge-base)|grep|rg|ls|cat|find|wc|sed|awk|sort|uniq|head|tail|node\s+-[ev]|true)\b/
 
+/**
+ * ⭐ A GIT READ OF HISTORY IS SAFE ONLY AT A PINNED BLOB (Boz's ruling, 2026-11-01). `git show` / `git cat-file` of
+ * `<rev>:<path>` reads the object store and writes nothing, but only a LITERAL 40-hex SHA names the same bytes on every
+ * run: a ref, a branch, HEAD~n or a short SHA moves (or can turn ambiguous), so what runs is not what was reviewed.
+ * Read in both forms: a command string, and execFileSync / spawnSync('git', [ … ]) as its array of literals (a template's
+ * `${NAME}` before the colon resolves only to a `const NAME = '<40 hex>'` in the same file; after it the path may be
+ * computed). ⛔ Any option, any other shape, and any string with a shell metacharacter (a pipe or a redirect into a
+ * writer) is not shown to be read-only: live. ▶ `gitSelfTest` below, run before every classification.
+ */
+const PINNED_REV = /^[0-9a-f]{40}:\S/
+// The command as the shell reads it: quotes kept whole, split into its stages at | || && ; outside them. A redirect (other
+// than to /dev/null or another descriptor) or a substitution ($( … ) or `…`, which run inside double quotes too) is
+// returned as `opaque`: it writes, or runs a command this cannot see. A `|` inside a quoted grep pattern is text.
+function shellStages(c) {
+  const stages = []; let cur = '', q = null, opaque = false
+  for (let i = 0; i < c.length; i++) {
+    const ch = c[i]
+    if (q === "'") { cur += ch; if (ch === "'") q = null; continue }
+    if (ch === '\\') { cur += ch + (c[i + 1] ?? ''); i++; continue }
+    if (ch === '`' || (ch === '$' && c[i + 1] === '(')) opaque = true
+    if (q === '"') { cur += ch; if (ch === '"') q = null; continue }
+    if (ch === "'" || ch === '"') { q = ch; cur += ch; continue }
+    if (ch === '>' || ch === '<') {
+      const m = /^(?:>>?|<)\s*(\/dev\/null\b|&\d)/.exec(c.slice(i))
+      if (!m) opaque = true; else { i += m[0].length - 1; continue }
+      continue
+    }
+    if (ch === '|' || ch === ';' || ch === '&') {
+      if (/^\d$/.test(cur.slice(-1)) && ch === '&') { cur += ch; continue }
+      stages.push(cur); cur = ''; if ((ch === '|' || ch === '&') && c[i + 1] === ch) i++
+      continue
+    }
+    cur += ch
+  }
+  stages.push(cur)
+  return { stages: stages.map(s => s.replace(/\s+\d$/, '').trim()).filter(Boolean), opaque: opaque || q !== null }
+}
+function stringCmdRead(c) {
+  const head = c.slice(0, 40), { stages, opaque } = shellStages(c)
+  if (opaque) return { local: false, why: `runs \`${head}\` — a redirect or a substitution: its effect cannot be read` }
+  if (stages.length > 1) {
+    const bad = stages.map(oneCmdRead).find(r => !r.local)
+    return bad ? { local: false, why: `${bad.why} (a stage of a pipe or chain)` } : { local: true, why: `runs \`${c.slice(0, 30)}\` — every stage local, read-only` }
+  }
+  return oneCmdRead(stages[0] ?? c)
+}
+function oneCmdRead(c) {
+  const head = c.slice(0, 40)
+  if (/^\s*git\s+(show|cat-file)\b/.test(c)) {
+    const m = /^\s*git\s+(?:show|cat-file\s+(?:-p|blob))\s+(\S+)\s*$/.exec(c)
+    return m && PINNED_REV.test(m[1]) ? { local: true, why: `runs \`${head}\` — a pinned blob, read-only` }
+      : { local: false, why: `runs \`${head}\` — git history at a moving or unpinned rev, or with an option` }
+  }
+  return LOCAL_CMD.test(c) ? { local: true, why: `runs \`${c.slice(0, 30)}\` — local, read-only` } : { local: false, why: `runs \`${head}\` — not a known-local command` }
+}
+/** execFileSync / spawnSync('git', [ … ]): each array read element by element → the command it runs, or null (unreadable). */
+const GIT_ARGV = /\b(?:execFileSync|spawnSync|execFile|spawn)\s*\(\s*(['"])git\1\s*,\s*\[([^\]]*)\]/g
+const NOT_LITERAL = '\u0000'
+function gitArgvCommands(code) {
+  const constSha = (name) => {
+    const m = new RegExp(`\\bconst\\s+${name.replace(/\$/g, '\\$')}\\s*=\\s*['"]([0-9a-f]{40})['"]`).exec(code)
+    return m ? m[1] : NOT_LITERAL
+  }
+  const out = []
+  for (const m of code.matchAll(GIT_ARGV)) {
+    const words = m[2].split(',').map(e => e.trim()).filter(Boolean).map(e => {
+      const q = /^(['"])([^'"`]*)\1$/.exec(e)
+      if (q) return q[2]
+      const t = /^`([^`]*)`$/.exec(e)
+      if (!t) return NOT_LITERAL                                           // a name, a spread, a call
+      const at = t[1].indexOf(':')
+      if (at < 0) return NOT_LITERAL
+      const rev = t[1].slice(0, at).replace(/\$\{\s*([A-Za-z_$][\w$]*)\s*\}/g, (_, n) => constSha(n))
+      return rev.includes('${') ? NOT_LITERAL : `${rev}:${t[1].slice(at + 1).replace(/\$\{[^}]*\}/g, 'x') || 'x'}`
+    })
+    out.push(words.some(w => w.includes(NOT_LITERAL)) ? null : `git ${words.join(' ')}`)
+  }
+  return out
+}
+
 const SIGNALS = {
   // Outbound calls. ⭐ A CALL-SHAPED signal (`'call'`) is read on the BLANKED code (`lex`): `fetch(` inside a string or a
   // regex literal is text, not a call (claims-a-slab-ships-under-content-names searches serve.js for `fetch(` and was tiered
@@ -164,6 +244,8 @@ function execCommands(code) {
   if (!IMPORTS_CHILD_PROCESS.test(code)) return { cmds: [], selfRuns: 0, opaque: false }
   const cmds = []
   for (const m of code.matchAll(/\b(execSync|execFileSync|exec|execFile|spawnSync|spawn)\s*\(\s*(['"`])([\s\S]*?)\2/g)) cmds.push(m[3])
+  // an argv-form git call is read as its array: the bare 'git' captured above is replaced by the command, when readable
+  for (const g of gitArgvCommands(code)) if (g) { const i = cmds.indexOf('git'); if (i >= 0) cmds[i] = g }
   const selfRuns = [...code.matchAll(SELF_RERUN)].length
   // a child_process call whose command is not a literal cannot be read at all — unless it re-runs this same file
   const calls = [...code.matchAll(/\b(execSync|execFileSync|exec|execFile|spawnSync|spawn)\s*\(/g)].length
@@ -887,8 +969,7 @@ export function classify(file, seen = new Set(), depth = 0, spanText = null) {
   const { cmds, selfRuns, opaque } = execCommands(code)
   for (const c of cmds) {
     if (NET_CMD.test(c)) { bump('live'); why.push(`runs \`${c.slice(0, 40)}\` — reaches out`) }
-    else if (!LOCAL_CMD.test(c)) { bump('live'); why.push(`runs \`${c.slice(0, 40)}\` — not a known-local command`) }
-    else why.push(`runs \`${c.slice(0, 30)}\` — local, read-only`)
+    else { const r = stringCmdRead(c); if (!r.local) bump('live'); why.push(r.why) }
   }
   if (selfRuns) why.push('re-runs its own file (process.execPath + its own path) — the same tier as itself')
   if (opaque) { bump('live'); why.push('child_process with a non-literal command — cannot be read') }
@@ -1027,8 +1108,41 @@ export function bucketSelfTest() {
   if (!threw) throw new Error('[tier] bucketSelfTest: an empty town roster expanded to no runs, silently — it must throw')
 }
 
+/** Boz's ruling on planted sources: only a literal 40-hex blob reads as safe; every mutation tiers live. */
+export function gitSelfTest() {
+  const SHA = '0123456789abcdef0123456789abcdef01234567', cp = "import { execFileSync, execSync } from 'node:child_process'\n"
+  const at = (body) => classifyVirtual({ 'checks/claims-planted.mjs': cp + body }, 'checks/claims-planted.mjs').tier
+  const cases = [
+    ['argv: a literal 40-hex blob', at(`execFileSync('git', ['show', '${SHA}:src/a.js'])`), 'safe'],
+    ['argv: a const 40-hex pin and a computed path', at(`const PIN = '${SHA}'\nconst r = (p) => execFileSync('git', ['show', \`\${PIN}:\${p}\`])`), 'safe'],
+    ['string: a literal 40-hex blob', at(`execSync('git show ${SHA}:src/a.js')`), 'safe'],
+    ['argv: a moving ref (HEAD)', at("execFileSync('git', ['show', 'HEAD:src/a.js'])"), 'live'],
+    ['argv: HEAD~1', at("execFileSync('git', ['show', 'HEAD~1:src/a.js'])"), 'live'],
+    ['argv: a branch', at("execFileSync('git', ['show', 'integration/2026-10-20:src/a.js'])"), 'live'],
+    ['argv: a short SHA', at("execFileSync('git', ['show', '1b833418:src/a.js'])"), 'live'],
+    ['argv: a const short-SHA pin', at("const PIN = '1b833418'\nexecFileSync('git', ['show', `${PIN}:src/a.js`])"), 'live'],
+    ['argv: a pin that is not a const', at(`let PIN = '${SHA}'\nexecFileSync('git', ['show', \`\${PIN}:src/a.js\`])`), 'live'],
+    ['argv: a pinned blob with an option (--output)', at(`execFileSync('git', ['show', '--output=out.txt', '${SHA}:src/a.js'])`), 'live'],
+    ['argv: a non-literal element', at("execFileSync('git', ['show', rev])"), 'live'],
+    ['argv: the args passed whole', at("execFileSync('git', args)"), 'live'],
+    ['string: a moving ref', at("execSync('git show HEAD:src/a.js')"), 'live'],
+    ['string: a pinned blob piped into a writer', at(`execSync('git show ${SHA}:src/a.js | tee out.txt')`), 'live'],
+    ['string: a pinned blob redirected to a file', at(`execSync('git show ${SHA}:src/a.js > out.txt')`), 'live'],
+    ['string: a known-local command piped into a writer', at("execSync('git ls-files | tee out.txt')"), 'live'],
+    ['string: a known-local command redirected to a file', at("execSync('git ls-files > out.txt')"), 'live'],
+    ['string: a chain into a command that writes', at("execSync('git ls-files && rm -rf x')"), 'live'],
+    ['string: a substitution inside double quotes', at("execSync('grep \"$(rm -rf x)\" src')"), 'live'],
+    ['string: a | inside a quoted pattern, then || true', at("execSync('grep -rlE \"a|b\" src || true')"), 'safe'],
+    ['string: a pipe between two local commands', at("execSync('git ls-files | wc -l')"), 'safe'],
+    ['string: stderr to /dev/null', at("execSync('git ls-files 2>/dev/null')"), 'safe'],
+  ]
+  for (const [name, got, want] of cases) if (got !== want) throw new Error(`[tier] ⛔ self-test: git — ${name} read as ${got}, want ${want}`)
+  return cases.length
+}
+
 export function classifyAll() {
   execSelfTest()
+  gitSelfTest()
   importSelfTest()
   bucketSelfTest()
   const files = []
