@@ -308,15 +308,24 @@ function guardPlacement(serveSrc, psSrc) {
   if (!/authoringReKeys\(sk, sk, authoringOf\(scene\)/.test(gb) || !/mintInputsOf\(scene,/.test(gb)) fails.push('pourGuardRefusals does not run both guards (the join guard through mintInputsOf, the skeleton guard through authoringReKeys on the skeleton against itself)')
   return fails
 }
-async function danglingRefuses() {
-  const AK = await import(pathToFileURL(join(CARTO, 'authoredKeys.mjs')).href), SC = await import(pathToFileURL(join(CARTO, 'scene.js')).href)
-  const town = REG.registeredMaps().find(m => existsSync(join(SC.mapCleanDir(m), 'skeleton.json')))
-  if (!town) return { unknown: 'no registered town has a skeleton on disk: the dangling-key guard cannot be exercised' }
-  const sk = JSON.parse(readFileSync(join(SC.mapCleanDir(town), 'skeleton.json'), 'utf8')), A = AK.authoringOf(town)
-  const base = AK.authoringReKeys(sk, sk, A, AK.highwayClasses()).hits.length
-  A.ids.set('a-chain-that-does-not-exist', ['the check\'s planted key'])
-  const planted = AK.authoringReKeys(sk, sk, A, AK.highwayClasses()).hits.filter(h => /DANGLING a-chain-that-does-not-exist/.test(h)).length
-  return { town, base, planted }
+// The dangling-key guard on a PLANTED skeleton (Zob, 2026-11-01): the check builds its own, so it runs in any checkout, data or
+// none (a throwaway worktree has no clean/skeleton.json, and a guard this check cannot exercise is never a pass). Two chains
+// crossing; one authored key on a chain that exists (it must come back SAME and refuse nothing: a guard that refuses every key
+// is no guard) and one on a chain that does not (it must refuse as DANGLING). authoringReKeys is pure, so the fixture is the
+// whole of what it reads; that pourGuardRefusals feeds it the scene's real skeleton and authoring is read by guardPlacement.
+const FIXTURE_SKELETON = { streets: [
+  { id: 'planted-east-west', osmIds: [1], highway: 'residential', points: [[-50, 0], [0, 0], [50, 0]] },
+  { id: 'planted-north-south', osmIds: [2], highway: 'residential', points: [[0, -50], [0, 0], [0, 50]] },
+] }
+async function danglingRefuses(akTransform) {
+  const AK = akTransform ? await importSource('cartograph/authoredKeys.mjs', { transform: akTransform }) : await import(pathToFileURL(join(CARTO, 'authoredKeys.mjs')).href)
+  const sk = FIXTURE_SKELETON, HW = AK.highwayClasses()
+  const A = { ids: new Map([['planted-east-west', ['the check\'s live key']], ['a-chain-that-does-not-exist', ['the check\'s planted key']]]), caps: new Map(), slots: new Map(), corners: [], notJudged: [] }
+  const r = AK.authoringReKeys(sk, sk, A, HW), fails = []
+  const live = r.rows.find(x => x.id === 'planted-east-west')
+  if (live?.status !== 'SAME' || r.hits.some(h => /planted-east-west/.test(h))) fails.push(`a key on a chain the skeleton has does not come back SAME (${live?.status ?? 'no row'}): the guard refuses what it should keep`)
+  if (!r.hits.some(h => /^DANGLING a-chain-that-does-not-exist/.test(h))) fails.push('a dangling authored key does not refuse (authoredKeys.mjs#authoringReKeys, on the planted skeleton against itself)')
+  return { fails, line: `a dangling authored key, planted: ${fails.length ? 'NOT refused as it should be' : 'REFUSES'}; a live key: ${live?.status ?? 'no row'}` }
 }
 
 // ── the elevation agreement: Looks of one scene that disagree must throw naming both; agreement returns the value; none → false ──
@@ -436,11 +445,10 @@ async function verdict(m = {}) {
 // ── run ──
 const base = await verdict()
 const D = await danglingRefuses()
-if (D.unknown) base.unknown.push(D.unknown)
-else if (!(D.planted > 0)) base.fails.push(`a dangling authored key does not refuse (authoredKeys.mjs#authoringReKeys on ${D.town}'s skeleton against itself)`)
+base.fails.push(...D.fails)
 if (VERBOSE) for (const r of base.rows) console.log(`  ${r}`)
 for (const u of base.unjudged) console.log(`  · unjudged: ${u}`)
-if (!D.unknown) console.log(`  a dangling authored key, planted on ${D.town}: ${D.planted ? 'REFUSES' : 'passes'} (today's hits: ${D.base})`)
+console.log(`  ${D.line}`)
 for (const u of base.unknown) console.log(`  ? ${u}`)
 for (const f of base.fails) console.log(`  ✗ ${f}`)
 console.log(base.unknown.length ? `⛔ NOT CHECKED — ${base.unknown.length} unknown(s): a read this check cannot parse is never a pass`
@@ -464,12 +472,14 @@ if (process.argv.includes('--mutants')) {
     ['the guard at the question no longer reads the home Look', { psSwap: ps.split('.streets, homeLookOf(scene))').length === 2 ? ['.streets, homeLookOf(scene))', '.streets, undefined)'] : null }],
     ['the elevation refusal deleted (a Look is picked)', { psSwap: ps.split("  if (new Set(vals.map(([, v]) => v)).size > 1) throw").length === 2 ? ["  if (new Set(vals.map(([, v]) => v)).size > 1) throw", '  if (false) throw'] : null }],
     ["Publish's guard removed", { serve: swap(serve, 'const guarded = pourGuardRefusals(pubScene, { requirePoured: true })', 'const guarded = []') }],
+    ['the DANGLING refusal deleted (authoredKeys.mjs)', { ak: swap(read('cartograph/authoredKeys.mjs'), "if (!b) { row(id, 'DANGLING',", "if (!b) { continue; row(id, 'DANGLING',") && ((t) => t.replace("if (!b) { row(id, 'DANGLING',", "if (!b) { continue; row(id, 'DANGLING',")) }],
+    ['the guard refuses every key (a live key reads as dangling)', { ak: swap(read('cartograph/authoredKeys.mjs'), 'const b = wb.get(id), a = wa.get(id)', 'const b = undefined, a = wa.get(id)') && ((t) => t.replace('const b = wb.get(id), a = wa.get(id)', 'const b = undefined, a = wa.get(id)')) }],
     ["the Bake's guard removed", { serve: swap(serve, 'if (!P.plan) { const g = pourGuardRefusals(bakeScene);', 'if (false) { const g = pourGuardRefusals(bakeScene);') }],
   ]
   let bad = 0
   for (const [name, mm] of MUTANTS) {
     if (Object.values(mm).some(v => v === null) || Object.values(mm.files || {}).some(v => v == null)) { console.log(`⚪ NOT APPLIED mutant: ${name} — its anchor is not in the source once; re-aim it`); bad++; continue }
-    const r = await verdict(mm)
+    const r = mm.ak ? { fails: (await danglingRefuses(mm.ak)).fails, unknown: [] } : await verdict(mm)
     const fresh = [...r.fails, ...r.unknown].filter(f => !had.has(f))
     console.log(`${fresh.length ? '🔴' : '⚪ SURVIVED'} mutant: ${name}${VERBOSE && fresh.length ? ` (${fresh[0].slice(0, 160)})` : ''}`)
     if (!fresh.length) bad++
