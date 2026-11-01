@@ -57,5 +57,5 @@ identity emoji is the favicon"). LS's becomes ⚜️, which the Ward already sho
 
 ## 4. Done
 
-Zob's PASS → Boz merges after `node checks/tier.mjs --check` → the staging publish and its route to production on Jacob's
+Zob's PASS → Boz merges after a fresh `node checks/tier.mjs --json` shows no TIERS.json diff → the staging publish and its route to production on Jacob's
 press → the four hosts' served tags re-measured → this brief retires to `cartograph/_archive/` dated.

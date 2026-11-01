@@ -227,4 +227,4 @@ where someone actually tried the read-in and found the holes.
    by symbol, marked measured / read / inferred.
 3. **A fail is a finding, never a vote:** ROT (evict the doc), REGRESSION (fix the code) or ASPIRATION (to Jacob).
 4. **Merges:** Boz merges a builder's branch into the record only on Zob's PASS, after checking each hash against git and
-   re-running `node checks/tier.mjs --check`. ⛔ A typed hash is a claim; copy it from git.
+   re-running `node checks/tier.mjs --json` and seeing no diff in `checks/TIERS.json` (tier.mjs has no `--check`; an unknown flag gives a fresh count, not a comparison). ⛔ A typed hash is a claim; copy it from git.
