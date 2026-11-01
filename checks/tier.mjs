@@ -172,12 +172,13 @@ function stringCmdRead(c, code) {
 // ⭐ A NAME IS READ IN PLACE ONLY WHEN IT APPEARS ONCE IN A BINDING SHAPE (Fuse, 2026-11-01): `const D = 'x'`, then
 // `function f(a = g(), D)`, `(…, D) =>`, `{ a = 1, D } = o` or a `let D` — the value at the call is not the const's. A
 // parameter list is not parsed (defaults hold parens and `=`); instead every occurrence of the name as a word that is
-// preceded by `(` `,` `{` `[` `...` or const/let/var/function/class, or followed by `=>`, is counted, OVER-counting by
-// shape (a call `f(D)` counts too), so a doubt reads live. A `${D}` use is not counted. Exactly one, and that one the
+// preceded by `(` `,` `{` `[` `:` `...` or const/let/var/function/class, or followed by `=>`, is counted, OVER-counting by
+// shape (a call `f(D)`, an object value `{ k: D }` and a ternary `? a : D` count too), so a doubt reads live. The `:`
+// is a destructuring rename (`{ x: D }`, Fuse). A `${D}` use is not counted. Exactly one, and that one the
 // `const` of a plain string literal, or the name is unresolved.
 function constLiteral(code, name) {
   const n = name.replace(/\$/g, '\\$')
-  const re = new RegExp(`(\\$\\{\\s*|\\.\\.\\.\\s*|[(,{\\[]\\s*|\\b(?:const|let|var|function|class)\\s+)?(?<![\\w$.])${n}(?![\\w$])(\\s*=>)?`, 'g')
+  const re = new RegExp(`(\\$\\{\\s*|\\.\\.\\.\\s*|[(,{\\[:]\\s*|\\b(?:const|let|var|function|class)\\s+)?(?<![\\w$.])${n}(?![\\w$])(\\s*=>)?`, 'g')
   let count = 0
   for (const m of code.matchAll(re)) { const pre = m[1] ?? ''; if (pre.startsWith('${')) continue; if (pre || m[2]) count++ }
   if (count !== 1) return null
@@ -1278,6 +1279,9 @@ export function gitSelfTest() {
     ['string: shadowed by a destructuring with a default', at("const D = 'public'\nfunction f(o) { const { a = 1, D } = o; execSync(`git ls-files -- ${D}`) }"), 'live'],
     ['string: shadowed by a method parameter after a default', at("const D = 'public'\nconst o = { f(a = g(), D) { execSync(`git ls-files -- ${D}`) } }"), 'live'],
     ['string: shadowed by a destructuring of the name alone', at("const D = 'public'\nfunction f(o) { const { D } = o; execSync(`git ls-files -- ${D}`) }"), 'live'],
+    ['string: shadowed by a destructuring rename', at("const D = 'public'\nfunction f(o) { const { x: D } = o; execSync(`git ls-files -- ${D}`) }"), 'live'],
+    ['string: shadowed by a renamed parameter', at("const D = 'public'\nfunction f({ x: D }) { execSync(`git ls-files -- ${D}`) }"), 'live'],
+    ['string: shadowed by a renamed arrow parameter after a default', at("const D = 'public'\nconst f = ({ a = 1, x: D }) => execSync(`git ls-files -- ${D}`)"), 'live'],
     ['string: shadowed by for-of', at("const D = 'public'\nfor (const D of xs) execSync(`git ls-files -- ${D}`)"), 'live'],
     ['string: a const used twice in splices only', at("const D = 'public'\nexecSync(`git ls-files -- ${D}`)\nexecSync(`git ls-files -- ${D}/x`)"), 'safe'],
     ['argv: a pin shadowed by an arrow parameter', at(`const PIN = '${SHA}'\nconst r = (PIN) => execFileSync('git', ['show', \`\${PIN}:src/a.js\`])`), 'live'],
