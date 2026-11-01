@@ -11,7 +11,9 @@
  *   2. httpFailure, driven: no answer, 5xx, 408 and 429 → Transient; any other status (404) → Refusal.
  *   3. R3FErrorBoundary, driven: a Refusal is reported to the one sink at once, keyed to the town in TownContext, with no
  *      retry scheduled, and the layer renders nothing; a clean remount clears the entry; an untyped crash is retried on every delay and, when the last one
- *      fails, reported as given up with its reason.
+ *      fails, reported as given up with its reason. A retry that commits clean and stays up for the longest delay starts
+ *      the table over; a town switch resets a refused boundary (it draws on the new town, and a refusal there is that
+ *      town's); a clean commit after a reset clears the layer's own entry.
  *   7. A FAILED SCENE READ IS NOT REMEMBERED, AND ITS FAILURE IS THE ATTEMPT'S: <Displays> rendered through useSceneRead
  *      under a hook runner: a 503 refuses; a REMOUNT reads the file again and no render of it refuses; on a Look switch
  *      the next Look's first render shows nothing yet, never the last Look's failure.
@@ -113,8 +115,9 @@ async function boundary(transform, marksT) {
     ...(marksT ? { redirect: { 'src/lib/startupMarks.js': { transform: marksT } } } : {}) })).default
   const M = marksT ? await importSource('src/lib/startupMarks.js', { transform: marksT }) : await import(pathToFileURL(join(ROOT, 'src/lib/startupMarks.js')))
   const { Refusal } = await import(pathToFileURL(join(ROOT, 'src/lib/refusal.js')))
-  const timers = [], was = { st: globalThis.setTimeout, err: console.error }
-  globalThis.setTimeout = (fn, ms) => { timers.push(ms); return 0 }
+  const timers = [], due = [], was = { st: globalThis.setTimeout, ct: globalThis.clearTimeout, err: console.error }
+  globalThis.setTimeout = (fn, ms) => { timers.push(ms); due.push([fn, ms]); return due.length }
+  globalThis.clearTimeout = (id) => { if (due[id - 1]) due[id - 1][0] = null }
   console.error = () => {}
   const drive = (err, retryCount, reveal) => {
     const b = new B({ name: 'Trees', reveal, children: 'CHILD' }); b.context = { lookId: 'a-town' }
@@ -163,7 +166,35 @@ async function boundary(transform, marksT) {
     M.markFailed(cls4, 'a hero card page did not arrive')
     const other = new B({ name: 'InstancedTrees', reveal: cls4, children: 'CHILD' }); other.context = { lookId: 'a-town' }; other.componentDidMount()
     if (M.failureOf(cls4) !== 'a hero card page did not arrive') fails.push("a clean remount clears a reveal failure another producer wrote: the town would reveal with the hole the gate exists to prevent")
-  } finally { globalThis.setTimeout = was.st; console.error = was.err }
+    // 2 · RECOVERY (2026-11-01). A retry that commits clean and stays up for the longest delay starts the table over.
+    failures.setState({ failed: {} }); timers.length = 0; due.length = 0
+    const r = new B({ name: 'Trees', children: 'CHILD' }); r.context = { lookId: 'a-town' }
+    r.setState = (u) => { r.state = { ...r.state, ...(typeof u === 'function' ? u(r.state) : u) } }
+    r.componentDidMount()
+    const crash = (err) => { const prev = { ...r.state }; r.state = { ...r.state, ...B.getDerivedStateFromError(err) }; r.componentDidCatch(err, {}); r.componentDidUpdate({}, prev) }
+    const commit = (u) => { const prev = { ...r.state }; r.setState(u); r.componentDidUpdate({}, prev) }
+    crash(new Error('lost context')); const firstDelay = timers.at(-1)
+    commit({ hasError: false, retryCount: 1 })                                   // the retry draws
+    const stable = due.filter(([fn, ms]) => fn && ms > firstDelay).at(-1)
+    if (!stable) fails.push('a retry that draws again schedules no recovery: retryCount only grows, and crashes spread over a session use up the table')
+    else { stable[0](); stable[0] = null }
+    crash(new Error('lost context again'))
+    if (timers.at(-1) !== firstDelay) fails.push(`after a layer recovered, its next crash is retried at ${timers.at(-1)} ms, not the table's first ${firstDelay} ms: retryCount never resets`)
+    // 2 · A TOWN SWITCH. Refused on A; the switch to B draws it again; B's own refusal is B's.
+    failures.setState({ failed: {} })
+    const t = new B({ name: 'Trees', children: 'CHILD' }); t.context = { lookId: 'a-town' }
+    t.setState = (u) => { t.state = { ...t.state, ...(typeof u === 'function' ? u(t.state) : u) } }
+    t.componentDidMount()
+    { const prev = { ...t.state }; const err = new Refusal('[Trees] ⛔ refused on A'); t.state = { ...t.state, ...B.getDerivedStateFromError(err) }; t.componentDidCatch(err, {}); t.componentDidUpdate({}, prev) }
+    failures.getState().report({ lookId: 'b-town', layer: 'Trees', kind: 'refusal', reason: 'an earlier refusal on B' })
+    t.context = { lookId: 'b-town' }
+    { const prev = { ...t.state }; t.componentDidUpdate({}, prev) }                 // the switch's update: it resets
+    { const prev = { ...t.state, hasError: true }; t.componentDidUpdate({}, prev) }  // and the reset commits clean
+    if (t.render() === null) fails.push('a layer refused on town A stays out on town B: a town switch does not reset the boundary, and B shows no entry for it (a silent absence)')
+    if (failures.getState().failed['b-town/Trees']) fails.push("a clean commit after a reset leaves the layer's stale entry for this town: the banner outlives its cause")
+    { const prev = { ...t.state }; const err = new Refusal('[Trees] ⛔ refused on B'); t.state = { ...t.state, ...B.getDerivedStateFromError(err) }; t.componentDidCatch(err, {}); t.componentDidUpdate({}, prev) }
+    if (failures.getState().failed['b-town/Trees']?.reason !== '[Trees] ⛔ refused on B') fails.push("a layer refused on town B after a switch is not reported under B")
+  } finally { globalThis.setTimeout = was.st; globalThis.clearTimeout = was.ct; console.error = was.err }
   return fails
 }
 
@@ -292,7 +323,10 @@ if (process.argv.includes('--mutants')) {
   const mutants = [
     ['the boundary retries a Refusal', { boundary: must('if (error instanceof Refusal) {', 'if (false) {') }],
     ['the boundary drops the report', { boundary: must("useFailures.getState().report({ lookId, layer, kind: 'refusal', reason: reasonOf(error) })", '') }],
-    ['a clean remount leaves the stale entry', { boundary: must("      useFailures.getState().clear(this.context?.lookId ?? null, this.props.name || 'component')\n", '') }],
+    ['retryCount never resets', { boundary: must('this.setState({ retryCount: 0 }) }, RETRY_DELAYS_MS.at(-1))', 'void 0 }, RETRY_DELAYS_MS.at(-1))') }],
+    ['a town switch keeps the boundary down', { boundary: must('if (this.state.hasError || this.state.retryCount) { this.setState({ hasError: false, retryCount: 0 }); return }', '') }],
+    ['a clean commit after a reset leaves the entry', { boundary: must('    if (prev.hasError && !this.state.hasError) {\n      this._clearOwn()\n', '    if (prev.hasError && !this.state.hasError) {\n') }],
+    ['a clean remount leaves the stale entry', { boundary: must("    useFailures.getState().clear(lookId, layer)\n", '') }],
     ['the boundary never reports giving up', { boundary: must("useFailures.getState().report({ lookId, layer, kind: 'gave-up', reason })", '') }],
     ['an untyped ⛔ throw returns', { files: swap('src/lib/failures.js', 'throw new Refusal(`[failures] ⛔', 'throw new Error(`[failures] ⛔') }],
     ['a ⛔ message held in a const returns untyped', { files: (fs) => [...fs, ['src/__mutant.js', "const msg = `[x] ⛔ held first`\nexport const f = () => { const e = new Error(msg); throw e }\n"]] }],
