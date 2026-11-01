@@ -15,7 +15,9 @@
  *   5. the default is the old Light Show's: show = the old SHOW_GAIN, glow = the old GLOW_GAIN × the old shimmer's
  *      time-averaged mean, read from LightShow.jsx and engine.js#glowColour (never typed here); kelvin is the
  *      temperature whose kelvinToRgb is nearest the old glow's colour; and over every day of a year at a test point,
- *      the default glows exactly inside the old dusk-to-dawn span (engine.js#glowSpan) at every fifth minute.
+ *      the default glows exactly inside the old dusk-to-dawn span (engine.js#glowSpan) at every fifth minute;
+ *   6. the scene bake carries every registered town's displays, each its Look's channel or the default, through
+ *      displayChannelsFor (so a display the town lacks fails the bake), read from the town's own instance records.
  * Usage: node checks/claims-a-display-is-authored-on-its-own-channel.mjs [--mutants] [--kelvin]
  *   --kelvin: prints the nearest temperature and its residual against the old glow colour.
  * ⚠️ Item 3 of the plan deletes SHOW_GAIN / GLOW_GAIN and the old shimmer; 5 then moves to a pinned reading.
@@ -28,7 +30,7 @@ const key = (o = {}) => ({ glow: 1, show: 2, kelvin: 3000, showEvery: 60, ...o }
 const refuses = (f, re) => { try { f(); return false } catch (e) { return re.test(e.message) } }
 const near = (a, b, e = 1e-6) => Math.abs(a - b) <= e
 
-async function verdict({ chan, param, view } = {}) {
+async function verdict({ chan, param, view, bake } = {}) {
   const fails = [], F = (c, m) => { if (!c) fails.push(m) }
   const redirect = param ? { 'src/cartograph/animatedParam.js': { transform: param } } : undefined
   const S = await importSource('src/displays/showChannel.js', { ...(chan ? { transform: chan } : {}), ...(redirect ? { redirect } : {}) })
@@ -96,6 +98,15 @@ async function verdict({ chan, param, view } = {}) {
     }
   }
   F(!miss, miss)
+  // 6. the scene bake carries the displays
+  const bs = bake ? bake(sourceOf('cartograph/bake-scene.js')) : sourceOf('cartograph/bake-scene.js')
+  F(/^\s*displays: displayChannelsFor\(displayRecordsOf\(look\), design\.displays, `bake-scene \$\{look\}`\),$/m.test(bs), 'bake-scene does not write displays through displayChannelsFor with the town\'s records')
+  const B = await importSource('cartograph/bake-scene.js', { span: { functions: ['displayRecordsOf'] }, prefix: "import { instanceForMap, registeredMaps } from '../src/instances/registry.js'\n", suffix: '\nexport { displayRecordsOf }', ...(bake ? { transform: bake } : {}) })
+  const REG = await importSource('src/instances/registry.js')
+  for (const m of REG.registeredMaps()) {
+    const inst = REG.instanceForMap(m), want = (inst.displays || []).map(x => x.id).sort().join(','), got = Object.keys(S.displayChannelsFor(B.displayRecordsOf(inst.lookId), undefined, m)).sort().join(',')
+    F(got === want, `the bake gives "${inst.lookId}" displays [${got}], not its town's [${want}]`)
+  }
   return fails
 }
 
@@ -118,6 +129,8 @@ if (process.argv.includes('--mutants')) {
     ['the default show dimmer than the old', { chan: (s) => s.replace('show: 2.4,', 'show: 2,') }],
     ['the default glow without the shimmer (1.7 × 0.9)', { chan: (s) => s.replace('glow: 1.36,', 'glow: 1.53,') }],
     ['the default kelvin at 2200', { chan: (s) => s.replace('export const DEFAULT_KELVIN = 3810', 'export const DEFAULT_KELVIN = 2200') }],
+    ['the bake writing the Look\'s displays raw', { bake: (s) => s.replace('displays: displayChannelsFor(displayRecordsOf(look), design.displays, `bake-scene ${look}`),', 'displays: design.displays || {},') }],
+    ['the bake reading no town', { bake: (s) => s.replace("return Object.fromEntries((town?.displays || []).map(d => [d.id, d]))", "return {}") }],
     ['the old gains changed under the default', { view: (s) => s.replace('const SHOW_GAIN = 2.4,', 'const SHOW_GAIN = 3,') }],
   ]
   let bad = 0

@@ -40,6 +40,8 @@ import { writeIfChanged } from './io.js'
 import { assertBakeTarget } from './bake-target.js'
 import { readBakeDesign } from './lookDesign.mjs'
 import { mapForLook } from './tree-bake-inputs.mjs'
+import { instanceForMap, registeredMaps } from '../src/instances/registry.js'
+import { displayChannelsFor } from '../src/displays/showChannel.js'
 import { migrateSkyChannel } from '../src/cartograph/skyGrid.js'
 import { assertKeyframesAimed, assertHeroMotion } from '../src/preview/heroAnim.js'
 import {
@@ -188,6 +190,11 @@ export async function bakeScene({ look } = {}) {
     archLight: migrateArchLight(design),
     setPieceLight: design.setPieceLight || kitDayChannel('setPieceLight'),   // the set-piece's uplights
     lantern:   design.lantern   || kitDayChannel('lantern'),
+    // The town's displays (its instance module's `displays`), each lit by this Look's own channel
+    // (src/displays/showChannel.js; r-a-display-is-authored-on-its-own-look-channel): the Look's, else the neutral
+    // default. ⛔ A Look keying a display its town lacks fails the bake by name. A Look that is no registered town's has
+    // no displays: { }. ▶ node checks/claims-a-display-is-authored-on-its-own-channel.mjs
+    displays: displayChannelsFor(displayRecordsOf(look), design.displays, `bake-scene ${look}`),
     // The town's lamp model, its authored choice (src/lib/lampModels.js). No choice ⇒ the key is omitted and
     // the runtime draws the kit's standard post, saying so — never inferred from the town's name.
     ...(design.lamps?.model ? { lampModel: design.lamps.model } : {}),
@@ -220,6 +227,12 @@ export async function bakeScene({ look } = {}) {
   const wrote = writeIfChanged(outPath, JSON.stringify(scene, null, 2))
   console.log(`[bake-scene] ${wrote ? 'wrote' : 'unchanged'} ${outPath}`)
   return scene
+}
+
+/** The display records of the town whose Look this is ({ <id>: record }), or { } for a Look that is no town's. */
+function displayRecordsOf(look) {
+  const town = registeredMaps().map(instanceForMap).find(i => i.lookId === look)
+  return Object.fromEntries((town?.displays || []).map(d => [d.id, d]))
 }
 
 async function main() {
