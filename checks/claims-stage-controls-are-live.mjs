@@ -93,6 +93,15 @@ function regionsOf(appText) {
 }
 
 // ── the channels Stage's cards edit ─────────────────────────────────────────
+// The top-level declaration (a column-0 function / const / class) that holds `idx`: a card's own body. ⛔ A card's
+// "conditional" read was a FILE-WIDE regex on its local's name, so any other function in StageApp.jsx with
+// `if (!channel) return` excused the Lantern card (Tinsel's Tonight strip, 2026-11-01: ① reported itself blind).
+const TOP = /^(?:export\s+)?(?:default\s+)?(?:async\s+)?(?:function\b|const\b|let\b|class\b)/gm
+function topLevelBody(text, idx) {
+  let from = 0, to = text.length
+  for (const m of text.matchAll(TOP)) { if (m.index <= idx) from = m.index; else { to = m.index; break } }
+  return text.slice(from, to)
+}
 function stageChannels(src) {
   const out = new Map()   // channel → { card, conditional }
   const add = (name, card, conditional = false) => { if (!out.has(name)) out.set(name, { card, conditional }) }
@@ -112,8 +121,8 @@ function stageChannels(src) {
     const cap = name[0].toUpperCase() + name.slice(1)
     if (!new RegExp(`s => s\\.set${cap}\\b`).test(stage)) continue   // read to pick knobs, never edited
     const card = /archLight|lantern|lampGlow/.test(name) ? 'Light Sources' : name === 'weatherMode' ? 'Time of Day' : 'Hero & Horizon'
-    // Conditional: the card renders this channel's knobs only when the channel exists.
-    const conditional = new RegExp(`\\b${local}\\s*\\?\\s*\\(|\\b${local}\\s*&&|if\\s*\\(!\\s*${local}\\)\\s*return`).test(stage)
+    // Conditional: the card renders this channel's knobs only when the channel exists, read in the CARD'S OWN body.
+    const conditional = new RegExp(`\\b${local}\\s*\\?\\s*\\(|\\b${local}\\s*&&|if\\s*\\(!\\s*${local}\\)\\s*return`).test(topLevelBody(stage, m.index))
     add(name, card, conditional)
   }
   return out
@@ -308,6 +317,12 @@ console.log('① EVERY STAGE CHANNEL REACHES SOMETHING DRAWN ON A POURED TOWN')
   const mut = appRaw.replace(/(const STAGE_CHANNELS = \[[\s\S]*?)'lantern',\s*/, '$1')
   const m = parity(mut, texts, false).failures.some(f => /› lantern /.test(f))
   m ? ok('mutation (poured towns lose the live lantern) is caught') : bad('mutation NOT caught — ① is blind')
+  // Self-mutation: the same, with a SIBLING function in StageApp that uses the Lantern card's local name behind
+  // `if (!channel) return` → it must not excuse the card, so lantern still goes red.
+  const local = /const (\w+)\s*=\s*useCartographStore\(s => s\.lantern\)/.exec(texts.stage)?.[1]
+  const sib = local ? { ...texts, stage: texts.stage + `\nfunction ZzzSibling() {\n  const ${local} = null\n  if (!${local}) return null\n  return ${local} && null\n}\n` } : null
+  const ms = sib && parity(mut, sib, false).failures.some(f => /› lantern /.test(f))
+  ms ? ok("mutation (a sibling function's `if (!" + local + ") return` beside the lost lantern) is caught") : bad(local ? "mutation NOT caught — a sibling function's local excuses the Lantern card" : 'the Lantern card reads no `useCartographStore(s => s.lantern)` local: re-aim this mutation')
 }
 
 console.log('② NO FLAT GATE ON A KEYFRAMED CHANNEL')
