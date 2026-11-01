@@ -180,6 +180,16 @@ export function pourDataReads(scene) {
   ]
 }
 
+// ⭐ WHAT THE POUR WAS GIVEN ON ITS COMMAND LINE THAT SHAPES ITS OUTPUT (2026-11-01). pipeline.js stamps it as `map.json.argvRead`
+// with what it ran with; the Bake compares it with what it would pass now, behind the same question as a code change. ONE
+// function, both sides, so the two can never name it differently. Today one flag: `--skip-elevation` decides whether map.json
+// carries an elevation grid, and was recorded nowhere, so toggling a town's `pour.elevation` never re-poured it (Fuse, read
+// from the code; not reproduced). ⛔ `--home-look` is NOT here: it feeds only the join guard, which shapes nothing and runs at
+// every Bake and Publish instead (pourSteps.mjs#pourGuardRefusals).
+export function pourArgvReads({ elevation }) {
+  return [{ value: "pipeline's elevation (--skip-elevation unless the town's pour.elevation is true)", read: () => elevation === true }]
+}
+
 // The geography the last pour projected with vs `scene`'s now → a one-line reason, or null. ⛔ No record ⇒ dirty.
 export function geographyReadChanged(record, scene) {
   if (!record || typeof record !== 'object') return '(no record of the geography the last pour read)'

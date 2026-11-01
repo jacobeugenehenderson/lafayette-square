@@ -6,13 +6,21 @@
 // town whose pour is HELD (a Look's `pour.held`) it stopped to ask about re-promoting (LS, twice on 2026-10-28). The Extent pours
 // also ran the pipeline with `--skip-elevation` always, where the Bake reads the town's `pour.elevation`. Now every caller runs
 // these steps and records them here, through one function. ▶ checks/claims-the-pour-records-itself-once.mjs
-import { readFileSync, writeFileSync } from 'fs'
+//
+// ⭐⭐ ONE PRINCIPLE (Boz's ruling, 2026-11-01): A STEP'S KEY RECORDS EVERY INPUT THAT SHAPES ITS OUTPUT, WHATEVER CARRIES IT — a
+// file, a value, or a flag on its command line (pour-code.mjs#pourArgvReads). A GUARD IS NOT KEYED: it shapes nothing, it only
+// refuses, so it runs whenever the town is about to be acted on — every Bake run and every Publish (#pourGuardRefusals), never
+// only when a step happens to re-run. Its inputs (the authoring, the home Look) are therefore never in a key.
+import { readFileSync, writeFileSync, existsSync } from 'fs'
 import { join, dirname } from 'path'
 import { importClosure, contentRecord, TOWN_REGISTRY } from './pour-code.mjs'
 import { terrainValueReads } from './terrainReads.mjs'
 import { COAST_FILE, TOLERANCE_FILE } from './coastFile.mjs'
 import { instanceForMap } from '../src/instances/registry.js'
 import { homeLookOf } from './homeLook.mjs'
+import { mintInputsOf } from './mintInputs.mjs'
+import { authoringOf, authoringReKeys, highwayClasses } from './authoredKeys.mjs'
+import { mapCleanDir, ribbonsPathOf } from './scene.js'
 
 const HERE = import.meta.dirname, REPO_ROOT = join(HERE, '..')
 
@@ -124,6 +132,43 @@ export function pourSteps(scene, paths, ribbons, { elevation }) {
     { label: 'promote-ribbons', timeout: 30000, cmd: `node promote-ribbons.js ${flag} --yes`, outputs: [ribbons],
       inputs: [paths.map, paths.geography, join(HERE, 'promote-ribbons.js')] },
   ]
+}
+
+/**
+ * ⛔ THE TOWN'S POUR ELEVATION, ONE VALUE OR A REFUSAL (Boz's ruling, 2026-11-01). The pour's outputs are the TOWN's, shared by every
+ * Look of it (#recordStep), so a field that shapes them must agree across those Looks. It never picks one (the Extent pour took
+ * `looks[0]`, the Bake the Look being baked: two answers whenever they differ). `looks`: the scene's Look ids; `designOf(id)` its
+ * design. Zero Looks → false: a scene with no Look yet declares none, so there is nothing to disagree — a neutral default, not a pick.
+ */
+export function townPourElevation(scene, looks, designOf) {
+  if (!looks.length) return false
+  const vals = looks.map(id => [id, designOf(id)?.pour?.elevation === true])
+  if (new Set(vals.map(([, v]) => v)).size > 1) throw new Error(`[pour] ⛔ ${scene}'s Looks disagree on pour.elevation (${vals.map(([id, v]) => `${id}: ${v}`).join(' · ')}). The pour is the town's, shared by every Look, so one value must hold: set it the same on each, then Bake.`)
+  return vals[0][1]
+}
+
+/**
+ * ⛔ THE POUR'S TWO GUARDS, RUN AT THE QUESTION (Boz's ruling, 2026-11-01: every Bake run and every Publish; not the plan, which only
+ * lists). Each reads the town's CURRENT authoring against what is on disk now, and returns refusals by name ([] = none):
+ *   · the join guard (chainJoins.mjs#refuseAuthoredReKey): the mint's input rebuilt from the scene's ribbons with the town's
+ *     home Look (mintInputsOf, as the pour builds it); any throw is a refusal.
+ *   · the skeleton guard (authoredKeys.mjs#authoringReKeys) on the skeleton on disk against itself: an authored key that names no
+ *     chain in the skeleton it was authored against (DANGLING) is reachable by authoring alone (Zob's read).
+ * `requirePoured`: Publish passes true, so a town with no skeleton or ribbons cannot ship unguarded. A Bake of a town not poured yet
+ * passes false: the pour's own guards run when it is made (reskeleton.mjs, the mint).
+ */
+export function pourGuardRefusals(scene, { requirePoured = false } = {}) {
+  const out = [], skPath = join(mapCleanDir(scene), 'skeleton.json'), rbPath = ribbonsPathOf(scene)
+  if (!existsSync(skPath) || !existsSync(rbPath)) {
+    if (requirePoured) out.push(`${scene} has no ${!existsSync(skPath) ? 'skeleton' : 'ribbons'} on disk, so its authoring cannot be guarded`)
+    return out
+  }
+  try { mintInputsOf(scene, JSON.parse(readFileSync(rbPath, 'utf8')).streets, homeLookOf(scene)) } catch (e) { out.push(e.message) }
+  try {
+    const sk = JSON.parse(readFileSync(skPath, 'utf8')), R = authoringReKeys(sk, sk, authoringOf(scene), highwayClasses())
+    if (R.hits.length) out.push(`[skeleton guard] ⛔ ${scene}: ${R.hits.length} authored key(s) do not hold on the skeleton they were authored against: ${R.hits.join(' ‖ ')}`)
+  } catch (e) { out.push(`[skeleton guard] ⛔ ${scene}: ${e.message}`) }
+  return out
 }
 
 /**
