@@ -102,8 +102,14 @@ function topLevelBody(text, idx) {
   for (const m of text.matchAll(TOP)) { if (m.index <= idx) from = m.index; else { to = m.index; break } }
   return text.slice(from, to)
 }
+// ⛔ A card NESTED in another declaration would be judged by the enclosing body, so a sibling card inside the same
+// function could excuse it: the file-wide defect at a smaller scale (Fuse, 2026-11-01). Not parsed, refused: a body
+// that declares a component past its first line (`function X(` or `const X = (`) is NOT CHECKED, by name.
+const NESTED_COMPONENT = /\n[ \t]+(?:function\s+([A-Z]\w*)\s*\(|const\s+([A-Z]\w*)\s*=\s*\()/
+const declName = (body) => /^(?:export\s+)?(?:default\s+)?(?:async\s+)?(?:function\s+|const\s+|let\s+|class\s+)(\w+)/.exec(body)?.[1] ?? '?'
 function stageChannels(src) {
   const out = new Map()   // channel → { card, conditional }
+  out.nested = []
   const add = (name, card, conditional = false) => { if (!out.has(name)) out.set(name, { card, conditional }) }
   for (const [file, card] of [['sky', 'Light & Sky'], ['post', 'Image'], ['surfaces', 'Surfaces']]) {
     for (const m of src[file].matchAll(/<StoreChannel\s+name="(\w+)"/g)) add(m[1], card)
@@ -122,7 +128,9 @@ function stageChannels(src) {
     if (!new RegExp(`s => s\\.set${cap}\\b`).test(stage)) continue   // read to pick knobs, never edited
     const card = /archLight|lantern|lampGlow/.test(name) ? 'Light Sources' : name === 'weatherMode' ? 'Time of Day' : 'Hero & Horizon'
     // Conditional: the card renders this channel's knobs only when the channel exists, read in the CARD'S OWN body.
-    const conditional = new RegExp(`\\b${local}\\s*\\?\\s*\\(|\\b${local}\\s*&&|if\\s*\\(!\\s*${local}\\)\\s*return`).test(topLevelBody(stage, m.index))
+    const body = topLevelBody(stage, m.index), inner = NESTED_COMPONENT.exec(body)
+    if (inner) out.nested.push(`NOT CHECKED: the ${name} card's read sits in ${declName(body)}, which declares a nested component (${inner[1] ?? inner[2]}): read the card's own body`)
+    const conditional = new RegExp(`\\b${local}\\s*\\?\\s*\\(|\\b${local}\\s*&&|if\\s*\\(!\\s*${local}\\)\\s*return`).test(body)
     add(name, card, conditional)
   }
   return out
@@ -185,6 +193,7 @@ function parity(appText, srcTexts, log = true) {
   const pouredRoots = [{ imports: appImports, tags: new Set([...tagsIn(R.canvas), ...tagsIn(R.generic)]) }]
   const poured = renderClosure(pouredRoots)
   const channels = stageChannels(srcTexts)
+  failures.push(...channels.nested)
   // Module → the files that import it (readers of a pump's uniforms).
   const readersCache = new Map()
   const importersOf = (mod) => {
@@ -323,6 +332,10 @@ console.log('① EVERY STAGE CHANNEL REACHES SOMETHING DRAWN ON A POURED TOWN')
   const sib = local ? { ...texts, stage: texts.stage + `\nfunction ZzzSibling() {\n  const ${local} = null\n  if (!${local}) return null\n  return ${local} && null\n}\n` } : null
   const ms = sib && parity(mut, sib, false).failures.some(f => /› lantern /.test(f))
   ms ? ok("mutation (a sibling function's `if (!" + local + ") return` beside the lost lantern) is caught") : bad(local ? "mutation NOT caught — a sibling function's local excuses the Lantern card" : 'the Lantern card reads no `useCartographStore(s => s.lantern)` local: re-aim this mutation')
+  // Self-mutation: a card NESTED in another function (its read inside, a component declared beside it) → NOT CHECKED.
+  const nest = { ...texts, stage: texts.stage + `\nfunction ZzzOuter() {\n  function ZzzCard() {\n    const zzzCh = useCartographStore(s => s.lantern)\n    return null\n  }\n  return null\n}\n` }
+  const mn = parity(appRaw, nest, false).failures.some(f => /^NOT CHECKED: .*ZzzOuter.*ZzzCard/.test(f))
+  mn ? ok('mutation (a card nested in another function) is refused NOT CHECKED') : bad('mutation NOT caught — a nested card is judged by its enclosing body')
 }
 
 console.log('② NO FLAT GATE ON A KEYFRAMED CHANNEL')
