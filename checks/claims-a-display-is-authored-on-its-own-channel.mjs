@@ -24,7 +24,8 @@
  *      channel's kelvin and glow through engine.js#glowColour, whose shimmer is centred on 1 (its time-average is the
  *      channel's level) with the old relative swing; no gain constant left in LightShow.jsx. <Displays> passes each
  *      display its channel from scene.json#displays, and refuses by name a scene that carries none, and a scene that
- *      could not be read (useSceneJson.js#sceneReadFailure: a 404 or bad JSON a Refusal, a 5xx or no answer a Transient).
+ *      could not be read (useSceneJson.js#fetchSceneOnce fails with a 404 or bad JSON as a Refusal, a 5xx or no answer as a Transient; useSceneRead
+ *      hands that failure to its reader).
  *   8. THE SCHEDULE is the channel's (engine.js#showtimesOn, #liveState, #refuseCrowdedShows):
  *      · under the default, the showtimes are the old schedule's (the pinned engine.js#showtimes over the old night) on
  *        every day of 2026 at 25°, 35°, 42° and 48.5° (just under the first slot the sun can miss, Night's −18°);
@@ -146,21 +147,19 @@ async function verdict({ chan, param, view, bake, eng, mount, pin, hook, manifes
   F(/<P\.Renderer display=\{d\} channel=\{lit\[d\.id\]\}/.test(dj) && /: !lit\?\.\[d\.id\] \? `\$\{where\}: the Look's scene\.json carries no channel for it/.test(dj), '<Displays> does not pass each display its channel, or does not refuse a scene with none')
   F(/if \(live\) \{ try \{ lit = displayChannelsFor\(Object\.fromEntries\(\(town\.displays \|\| \[\]\)\.map\(d => \[d\.id, d\]\)\), live, /.test(dj) && /else lit = scene\?\.displays \?\? null/.test(dj) && /: liveErr \? liveErr\n/.test(dj), "<Displays> does not light from Stage's live channels through displayChannelsFor (the default for the rest, a refusal named), or the baked scene elsewhere")
   F(/if \(!list\.length \|\| \(!live && !scene && !failed\)\) return null/.test(dj) && /: failed \? failed\n/.test(dj), '<Displays> goes silent on a scene.json that could not be read (it must refuse it by name)')
-  const H = await importSource('src/lib/useSceneJson.js', { span: { functions: ['fetchSceneOnce', 'sceneReadFailure'] },
-    prefix: "import { Refusal, Transient, httpFailure } from './refusal.js'\nconst _cache = new Map(), _failed = new Map(), _fetchOpts = undefined\nlet slabFetch = null\nexport const setFetch = (f) => { slabFetch = f }\nexport { Refusal, Transient }\n",
-    suffix: '\nexport { fetchSceneOnce, sceneReadFailure }', ...(hook ? { transform: hook } : {}) })
+  const H = await importSource('src/lib/useSceneJson.js', { span: { functions: ['fetchSceneOnce'] },
+    prefix: "import { Refusal, Transient, httpFailure } from './refusal.js'\nconst _cache = new Map(), _fetchOpts = undefined\nlet slabFetch = null\nexport const setFetch = (f) => { slabFetch = f }\nexport { Refusal, Transient }\n",
+    suffix: '\nexport { fetchSceneOnce }', ...(hook ? { transform: hook } : {}) })
   const realWarn = console.warn; console.warn = () => {}
   const reads = [['a 404', { ok: false, status: 404 }, 'Refusal'], ['a 503', { ok: false, status: 503 }, 'Transient'],
     ['bad JSON', { ok: true, status: 200, json: async () => { throw new SyntaxError('Unexpected token') } }, 'Refusal'], ['no answer', null, 'Transient']]
   for (const [what, res, kind] of reads) {
     H.setFetch(async () => { if (!res) throw new TypeError('Failed to fetch'); return res })
-    await H.fetchSceneOnce(`l-${what}`, 0)
-    const e = H.sceneReadFailure(`l-${what}`, 0)
-    F(e instanceof H[kind] && !(kind === 'Refusal' && e instanceof H.Transient), `a scene.json read that ends in ${what} is not recorded as a ${kind} (${e?.constructor?.name ?? 'nothing'})`)
+    const e = await H.fetchSceneOnce(`l-${what}`, 0).then(() => null, (x) => x)
+    F(e instanceof H[kind] && !(kind === 'Refusal' && e instanceof H.Transient), `a scene.json read that ends in ${what} does not fail as a ${kind} (${e?.constructor?.name ?? 'nothing'})`)
   }
   H.setFetch(async () => ({ ok: true, status: 200, json: async () => ({ displays: {} }) }))
-  await H.fetchSceneOnce('l-ok', 0)
-  F(H.sceneReadFailure('l-ok', 0) === null, 'a scene.json that was read is recorded as failed')
+  F(await H.fetchSceneOnce('l-ok', 0).then(() => true, () => false), 'a scene.json that was read fails')
   console.warn = realWarn
   // 8. the schedule
   for (const lat of [25, 35, 42.05, 48.5]) {
@@ -310,7 +309,7 @@ if (process.argv.includes('--mutants')) {
     ['Stage not carrying displays to <Town>', { wire: (rel, s) => rel.endsWith('CartographApp.jsx') ? s.replace("'labels', 'displays',\n]", "'labels',\n]") : s }],
     ['<SetPiece> not handing Stage\'s channels on', { wire: (rel, s) => rel.endsWith('SetPiece.jsx') ? s.replace(' channels={displaysOverride}', '') : s }],
     ['<Displays> silent on a failed read', { mount: (s) => s.replace('if (!list.length || (!live && !scene && !failed)) return null', 'if (!list.length || (!live && !scene)) return null') }],
-    ['a failed read not recorded', { hook: (s) => s.replace('_failed.set(key,', 'void (key,') }],
+    ['a failed read untyped', { hook: (s) => s.replace('throw e instanceof Refusal || e instanceof Transient ? e : ', 'throw ') }],
     ['a 404 taken for the network', { hook: (s) => s.replace("if (!r.ok) throw httpFailure(r,", "if (!r.ok) throw new Transient(") }],
     ['<Displays> not refusing a scene with none', { mount: (s) => s.replace(": !lit?.[d.id] ? `${where}: the Look's scene.json carries no channel for it", ": false ? `${where}: the Look's scene.json carries no channel for it") }],
   ]

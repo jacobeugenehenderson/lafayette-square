@@ -12,6 +12,9 @@
  *   3. R3FErrorBoundary, driven: a Refusal is reported to the one sink at once, keyed to the town in TownContext, with no
  *      retry scheduled, and the layer renders nothing; a clean remount clears the entry; an untyped crash is retried on every delay and, when the last one
  *      fails, reported as given up with its reason.
+ *   7. A FAILED SCENE READ IS NOT REMEMBERED, AND ITS FAILURE IS THE ATTEMPT'S: <Displays> rendered through useSceneRead
+ *      under a hook runner: a 503 refuses; a REMOUNT reads the file again and no render of it refuses; on a Look switch
+ *      the next Look's first render shows nothing yet, never the last Look's failure.
  *   6. THE REVEAL HEARS IT: a boundary around a layer the reveal waits on (Town.jsx's PHYSICAL, read from source) marks
  *      that class failed on a Refusal and on giving up, so the gate says why the town is held; a clean remount clears
  *      a failure it wrote (never another producer's) with a mark of its own (the gate hears only new marks); every class has exactly one such boundary. Stage's
@@ -197,11 +200,81 @@ function oneSink(files) {
   return fails
 }
 
-async function verdict({ files: mutate, boundary: bt, http: ht, marks: mt } = {}) {
+// ── 7. a failed scene read is not remembered, and its failure belongs to the attempt ─────────────────────────────────────
+// useSceneJson.js#fetchSceneOnce kept a failed read's promise (resolved to null) in its cache, and production passes no
+// reread: a 503 at boot was "no scene" for the session (Zob's note, b6ef3b47). And a failure kept by the MODULE was read at
+// a remount's first render, before the new attempt, so a display refused a scene that then read (Zob, 2026-11-01).
+// RUN, not read: <Displays> (src/displays/Displays.jsx, its JSX compiled here) is rendered through useSceneRead under a
+// minimal hook runner (state, memo, effects after render, a re-render on a state change, cleanup on unmount). What it
+// renders is read: a <Refuse> child (the refusal DisplayBoundary would report) or the plugin's <Suspense>.
+function hookRunner() {
+  let cur = null
+  const same = (a, b) => !!a && !!b && a.length === b.length && a.every((x, i) => Object.is(x, b[i]))
+  globalThis.__hooks = {
+    useState(init) { const i = cur, k = i.k++; if (!(k in i.s)) i.s[k] = init; return [i.s[k], (v) => { i.s[k] = v; i.dirty = true }] },
+    useMemo(f, deps) { const i = cur, k = i.k++, m = i.m[k]; if (m && same(m.deps, deps)) return m.v; const v = f(); i.m[k] = { deps, v }; return v },
+    useEffect(f, deps) { const i = cur, k = i.k++, e = i.e[k]; if (e && same(e.deps, deps)) return; i.after.push(() => { e?.cleanup?.(); i.e[k] = { deps, cleanup: f() } }) },
+  }
+  return (render) => {
+    const i = { s: {}, m: {}, e: {}, k: 0, after: [], dirty: false, outs: [] }
+    const go = (props) => { cur = i; i.k = 0; i.dirty = false; const out = render(props); cur = null; i.outs.push(out); for (const f of i.after.splice(0)) f(); return out }
+    return { outs: i.outs, render: go,
+      async settle(props) { for (let n = 0; n < 20; n++) { await new Promise((r) => setTimeout(r, 0)); if (i.dirty) go(props) } },
+      unmount() { for (const e of Object.values(i.e)) e.cleanup?.() } }
+  }
+}
+// useSceneJson.js from its cache down, its imports supplied: the hooks, slabFetch and the town's shot are the runner's.
+const HOOK_PREFIX = ['useEffect', 'useMemo', 'useState'].map(h => `const ${h} = (...a) => globalThis.__hooks.${h}(...a)`).join('\n') +
+  "\nconst slabFetch = (...a) => globalThis.__slabFetch(...a)\nconst useTownShot = () => null\nimport { shotKeyForViewMode, resolveShotScene } from './shotScene.js'\nimport { sceneFor } from './sceneFor.js'\nimport { Refusal, Transient, httpFailure } from './refusal.js'"
+const HOOK_DEV = (t) => t.replace(/import\.meta\.env\.DEV/g, 'false')
+async function sceneRead(transform, displaysT) {
+  const fails = []
+  const { transformSync } = require('esbuild')
+  const jsx = (t) => transformSync(displaysT ? displaysT(t) : t, { loader: 'jsx', jsx: 'transform', jsxFactory: '__h', jsxFragment: '__F' }).code
+  // The hook, from its cache down, its imports supplied (the hooks, slabFetch and the town's shot are the runner's)…
+  const H = await importSource('src/lib/useSceneJson.js', { span: { from: 'const _cache = new Map()' }, prefix: HOOK_PREFIX,
+    transform: (t) => HOOK_DEV(transform ? transform(t) : t) })
+  globalThis.__useSceneRead = H.useSceneRead
+  // …and Displays and Refuse (Displays to the file's end) reading it, with a planted plugin (a Renderer that draws
+  // nothing): the check judges refusal against display, never the plugin, so the real one (a lazy LightShow) is not imported.
+  const D = await importSource('src/displays/Displays.jsx', { span: { from: 'export default function Displays(' },
+    prefix: "import { createElement as __h, Fragment as __F, Suspense } from 'react'\nimport DisplayBoundary from './DisplayBoundary.js'\nimport { Refusal, Transient } from '../lib/refusal.js'\nimport { displayChannelsFor } from './showChannel.js'\nconst useSceneRead = (...a) => globalThis.__useSceneRead(...a)\nconst PLUGINS = { 'light-show': { label: 'Light Show', attaches: ['setPiece'], Renderer: () => null } }",
+    transform: jsx })
+  const mount = hookRunner(), was = console.warn
+  const town = { displays: [{ id: 'd1', kind: 'light-show', attach: 'setPiece' }], contentRoot: '' }
+  const props = (lookId) => ({ town, lookId, attach: 'setPiece', calendar: [], drawerSource: 'published' })
+  // Fresh Look ids per run: the same module text is the same module instance (its cache outlives one verdict).
+  const tag = Math.random().toString(36).slice(2), A = `a-${tag}`, X = `x-${tag}`, Y = `y-${tag}`
+  const shown = (out) => !out ? 'nothing (not yet)' : out[0]?.props?.children?.type?.name === 'Refuse' ? 'a refusal' : 'the display'
+  let calls = 0
+  console.warn = () => {}
+  try {
+    // a 503: the display refuses, by name
+    globalThis.__slabFetch = async () => { calls++; return { ok: false, status: 503 } }
+    const a = mount(D.default); a.render(props(A)); await a.settle(props(A)); a.unmount()
+    if (shown(a.outs.at(-1)) !== 'a refusal') fails.push(`a scene read that answered 503 renders ${shown(a.outs.at(-1))}, not a refusal (the check cannot reach what follows)`)
+    // the same Look REMOUNTED, the file now reads: read again, and no render of the new mount refuses
+    globalThis.__slabFetch = async () => { calls++; return { ok: true, status: 200, json: async () => ({ displays: { d1: { animated: 'tod', values: {} } } }) } }
+    const b = mount(D.default); b.render(props(A)); await b.settle(props(A)); b.unmount()
+    if (calls !== 2) fails.push(`a remount after a failed scene read made ${calls - 1} read(s), not 1: the failure is remembered (useSceneJson.js#fetchSceneOnce)`)
+    const seen = b.outs.map(shown)
+    if (seen.includes('a refusal')) fails.push(`a remount after a failed scene read renders a refusal (${seen.join(' → ')}): a failure from an earlier attempt refuses a scene that reads`)
+    if (seen.at(-1) !== 'the display') fails.push(`a remount whose scene reads ends at ${seen.at(-1)}, not the display`)
+    // a Look switch in one mount: the last Look's failure is never this Look's
+    globalThis.__slabFetch = async () => ({ ok: false, status: 503 })
+    const c = mount(D.default); c.render(props(X)); await c.settle(props(X))
+    globalThis.__slabFetch = () => new Promise(() => {})
+    const first = shown(c.render(props(Y))); c.unmount()
+    if (first !== 'nothing (not yet)') fails.push(`on a switch from a Look whose read failed, the next Look's first render shows ${first}: another Look's failure`)
+  } finally { console.warn = was; delete globalThis.__slabFetch }
+  return fails
+}
+
+async function verdict({ files: mutate, boundary: bt, http: ht, marks: mt, scene: st, displays: dt } = {}) {
   let files = SRC.map(f => [f, readFileSync(join(ROOT, f), 'utf8')])
   if (mutate) files = mutate(files)
   const c = contract(files)
-  const fails = [...c.fails, ...await http(ht), ...await boundary(bt, mt), ...noUrlFlag(files), ...oneSink(files)]
+  const fails = [...c.fails, ...await http(ht), ...await boundary(bt, mt), ...await sceneRead(st, dt), ...noUrlFlag(files), ...oneSink(files)]
   return { fails, c }
 }
 
@@ -234,9 +307,15 @@ if (process.argv.includes('--mutants')) {
     ['a reveal class with no boundary', { files: swap('src/components/Town.jsx', '<R3FErrorBoundary name="InstancedTrees" reveal="trees">', '<R3FErrorBoundary name="InstancedTrees">') }],
     ['the banner back under the splash', { files: swap('src/stage/StageApp.jsx', 'const FAILURES_Z = 400', 'const FAILURES_Z = 10') }],
     ['the banner back in the panel', { files: swap('src/stage/StageApp.jsx', 'return createPortal(', 'return ((el) => el)(') }],
+    ['a failed scene read stays cached', { scene: must('      _cache.delete(key)\n', '') }],
+    ['a Look switch shows the last Look\'s failure', { scene: must('failure = held?.lookId === lookId ? held.failure : null', 'failure = held?.failure ?? null') }],
+    ['a display refuses on a module record of the failure', { scene: (t) => must('const p = slabFetch(', 'const p = slabFetch(')(t).replace(/\.catch\(e => \{\n/, '.catch(e => { globalThis.__lastFail = e\n') + '\nexport const lastFail = () => globalThis.__lastFail',
+      displays: must('const { scene, failure } = useSceneRead(lookId), failed', "const { scene } = useSceneRead(lookId), failure = globalThis.__lastFail, failed") }],
     ['Stage drops the banner', { files: swap('src/stage/StageApp.jsx', '<FailuresBanner />', '') }],
   ]
   let bad = 0
-  for (const [name, m] of mutants) { const { fails: f } = await verdict(m); console.log(`${f.length ? '🔴' : '⚪ SURVIVED'} mutant: ${name}${VERBOSE && f.length ? ` (${f[0]})` : ''}`); if (!f.length) bad++ }
+  // A mutant is red only on a failure the baseline does not already have: a red baseline must not paint every mutant red.
+  const had = new Set(fails)
+  for (const [name, m] of mutants) { const f = (await verdict(m)).fails.filter(x => !had.has(x)); console.log(`${f.length ? '🔴' : '⚪ SURVIVED'} mutant: ${name}${VERBOSE && f.length ? ` (${f[0]})` : ''}`); if (!f.length) bad++ }
   if (bad) process.exitCode = 1
 }

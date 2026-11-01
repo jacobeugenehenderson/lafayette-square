@@ -32,7 +32,7 @@ NO ROUTINE PURGE: content names give a changed file a fresh name, and our reader
 - **FOLLOW-UP BRIEFS OWED (named, not written):** the photos data move (LS 249 + Huron 59 root `/photos/` paths, Huron's off-host
   logo, LS's 5 missing photos `modern-dollar/03`, `lsrc/01,02,03,06`; first rule OPERATIONS § Photographs ROT vs plan) · floated
   `reloadTerrain` + useFrame throws · console-only ⛔ refusals (154) · retryCount never resets · LightShow's two Stage mislabels ·
-  `fetchSceneOnce` caches a failed read as null · `/stage/lafayette-square/hero` blank · the 130 safe-tier reds have no baseline ·
+  `/stage/lafayette-square/hero` blank · the 130 safe-tier reds have no baseline ·
   the Ward: `useFailures` not shown to visitors.
 - **STANDING REDS (Ward):** society-frames-what-it-lights + society-flight-has-no-long-frame fail identically before and after the
   pin (Kalends' A/B; frames went green once on the base); cause not established.
