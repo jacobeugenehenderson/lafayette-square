@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 556,
+  "total": 557,
   "counts": {
-    "safe": 382,
+    "safe": 383,
     "local-effect": 32,
     "live": 142
   },
@@ -304,6 +304,15 @@
       "tier": "safe",
       "why": [
         "importSource of src/displays/lightShow/engine.js — read, safe"
+      ]
+    },
+    {
+      "file": "checks/claims-a-display-is-authored-on-its-own-channel.mjs",
+      "tier": "safe",
+      "why": [
+        "importSource of src/displays/showChannel.js — read, safe",
+        "importSource of src/displays/lightShow/engine.js — read, safe",
+        "importSource of src/lib/todSlots.js — read, safe"
       ]
     },
     {

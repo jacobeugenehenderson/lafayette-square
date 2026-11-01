@@ -36,6 +36,7 @@
 // so the envelope shifts seasonally with the real sun.
 import { TOD_SLOT_IDS, todSlotMinutesAt, todSlotNearest } from '../lib/todSlots.js'
 import { townPlace } from '../lib/townPlace.js'
+import { Refusal } from '../lib/refusal.js'
 import { LAMPGLOW_FLAT_DEFAULTS, LAMPGLOW_RADIUS_V } from './skyLightChannels.js'
 
 
@@ -406,6 +407,30 @@ export function resolveGroupAtMinute(channel, minute, slotMinutes, fieldKeys, de
     out[k] = env.key ? env.key[k] * env.scale : base[k] * env.tween
   }
   return out
+}
+
+/**
+ * A STEP-HELD field of a tod channel: the value of the last key at or before `minute`, held until the next, never
+ * tweened (a count, e.g. a display's minutes between shows: a tweened 45 between keys of 30 and 60 is a value nobody
+ * keyed). Before the day's first key, the day's last key holds across midnight. Fades do not touch it. Keys whose slot
+ * has no minute that day drop, as in the tweens; with none left it is null (nothing keyed). A flat channel returns its one value. ⛔ A key without the field
+ * throws by name: a step has no default to fall back to.
+ * ▶ node checks/claims-a-display-is-authored-on-its-own-channel.mjs
+ */
+export function keyedStepAt(channel, field, minute, slotMinutes) {
+  if (!channel?.animated) {
+    const v = channel?.values?.[field]
+    if (v == null) throw new Refusal(`[keyedStepAt] ⛔ the flat channel has no "${field}"`)
+    return v
+  }
+  const pts = Object.entries(channel.values || {}).filter(([id]) => slotMinutes[id] != null).map(([id, tuple]) => {
+    if (tuple?.[field] == null) throw new Refusal(`[keyedStepAt] ⛔ the key at "${id}" has no "${field}"`)
+    return { id, minute: slotMinutes[id], v: tuple[field] }
+  }).sort((a, b) => a.minute - b.minute || SLOT_ORDER.indexOf(a.id) - SLOT_ORDER.indexOf(b.id))
+  if (!pts.length) return null
+  let held = pts[pts.length - 1]
+  for (const p of pts) if (p.minute <= minute) held = p
+  return held.v
 }
 
 // Generic group-channel migrate. Used by new channels (Bloom, Sky, etc.)
