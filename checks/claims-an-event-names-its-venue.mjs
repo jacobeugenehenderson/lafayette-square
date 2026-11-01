@@ -48,7 +48,7 @@ const PASSES = [
   { ...D, listing_id: 'L1' }, { ...D, listing_id: 'L1', venue: { listing: 'L1' }, host: { listing: 'L1' } },
 ]
 
-async function verdict({ bake, ticker, guardian } = {}) {
+async function verdict({ bake, ticker, guardian, plant } = {}) {
   const fails = [], F = (c, m) => { if (!c) fails.push(m) }
   const B = await importSource('cartograph/bake-content.js', bake ? { transform: bake } : {})
   const ctx = { listings, roster, inRadius: () => B.townRadius('provincetown') }
@@ -62,10 +62,14 @@ async function verdict({ bake, ticker, guardian } = {}) {
   const towns = readdirSync('cartograph/data').filter(t => existsSync(`cartograph/data/${t}/content/events.json`))
   F(towns.length >= 2, `only ${towns.length} town(s) keep a calendar: the real-data clause would pass on almost nothing`)
   for (const t of towns) {
-    const real = JSON.parse(sourceOf(`cartograph/data/${t}/content/events.json`)), rows = Array.isArray(real) ? real : real.events
+    const real = JSON.parse(sourceOf(`cartograph/data/${t}/content/events.json`))
+    const rows = [...(Array.isArray(real) ? real : real.events), ...(plant?.town === t ? [plant.row] : [])]
     if (!rows.length) continue
-    const L = existsSync(`cartograph/data/${t}/content/listings.json`) ? JSON.parse(sourceOf(`cartograph/data/${t}/content/listings.json`)).listings : []
-    const Rb = existsSync(`cartograph/data/${t}/content/roster.json`) ? JSON.parse(sourceOf(`cartograph/data/${t}/content/roster.json`)).buildings : []
+    // ⛔ never an empty stand-in for a missing file: a town with rows and no roster/listings is said, by name (Zob)
+    const missing = ['listings.json', 'roster.json'].filter(f => !existsSync(`cartograph/data/${t}/content/${f}`))
+    if (missing.length) { fails.push(`${t} keeps a calendar with ${rows.length} rows but has no content/${missing.join(' or content/')}`); continue }
+    const L = JSON.parse(sourceOf(`cartograph/data/${t}/content/listings.json`)).listings
+    const Rb = JSON.parse(sourceOf(`cartograph/data/${t}/content/roster.json`)).buildings
     const R = B.eventProblems(rows, { listings: L, roster: Rb, inRadius: () => B.townRadius(t) })
     F(!R.errs.length, `${t}'s own calendar does not validate: ${R.errs.join(' · ')}`)
   }
@@ -84,6 +88,13 @@ async function verdict({ bake, ticker, guardian } = {}) {
 }
 
 const fails = await verdict()
+// ⭐ The loop is proven to reach past Provincetown: a bad row planted IN MEMORY in another town's calendar must turn the
+// check red, naming that town (Zob: no mutant showed the loop could fail).
+{
+  const other = readdirSync('cartograph/data').filter(t => t !== 'provincetown' && existsSync(`cartograph/data/${t}/content/events.json`) && existsSync(`cartograph/data/${t}/content/roster.json`))[0]
+  const planted = other ? await verdict({ plant: { town: other, row: { id: 'planted', title: 't', start_date: '2026-11-11', venue: { name: 'Boston', point: { lat: 42.3601, lon: -71.0589 } } } } }) : []
+  if (!other || !planted.some(f => f.startsWith(`${other}'s own calendar`))) fails.push(`a bad row planted in ${other ?? 'another town'}'s calendar did not turn the check red: the loop does not reach past Provincetown`)
+}
 if (fails.length) { console.log('⛔ an event does not name its venue:\n  · ' + fails.join('\n  · ')); process.exitCode = 1 }
 else console.log(`✅ every event names where it happens: ${REFUSED.length} wrong rows refused by name, ${PASSES.length} good forms pass, every town's own calendar validates; the ticker opens the venue and draws a scene show as text; the guardian path (repo copy) cannot name the scene`)
 
