@@ -23,7 +23,7 @@ import { treeBakeInputsForMap, treeLibraryFiles } from './tree-bake-inputs.mjs'
 import { terrainValueReads } from './terrainReads.mjs'
 import { COAST_FILE } from './coastFile.mjs'
 import { pendingPathOf, tolerancePathOf, recordIdentity, coastReadsOf } from './bake-coast.mjs'   // the coast's residual record: one home
-import { pourSteps, skeletonStep, runSkeleton, stepReads, recordStep, readBakeReads, runPour, groundForReaders, sceneForReaders, townPourElevation, pourGuardRefusals } from './pourSteps.mjs'
+import { pourSteps, skeletonStep, runSkeleton, stepReads, recordStep, readBakeReads, runPour, groundForReaders, sceneForReaders, townPourElevation, pourGuardRefusals, townRecordFor } from './pourSteps.mjs'
 import { readBakeDesign, SEED_STRIPPED_FIELDS } from './lookDesign.mjs'
 import { productionDomainFor, askOperations } from './operations-domain.mjs'
 import { lookIdFor, isDeclaredOnly, planJoin, executeJoin } from './scene-address.mjs'
@@ -2677,7 +2677,7 @@ createServer(async (req, res) => {
           if (P.plan) { P.plan.stale.push({ step: label, why: ['an authoring input is newer than its output'] }); return }
           await runStep(P, label, cmd, opts); ran(label); return
         }
-        const { code, data } = stepReads(inputs, bakeScene)   // the step's import closure, its data and the town's record (pourSteps.mjs)
+        const { code, data } = stepReads(inputs)   // the step's import closure and its data, the record's declared fields among them (pourSteps.mjs)
         const was = bakeReads[`${id}:${label}`], who = `step "${label}"`
         const why = was ? [...contentChanged(was.code, code, who), ...contentChanged(was.data, data, who)] : contentChanged(undefined, [], who)
         const missing = outputs.filter(o => !existsSync(o) && !(was && absentOk.includes(o)))
@@ -2689,7 +2689,7 @@ createServer(async (req, res) => {
         if (stage) stage.published = await stagedSlabStep({ ...stage, step: (dir) => runStep(P, label, `${cmd} --out-dir="${dir}"`, opts) })
         else await runStep(P, label, cmd, opts)
         // recorded AFTER the run: an input that is also an output (ground-ao's ground.json) is recorded as it left it
-        recordStep(MAP_JSON, [id], label, inputs, bakeScene)   // the one recorder (pourSteps.mjs), as Extent's pours record
+        recordStep(MAP_JSON, [id], label, inputs)   // the one recorder (pourSteps.mjs), as Extent's pours record
         ran(label)
       }
       // Bake only ACTIVATED content: a hidden layer (layerVis=false) doesn't get
@@ -2956,7 +2956,8 @@ createServer(async (req, res) => {
            ...declaredAddressPointPaths(bakeScene), ...declaredParcelPaths(bakeScene), sourcesPath(bakeScene),
            join(here, 'bake-buildings.js'), join(here, 'building-address.mjs'), join(here, 'address-points.mjs'),
            groundForReaders(LOOK_DIR), join(LOOK_DIR, 'ground.bin'),   // each building's groundY is sampled off the drawn ground (a raised kerb)
-           join(SCENE_DIR, 'clean', 'skeleton.json')],   // the named streets each building fronts, for its neon faces (bake-buildings.js)
+           join(SCENE_DIR, 'clean', 'skeleton.json'),   // the named streets each building fronts, for its neon faces (bake-buildings.js)
+           townRecordFor(bakeScene, ['setPiece.buildingId'])],   // the town's set-piece building (bake-buildings.js), the one field it reads
           [join(LOOK_DIR, 'buildings.json'), join(LOOK_DIR, 'buildings.bin')],
           `node bake-buildings.js --look=${id} ${sceneFlag}`,
           { cwd: here, timeout: 300000 })
@@ -3175,7 +3176,9 @@ createServer(async (req, res) => {
       await runIfDirty('ground-ao',
         [MAP_JSON, join(SCENE_DIR, 'buildings.json'), join(LOOK_DIR, 'ground.json'), join(LOOK_DIR, 'ground.bin'),
          join(LOOK_DIR, 'lamps.json'), join(LOOK_DIR, 'trees.json'), join(LOOK_DIR, 'trees-atlas.json'),
-         join(here, 'bake-ground-ao.js')],
+         join(here, 'bake-ground-ao.js'),
+         // its code imports bake-buildings.js (loadBuildings), whose file reads this field: declared, the safe direction
+         townRecordFor(bakeScene, ['setPiece.buildingId'])],
         // it also WRITES ground.json (its four maps, pourSteps.mjs#GROUND_AO_FIELDS): the steps above read that by value
         [join(LOOK_DIR, 'ground.lightmap.png'), join(LOOK_DIR, 'ground.json')],
         `node bake-ground-ao.js --look=${id} ${sceneFlag}`,

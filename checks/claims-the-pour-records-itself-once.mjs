@@ -26,7 +26,7 @@ const PC = await import('../cartograph/pour-code.mjs')
 // (1) the source
 { const s = readFileSync(join(ROOT, 'cartograph/serve.js'), 'utf8'), code = s.split('\n').filter(l => !/^\s*\/\//.test(l)).join('\n')
   const own = ['node bake-coast.mjs', 'node pipeline.js', 'node promote-ribbons.js'].filter(c => code.includes(c))
-  const bake = /const POUR = Object\.fromEntries\(pourSteps\(bakeScene,/.test(s) && /stepReads\(inputs, bakeScene\)/.test(s) && /recordStep\(MAP_JSON, \[id\], label, inputs, bakeScene\)/.test(s)
+  const bake = /const POUR = Object\.fromEntries\(pourSteps\(bakeScene,/.test(s) && /stepReads\(inputs\)/.test(s) && /recordStep\(MAP_JSON, \[id\], label, inputs\)/.test(s)
   const extent = (s.match(/await runExtentPour\(scene, \{ cwd: here, env \}\)/g) || []).length === 2 && /return runPour\(pour\.steps,/.test(s)
   row(!own.length && bake && extent, `(1) serve.js: its own step commands ${own.length ? own.join(', ') : 'none'} · the Bake reads the table, judges with stepReads, records with recordStep (${bake}) · /rescope and /pour run runExtentPour → runPour (${extent})`) }
 
@@ -45,7 +45,7 @@ const plant = async (M) => { rmSync(join(clean, 'bake-reads.json'), { force: tru
   const steps = M.pourSteps(SCENE, paths, RIB, { elevation: true })
   const out = await M.runPour(steps, { scene: SCENE, mapJson: paths.map, lookIds: [LOOK], run: async (st, onLine) => { ran.push(st.label); if (onLine) onLine('PROMOTE-DIFF {"streets":[419,419]}') } })
   const reads = P.readBakeReads(paths.map), dirty = {}
-  for (const st of steps.filter(s => s.judge !== 'mtime')) { const was = reads[`${LOOK}:${st.label}`], { code, data } = P.stepReads(st.inputs, SCENE), who = `step "${st.label}"`
+  for (const st of steps.filter(s => s.judge !== 'mtime')) { const was = reads[`${LOOK}:${st.label}`], { code, data } = P.stepReads(st.inputs), who = `step "${st.label}"`
     dirty[st.label] = was ? [...PC.contentChanged(was.code, code, who), ...PC.contentChanged(was.data, data, who)] : PC.contentChanged(undefined, [], who) }
   const asks = !reads[`${LOOK}:promote-ribbons`]   // serve.js lsAsks, for a held town
   return { ran, out, dirty, asks, pass: ran.join() === 'coast,pipeline,promote-ribbons' && !dirty.coast.length && !dirty['promote-ribbons'].length && !asks && !reads[`${LOOK}:pipeline`] && out.promoteDiff?.streets?.[0] === 419 } }
@@ -53,7 +53,7 @@ const say = (J) => `ran ${J.ran.join(' → ')} · the Bake then finds coast ${J.
 try {
   { const J = await plant(P); row(J.pass, `(3) an Extent pour, planted: ${say(J)}`) }
   // MUTANT: runPour's record removed
-  { const src1 = readFileSync(join(ROOT, 'cartograph/pourSteps.mjs'), 'utf8'), ANCHOR1 = "    if (st.judge !== 'mtime') recordStep(mapJson, lookIds, st.label, st.inputs, scene)\n"
+  { const src1 = readFileSync(join(ROOT, 'cartograph/pourSteps.mjs'), 'utf8'), ANCHOR1 = "    if (st.judge !== 'mtime') recordStep(mapJson, lookIds, st.label, st.inputs)\n"
     if (src1.split(ANCHOR1).length !== 2) row(false, 'mutant (the record skipped): the anchor is not in pourSteps.mjs once — re-aim it')
     else { const dir1 = mkdtempSync(join(tmpdir(), 'pourrec-m-'))
       try { writeFileSync(join(dir1, 'pourSteps.mjs'), src1.replace(ANCHOR1, '').replace(/from '(\.{1,2}\/[^']+)'/g, (_, r) => `from "${pathToFileURL(join(ROOT, 'cartograph', r)).href}"`))

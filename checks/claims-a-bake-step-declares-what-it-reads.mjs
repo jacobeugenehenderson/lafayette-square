@@ -224,7 +224,7 @@ const RUN_IF_DIRTY_EXPANDS_CODE = (() => {
   const body = src.slice(a, balanced(src, src.indexOf('{', src.indexOf('=>', a))))
   // the step's reads and its record live in pourSteps.mjs (#stepReads, #recordStep), which runIfDirty calls
   const reads = POUR_SRC.slice(POUR_SRC.indexOf('export function stepReads('), POUR_SRC.indexOf('\n}\n', POUR_SRC.indexOf('export function stepReads(')))
-  return /stepReads\(inputs, bakeScene\)/.test(body) && /contentChanged\(/.test(body) && /recordStep\(/.test(body) && /importClosure\(inputs\.filter\(isCode\)/.test(reads)
+  return /stepReads\(inputs\)/.test(body) && /contentChanged\(/.test(body) && /recordStep\(/.test(body) && /importClosure\(inputs\.filter\(isCode\)/.test(reads)
 })()
 
 // ── the steps ──

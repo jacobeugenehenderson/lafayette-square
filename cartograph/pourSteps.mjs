@@ -35,9 +35,18 @@ export function saveBakeRead(mapJson, lookId, label, rec) {
   catch (e) { console.warn(`[bake] could not record what ${label} read: ${e.message}`) }   // the next bake re-runs it: the safe direction
 }
 
-// ⭐ THE TOWN'S RECORD IS DATA, NOT CODE (2026-10-04): a step's code closure stops at the town registry, and the step reads THIS
-// town's record by value, so an edit to Huron reaches Huron and no other town.
-export const townRecordOf = (scene) => ({ value: `the town record of "${scene}"`, read: () => instanceForMap(scene) ?? null })
+// ⭐ THE TOWN'S RECORD IS DATA, NOT CODE (2026-10-04), AND A STEP KEYS ONLY THE FIELDS IT READS (2026-11-01). A step's code closure
+// stops at the town registry; a step that reads the record declares the fields, as a projection, among its inputs:
+// `townRecordFor(scene, ['setPiece.buildingId'])` ('*' = the whole record). A step that declares none carries no record, so a
+// branding edit re-runs no geometry. ⛔ Until 2026-11-01 every step carried the WHOLE record (stepReads appended it), so any
+// edit re-poured the town from its skeleton; one judged step read one field. ▶ node checks/claims-a-step-keys-every-input-that-shapes-it.mjs
+/** `rec` projected onto `fields`, in the declared order: a path → its value (a missing one → null, the same on every run). */
+export function pickRecord(rec, fields) {
+  if (fields.includes('*')) return rec
+  return Object.fromEntries(fields.map(f => [f, f.split('.').reduce((o, k) => (o == null ? undefined : o[k]), rec) ?? null]))
+}
+export const townRecordFor = (scene, fields) => ({ value: `the town record of "${scene}": ${fields.join(', ')}`, fields,
+  read: () => { const rec = instanceForMap(scene); return rec ? pickRecord(rec, fields) : null } })
 
 // ⭐ ground.json AS ITS READERS READ IT (2026-10-28, the 10-04 scene.json/bakedAt pattern). bake-ground-ao runs LAST and writes
 // its four maps back into ground.json (`lightmap` with the groundKey it was baked against, `colormap`, `poolmap`, `rulemap`);
@@ -70,16 +79,16 @@ export const sceneForReaders = (sceneDir) => ({
   },
 })
 
-/** A step's reads: its CODE is its declared scripts' whole import closure, its DATA every other declared input plus the town's
- *  record. What the Bake judges a step by, and what is recorded after it runs. */
-export function stepReads(inputs, scene) {
+/** A step's reads: its CODE is its declared scripts' whole import closure, its DATA every other declared input (the record's
+ *  fields among them, when it declares any: #townRecordFor). What the Bake judges a step by, and what is recorded after it runs. */
+export function stepReads(inputs) {
   const isCode = (f) => typeof f === 'string' && /\.m?js$/.test(f)
-  return { code: importClosure(inputs.filter(isCode), { stopAt: [TOWN_REGISTRY] }), data: [...inputs.filter(f => !isCode(f)), townRecordOf(scene)] }
+  return { code: importClosure(inputs.filter(isCode), { stopAt: [TOWN_REGISTRY] }), data: inputs.filter(f => !isCode(f)) }
 }
 
 /** The one recorder: what `label` read, saved for every Look of the scene (the pour's outputs are the town's, not one Look's). */
-export function recordStep(mapJson, lookIds, label, inputs, scene) {
-  const { code, data } = stepReads(inputs, scene), rec = { code: contentRecord(code), data: contentRecord(data) }
+export function recordStep(mapJson, lookIds, label, inputs) {
+  const { code, data } = stepReads(inputs), rec = { code: contentRecord(code), data: contentRecord(data) }
   for (const id of lookIds) saveBakeRead(mapJson, id, label, rec)
 }
 
@@ -101,7 +110,7 @@ export function skeletonStep(scene, paths) {
 /** Run the skeleton step outside the Bake (Extent's commit, its rollback) and record it, so the next Bake judges it done. */
 export async function runSkeleton(step, { scene, mapJson, lookIds, run }) {
   await run(step)
-  recordStep(mapJson, lookIds, step.label, step.inputs, scene)
+  recordStep(mapJson, lookIds, step.label, step.inputs)
 }
 
 /**
@@ -179,7 +188,7 @@ export async function runPour(steps, { scene, mapJson, lookIds, run }) {
   let promoteDiff = null
   for (const st of steps) {
     await run(st, st.label === 'promote-ribbons' ? (l) => { if (l.startsWith('PROMOTE-DIFF ')) promoteDiff = JSON.parse(l.slice(13)) } : null)
-    if (st.judge !== 'mtime') recordStep(mapJson, lookIds, st.label, st.inputs, scene)
+    if (st.judge !== 'mtime') recordStep(mapJson, lookIds, st.label, st.inputs)
   }
   return { promoteDiff }
 }
