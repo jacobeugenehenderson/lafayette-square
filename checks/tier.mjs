@@ -106,8 +106,6 @@ function lex(src) {
 
 /** Commands that reach the network, or that can run anything (so: undecidable ⇒ live). */
 const NET_CMD = /\b(curl|wget|nc|ssh|scp|supabase|psql|npx|npm\s+(i|install|publish)|pip|gh\s)\b/
-/** Local, read-only commands. Anything outside this list is not shown to be local. */
-const LOCAL_CMD = /^\s*(git\s+(ls-files|show|rev-parse|log|diff|cat-file|status|grep|merge-base)|grep|rg|ls|cat|find|wc|sed|awk|sort|uniq|head|tail|node\s+-[ev]|true)\b/
 
 /**
  * ⭐ A GIT READ OF HISTORY IS SAFE ONLY AT A PINNED BLOB (Boz's ruling, 2026-11-01). `git show` / `git cat-file` of
@@ -154,8 +152,8 @@ const PLAIN_WORD = /^[\w./:@%+=,-]*$/
 function spliceConsts(c, code) {
   let opaque = false
   const out = c.replace(/\$\{\s*([A-Za-z_$][\w$]*)?[^}]*\}/g, (whole, name) => {
-    const m = name && whole === `\${${name}}` ? new RegExp(`\\bconst\\s+${name.replace(/\$/g, '\\$')}\\s*=\\s*(['"])([^'"\`]*)\\1`).exec(code ?? '') : null
-    if (m && PLAIN_WORD.test(m[2])) return m[2]
+    const v = name && whole === `\${${name}}` ? constLiteral(code ?? '', name) : null
+    if (v != null && PLAIN_WORD.test(v)) return v
     opaque = true; return 'x'
   })
   return { text: out.replace(/(^|[^\\])\\n/g, '$1\n'), opaque }
@@ -171,24 +169,55 @@ function stringCmdRead(c, code) {
   }
   return oneCmdRead(stages[0] ?? c)
 }
-function oneCmdRead(c) {
-  const head = c.slice(0, 40)
-  if (/^\s*git\s+(show|cat-file)\b/.test(c)) {
-    const m = /^\s*git\s+(?:show|cat-file\s+(?:-p|blob))\s+(\S+)\s*$/.exec(c)
-    return m && PINNED_REV.test(m[1]) ? { local: true, why: `runs \`${head}\` — a pinned blob, read-only` }
-      : { local: false, why: `runs \`${head}\` — git history at a moving or unpinned rev, or with an option` }
-  }
-  return LOCAL_CMD.test(c) ? { local: true, why: `runs \`${c.slice(0, 30)}\` — local, read-only` } : { local: false, why: `runs \`${head}\` — not a known-local command` }
+// ⭐ A NAME IS READ IN PLACE ONLY WHEN IT APPEARS ONCE IN A BINDING SHAPE (Fuse, 2026-11-01): `const D = 'x'`, then
+// `function f(a = g(), D)`, `(…, D) =>`, `{ a = 1, D } = o` or a `let D` — the value at the call is not the const's. A
+// parameter list is not parsed (defaults hold parens and `=`); instead every occurrence of the name as a word that is
+// preceded by `(` `,` `{` `[` `:` `...` or const/let/var/function/class, or followed by `=>`, is counted, OVER-counting by
+// shape (a call `f(D)`, an object value `{ k: D }` and a ternary `? a : D` count too), so a doubt reads live. The `:`
+// is a destructuring rename (`{ x: D }`, Fuse). A `${D}` use is not counted. Exactly one, and that one the
+// `const` of a plain string literal, or the name is unresolved.
+function constLiteral(code, name) {
+  const n = name.replace(/\$/g, '\\$')
+  const re = new RegExp(`(\\$\\{\\s*|\\.\\.\\.\\s*|[(,{\\[:]\\s*|\\b(?:const|let|var|function|class)\\s+)?(?<![\\w$.])${n}(?![\\w$])(\\s*=>)?`, 'g')
+  let count = 0
+  for (const m of code.matchAll(re)) { const pre = m[1] ?? ''; if (pre.startsWith('${')) continue; if (pre || m[2]) count++ }
+  if (count !== 1) return null
+  const m = new RegExp(`\\bconst\\s+${n}\\s*=\\s*(['"])([^'"\`\\\\]*)\\1`).exec(code)
+  return m ? m[2] : null
 }
+
+/** A shell stage's words, quotes removed (an escape keeps the next character). */
+function shellWords(s) {
+  const out = []; let cur = '', q = null, any = false
+  for (let i = 0; i < s.length; i++) {
+    const ch = s[i]
+    if (q) { if (ch === q) q = null; else if (q === '"' && ch === '\\') cur += s[++i] ?? ''; else cur += ch; continue }
+    if (ch === "'" || ch === '"') { q = ch; any = true; continue }
+    if (ch === '\\') { cur += s[++i] ?? ''; any = true; continue }
+    if (/\s/.test(ch)) { if (cur || any) out.push(cur); cur = ''; any = false; continue }
+    cur += ch
+  }
+  if (cur || any) out.push(cur)
+  return out
+}
+
+/**
+ * ⭐ A COMMAND IS LOCAL BY WHAT IT IS ASKED TO DO, NOT BY ITS NAME (Boz's ticket, 2026-11-01). The old list of read-only
+ * commands passed every option of each: `node -e` runs code, `sed -i`, `find -delete`, awk's system(), `sort -o` and
+ * rg's `--pre` write or run a program. A per-option DENY-list is a fallback (Fuse: `sed -f`, a sed `s` with any delimiter,
+ * `awk -f`/`-l`, `sort --compress-program`, rg `--hostname-bin` each passed one), so the list holds only what checks run:
+ * git (its options read, below), grep, ls, cat, wc, head, tail without follow (it never exits), `true`, `node -v`. Every
+ * other command is live, sed, awk, find, sort, uniq and rg included; one comes back with an option ALLOW-list and a
+ * planted case when a check needs it. One reader for a shell stage and an argv call. ▶ `gitSelfTest` below.
+ */
 // ⛔ GIT OPTIONS CAN WRITE OR RUN A PROGRAM (Fuse, 2026-11-01): `diff`/`log --output=<file>` writes, `grep -O` opens a
-// pager, `--ext-diff` / `--textconv` run a configured command. On an argv call, options are read only where none can:
-// ls-files, rev-parse and merge-base take any; grep takes the listed ones; every other subcommand (show, cat-file, log,
-// diff, status) takes none. An argv call outside that is unreadable: live. (The STRING form's options are the older
-// LOCAL_CMD hole, ticketed on its own.)
+// pager, `--ext-diff` / `--textconv` run a configured command. Options are read only where none can: ls-files, rev-parse
+// and merge-base take any; grep takes the listed ones; show and cat-file name a pinned blob; log, diff and status take
+// none. The same in a string and in an argv call.
 const GIT_GREP_OPTS = new Set(['-n', '-I', '-e', '-l', '-i', '-w', '-E', '-F', '-c', '-h', '-q', '--'])
-function argvOptionsRead([sub, ...rest]) {
+const GIT_READS = ['ls-files', 'rev-parse', 'merge-base', 'log', 'diff', 'status', 'grep']
+function gitOptionsRead([sub, ...rest]) {
   if (['ls-files', 'rev-parse', 'merge-base'].includes(sub)) return true
-  if (sub === 'cat-file') return rest.length === 2 && ['-p', 'blob'].includes(rest[0]) && !rest[1].startsWith('-')
   let afterE = false, afterDashes = false
   for (const w of rest) {
     if (afterDashes) continue
@@ -200,27 +229,45 @@ function argvOptionsRead([sub, ...rest]) {
   }
   return true
 }
-/** execFileSync / spawnSync('git', [ … ]): each array read element by element → the command it runs, or null (unreadable). */
-const GIT_ARGV = /\b(?:execFileSync|spawnSync|execFile|spawn)\s*\(\s*(['"])git\1\s*,\s*\[([^\]]*)\]/g
-const NOT_LITERAL = '\u0000'
-function gitArgvCommands(code) {
-  const constSha = (name) => {
-    const m = new RegExp(`\\bconst\\s+${name.replace(/\$/g, '\\$')}\\s*=\\s*['"]([0-9a-f]{40})['"]`).exec(code)
-    return m ? m[1] : NOT_LITERAL
+function wordsRead(words, head) {
+  const [cmd, ...a] = words, ok = { local: true, why: `runs \`${head.slice(0, 30)}\` — local, read-only` }
+  const no = (why) => ({ local: false, why: `runs \`${head.slice(0, 40)}\` — ${why}` })
+  switch (cmd) {
+    case 'git': {
+      const [sub, ...r] = a
+      if (sub === 'show' || sub === 'cat-file') {
+        const rev = sub === 'show' ? (r.length === 1 ? r[0] : null) : (r.length === 2 && ['-p', 'blob'].includes(r[0]) ? r[1] : null)
+        return rev && PINNED_REV.test(rev) ? { local: true, why: `runs \`${head.slice(0, 40)}\` — a pinned blob, read-only` } : no('git history at a moving or unpinned rev, or with an option')
+      }
+      if (!GIT_READS.includes(sub)) return no('not a known read-only git subcommand')
+      return gitOptionsRead(a) ? ok : no(`git ${sub} with an option that can write or run a program`)
+    }
+    case 'node': return a.length === 1 && ['-v', '--version'].includes(a[0]) ? ok : no('node runs the code it is handed')
+    case 'tail': return a.some(x => /^-[^-]*[fF]|^--follow/.test(x)) ? no('tail follows and never exits (-f, -F, --follow)') : ok
+    case 'grep': case 'ls': case 'cat': case 'wc': case 'head': case 'true': return ok
+    default: return no('not a known-local command')
   }
+}
+function oneCmdRead(c) { return wordsRead(shellWords(c), c) }
+
+/** execFileSync / spawnSync('<cmd>', [ … ]): each array read element by element → { text, words }, or null (unreadable). */
+const ARGV_CALL = /\b(?:execFileSync|spawnSync|execFile|spawn)\s*\(\s*(['"])([\w./-]+)\1\s*,\s*\[([^\]]*)\]/g
+const NOT_LITERAL = '\u0000'
+function argvCommands(code) {
   const out = []
-  for (const m of code.matchAll(GIT_ARGV)) {
-    const words = m[2].split(',').map(e => e.trim()).filter(Boolean).map(e => {
+  for (const m of code.matchAll(ARGV_CALL)) {
+    const cmd = m[2]
+    const words = m[3].split(',').map(e => e.trim()).filter(Boolean).map(e => {
       const q = /^(['"])([^'"`]*)\1$/.exec(e)
       if (q) return q[2]
       const t = /^`([^`]*)`$/.exec(e)
       if (!t) return NOT_LITERAL                                           // a name, a spread, a call
-      const at = t[1].indexOf(':')
-      if (at < 0) return NOT_LITERAL
-      const rev = t[1].slice(0, at).replace(/\$\{\s*([A-Za-z_$][\w$]*)\s*\}/g, (_, n) => constSha(n))
-      return rev.includes('${') ? NOT_LITERAL : `${rev}:${t[1].slice(at + 1).replace(/\$\{[^}]*\}/g, 'x') || 'x'}`
+      const read = (txt) => txt.replace(/\$\{\s*([A-Za-z_$][\w$]*)\s*\}|\$\{[^}]*\}/g, (_, n) => { const v = n ? constLiteral(code, n) : null; return v != null && PLAIN_WORD.test(v) ? v : NOT_LITERAL })
+      // git's `<rev>:<path>`: the rev must read as a pinned SHA; the path after it may be computed (it names a blob, not an option)
+      if (cmd === 'git' && t[1].includes(':')) { const at = t[1].indexOf(':'); return `${read(t[1].slice(0, at))}:${t[1].slice(at + 1).replace(/\$\{[^}]*\}/g, 'x') || 'x'}` }
+      return read(t[1])
     })
-    out.push(words.some(w => w.includes(NOT_LITERAL)) || !argvOptionsRead(words) ? null : `git ${words.join(' ')}`)
+    out.push({ cmd, words: words.some(w => w.includes(NOT_LITERAL)) ? null : [cmd, ...words] })
   }
   return out
 }
@@ -277,13 +324,13 @@ const SELF_RERUN = /\b(?:spawnSync|execFileSync)\s*\(\s*process\.execPath\s*,\s*
 const IMPORTS_CHILD_PROCESS = /['"](?:node:)?child_process['"]/
 
 function execCommands(code) {
-  if (!IMPORTS_CHILD_PROCESS.test(code)) return { cmds: [], argv: new Set(), selfRuns: 0, opaque: false }
+  if (!IMPORTS_CHILD_PROCESS.test(code)) return { cmds: [], argv: new Map(), selfRuns: 0, opaque: false }
   const cmds = []
   for (const m of code.matchAll(/\b(execSync|execFileSync|exec|execFile|spawnSync|spawn)\s*\(\s*(['"`])([\s\S]*?)\2/g)) cmds.push(m[3])
-  // an argv-form git call is read as its array: the bare 'git' captured above is replaced by the command, when readable
-  // (no shell runs an argv call, so its command is read word by word, never split into stages)
-  const argv = new Set()
-  for (const g of gitArgvCommands(code)) if (g) { const i = cmds.indexOf('git'); if (i >= 0) { cmds[i] = g; argv.add(g) } }
+  // an argv call is read as its array: the bare command name captured above is replaced by the command, when readable
+  // (no shell runs an argv call, so its words are read as they are, never split into stages)
+  const argv = new Map()
+  for (const g of argvCommands(code)) if (g.words) { const i = cmds.indexOf(g.cmd); if (i >= 0) { cmds[i] = g.words.join(' '); argv.set(cmds[i], g.words) } }
   const selfRuns = [...code.matchAll(SELF_RERUN)].length
   // a child_process call whose command is not a literal cannot be read at all — unless it re-runs this same file
   const calls = [...code.matchAll(/\b(execSync|execFileSync|exec|execFile|spawnSync|spawn)\s*\(/g)].length
@@ -1007,7 +1054,7 @@ export function classify(file, seen = new Set(), depth = 0, spanText = null) {
   const { cmds, argv, selfRuns, opaque } = execCommands(code)
   for (const c of cmds) {
     if (NET_CMD.test(c)) { bump('live'); why.push(`runs \`${c.slice(0, 40)}\` — reaches out`) }
-    else { const r = argv.has(c) ? oneCmdRead(c) : stringCmdRead(c, code); if (!r.local) bump('live'); why.push(r.why) }
+    else { const r = argv.has(c) ? wordsRead(argv.get(c), c) : stringCmdRead(c, code); if (!r.local) bump('live'); why.push(r.why) }
   }
   if (selfRuns) why.push('re-runs its own file (process.execPath + its own path) — the same tier as itself')
   if (opaque) { bump('live'); why.push('child_process with a non-literal command — cannot be read') }
@@ -1184,6 +1231,60 @@ export function gitSelfTest() {
     ['string: a ${…} const holding a metacharacter', at("const D = 'x; rm -rf y'\nexecSync(`git ls-files -- ${D}`)"), 'live'],
     ['string: a \\n escape between two commands', at("execSync('git ls-files\\nrm -rf x')"), 'live'],
     ['string: a real newline between two commands', at("execSync(`git ls-files\nrm -rf x`)"), 'live'],
+    // the LOCAL_CMD ticket (Boz, 2026-11-01): a command is local by what it is asked to do
+    ['string: node -e runs code', at("execSync('node -e \"require(1)\"')"), 'live'],
+    ['string: node -v', at("execSync('node -v')"), 'safe'],
+    ['string: sed -i edits in place', at("execSync('sed -i s/a/b/ f.txt')"), 'live'],
+    ['string: sed -ni (a bundled -i)', at("execSync('sed -ni 1p f.txt')"), 'live'],
+    ["string: sed's w writes a file", at("execSync(\"sed 's/a/b/w out.txt' f.txt\")"), 'live'],
+    ["string: sed's e, after an address, executes", at("execSync(\"sed '1e rm -rf x' f.txt\")"), 'live'],
+    ['string: sed is not on the list, even printing', at("execSync(\"sed -n '1,5p' f.txt\")"), 'live'],
+    ['string: find -delete', at("execSync('find . -name x -delete')"), 'live'],
+    ['string: find -exec', at("execSync('find . -exec rm {} +')"), 'live'],
+    ['string: find is not on the list, even listing', at("execSync('find . -name x')"), 'live'],
+    // (a template literal: the command capture ends a string at its first escaped quote, which reads opaque, never safe)
+    ["string: awk's system()", at("execSync(`awk '{system(\"rm x\")}' f.txt`)"), 'live'],
+    ["string: awk's print >", at("execSync(`awk '{print $1 > \"o\"}' f.txt`)"), 'live'],
+    ["string: awk's getline from a command", at("execSync(`awk 'BEGIN{\"date\" | getline d}' f.txt`)"), 'live'],
+    ["string: awk is not on the list, even printing", at("execSync(\"awk '{print $1}' f.txt\")"), 'live'],
+    ['string: sort -o', at("execSync('sort -o out.txt f.txt')"), 'live'],
+    ["string: uniq's output operand", at("execSync('uniq f.txt out.txt')"), 'live'],
+    ['string: rg --pre', at("execSync('rg --pre cat x')"), 'live'],
+    ['string: git diff --ext-diff', at("execSync('git diff --ext-diff')"), 'live'],
+    ['string: git log with an option', at("execSync('git log --output=o.txt')"), 'live'],
+    ['argv: find -delete', at("execFileSync('find', ['.', '-name', 'x', '-delete'])"), 'live'],
+    ['argv: sed -i', at("execFileSync('sed', ['-i', 's/a/b/', 'f.txt'])"), 'live'],
+    ['argv: node -e', at("execFileSync('node', ['-e', 'x'])"), 'live'],
+    ['argv: find is not on the list', at("execFileSync('find', ['.', '-name', 'x'])"), 'live'],
+    // Fuse's HOLD on 2531d075: what a deny-list let through, and tail's follow
+    ['string: sed -f (a script file never read)', at("execSync('sed -f x.sed f.txt')"), 'live'],
+    ["string: sed s with a ':' delimiter and w", at("execSync(\"sed 's:a:b:w out.txt' f.txt\")"), 'live'],
+    ["string: sed s with an '@' delimiter and e", at("execSync(\"sed 's@a@b@e' f.txt\")"), 'live'],
+    ['string: awk -f (a program file never read)', at("execSync('awk -f x.awk f.txt')"), 'live'],
+    ['string: gawk -l (loads a library)', at("execSync(\"awk -l ext '{print}' f.txt\")"), 'live'],
+    ['string: sort --compress-program', at("execSync('sort --compress-program=sh f.txt')"), 'live'],
+    ['string: rg --hostname-bin', at("execSync('rg --hostname-bin=sh x src')"), 'live'],
+    ['argv: sed -f', at("execFileSync('sed', ['-f', 'x.sed', 'f.txt'])"), 'live'],
+    ['string: tail -f never exits', at("execSync('tail -f log.txt')"), 'live'],
+    ['string: tail -F', at("execSync('tail -F log.txt')"), 'live'],
+    ['string: tail --follow', at("execSync('tail --follow log.txt')"), 'live'],
+    ['string: tail -n 5', at("execSync('tail -n 5 log.txt')"), 'safe'],
+    ['argv: tail -f (a non-git argv call read past its name)', at("execFileSync('tail', ['-f', 'log.txt'])"), 'live'],
+    ['argv: grep, read as its array', at("execFileSync('grep', ['-rl', 'x', 'src'])"), 'safe'],
+    // Fuse's shadow (2026-11-01): a name read in place only when the file binds it once
+    ['string: a const shadowed by a parameter', at("const D = 'public'\nfunction f(D) { execSync(`git ls-files -- ${D}`) }"), 'live'],
+    ['string: a const shadowed by a let', at("const D = 'public'\n{ let D = process.argv[2]; execSync(`git ls-files -- ${D}`) }"), 'live'],
+    ['string: shadowed by a parameter after a default with parens', at("const D = 'public'\nfunction f(a = g(), D) { execSync(`git ls-files -- ${D}`) }"), 'live'],
+    ['string: shadowed by an arrow parameter after a default', at("const D = 'public'\nconst f = (a = g(), D) => execSync(`git ls-files -- ${D}`)"), 'live'],
+    ['string: shadowed by a destructuring with a default', at("const D = 'public'\nfunction f(o) { const { a = 1, D } = o; execSync(`git ls-files -- ${D}`) }"), 'live'],
+    ['string: shadowed by a method parameter after a default', at("const D = 'public'\nconst o = { f(a = g(), D) { execSync(`git ls-files -- ${D}`) } }"), 'live'],
+    ['string: shadowed by a destructuring of the name alone', at("const D = 'public'\nfunction f(o) { const { D } = o; execSync(`git ls-files -- ${D}`) }"), 'live'],
+    ['string: shadowed by a destructuring rename', at("const D = 'public'\nfunction f(o) { const { x: D } = o; execSync(`git ls-files -- ${D}`) }"), 'live'],
+    ['string: shadowed by a renamed parameter', at("const D = 'public'\nfunction f({ x: D }) { execSync(`git ls-files -- ${D}`) }"), 'live'],
+    ['string: shadowed by a renamed arrow parameter after a default', at("const D = 'public'\nconst f = ({ a = 1, x: D }) => execSync(`git ls-files -- ${D}`)"), 'live'],
+    ['string: shadowed by for-of', at("const D = 'public'\nfor (const D of xs) execSync(`git ls-files -- ${D}`)"), 'live'],
+    ['string: a const used twice in splices only', at("const D = 'public'\nexecSync(`git ls-files -- ${D}`)\nexecSync(`git ls-files -- ${D}/x`)"), 'safe'],
+    ['argv: a pin shadowed by an arrow parameter', at(`const PIN = '${SHA}'\nconst r = (PIN) => execFileSync('git', ['show', \`\${PIN}:src/a.js\`])`), 'live'],
   ]
   for (const [name, got, want] of cases) if (got !== want) throw new Error(`[tier] ⛔ self-test: git — ${name} read as ${got}, want ${want}`)
   return cases.length
