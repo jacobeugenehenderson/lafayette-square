@@ -169,16 +169,18 @@ function stringCmdRead(c, code) {
   }
   return oneCmdRead(stages[0] ?? c)
 }
-// ⭐ A NAME IS READ IN PLACE ONLY WHEN THE FILE BINDS IT ONCE (Fuse, 2026-11-01): `const D = 'x'` and then `function f(D)`
-// or a `let D` elsewhere — the value at the call is not the const's. Every declaration, destructuring, parameter list and
-// catch binding of the name is counted; anything but exactly one, a `const` of a plain string literal, is unresolved.
+// ⭐ A NAME IS READ IN PLACE ONLY WHEN IT APPEARS ONCE IN A BINDING SHAPE (Fuse, 2026-11-01): `const D = 'x'`, then
+// `function f(a = g(), D)`, `(…, D) =>`, `{ a = 1, D } = o` or a `let D` — the value at the call is not the const's. A
+// parameter list is not parsed (defaults hold parens and `=`); instead every occurrence of the name as a word that is
+// preceded by `(` `,` `{` `[` `...` or const/let/var/function/class, or followed by `=>`, is counted, OVER-counting by
+// shape (a call `f(D)` counts too), so a doubt reads live. A `${D}` use is not counted. Exactly one, and that one the
+// `const` of a plain string literal, or the name is unresolved.
 function constLiteral(code, name) {
-  const n = name.replace(/\$/g, '\\$'), word = new RegExp(`(^|[^\\w$])${n}([^\\w$]|$)`)
-  const decl = [...code.matchAll(new RegExp(`\\b(?:const|let|var)\\s+${n}(?![\\w$])`, 'g'))].length
-  const destr = [...code.matchAll(/\b(?:const|let|var)\s*([[{][^=;]*[\]}])\s*=/g)].filter(m => word.test(m[1])).length
-  const params = [...code.matchAll(/\bfunction\b[^(]*\(([^)]*)\)|\(([^()]*)\)\s*=>|([A-Za-z_$][\w$]*)\s*=>|\bcatch\s*\(([^)]*)\)|[A-Za-z_$][\w$]*\s*\(([^()]*)\)\s*\{/g)]
-    .filter(m => word.test(m[1] ?? m[2] ?? m[3] ?? m[4] ?? m[5] ?? '')).length
-  if (decl + destr + params !== 1) return null
+  const n = name.replace(/\$/g, '\\$')
+  const re = new RegExp(`(\\$\\{\\s*|\\.\\.\\.\\s*|[(,{\\[]\\s*|\\b(?:const|let|var|function|class)\\s+)?(?<![\\w$.])${n}(?![\\w$])(\\s*=>)?`, 'g')
+  let count = 0
+  for (const m of code.matchAll(re)) { const pre = m[1] ?? ''; if (pre.startsWith('${')) continue; if (pre || m[2]) count++ }
+  if (count !== 1) return null
   const m = new RegExp(`\\bconst\\s+${n}\\s*=\\s*(['"])([^'"\`\\\\]*)\\1`).exec(code)
   return m ? m[2] : null
 }
@@ -199,15 +201,14 @@ function shellWords(s) {
 }
 
 /**
- * ⭐ A COMMAND IS LOCAL BY WHAT IT IS ASKED TO DO, NOT BY ITS NAME (Boz's ticket, 2026-11-01). The list of read-only
- * commands let through every option of each: `node -e` runs code it is handed, `sed -i` and sed's `w` write, sed's `e`,
- * `find -exec` / `-delete`, awk's system() / getline / `|` / `print >`, `sort -o`, uniq's output file and rg's `--pre`
- * write or run a program. Each command is read word by word, for the forms that cannot; anything else is live. One
- * reader for a shell stage and for an argv call. ▶ `gitSelfTest` below, run before every classification.
+ * ⭐ A COMMAND IS LOCAL BY WHAT IT IS ASKED TO DO, NOT BY ITS NAME (Boz's ticket, 2026-11-01). The old list of read-only
+ * commands passed every option of each: `node -e` runs code, `sed -i`, `find -delete`, awk's system(), `sort -o` and
+ * rg's `--pre` write or run a program. A per-option DENY-list is a fallback (Fuse: `sed -f`, a sed `s` with any delimiter,
+ * `awk -f`/`-l`, `sort --compress-program`, rg `--hostname-bin` each passed one), so the list holds only what checks run:
+ * git (its options read, below), grep, ls, cat, wc, head, tail without follow (it never exits), `true`, `node -v`. Every
+ * other command is live, sed, awk, find, sort, uniq and rg included; one comes back with an option ALLOW-list and a
+ * planted case when a check needs it. One reader for a shell stage and an argv call. ▶ `gitSelfTest` below.
  */
-const FIND_ACTS = /^-(delete|exec|execdir|ok|okdir|fprint|fprint0|fprintf|fls)$/
-const SED_WRITES = /(^|[;{}\n])\s*(\d+|\$|\/[^/]*\/)?\s*[wWe](\s|$)|[/|#,][gpiImM0-9]*[we](\s|$|;|\})/
-const AWK_RUNS = /\bsystem\s*\(|\bgetline\b|\||\bprintf?\b[^;}]*>/
 // ⛔ GIT OPTIONS CAN WRITE OR RUN A PROGRAM (Fuse, 2026-11-01): `diff`/`log --output=<file>` writes, `grep -O` opens a
 // pager, `--ext-diff` / `--textconv` run a configured command. Options are read only where none can: ls-files, rev-parse
 // and merge-base take any; grep takes the listed ones; show and cat-file name a pinned blob; log, diff and status take
@@ -230,7 +231,6 @@ function gitOptionsRead([sub, ...rest]) {
 function wordsRead(words, head) {
   const [cmd, ...a] = words, ok = { local: true, why: `runs \`${head.slice(0, 30)}\` — local, read-only` }
   const no = (why) => ({ local: false, why: `runs \`${head.slice(0, 40)}\` — ${why}` })
-  const operands = a.filter(x => !x.startsWith('-'))
   switch (cmd) {
     case 'git': {
       const [sub, ...r] = a
@@ -242,13 +242,8 @@ function wordsRead(words, head) {
       return gitOptionsRead(a) ? ok : no(`git ${sub} with an option that can write or run a program`)
     }
     case 'node': return a.length === 1 && ['-v', '--version'].includes(a[0]) ? ok : no('node runs the code it is handed')
-    case 'sed': return a.some(x => /^-[^-]*i|^--in-place/.test(x)) || operands.some(x => SED_WRITES.test(x)) ? no('sed edits in place, writes or executes (-i, w, e)') : ok
-    case 'find': return a.some(x => FIND_ACTS.test(x)) ? no('find deletes, writes or runs a program (-delete, -exec, -fprint …)') : ok
-    case 'awk': return operands.some(x => AWK_RUNS.test(x)) ? no("awk runs a program or writes (system(), getline, |, print >)") : ok
-    case 'sort': return a.some(x => /^-[^-]*o|^--output/.test(x)) ? no('sort writes its output file (-o)') : ok
-    case 'uniq': return operands.length > 1 ? no('uniq writes its second operand') : ok
-    case 'rg': return a.some(x => /^--pre(-glob)?\b|^-[^-]*z|^--search-zip/.test(x)) ? no('rg runs a preprocessor or a decompressor') : ok
-    case 'grep': case 'ls': case 'cat': case 'wc': case 'head': case 'tail': case 'true': return ok
+    case 'tail': return a.some(x => /^-[^-]*[fF]|^--follow/.test(x)) ? no('tail follows and never exits (-f, -F, --follow)') : ok
+    case 'grep': case 'ls': case 'cat': case 'wc': case 'head': case 'true': return ok
     default: return no('not a known-local command')
   }
 }
@@ -1242,15 +1237,15 @@ export function gitSelfTest() {
     ['string: sed -ni (a bundled -i)', at("execSync('sed -ni 1p f.txt')"), 'live'],
     ["string: sed's w writes a file", at("execSync(\"sed 's/a/b/w out.txt' f.txt\")"), 'live'],
     ["string: sed's e, after an address, executes", at("execSync(\"sed '1e rm -rf x' f.txt\")"), 'live'],
-    ['string: sed -n prints', at("execSync(\"sed -n '1,5p' f.txt\")"), 'safe'],
+    ['string: sed is not on the list, even printing', at("execSync(\"sed -n '1,5p' f.txt\")"), 'live'],
     ['string: find -delete', at("execSync('find . -name x -delete')"), 'live'],
     ['string: find -exec', at("execSync('find . -exec rm {} +')"), 'live'],
-    ['string: find -name', at("execSync('find . -name x')"), 'safe'],
+    ['string: find is not on the list, even listing', at("execSync('find . -name x')"), 'live'],
     // (a template literal: the command capture ends a string at its first escaped quote, which reads opaque, never safe)
     ["string: awk's system()", at("execSync(`awk '{system(\"rm x\")}' f.txt`)"), 'live'],
     ["string: awk's print >", at("execSync(`awk '{print $1 > \"o\"}' f.txt`)"), 'live'],
     ["string: awk's getline from a command", at("execSync(`awk 'BEGIN{\"date\" | getline d}' f.txt`)"), 'live'],
-    ["string: awk prints", at("execSync(\"awk '{print $1}' f.txt\")"), 'safe'],
+    ["string: awk is not on the list, even printing", at("execSync(\"awk '{print $1}' f.txt\")"), 'live'],
     ['string: sort -o', at("execSync('sort -o out.txt f.txt')"), 'live'],
     ["string: uniq's output operand", at("execSync('uniq f.txt out.txt')"), 'live'],
     ['string: rg --pre', at("execSync('rg --pre cat x')"), 'live'],
@@ -1259,10 +1254,32 @@ export function gitSelfTest() {
     ['argv: find -delete', at("execFileSync('find', ['.', '-name', 'x', '-delete'])"), 'live'],
     ['argv: sed -i', at("execFileSync('sed', ['-i', 's/a/b/', 'f.txt'])"), 'live'],
     ['argv: node -e', at("execFileSync('node', ['-e', 'x'])"), 'live'],
-    ['argv: find -name', at("execFileSync('find', ['.', '-name', 'x'])"), 'safe'],
+    ['argv: find is not on the list', at("execFileSync('find', ['.', '-name', 'x'])"), 'live'],
+    // Fuse's HOLD on 2531d075: what a deny-list let through, and tail's follow
+    ['string: sed -f (a script file never read)', at("execSync('sed -f x.sed f.txt')"), 'live'],
+    ["string: sed s with a ':' delimiter and w", at("execSync(\"sed 's:a:b:w out.txt' f.txt\")"), 'live'],
+    ["string: sed s with an '@' delimiter and e", at("execSync(\"sed 's@a@b@e' f.txt\")"), 'live'],
+    ['string: awk -f (a program file never read)', at("execSync('awk -f x.awk f.txt')"), 'live'],
+    ['string: gawk -l (loads a library)', at("execSync(\"awk -l ext '{print}' f.txt\")"), 'live'],
+    ['string: sort --compress-program', at("execSync('sort --compress-program=sh f.txt')"), 'live'],
+    ['string: rg --hostname-bin', at("execSync('rg --hostname-bin=sh x src')"), 'live'],
+    ['argv: sed -f', at("execFileSync('sed', ['-f', 'x.sed', 'f.txt'])"), 'live'],
+    ['string: tail -f never exits', at("execSync('tail -f log.txt')"), 'live'],
+    ['string: tail -F', at("execSync('tail -F log.txt')"), 'live'],
+    ['string: tail --follow', at("execSync('tail --follow log.txt')"), 'live'],
+    ['string: tail -n 5', at("execSync('tail -n 5 log.txt')"), 'safe'],
+    ['argv: tail -f (a non-git argv call read past its name)', at("execFileSync('tail', ['-f', 'log.txt'])"), 'live'],
+    ['argv: grep, read as its array', at("execFileSync('grep', ['-rl', 'x', 'src'])"), 'safe'],
     // Fuse's shadow (2026-11-01): a name read in place only when the file binds it once
     ['string: a const shadowed by a parameter', at("const D = 'public'\nfunction f(D) { execSync(`git ls-files -- ${D}`) }"), 'live'],
     ['string: a const shadowed by a let', at("const D = 'public'\n{ let D = process.argv[2]; execSync(`git ls-files -- ${D}`) }"), 'live'],
+    ['string: shadowed by a parameter after a default with parens', at("const D = 'public'\nfunction f(a = g(), D) { execSync(`git ls-files -- ${D}`) }"), 'live'],
+    ['string: shadowed by an arrow parameter after a default', at("const D = 'public'\nconst f = (a = g(), D) => execSync(`git ls-files -- ${D}`)"), 'live'],
+    ['string: shadowed by a destructuring with a default', at("const D = 'public'\nfunction f(o) { const { a = 1, D } = o; execSync(`git ls-files -- ${D}`) }"), 'live'],
+    ['string: shadowed by a method parameter after a default', at("const D = 'public'\nconst o = { f(a = g(), D) { execSync(`git ls-files -- ${D}`) } }"), 'live'],
+    ['string: shadowed by a destructuring of the name alone', at("const D = 'public'\nfunction f(o) { const { D } = o; execSync(`git ls-files -- ${D}`) }"), 'live'],
+    ['string: shadowed by for-of', at("const D = 'public'\nfor (const D of xs) execSync(`git ls-files -- ${D}`)"), 'live'],
+    ['string: a const used twice in splices only', at("const D = 'public'\nexecSync(`git ls-files -- ${D}`)\nexecSync(`git ls-files -- ${D}/x`)"), 'safe'],
     ['argv: a pin shadowed by an arrow parameter', at(`const PIN = '${SHA}'\nconst r = (PIN) => execFileSync('git', ['show', \`\${PIN}:src/a.js\`])`), 'live'],
   ]
   for (const [name, got, want] of cases) if (got !== want) throw new Error(`[tier] ⛔ self-test: git — ${name} read as ${got}, want ${want}`)
