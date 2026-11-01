@@ -18,6 +18,7 @@
  *
  * Usage: node checks/claims-an-event-names-its-venue.mjs [--mutants]
  */
+import { readdirSync, existsSync } from 'node:fs'
 import { importSource, sourceOf } from './_importSource.mjs'
 
 const code = (s) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\{\/\*[\s\S]*?\*\/\}/g, '').replace(/\/\/.*$/gm, '')
@@ -57,9 +58,17 @@ async function verdict({ bake, ticker, guardian } = {}) {
   }
   const ok = B.eventProblems(PASSES, ctx)
   F(!ok.errs.length, `good rows refused: ${ok.errs.join(' · ')}`)
-  const real = JSON.parse(sourceOf('cartograph/data/provincetown/content/events.json'))
-  const R = B.eventProblems(Array.isArray(real) ? real : real.events, { listings: JSON.parse(sourceOf('cartograph/data/provincetown/content/listings.json')).listings, roster: JSON.parse(sourceOf('cartograph/data/provincetown/content/roster.json')).buildings, inRadius: ctx.inRadius })
-  F(!R.errs.length, `Provincetown's own calendar does not validate: ${R.errs.join(' · ')}`)
+  // every town that keeps a calendar, read from the data dir (never a list): its own rows against its own listings, roster and radius
+  const towns = readdirSync('cartograph/data').filter(t => existsSync(`cartograph/data/${t}/content/events.json`))
+  F(towns.length >= 2, `only ${towns.length} town(s) keep a calendar: the real-data clause would pass on almost nothing`)
+  for (const t of towns) {
+    const real = JSON.parse(sourceOf(`cartograph/data/${t}/content/events.json`)), rows = Array.isArray(real) ? real : real.events
+    if (!rows.length) continue
+    const L = existsSync(`cartograph/data/${t}/content/listings.json`) ? JSON.parse(sourceOf(`cartograph/data/${t}/content/listings.json`)).listings : []
+    const Rb = existsSync(`cartograph/data/${t}/content/roster.json`) ? JSON.parse(sourceOf(`cartograph/data/${t}/content/roster.json`)).buildings : []
+    const R = B.eventProblems(rows, { listings: L, roster: Rb, inRadius: () => B.townRadius(t) })
+    F(!R.errs.length, `${t}'s own calendar does not validate: ${R.errs.join(' · ')}`)
+  }
   // 2. the ticker
   const t = code(ticker ? ticker(sourceOf('src/components/EventTicker.jsx')) : sourceOf('src/components/EventTicker.jsx'))
   F(/function TickerEntry\(\{ opens, empty, onClick, className, children \}\) \{\s*if \(opens\) return <button/.test(t) && /return <div className=\{className\}/.test(t), 'the ticker draws an entry with nowhere to open as a button')
@@ -76,7 +85,7 @@ async function verdict({ bake, ticker, guardian } = {}) {
 
 const fails = await verdict()
 if (fails.length) { console.log('⛔ an event does not name its venue:\n  · ' + fails.join('\n  · ')); process.exitCode = 1 }
-else console.log(`✅ every event names where it happens: ${REFUSED.length} wrong rows refused by name, ${PASSES.length} good forms pass, Provincetown's calendar validates; the ticker opens the venue and draws a scene show as text; the guardian path (repo copy) cannot name the scene`)
+else console.log(`✅ every event names where it happens: ${REFUSED.length} wrong rows refused by name, ${PASSES.length} good forms pass, every town's own calendar validates; the ticker opens the venue and draws a scene show as text; the guardian path (repo copy) cannot name the scene`)
 
 if (process.argv.includes('--mutants')) {
   const mutants = [
