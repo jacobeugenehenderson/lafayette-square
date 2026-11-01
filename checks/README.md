@@ -208,7 +208,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 379. This is `npm test`.
+## safe — 380. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -358,6 +358,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-every-mapped-stone-structure-is-stone.mjs` | DOES EVERY MAPPED BREAKWATER AND GROYNE CARRY STONE? |
 | `checks/claims-every-measurable-town-is-declared.mjs` | A TOWN THE KIT CAN MEASURE IS A TOWN THE KIT DECLARES. |
 | `checks/claims-every-off-grade-span-over-the-water-is-listed.mjs` | CLAIM — EVERY OFF-GRADE SPAN OVER THE WATER IS LISTED, BY IDENTITY. ① leaves each one out of the ink (`tileGround.js#splitOverWater`: |
+| `checks/claims-every-operator-tab-wears-the-ward-mark.mjs` | DOES EVERY TAB THE KIT SERVES ITS OPERATOR WEAR THE ONE WARD MARK, |
 | `checks/claims-every-piece-takes-its-own-land-use.mjs` | ⭐⭐ THE INVARIANT (Jacob, 2026-10-04 — `docs/briefs/BRIEF-land-use-per-piece-and-the-control.md`): |
 | `checks/claims-every-proto-edge-lies-on-its-owner.mjs` | CLAIM — EVERY ① EDGE LIES ON THE CHAIN THAT OWNS IT (one owner per edge, and it is the right one). |
 | `checks/claims-every-shadowed-placement-renders.mjs` | EVERY PLACEMENT THE GROUND SHADOWS MUST RENDER A TREE. |
