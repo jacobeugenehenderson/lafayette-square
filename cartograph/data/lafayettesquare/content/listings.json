@@ -13,7 +13,7 @@
    "address": "Park Avenue",
    "phone": "13142312537",
    "website": "https://squareonebrewery.com/",
-   "logo": "/logos/square-one.png",
+   "logo": "logos/square-one.png",
    "category": "dining",
    "subcategory": "restaurants",
    "building_id": "bldg-0652",
@@ -105,7 +105,7 @@
    "subcategory": "cafes",
    "opening_hours_raw": "Mo-Fr 06:30-18:00; Sa 07:00-18:00; Su 07:30-18:00",
    "building_id": "bldg-0386",
-   "logo": "/logos/park-avenue-coffee.png",
+   "logo": "logos/park-avenue-coffee.png",
    "hours": {
     "monday": {
      "open": "07:00",
@@ -188,7 +188,7 @@
    "address": "Chouteau Avenue",
    "phone": "13143461165",
    "website": "https://extrawavystl.com/",
-   "logo": "/logos/extra-wavy.png",
+   "logo": "logos/extra-wavy.png",
    "category": "dining",
    "subcategory": "restaurants",
    "building_id": "bldg-0086",
@@ -454,7 +454,7 @@
    "address": "1923 Park Ave",
    "phone": "(314) 325-2553",
    "website": "https://www.politesocietystl.com",
-   "logo": "/logos/polite-society.png",
+   "logo": "logos/polite-society.png",
    "category": "dining",
    "subcategory": "restaurants",
    "building_id": "bldg-0376",
@@ -548,7 +548,7 @@
    "name": "Baileys' Chocolate Bar",
    "address": "Park Avenue",
    "phone": "13142418100",
-   "logo": "/logos/baileys.png",
+   "logo": "logos/baileys.png",
    "category": "dining",
    "subcategory": "restaurants",
    "building_id": "bldg-0387",
@@ -1126,7 +1126,7 @@
    "address": "South 18th Street",
    "phone": "1 314-865-3522",
    "website": "https://sqwires.com/",
-   "logo": "/logos/sqwires.png",
+   "logo": "logos/sqwires.png",
    "category": "dining",
    "subcategory": "restaurants",
    "opening_hours_raw": "Mo-Fr 11:00-20:00; Sa 09:00-20:00; Su 09:00-14:00,17:00-20:00",
@@ -1218,7 +1218,7 @@
    "address": "Mississippi Avenue",
    "phone": "13142419999",
    "website": "https://www.1111-m.com/",
-   "logo": "/logos/eleven-eleven.png",
+   "logo": "logos/eleven-eleven.png",
    "category": "dining",
    "subcategory": "restaurants",
    "building_id": "bldg-0464",
@@ -1444,7 +1444,7 @@
    "category": "dining",
    "subcategory": "restaurants",
    "building_id": "bldg-0082",
-   "logo": "/logos/hamiltons.png",
+   "logo": "logos/hamiltons.png",
    "hours": {
     "tuesday": {
      "open": "15:00",
@@ -2033,7 +2033,7 @@
    "category": "dining",
    "subcategory": "restaurants",
    "building_id": "bldg-0711",
-   "logo": "/logos/bellwether.jpg",
+   "logo": "logos/bellwether.jpg",
    "hours": {
     "tuesday": {
      "open": "17:00",
@@ -2190,7 +2190,7 @@
      "close": "22:00"
     }
    },
-   "logo": "/logos/clementines.png",
+   "logo": "logos/clementines.png",
    "photos": [
     "/photos/clementines/01.jpg",
     "/photos/clementines/02.jpg",
@@ -2274,7 +2274,7 @@
      "close": "17:00"
     }
    },
-   "logo": "/logos/gausnell.png",
+   "logo": "logos/gausnell.png",
    "photos": [
     "/photos/gausnell/01.png"
    ],
@@ -2571,7 +2571,7 @@
    "category": "services",
    "subcategory": "advertising",
    "building_id": "bldg-0048",
-   "logo": "/logos/kuhl-swaine.png",
+   "logo": "logos/kuhl-swaine.png",
    "hours": {
     "monday": {
      "open": "09:00",
@@ -2852,7 +2852,7 @@
    "category": "services",
    "subcategory": "health",
    "building_id": "bldg-0022",
-   "logo": "/logos/chiropractic.png",
+   "logo": "logos/chiropractic.png",
    "hours": {
     "monday": {
      "open": "10:00",
@@ -2956,7 +2956,7 @@
    "category": "shopping",
    "subcategory": "pets",
    "building_id": "bldg-0723",
-   "logo": "/logos/four-muddy-paws.png",
+   "logo": "logos/four-muddy-paws.png",
    "hours": {
     "monday": {
      "open": "09:00",

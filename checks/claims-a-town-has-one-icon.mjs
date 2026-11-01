@@ -8,7 +8,7 @@
 // and HPDM served `https://lafayette-square.com/favicon.svg` — the instances' old-player branding — which 404s since
 // the .com redirect.
 // Four judges, each reading the source of truth rather than restating it:
-//   1 · THE SOURCE — publish writes towns.json from towns-record.mjs#buildTownsRecord, and neither file reads the
+//   1 · THE SOURCE — publish-towns-record writes the record from towns-record.mjs#buildTownsRecord, and neither file reads the
 //       instances' branding, a faviconUrl/markSvg, or the Look's design.json (authoring); towns-record reads the baked
 //       manifest's `look` and draws with townIcon.
 //   2 · THE RECORD — buildTownsRecord, RUN: every registered town's icon is a data:image/svg+xml URI (never a URL) equal
@@ -35,7 +35,7 @@ import { cardFor } from '../src/lib/shareCard.js'
 import { registeredMaps, instanceForMap } from '../src/instances/registry.js'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
-const PUBLISH = 'scripts/publish-player-to-staging.mjs', RECORD = 'scripts/towns-record.mjs'
+const PUBLISH = 'scripts/publish-towns-record.mjs', RECORD = 'scripts/towns-record.mjs'
 const read = (rel) => readFileSync(join(ROOT, rel), 'utf8')
 const OLD = /\b(faviconUrl|markSvg)\b|\.branding\b|\bbranding\s*[.?]/
 
@@ -43,8 +43,8 @@ const OLD = /\b(faviconUrl|markSvg)\b|\.branding\b|\bbranding\s*[.?]/
 function judgeSource(publish, record) {
   const why = []
   if (!/import \{[^}]*\bbuildTownsRecord\b[^}]*\} from '\.\/towns-record\.mjs'/.test(publish)) why.push(`${PUBLISH} does not import buildTownsRecord from ./towns-record.mjs`)
-  if (!/const towns = await buildTownsRecord\(REPO_ROOT\)/.test(publish)) why.push(`${PUBLISH} does not build towns from buildTownsRecord(REPO_ROOT)`)
-  if (!/writeFileSync\(townsTmp, JSON\.stringify\(towns\b/.test(publish)) why.push(`${PUBLISH} does not write that record as towns.json`)
+  if (!/const towns = await buildTownsRecord\(repoRoot\)/.test(publish)) why.push(`${PUBLISH} does not build towns from buildTownsRecord(repoRoot)`)
+  if (!/const buf = Buffer\.from\(JSON\.stringify\(towns\b/.test(publish)) why.push(`${PUBLISH} does not publish that record`)
   for (const [f, t] of [[PUBLISH, publish], [RECORD, record]]) {
     const hit = t.split('\n').find((l) => !/^\s*(\/\/|\*)/.test(l) && OLD.test(l))
     if (hit) why.push(`${f} reads the instances' old branding: ${hit.trim().slice(0, 120)}`)
@@ -131,10 +131,10 @@ if (process.argv.includes('--mutants')) {
   const MUTANTS = [
     ['a · a URL back', 2, { towns: swap(a, 'https://lafayette-square.com/favicon.svg') }],
     ['b · another town\'s mark', 2, { towns: b ? swap(a, towns[b].icon) : null }],
-    ['c · instance branding as the source, in publish', 1, { publish: texts.publish.replace('const towns = await buildTownsRecord(REPO_ROOT)',
+    ['c · instance branding as the source, in publish', 1, { publish: texts.publish.replace('const towns = await buildTownsRecord(repoRoot)',
       "const towns = {}\n  for (const m of registeredMaps()) { const b = instanceForMap(m).branding || {}; towns[m] = { faviconUrl: b.faviconUrl || null, mark: b.mark || null } }") }],
-    ['c2 · instance branding laid over the record, in publish', 1, { publish: texts.publish.replace('const towns = await buildTownsRecord(REPO_ROOT)',
-      'const towns = await buildTownsRecord(REPO_ROOT)\n  for (const m in towns) towns[m].faviconUrl = instanceForMap(m).branding.faviconUrl') }],
+    ['c2 · instance branding laid over the record, in publish', 1, { publish: texts.publish.replace('const towns = await buildTownsRecord(repoRoot)',
+      'const towns = await buildTownsRecord(repoRoot)\n  for (const m in towns) towns[m].faviconUrl = instanceForMap(m).branding.faviconUrl') }],
     ['d · instance branding as the source, in towns-record', 1, { record: texts.record.replace('b.baked ? townIcon({ look: b.look, title })',
       'b.baked ? townIcon({ look: { mark: t.branding.mark }, title })') }],
     ['e · the Look\'s design.json instead of the bake', 1, { record: texts.record.replace("join(repoRoot, 'public', 'baked', map, 'manifest.json')",

@@ -22,6 +22,7 @@
  * on its plain path; (f) staging hands cardFor its whole path (`/<town>/place/…`).
  *   node checks/claims-a-place-link-sends-its-own-card.mjs
  */
+import { STAGING_TOWNS, townsKey } from '../src/lib/townsRecordKeys.js'
 import { join } from 'node:path'
 import { workerInMiniflare, mint, hex } from './_miniflare.mjs'
 import { CARD_HEADER, SHARE_IMAGE_RELS, PREVIEW_LICENCES } from '../src/lib/shareCard.js'
@@ -62,7 +63,7 @@ async function run(site, mutate) {
   const { mf, r2, get } = await workerInMiniflare(WORKERS[site], bindings, { mutate })
   const at = {}
   if (site === 'staging') {
-    await r2.put('staging/player/towns.json', JSON.stringify(towns))
+    await r2.put(STAGING_TOWNS, JSON.stringify(towns))
     await r2.put('staging/ward/current.json', JSON.stringify({ sha: W, kit: K }))
     await r2.put(`staging/ward/${W}/index.html`, WARD_DOC(W))
     await r2.put(`staging/kit/${K}/manifest.json`, '{}')
@@ -79,7 +80,7 @@ async function run(site, mutate) {
       const domain = `${t}.example`
       await r2.put(`hosts/${domain}.json`, JSON.stringify({ v: 2, app: 'ward', map: t, look: t, ward: W, kit: K, domain }))
       await r2.put(`baked/${t}/manifest.json`, JSON.stringify(mans[t]))
-      await r2.put(`player/${t}/towns.json`, JSON.stringify(towns))
+      await r2.put(townsKey(t), JSON.stringify(towns))
       at[t] = { root: `https://${domain}/`, slab: `https://${domain}/baked/${t}/` }
     }
     await r2.put(`baked/${town}/content/listings.json`, JSON.stringify({ meta: {}, listings: LISTINGS }))

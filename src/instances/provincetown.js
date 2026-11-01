@@ -48,7 +48,7 @@ export default {
   modules: {
     bulletin: true,
     delivery: { enabled: false, zoneDescription: null },
-    contact: true, codedesk: true, sms: true, chat: true, info: true, events: true, society: true, residences: true,
+    contact: true, sms: true, chat: true, info: true, events: true, society: true, residences: true,
   },
 
   // The town's set-piece: the Pilgrim Monument, roughed in from the reconstruction dossier

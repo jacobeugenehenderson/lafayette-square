@@ -76,7 +76,7 @@ console.log(`\nLOOK SEED — does a new Look start clean?\ndeclared scene-keyed 
 // 1. The real regression, replayed. Seed LS's HISTORICAL authored design (the
 //    pre-reset copy — LS's live design.json now carries zero slots, so seeding
 //    from it would pass vacuously) into a foreign scene.
-const lsAuthored = readJsonOrNull(join(PUBLIC_DIR, 'looks/lafayettesquare/design.json.pre-reset'))
+const lsAuthored = readJsonOrNull(join(ROOT, 'cartograph/data/lafayettesquare/authoring-snapshots/design.json.pre-reset'))
 check('the 2026-07-14 regression cannot recur — LS authoring does not reach a foreign scene', () => {
   if (!lsAuthored) return 'no design.json.pre-reset to replay against; test is vacuous'
   if (!slotCount(lsAuthored.blockCustoms)) return 'the replay fixture carries no authoring; test is vacuous'

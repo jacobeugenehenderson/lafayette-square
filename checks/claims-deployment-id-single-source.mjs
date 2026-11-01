@@ -25,8 +25,8 @@ import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs'
 import { join, relative } from 'node:path'
 
 const ROOT = new URL('..', import.meta.url).pathname
-// ⚠️ `public` is NOT skipped — `public/codedesk/index.html` is a real location
-// and skipping it was this file's own first bug. `public/baked` (the slab) and
+// ⚠️ `public` is NOT skipped: whatever is there ships to visitors, and skipping it was this file's own
+// first bug (the location then was public/codedesk/index.html, retired 2026-11-01). `public/baked` (the slab) and
 // `.claude/worktrees` (stale copies of the whole repo) are skipped by path below.
 const SKIP = new Set(['node_modules', 'dist', '.git', '_archive', '_landscape-intake', 'photos-wikimedia', 'models', 'assets', '.claude'])
 const SKIP_PATH = ['public/baked', 'public/trees', 'public/clouds']

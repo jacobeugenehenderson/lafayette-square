@@ -52,32 +52,11 @@ Flow: `createLinkToken` → `postClaimLinkToken` (`Code.js`) → `checkLinkToken
 
 ## 4. The QR Studio (Code Desk)
 
-Printable cards are designed in the **QR Studio**, embedded as an iframe by `CodeDeskModal.jsx` and opened from a card's QR tab ("Design in QR Studio", `PlaceCard.jsx:2477`). It opens in **guardian mode** (locked to one listing) or **admin mode** (full place picker).
+⭐ **Not in the kit.** The kit's in-app copy (`public/codedesk/`), its host `CodeDeskModal.jsx`, the place card's "Design in QR Studio" button and the admin menu's "QR Generator" were retired 2026-11-01 (Jacob: *"retire it"*; *"yes, remove the guardian QR button too"*). CodeDesk's one source is its own repo (`jacobeugenehenderson/codedesk`, `dev.nosync/codedesk`), framed by jacobhenderson.studio; its README carries the payload rules, the host contract and the release procedure. A town's printable codes come from **the Ward's QR Studio** (theward `src/place/printable.js`; the archived brief's §2.5). ▶ `node checks/claims-no-host-carries-a-codedesk-copy.mjs`. The three-copies table and the host↔studio message list are in the Diary (`cartograph/_archive/BRIEF-codedesk-KIT-COPY-RETIRED-2026-11-01.md`).
 
-> ### ⛔⛔ THERE ARE THREE DEPLOYED CODEDESKS AND THEY ALL DIFFER *(measured 2026-08-29)*
-> `public/codedesk/` in THIS repo is **an in-app copy**, not the tool Jacob authors in.
-> A fix applied here reaches the LS place-card modal and nothing else.
->
-> | build | source | who uses it |
-> |---|---|---|
-> | `github.io/**codedesk**/` | repo `jacobeugenehenderson/codedesk` | ⭐ **PRODUCTION** — framed by `jacobhenderson.studio` (`?mode=embed`) |
-> | `<app>/codedesk/` | `public/codedesk/` here | the LS place-card QR tab |
-> | `github.io/ascend-portal/…` · `ascend.jacobhenderson.studio/…` | repo `ascend-portal` | ⚰️ **dead siblings** — Jacob: *"I don't care about the ascend version"* |
->
-> ⚠️ **They are not the same file and none matches another.** On 2026-08-29 they measured
-> 95,884 / 80,350 / 77,586 bytes for `qr_sync_pipeline.js`, and the Cloudflare one matched
-> **no commit in any checkout**. ⛔ **So "the live tool" is a question with three answers —
-> certify which one before editing.** A whole fix was applied to the wrong copy that day
-> because the repo that happened to be open was named `codedesk`.
-> ▶ `curl -s <base>/codedesk/qr_sync_pipeline.js | md5` against your working copy.
-> ⭐ The payload rules, the two-builder trap and how to check a code's scanning margin live
-> in the PRODUCTION repo's own `README.md` — not here, and not in `public/codedesk/`.
-
-- **Host ↔ studio** talk over `postMessage` (`CodeDeskModal.jsx:83–114`): `lsq-set-qr-type` (Townie/Resident/Guardian), `lsq-set-businesses`, `lsq-set-listing`, `lsq-set-claim-secret`, `lsq-save` → `lsq-saved`.
-- **Engine files** (`public/codedesk/`): `qr_app-bootstrapper.js`, `qr_render_engine.js` (canvas), `qr_state_engine.js`, `qr_sync_pipeline.js` (persistence), `qr_ui_toolkit.js`, plus `qr_type_manifest.json` + `qr_templates.json`.
 - **Customizable:** campaign + caption text, text/body colors, background gradient (top/bottom + alpha or transparent), module/eye-ring/eye-center shapes (Square or Emoji mode), a center logo/emoji, scales. Font is fixed (IBM Plex Sans).
 
-⚠️ **OPEN (2026-08-29, Jacob) — A MODULE BRIGHTNESS EDIT DOES NOT REACH THE RENDER.** He set the module values to 5% brightness deliberately; the rendered code came out unchanged. ⭐ **Raising ERROR CORRECTION in the same session did take effect and is measurable** — the same design went from decoding on 1 of 24 preprocessing variants to **8 of 18, first try, unprocessed** — so the ECC pill is wired and this is specific to the module colour path. ⛔ **Cause not established** — not measured, so nothing here says why. ▶ First place to look: the `style` shape below carries `bodyColor`, `eyeRingColor` and `eyeCenterColor` but **no module colour of its own**, so it is worth confirming which field the modules actually draw from in `qr_render_engine.js` before assuming the edit was lost in state or in persistence. ⚠️ Contrast is not cosmetic here: the code shipped on `theward.online` decoded only after thresholding at native size (Chrome BarcodeDetector, 2026-08-29), so the brightness control is the one that governs whether a code scans at all.
+⚠️ **OPEN in CodeDesk's own repo (2026-08-29, Jacob) — A MODULE BRIGHTNESS EDIT DOES NOT REACH THE RENDER.** He set the module values to 5% brightness deliberately; the rendered code came out unchanged. ⭐ **Raising ERROR CORRECTION in the same session did take effect and is measurable** — the same design went from decoding on 1 of 24 preprocessing variants to **8 of 18, first try, unprocessed** — so the ECC pill is wired and this is specific to the module colour path. ⛔ **Cause not established** — not measured, so nothing here says why. ▶ First place to look: the `style` shape below carries `bodyColor`, `eyeRingColor` and `eyeCenterColor` but **no module colour of its own**, so it is worth confirming which field the modules actually draw from in `qr_render_engine.js` before assuming the edit was lost in state or in persistence. ⚠️ Contrast is not cosmetic here: the code shipped on `theward.online` decoded only after thresholding at native size (Chrome BarcodeDetector, 2026-08-29), so the brightness control is the one that governs whether a code scans at all.
 
 ### Design object + persistence
 The design shape (`qr_sync_pipeline.js`):
@@ -104,8 +83,6 @@ The design shape (`qr_sync_pipeline.js`):
 | Check-in / resident flow | `src/pages/CheckinPage.jsx` | — |
 | Claim flow | `src/pages/ClaimPage.jsx` | — |
 | Device link | `src/pages/LinkPage.jsx` · `src/App.jsx` | 6–50 · 100–128 |
-| QR Studio host | `src/components/CodeDeskModal.jsx` | store 6–21 · iframe 169 · postMessage 83–114 |
-| QR Studio app — ⛔ **the in-app COPY, not production** (§4) | `public/codedesk/` | `qr_sync_pipeline.js` (design shape, persistence) + engine files |
 | QR Studio app — ⭐ **PRODUCTION**, framed by jacobhenderson.studio | repo `jacobeugenehenderson/codedesk` (outside this repo) | its own `README.md` carries the payload rules + the two-builder trap |
 | Claim secret | `apps-script/Code.js` | `getClaimSecret` 792–831 (gen 800/822) · validate `postClaim` 614 |
 | Designs backend | `apps-script/Code.js` | `getDesign` 1556 · `saveDesign` 1569 · sheet 1940 · routes 194/246 |

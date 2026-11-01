@@ -9,7 +9,6 @@ import useCamera from '../hooks/useCamera'
 import useBulletin from '../hooks/useBulletin'
 import { useCourierDash } from './CourierDashboard'
 import { useContact } from './ContactModal'
-import { useCodeDesk } from './CodeDeskModal'
 import { useInfo } from './InfoModal'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useGuardianStatus from '../hooks/useGuardianStatus'
@@ -319,7 +318,6 @@ export default function EventTicker() {
 
   const courierOpen = useCourierDash(s => s.open)
   const contactOpen = useContact(s => s.open)
-  const codeDeskOpen = useCodeDesk(s => s.open)
   const infoOpen = useInfo(s => s.open)
 
   const viewMode = useCamera(s => s.viewMode)
@@ -332,7 +330,7 @@ export default function EventTicker() {
   const panelFull = useCamera(s => s.panelState) === 'full'
 
   if (viewMode === 'planetarium') return null
-  if (showCard || bulletinOpen || courierOpen || contactOpen || codeDeskOpen || infoOpen || panelFull) return null
+  if (showCard || bulletinOpen || courierOpen || contactOpen || infoOpen || panelFull) return null
 
   // ⛔⛔ THE ENTRY COUNT MAY NOT GATE THE CHROME. This used to be
   // `if (tickerItems.length === 0) return null`, and the bar carries more than the

@@ -38,6 +38,7 @@ import { execFile, execFileSync } from 'node:child_process'
 import { promisify } from 'node:util'
 import { freshUrl } from '../src/lib/freshUrl.js'
 import { playerShipSet, VITE_MANIFEST } from './player-graph.mjs'
+import { publishTownsRecord } from './publish-towns-record.mjs'
 import { buildTownsRecord } from './towns-record.mjs'
 
 const execFileAsync = promisify(execFile)
@@ -191,9 +192,6 @@ async function alreadyThere(files) {
     + `the operator apps and the build manifest (scripts/player-graph.mjs)`)
   console.log(`skip     ${dropped.length} files, ${mb(droppedBytes)} — untracked under public/, so the `
     + `deploy has never served them`)
-  // ⭐ Shipped ON PURPOSE, said so on every publish (Boz, 2026-10-30; whether it stays public is Jacob's to rule).
-  const desk = files.filter((f) => f.rel.startsWith('codedesk/'))
-  if (desk.length) console.log(`codedesk ${desk.length} files — public/codedesk ships deliberately: a public-by-design app (OPERATIONS § Production sites)`)
 
   let pending = files
   if (!force) {
@@ -224,6 +222,9 @@ async function alreadyThere(files) {
   writeFileSync(townsTmp, JSON.stringify(towns, null, 2))
   await put({ abs: townsTmp, rel: 'towns.json' })
   console.log(`towns    towns.json · ${Object.keys(towns).join(', ')}`)
+  // ⭐ The record's own keys (scripts/publish-towns-record.mjs), which the Workers and Promote read. The copy above stays
+  // only until the legacy player retires (Boz, Zob, 2026-11-01: publish the new key, then the Workers, then Promote).
+  await publishTownsRecord()
 
   // ⭐⭐ THE MANIFEST — every byte of THIS build, by name and MD5. Promote copies a town's pinned
   // production player from exactly this list and checks each object against it

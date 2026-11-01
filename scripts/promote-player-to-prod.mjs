@@ -20,8 +20,8 @@
  *            no other town's bytes" true rather than probable. ⛔ And nothing may delete a
  *            `ward/<sha>/` or `kit/<sha>/` that any `hosts/*.json` still names (the old player's
  *            removal, Phase 4, must honour it).
- *            The town's share card (`towns.json`, beside the kit's player) is pinned at
- *            `player/<map>/towns.json` too, as staging reads it for both players.
+ *            The town's share card (the towns record, `staging/towns.json`, checked against its list) is pinned at
+ *            `sites/<map>/towns.json` (src/lib/townsRecordKeys.js).
  *
  * ⭐⭐ COPY, NOT REBUILD (Jacob, 2026-09-26). Production gets the exact bytes that staging served:
  * the build named by `staging/player/build.json`, file by file from its `manifest.json`, each one
@@ -44,6 +44,7 @@ import { createHash } from 'node:crypto'
 import { fileURLToPath } from 'node:url'
 import { typeFor } from '../src/lib/slabWire.js'
 import { freshUrl } from '../src/lib/freshUrl.js'
+import { STAGING_TOWNS, STAGING_TOWNS_LIST, townsKey } from '../src/lib/townsRecordKeys.js'
 
 const REPO_ROOT = fileURLToPath(new URL('..', import.meta.url))
 const BUCKET = process.env.R2_BUCKET || 'theward-assets'
@@ -55,6 +56,7 @@ const map = arg('map'), look = arg('look')
 const dryRun = process.argv.includes('--dry-run')
 const MAP_ID = /^[a-z0-9][a-z0-9-]{0,63}$/
 const SHA = /^[0-9a-f]{40}$/
+const SHA256 = /^[0-9a-f]{64}$/
 const md5 = (buf) => createHash('md5').update(buf).digest('hex')
 const sha256 = (buf) => createHash('sha256').update(buf).digest('hex')
 
@@ -129,10 +131,16 @@ async function promoteWard() {
     { from: `staging/ward/${cur.sha}/`, to: `ward/${cur.sha}/`, files: build.files || {}, list: ['build.json', buildBuf], cache: WARD_CACHE },
     { from: `staging/kit/${cur.kit}/`, to: `kit/${cur.kit}/`, files: kitMan.files || {}, list: ['manifest.json', kitBuf], cache: KIT_CACHE },
   ]
-  // The share card, byte-checked against the kit player's own manifest (the file staging reads).
-  const stagedMan = JSON.parse(await getBytes(`${STAGED}manifest.json`))
-  const towns = stagedMan.files.find((f) => f.rel === 'towns.json')
-  if (!towns) throw new Error(`${STAGED}manifest.json lists no towns.json — the share card has no source. Publish to Staging again.`)
+  // The share card: the towns record's own list (src/lib/townsRecordKeys.js). ⛔ No list, no promote, never the legacy
+  // player's copy: the record is published first, then the Workers read it, then Promote pins it (Zob, 2026-11-01).
+  const listBuf = await getBytes(STAGING_TOWNS_LIST, { missingOk: true })
+  if (!listBuf) throw new Error(`no ${STAGING_TOWNS_LIST} — the towns record has not been published. ▶ node scripts/publish-towns-record.mjs`)
+  const townsList = JSON.parse(listBuf)
+  if (!SHA256.test(townsList.sha256 || '')) throw new Error(`${STAGING_TOWNS_LIST} names no sha256 — publish the towns record again`)
+  const townsBuf = await getBytes(STAGING_TOWNS, { missingOk: true })
+  if (!townsBuf) throw new Error(`${STAGING_TOWNS_LIST} names a record ${STAGING_TOWNS} does not hold — publish the towns record again`)
+  if (sha256(townsBuf) !== townsList.sha256) throw new Error(`${STAGING_TOWNS} does not match ${STAGING_TOWNS_LIST} — publish the towns record again, then promote.`)
+  if (!JSON.parse(townsBuf)[map]) throw new Error(`${STAGING_TOWNS} has no entry for "${map}" — its card would be absent. Publish the towns record again.`)
 
   // ── Plan: what each key needs. ⛔ Existing bytes are READ and compared, never assumed.
   const toCopy = [], problems = []
@@ -168,9 +176,7 @@ async function promoteWard() {
   }))
   // The lists LAST: they say "this commit is complete in production".
   for (const set of sets) if (!set.listPresent) await put(set.to + set.list[0], set.list[1], set.list[0], set.cache(set.list[0]))
-  const townsBuf = await getBytes(`${STAGED}towns.json`)
-  if (md5(townsBuf) !== towns.md5) throw new Error(`${STAGED}towns.json does not match its manifest — promote again.`)
-  await put(`player/${map}/towns.json`, townsBuf, 'towns.json')
+  await put(townsKey(map), townsBuf, 'towns.json', 'no-cache')
 
   console.log(`\n✅ Ward ${cur.sha.slice(0, 12)} + kit ${cur.kit.slice(0, 12)} pinned for ${map}`)
   console.log(JSON.stringify({ ok: true, map, look, player: 'ward', ward: cur.sha, kit: cur.kit, builtAt: build.builtAt ?? null, copied: toCopy.length }))

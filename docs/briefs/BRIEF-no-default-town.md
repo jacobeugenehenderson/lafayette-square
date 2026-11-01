@@ -30,7 +30,7 @@ until a town is chosen (choosing reloads the page onto it — `Toolbar.jsx`), an
 - **Entries and harnesses — IN SCOPE (5):** `placeBootTown.js`, `hooks/useInit.js`, `harness/lab/{main.jsx,
   stage.js,legibility.jsx}`.
 - **The old player only — OUT OF SCOPE (26): goes at cutover.** `App.jsx`, `Scene.jsx`, `SidePanel.jsx`,
-  `PlaceCard.jsx`, the modals (Bulletin, Chat, CodeDesk, Contact), Cary/Courier, `LegalPage.jsx`,
+  `PlaceCard.jsx`, the modals (Bulletin, Chat, Contact), Cary/Courier, `LegalPage.jsx`,
   `instances/copy/*`, `lib/{api,assetUrl,commerceApi,resolveLookId,sources,townMark,townOrigin}.js`,
   `hooks/useEvents.js`, `AlmanacEmbed`, `SkyEmbed`, `TreeDiorama`. The old player is frozen to fixes; no effort
   goes into making it tolerate "no town".

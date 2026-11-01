@@ -412,7 +412,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-no-corner-at-a-true-geometry-edge.mjs` | CLAIM — ② MAKES AT MOST ONE CORNER WHERE THE EXACT INK HAS A SUB-INK EDGE, AND ONLY IF THE GROUND THERE TURNS. Where two |
 | `checks/claims-no-dossier-rests-on-a-wrong-species.mjs` | DOES ANY DOSSIER CITE A SOURCE THAT ANSWERED FOR ANOTHER SPECIES? |
 | `checks/claims-no-hairline-ring-reaches-the-operator.mjs` | CLAIM: every ring the operator is shown — ① and the ②/③ ped bands — has a real |
-| `checks/claims-no-host-carries-a-codedesk-copy.mjs` | CodeDesk has one source, and hosts pin its releases (BRIEF-codedesk). |
+| `checks/claims-no-host-carries-a-codedesk-copy.mjs` | No host carries a CodeDesk copy; the kit's was retired 2026-11-01 (`cartograph/_archive/BRIEF-codedesk-KIT-COPY-RETIRED-2026-11-01.md`). |
 | `checks/claims-no-label-is-a-made-up-name.mjs` | ⭐ IS ANY BAKED STREET LABEL A NAME THE SKELETON MADE UP? — `ROADMAP A19`. |
 | `checks/claims-no-listing-links-to-a-hijacked-domain.mjs` | a URL a researcher condemned may not ship. |
 | `checks/claims-no-photo-loads-from-someone-elses-server.mjs` | every listing photograph is ours, and |

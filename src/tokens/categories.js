@@ -1,7 +1,7 @@
 /**
  * Category taxonomy — single source of truth.
  *
- * Consumed by: SidePanel, PlaceCard, useLandmarkFilter, neon bands, QR styling, CodeDesk.
+ * Consumed by: SidePanel, PlaceCard, useLandmarkFilter, neon bands, QR styling.
  * Each category defines: label, subtitle, emoji, Tailwind color key, hex for Three.js,
  * Tailwind class set, and subcategories.
  *

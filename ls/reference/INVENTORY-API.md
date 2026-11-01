@@ -100,7 +100,6 @@ Per `PUBLISH.md §"Single source of truth"`, the deployment ID must match across
 - `PUBLISH.md` heading
 - `.env` → `VITE_API_URL`
 - GitHub Secret → `VITE_API_URL`
-- `public/codedesk/index.html` → `window.LSQ_API_URL`
 - `worker.js` → `GAS_API` constant (also)
 
 Drift = "Unknown-action" errors at runtime.

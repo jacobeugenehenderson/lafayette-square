@@ -7,7 +7,7 @@
  * production players by Promote. The publish now ships by scripts/player-graph.mjs#playerShipSet.
  *   ① THE DECISION, on a fixture build shaped as the measured one: a player chunk reached only by a dynamic import, its
  *     css and assets, a chunk shared with an operator app, a worker and each town's content/ (which the Vite manifest
- *     does not name), public/codedesk, and an untracked public/ file. Ships: the player's graph and everything the
+ *     does not name), a public/ file, and an untracked public/ file. Ships: the player's graph and everything the
  *     manifest does not know that public/ allows. Never: another entry's page, a file only another entry reaches, the
  *     build manifest, an untracked public/ file. A manifest with no player entry refuses.
  *   ② THE BUILD writes the manifest the publish reads: vite.config.js (loaded for `build`) sets build.manifest.
@@ -45,7 +45,7 @@ const MANIFEST = {
   'src/OpLazy.jsx': { file: 'assets/OpLazy-x.js', isDynamicEntry: true },
 }
 const SHIP = ['index.html', 'assets/main-a.js', 'assets/main-a.css', 'assets/logo-a.png', 'assets/react-r.js', 'assets/shared-s.js',
-  'assets/Lazy-l.js', 'assets/Lazy-l.css', 'assets/rgPageWorker-w.js', 'content/fx/logo.png', 'codedesk/index.html', 'textures/a.ktx2']
+  'assets/Lazy-l.js', 'assets/Lazy-l.css', 'assets/rgPageWorker-w.js', 'content/fx/logo.png', 'weather-icons/rain.svg', 'textures/a.ktx2']
 const OPERATOR = ['cartograph.html', 'assets/cartograph-c.js', 'assets/cartograph-c.css', 'assets/opOnly-o.js', 'assets/OpLazy-x.js', '.vite/manifest.json']
 const UNTRACKED = ['photos/x.jpg']
 
@@ -77,7 +77,7 @@ const MUTANTS = [
   ['an operator entry\'s page ships', 'graph', "    if (c.isEntry && key !== entry && key.endsWith('.html')) out.add(key)\n", ''],
   ['the player\'s dynamic imports not followed', 'graph', '...(c.imports || []), ...(c.dynamicImports || [])', '...(c.imports || [])'],
   ['the player\'s css not followed', 'graph', 'for (const f of [...(c.css || []), ...(c.assets || [])]) files.add(f)', 'for (const f of [...(c.assets || [])]) files.add(f)'],
-  ['everything outside the graph dropped (content/, the worker, codedesk)', 'graph', 'notPlayers.has(f.rel) ? operator', '!graphOf(manifest, entry).has(f.rel) ? operator'],
+  ['everything outside the graph dropped (content/, the worker, public/ files)', 'graph', 'notPlayers.has(f.rel) ? operator', '!graphOf(manifest, entry).has(f.rel) ? operator'],
   ['the build manifest ships', 'graph', 'const out = new Set([VITE_MANIFEST])', 'const out = new Set()'],
   ['the publish ships every built file', 'publish', 'const { ship: files, operator, untracked: dropped } = playerShipSet(all, ', 'const { ship: files, operator, untracked: dropped } = { ship: all, operator: [], untracked: [] } || playerShipSet(all, '],
   ['the publish ships everything when there is no Vite manifest', 'publish', 'if (!existsSync(viteManifestAt)) throw new Error(', 'if (false) throw new Error('],

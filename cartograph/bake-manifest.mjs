@@ -29,8 +29,8 @@
  *               like the slab's. The override sidecars are inputs to bake-content, not payload.
  *   board     — the town's bulletin groups and sections. None authored yet: the kit's list, `authored:
  *               false`, generic labels, ids kept stable; Cary's group only where delivery is on.
- *   photos    — every photo a published listing names, copied beside the content, indexed by the
- *               listing's own url (null when the file is missing). Credit/licence ride on the listing.
+ *   photos    — every file a published listing names (its photos and its logo), copied beside the content, indexed
+ *               by the listing's own string (null when the file is missing): cartograph/listing-assets.mjs.
  *   displays  — each display the identity declares, its DRAWER published beside the content: the drawer's looks.json
  *               and every frame it names, under content/<display.drawer's dir>/, indexed { [id]: { drawer, files } }.
  *               Preview and the player read it through the slab resolver; Stage reads the authoring drawer
@@ -58,6 +58,7 @@
 import { categoryNeon, categoryDetail, isAuthoredCategory } from '../src/lib/categoryColor.js'
 import { readDeployment } from '../src/lib/deployment.js'
 import { resolveIdentity } from '../src/lib/townIdentity.js'
+import { indexListingAssets } from './listing-assets.mjs'
 import { readFileSync, writeFileSync, readdirSync, statSync, existsSync, mkdirSync, rmSync } from 'node:fs'
 import { createHash } from 'node:crypto'
 import { resolve, relative, dirname, sep } from 'node:path'
@@ -120,39 +121,24 @@ for (const name of CONTENT_PAYLOAD) {
   content[name] = { bytes: buf.length, sha256: createHash('sha256').update(buf).digest('hex') }
 }
 
-// ── photos: every photo a published listing names, published beside the content ──
-// Listings name photos three ways today: '/photos/<slug>/NN.jpg' and '/photos/<town>/<id>/NN.jpg' (files in
-// the kit's public/photos/), and 'photos/<slug>/NN.jpg' (files in the town's own content/photos/). Each is
-// resolved to its file and copied to baked/<town>/content/photos/<same tail>, and the manifest's
-// `photos` index maps the listing's own url → { path, bytes, sha256 }, or null when the file is missing —
-// said, never skipped. Credit and licence travel on the listing record; the player must show them.
-// ⚠️ Photos living in the app's public/photos/ are town data outside the town's folder (BRIEF-slab-loading ③);
-// the manifest reports how many, so the move is visible.
-/** Copy one file beside the content and index it: { path, bytes, sha256 }. Photos and drawers alike. */
+// ── photos: every file a published listing names — its photos AND its logo — published beside the content and
+// indexed in `photos` by the listing's own string (cartograph/listing-assets.mjs, which says why the Ward needs that key).
+// Credit and licence travel on the listing record; the player must show them.
+/** Copy one file beside the content and index it: { path, bytes, sha256 }. Photos, logos and drawers alike. */
 function publishBeside(src, rel) {
   const buf = readFileSync(src), out = resolve(contentOut, rel)
   mkdirSync(dirname(out), { recursive: true })
   writeFileSync(out, buf)
   return { path: 'content/' + rel, bytes: buf.length, sha256: createHash('sha256').update(buf).digest('hex') }
 }
-const photos = {}
-let photosOutsideTown = 0
 const listingsFile = resolve(contentSrc, 'listings.json')
-if (existsSync(listingsFile)) {
-  const raw = JSON.parse(readFileSync(listingsFile, 'utf8'))
-  const list = Array.isArray(raw) ? raw : (raw.listings || [])
-  for (const l of list) {
-    for (const ph of (l && l.photos) || []) {
-      const url = typeof ph === 'string' ? ph : ph && ph.url
-      if (!url || url in photos) continue
-      const tail = url.replace(/^\/?photos\//, '')
-      const src = url.startsWith('/') ? resolve(ROOT, 'public', url.slice(1)) : resolve(contentSrc, url)
-      if (!existsSync(src)) { photos[url] = null; continue }
-      if (url.startsWith('/')) photosOutsideTown++
-      photos[url] = publishBeside(src, 'photos/' + tail)   // ⚠️ the photos dir is not emptied first: a removed photo stays published (latent, as Zob noted)
-    }
-  }
-}
+const listingsRaw = existsSync(listingsFile) ? JSON.parse(readFileSync(listingsFile, 'utf8')) : null
+// ⚠️ the content dir is not emptied first: a removed photo stays published (latent, as Zob noted)
+const { index: photos, outsideTown: photosOutsideTown } = indexListingAssets(
+  listingsRaw ? (Array.isArray(listingsRaw) ? listingsRaw : (listingsRaw.listings || [])) : [],
+  { resolveSrc: (url) => url.startsWith('/') ? resolve(ROOT, 'public', url.slice(1)) : resolve(contentSrc, url),
+    rootOf: (url) => url.startsWith('/') ? resolve(ROOT, 'public', url.slice(1).split('/')[0]) : resolve(contentSrc, url.split('/')[0]),
+    exists: existsSync, publish: publishBeside })
 
 // ── displays: each declared display's drawer, published beside the content (header) ──
 const displays = {}
@@ -268,6 +254,6 @@ const manifest = {
 writeFileSync(resolve(slabDir, 'manifest.json'), JSON.stringify(manifest, null, 2) + '\n')
 const total = Object.values(files).reduce((s, f) => s + f.bytes, 0)
 const missingPhotos = Object.entries(photos).filter(([, v]) => !v).map(([k]) => k)
-if (missingPhotos.length) console.error(`⚠️ ${missingPhotos.length} photo(s) named by listings are missing on disk: ${missingPhotos.slice(0, 5).join(', ')}${missingPhotos.length > 5 ? ' …' : ''}`)
+if (missingPhotos.length) console.error(`⚠️ ${missingPhotos.length} photo/logo file(s) named by listings are missing on disk: ${missingPhotos.slice(0, 5).join(', ')}${missingPhotos.length > 5 ? ' …' : ''}`)
 const have = Object.entries(content).filter(([, v]) => v).map(([k]) => k.replace('.json', ''))
-console.log(`✅ ${relative(ROOT, resolve(slabDir, 'manifest.json'))} — ${Object.keys(files).length} slab files, ${(total / 1e6).toFixed(1)} MB · content: ${have.join(', ') || 'none'} · photos ${Object.values(photos).filter(Boolean).length}/${Object.keys(photos).length}${photosOutsideTown ? ` (${photosOutsideTown} from the app's public/photos/)` : ''} · ${categories.length} categories (unauthored)${tide ? ` · tide: ${tide.constituents.length} constituents, station ${tide.station}` : ''} · deployment ${deployment.authored ? 'authored' : 'none authored'}${Object.keys(unlisted).length ? ` · not published, so not listed: ${Object.entries(unlisted).map(([w, n]) => `${n} × ${w}`).join('; ')}` : ''}`)
+console.log(`✅ ${relative(ROOT, resolve(slabDir, 'manifest.json'))} — ${Object.keys(files).length} slab files, ${(total / 1e6).toFixed(1)} MB · content: ${have.join(', ') || 'none'} · photos ${Object.values(photos).filter(Boolean).length}/${Object.keys(photos).length}${photosOutsideTown ? ` (${photosOutsideTown} from the app's public/, outside the town)` : ''} · ${categories.length} categories (unauthored)${tide ? ` · tide: ${tide.constituents.length} constituents, station ${tide.station}` : ''} · deployment ${deployment.authored ? 'authored' : 'none authored'}${Object.keys(unlisted).length ? ` · not published, so not listed: ${Object.entries(unlisted).map(([w, n]) => `${n} × ${w}`).join('; ')}` : ''}`)

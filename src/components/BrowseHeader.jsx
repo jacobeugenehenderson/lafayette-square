@@ -2,7 +2,6 @@ import useCamera from '../hooks/useCamera'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSelectedBuilding from '../hooks/useSelectedBuilding'
 import useBulletin from '../hooks/useBulletin'
-import { useCodeDesk } from './CodeDeskModal'
 import { useContact } from './ContactModal'
 import { useInfo } from './InfoModal'
 
@@ -11,13 +10,12 @@ export default function BrowseHeader() {
   const isLive = useTimeOfDay(s => s.isLive)
   const showCard = useSelectedBuilding(s => s.showCard)
   const bulletinOpen = useBulletin(s => s.modalOpen)
-  const codeDeskOpen = useCodeDesk(s => s.open)
   const contactOpen = useContact(s => s.open)
   const infoOpen = useInfo(s => s.open)
 
   const panelFull = useCamera(s => s.panelState) === 'full'
   if (viewMode !== 'browse' && !panelFull) return null
-  if (showCard || bulletinOpen || codeDeskOpen || contactOpen || infoOpen || panelFull) return null
+  if (showCard || bulletinOpen || contactOpen || infoOpen || panelFull) return null
 
   return (
     <div className="fixed right-5 z-[60] flex flex-col items-end gap-2" style={{ top: 'calc(env(safe-area-inset-top, 0px) + 20px)' }}>

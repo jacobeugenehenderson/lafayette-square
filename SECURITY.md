@@ -494,11 +494,11 @@ spreadsheet every town shares. **Fix:** theward `plumb/fortify` (e83104a) `backe
 the recovery patch; its header names what it leaves. ▶ theward `node backend/fortify-harness.mjs <Code.js>` (+ `--mutants`).
 
 ### F-20 · MEDIUM · The admin token travels in a URL query string  *(new, 2026-09-28)*
-`src/lib/api.js#getClaimSecret` (admin path: `get('claim-secret', { lid, admin: token })`) and the kit's CodeDesk
-copy (`public/codedesk/qr_sync_pipeline.js`, `&admin=…`) send the operator's admin token as a GET query
-parameter, so it lands in every server, proxy and browser log that records URLs. Found by Tamp (CodeDesk brief).
+`src/lib/api.js#getClaimSecret` (admin path: `get('claim-secret', { lid, admin: token })`) sends the operator's admin
+token as a GET query parameter, so it lands in every server, proxy and browser log that records URLs. Found by Tamp
+(CodeDesk brief); the kit's CodeDesk copy did the same and was retired 2026-11-01.
 **Fix:** send it in a POST body (or a header) and never in a URL; the Apps Script reads it from there. The Ward's
-admin surface (step 5) must not reproduce the pattern. The CodeDesk copy dies with the kit's `public/codedesk/`.
+admin surface (step 5) must not reproduce the pattern.
 **Worse, same class (Quire, 2026-09-28):** `admin-auth` is GET-only and takes the operator's PASSPHRASE as `?p=`;
 `doPost` has no `admin-auth`. The fix adds a POST `admin-auth` and reads `admin_token` from POST bodies everywhere.
 Until it deploys, the Ward has no operator sign-in.
@@ -558,21 +558,14 @@ requester's row, which the kit's staff panel reads (bf909fba). ⚙️ **In the h
 `apps-script/Code.js#saveDesign` overwrites a business's row in the town's `Designs` tab (`design_json`, any JSON
 object) for whatever business id the request names, or appends a new row for an unknown one. It checks no caller.
 **What a Design is:** per its commit (81a19b66, 2026-02-25), a business's saved styled-QR design. The designer loads it
-back (`getdesign`), and the PlaceCard shows the PNG that designer exported to localStorage. The one caller is the
-kit's CodeDesk (`public/codedesk/qr_sync_pipeline.js`), opened by the operator or by a place's full Guardian, and it
-sent no credential at all. Established: anyone can replace any business's saved design, and can add rows without limit.
+back (`getdesign`), and the PlaceCard shows the PNG that designer exported to localStorage. The one caller was the
+kit's CodeDesk copy, retired 2026-11-01 (Jacob: "retire it"); the endpoint stays open to any caller until the fix deploys. Established: anyone can replace any business's saved design, and can add rows without limit.
 **Reach:** every town. A tenant id selects the town and is public (F-28).
-**Fix:** a valid admin token, or a full Guardian of the listing (`isFullGuardianOf`, the same people the player lets
-open CodeDesk); a design id must end in one of CodeDesk's own QR types, else it is refused. CodeDesk now sends the
-Guardian's key or the operator's token and shows a refused save (kit bf909fba, which ships BEFORE the backend). ⚙️ **In the hotfix draft, second review closed 2026-10-30 (Zob); ⛔ not deployed** (Jacob's deploy steps are in its header): theward `wip/backend-hotfix` (7b5da7b), `backend/apps-script-hotfix-2026-10-07.DRAFT.patch`. ▶ theward `node backend/hotfix-harness.mjs <Code.js>` (+ `hotfix-mutations.mjs`).
+**Fix:** a valid admin token, or a full Guardian of the listing (`isFullGuardianOf`); a design id must end in one of
+CodeDesk's own QR types, else it is refused. ⚙️ **In the hotfix draft, second review closed 2026-10-30 (Zob); ⛔ not deployed** (Jacob's deploy steps are in its header): theward `wip/backend-hotfix` (7b5da7b), `backend/apps-script-hotfix-2026-10-07.DRAFT.patch`. ▶ theward `node backend/hotfix-harness.mjs <Code.js>` (+ `hotfix-mutations.mjs`).
 The four other writes that looked ungated (`set-handle`, `update-avatar`, `bulletin`, `remove-lobby-post`) were read
 to the end. Each is self-scoped by the caller's own `device_hash` (`bulletin` also requires a townie), so none is open
 beyond the bearer-key model F-24 and F-27 already cover.
-**Open, UNRATED (each fails closed, so not a hole; found 2026-10-13 while fixing F-26, not fixed):** (a) CodeDesk names
-its town by look (`qr_sync_pipeline.js#_lsqLookParam`), and only Lafayette Square still has a legacy look, so off LS
-every CodeDesk call, F-26's save included, is refused as townless; it should send `townTenant()` like the other clients
-(`claims-a-town-has-one-sealed-id.mjs` #6 doesn't list it). (b) CodeDesk's claim-secret reads the admin token from
-`sessionStorage`, and the app keeps it in `localStorage`, so the operator's fetch carries no token.
 
 ### F-27 · CRITICAL · Device keys are served publicly in events and reviews  *(new, 2026-10-07; EXISTING on live)*  — ⚙️ FIXED IN DRAFT 2026-10-13, reviewed 2026-10-30 (Zob), not deployed
 `apps-script/Code.js` `fetchEventsData` (GET `events`, and `init`) and `getReviews` (GET `reviews`) return whole sheet

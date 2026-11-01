@@ -20,6 +20,7 @@
  *
  * ⛔ LOCAL ONLY. Usage: node checks/claims-a-production-town-plays-the-player-promote-pinned.mjs
  */
+import { STAGING_TOWNS, STAGING_TOWNS_LIST } from '../src/lib/townsRecordKeys.js'
 import { createServer } from 'node:http'
 import { createHash } from 'node:crypto'
 import { execFile } from 'node:child_process'
@@ -106,6 +107,7 @@ function seedStaging(app) {
   putS('staging/player/manifest.json', lman)
   putS('staging/player/build.json', { assetBase: 'runtime', builtAt: '2026-09-29T00:00:00.000Z', manifestMd5: md5(JSON.stringify(lman)) })
   putS('staging/player/index.html', '<p>'); putS(`staging/player/looks/${MAP}/design.json`, '{}'); putS('staging/player/towns.json', townsJson)
+  putS(STAGING_TOWNS, townsJson); putS(STAGING_TOWNS_LIST, { sha256: sha256(townsJson), bytes: townsJson.length, builtAt: '2026-11-01T00:00:00.000Z' })
 }
 const server = createServer((req, res) => {
   const k = decodeURIComponent(req.url.split('?')[0].slice(1))
@@ -129,6 +131,17 @@ try {
   seedStaging('sometimes')
   p = await promote()
   expect('Promote refuses an unknown staging player', p.code !== 0 && p.out.includes('sometimes'), { status: p.code, body: p.out })
+  // ⛔ The towns record is published before Promote pins it (Zob, 2026-11-01): no list, a list that does not match, or a record
+  // without this town → Promote refuses by name, and never falls back to the legacy player's copy.
+  seedStaging('ward'); store.delete(STAGING_TOWNS_LIST)
+  p = await promote()
+  expect('Promote refuses when the towns record was never published', p.code !== 0 && p.out.includes('publish-towns-record'), { status: p.code, body: p.out })
+  seedStaging('ward'); putS(STAGING_TOWNS, JSON.stringify({ other: { title: 'x' } }))
+  p = await promote()
+  expect('Promote refuses a towns record that does not match its list', p.code !== 0 && p.out.includes('does not match'), { status: p.code, body: p.out })
+  seedStaging('ward'); { const other = JSON.stringify({ other: { title: 'x' } }); putS(STAGING_TOWNS, other); putS(STAGING_TOWNS_LIST, { sha256: sha256(other) }) }
+  p = await promote()
+  expect('Promote refuses a towns record with no entry for the town', p.code !== 0 && p.out.includes(`no entry for "${MAP}"`), { status: p.code, body: p.out })
   seedStaging('ward')
   p = await promote()
   let j = null; try { j = JSON.parse(p.last) } catch { /* reported */ }

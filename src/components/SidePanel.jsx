@@ -981,7 +981,7 @@ function SidePanel() {
         a SIBLING rather than a child: the panel is `overflow-hidden` for its
         rounded corners and would clip anything above its top edge. Anchored off
         `panelCollapsedPx`, the live panel height the ResizeObserver below
-        publishes — the same value InfoModal, CodeDeskModal, BulletinModal and
+        publishes — the same value InfoModal, BulletinModal and
         PlaceCard already use to sit clear of the panel.
 
         `collapsed` already rendered exactly the three-part bar this produces;
