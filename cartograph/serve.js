@@ -2719,9 +2719,10 @@ createServer(async (req, res) => {
       // Whether poured towns should carry pipeline elevation is its own decision.
       // ⭐ the pour's three steps, declared ONCE (pourSteps.mjs): the Bake, Extent's re-apply and its first pour all run and record these
       // ⛔ the town's elevation is ONE value across its Looks, or the Bake refuses by name (pourSteps.mjs#townPourElevation); a plan lists it
-      let townElevation
+      // in a plan, a disagreement is the pipeline's one line (a blocker): no value is substituted into anything it compares
+      let townElevation, elevationBlocked = false
       try { townElevation = townPourElevation(bakeScene, idx.looks.filter(l => l.scene === bakeScene).map(l => l.id), (lid) => readBakeDesign(lid, bakeScene, 'bake')) }
-      catch (e) { if (!P.plan) throw e; P.plan.stale.push({ step: 'pipeline', blocker: true, why: [e.message] }); townElevation = false }
+      catch (e) { if (!P.plan) throw e; P.plan.stale.push({ step: 'pipeline', blocker: true, why: [e.message] }); elevationBlocked = true }
       const POUR = Object.fromEntries(pourSteps(bakeScene, bakePaths, RIBBONS, { elevation: townElevation }).map(st => [st.label, st]))
       // ⛔ THE POUR'S GUARDS RUN ON EVERY BAKE RUN (pourSteps.mjs#pourGuardRefusals; Boz's ruling 2026-11-01), not only when a step
       // re-runs: the authoring they read is in no key. Not on the plan, which only lists.
@@ -2787,7 +2788,7 @@ createServer(async (req, res) => {
         // these drive the pour, so a re-pour they cause asks first, naming them (Boz's ruling Q1, 2026-09-26)
         const dataChanged = lastPour ? contentChanged(lastPour.dataRead, pourDataReads(bakeScene), 'the pour') : []
         // ⭐ what the pour was GIVEN that shapes it (map.json.argvRead, pour-code.mjs#pourArgvReads): the same question
-        const argvChanged = lastPour ? contentChanged(lastPour.argvRead, pourArgvReads({ elevation: townElevation }), 'the pour') : []
+        const argvChanged = lastPour && !elevationBlocked ? contentChanged(lastPour.argvRead, pourArgvReads({ elevation: townElevation }), 'the pour') : []
         const codeNewer = [...codeChanged,
                            ...dataChanged.map(p => `${p} — the pour reads it`),
                            ...argvChanged.map(p => `${p} — the pour is given it`),

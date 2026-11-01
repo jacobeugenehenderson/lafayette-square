@@ -11,7 +11,8 @@
 //       a guard that runs at the question (pourSteps.mjs#pourGuardRefusals calls the same source). ⛔ `--skip-elevation`
 //       was recorded nowhere, so a town's pour.elevation toggle never re-poured it.
 // And the guards themselves: pourGuardRefusals runs on every Bake RUN and at Publish before anything ships, and a dangling
-// authored key refuses.
+// authored key refuses. And the one value the town's Looks share: pourSteps.mjs#townPourElevation refuses, naming both, when two
+// Looks of a scene disagree on pour.elevation; it never picks one (Boz's ruling 1, 2026-11-01).
 //
 // HOW IT READS:
 //   · STEPS: every `runIfDirty(` call in serve.js (comments stripped). ⛔ A call whose label is not a literal, or whose inputs
@@ -318,6 +319,19 @@ async function danglingRefuses() {
   return { town, base, planted }
 }
 
+// ── the elevation agreement: Looks of one scene that disagree must throw naming both; agreement returns the value; none → false ──
+function elevationFails(fn) {
+  const D = { a: { pour: { elevation: true } }, b: { pour: {} }, c: {}, d: { pour: { elevation: true } } }, of = (id) => D[id], fails = []
+  if (typeof fn !== 'function') return ['it is not exported']
+  let threw = null
+  try { fn('planted', ['a', 'b'], of) } catch (e) { threw = e.message }
+  if (!threw) fails.push('two Looks disagreeing (a: true · b: unset) did not refuse — a value was picked')
+  else if (!/\ba\b/.test(threw) || !/\bb\b/.test(threw)) fails.push(`the refusal does not name both Looks: ${threw.slice(0, 120)}`)
+  try { if (fn('planted', ['a', 'd'], of) !== true || fn('planted', ['b', 'c'], of) !== false) fails.push('agreeing Looks do not return their one value') } catch (e) { fails.push(`agreeing Looks refused: ${e.message.slice(0, 120)}`) }
+  try { if (fn('planted', [], of) !== false) fails.push('a scene with no Look does not read false (the neutral default)') } catch (e) { fails.push(`a scene with no Look refused: ${e.message.slice(0, 120)}`) }
+  return fails
+}
+
 // ── the projection ──
 function projectionFails(pick) {
   const h = (v) => createHash('sha1').update(JSON.stringify(v)).digest('hex'), fails = []
@@ -403,6 +417,8 @@ async function verdict(m = {}) {
   await Promise.all(ctx.pending)
   // the guards
   fails.push(...guardPlacement(serveSrc, psSrc))
+  // the town's elevation: one agreed value across its Looks, or a refusal naming them (pourSteps.mjs#townPourElevation)
+  fails.push(...elevationFails(P.townPourElevation).map(f => `the town's pour elevation (pourSteps.mjs#townPourElevation): ${f}`))
   // the projection
   const pick = m.pick ?? PS.pickRecord
   fails.push(...projectionFails(pick).map(f => `the record projection (pourSteps.mjs#pickRecord): ${f}`))
@@ -446,6 +462,7 @@ if (process.argv.includes('--mutants')) {
     ['a runIfDirty call the parser cannot read', { serve: swap(serve, "await runIfDirty('buildings',", "await runIfDirty(lbl, someInputs, [], 'node x.js')\n        await runIfDirty('buildings',") }],
     ['--skip-elevation unrecorded (pourArgvReads names no option)', { pourCode: swap(pc, 'export function pourArgvReads({ elevation }) {', 'export function pourArgvReads({}) { const elevation = undefined;') }],
     ['the guard at the question no longer reads the home Look', { psSwap: ps.split('.streets, homeLookOf(scene))').length === 2 ? ['.streets, homeLookOf(scene))', '.streets, undefined)'] : null }],
+    ['the elevation refusal deleted (a Look is picked)', { psSwap: ps.split("  if (new Set(vals.map(([, v]) => v)).size > 1) throw").length === 2 ? ["  if (new Set(vals.map(([, v]) => v)).size > 1) throw", '  if (false) throw'] : null }],
     ["Publish's guard removed", { serve: swap(serve, 'const guarded = pourGuardRefusals(pubScene, { requirePoured: true })', 'const guarded = []') }],
     ["the Bake's guard removed", { serve: swap(serve, 'if (!P.plan) { const g = pourGuardRefusals(bakeScene);', 'if (false) { const g = pourGuardRefusals(bakeScene);') }],
   ]
