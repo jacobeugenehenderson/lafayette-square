@@ -35,6 +35,7 @@ const REFUSED = [
   ['a venue of two forms', [{ ...D, id: 'a', venue: { listing: 'L1', building: 'B1' } }], /is not exactly one of/],
   ['a place\'s own event naming another venue', [{ ...D, listing_id: 'L1', venue: { building: 'B1' } }], /happens at the place/],
   ['links_to', [{ ...D, id: 'a', venue: { scene: true }, links_to: 'L1' }], /`links_to` is retired/],
+  ['a links_to present but null (the Ward\u2019s player refuses it too)', [{ ...D, id: 'a', venue: { scene: true }, links_to: null }], /`links_to` is retired/],
   ['a duplicate id across a listing row', [{ ...D, id: 'x', venue: { scene: true } }, { ...D, id: 'x', listing_id: 'L1' }], /duplicate `id` "x"/],
   ['a scene venue not `true`', [{ ...D, id: 'a', venue: { scene: 'yes' } }], /venue\.scene/],
   ['a host listing that resolves to nothing', [{ ...D, id: 'a', venue: { scene: true }, host: { listing: 'nope' } }], /host\.listing "nope"/],
@@ -80,6 +81,7 @@ else console.log(`✅ every event names where it happens: ${REFUSED.length} wron
 if (process.argv.includes('--mutants')) {
   const mutants = [
     ['links_to accepted', { bake: (s) => s.replace("if ('links_to' in e) err(", "if (false) err(") }],
+    ['a null links_to passing', { bake: (s) => s.replace("if ('links_to' in e) err(", "if (e.links_to) err(") }],
     ['the venue not required', { bake: (s) => s.replace("if (!e.venue) err('no `venue`", "if (false) err('no `venue`") }],
     ['a nameless, addressless building passes', { bake: (s) => s.replace('if (!b.name && !b.address) return', 'if (false) return') }],
     ['the radius not asked', { bake: (s) => s.replace('if (!(inRadius ??= radiusOf())(pt.lat, pt.lon))', 'if (false)') }],
