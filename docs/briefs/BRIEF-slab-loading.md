@@ -88,7 +88,7 @@ overlay or no optional file gets a 200 of the wrong type instead of a 404. Stagi
 ### ⑥b The renderer fetches its own assets from whichever app hosts it (Quire, 2026-09-28)
 Beyond the slab (read through `ASSET_BASE`), the renderer fetches kit assets through Vite's `BASE_URL` —
 the HOSTING app's origin: `basis/` (the KTX2 transcoder), `clouds/{almanac,presets,modulators}.json`,
-`models/lamp-posts/…`, `textures/{moon.jpg,milky_way.jpg,buildings/*}`, and `looks/<town>/design.json`
+`models/lamp-posts/…`, `textures/{moon.jpg,buildings/*}`, and `looks/<town>/design.json`
 (⑥ — a town's authoring file, fetched with `Date.now()`). In the kit's apps that origin is the kit; in
 The Ward it is the Ward, so they miss. **The renderer's assets are the renderer's**: publish them on the
 asset host as a VERSIONED kit bundle (the same release discipline as CodeDesk's, `cartograph/_archive/BRIEF-codedesk-KIT-COPY-RETIRED-2026-11-01.md` §2b), read through the
@@ -97,7 +97,7 @@ is baked into the town's slab or manifest. The Ward proxies these paths to the k
 development only (its OPERATIONS.md says so).
 
 ### ⑦ Shipped and never loaded
-`public/textures/milky_way.jpg` (17 MB; its sphere is commented out), `public/models/lamp-posts/`
+`public/models/lamp-posts/`
 (~255 MB, one file used), `public/trees/` (~5.3 GB, copied into `dist/`),
 PNG twins beside the KTX2 impostor pages. Deploy weight, not visitor weight — but palimpsest.
 - ▶ `du -sh public/trees public/models/lamp-posts dist/trees 2>/dev/null`

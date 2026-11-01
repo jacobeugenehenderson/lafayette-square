@@ -35,7 +35,7 @@ for (const id of ids) {
 if (/BASE_URL/.test(code(readFileSync(join(ROOT, 'src/lib/kitUrl.js'), 'utf8')))) fails.push('src/lib/kitUrl.js reads BASE_URL — it must read only <meta name="ward-kit-base">')
 const walk = (d, out = []) => { for (const e of readdirSync(d)) { const p = join(d, e); statSync(p).isDirectory() ? walk(p, out) : /\.(jsx?|mjs)$/.test(e) && out.push(p) } return out }
 for (const f of walk(join(ROOT, 'src'))) {
-  const m = readFileSync(f, 'utf8').match(/BASE_URL[^`'"\n]*\}?(basis\/|clouds\/|models\/lamp-posts\/|textures\/(moon|milky_way|buildings)|weather-icons\/)/)
+  const m = readFileSync(f, 'utf8').match(/BASE_URL[^`'"\n]*\}?(basis\/|clouds\/|models\/lamp-posts\/|textures\/(moon|buildings)|weather-icons\/)/)
   if (m) fails.push(`${f.slice(ROOT.length)} fetches the renderer's own "${m[1]}" through BASE_URL — use kitUrl()`)
 }
 

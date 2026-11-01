@@ -3,7 +3,6 @@ import { useFrame, useThree } from '@react-three/fiber'
 import { useTexture } from '@react-three/drei'
 import * as THREE from 'three'
 import { terrainExag } from '../utils/terrainShader'
-import SunCalc from 'suncalc'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import { useTownShot } from './townContext.js'
 import useSkyState from '../hooks/useSkyState'
@@ -43,7 +42,7 @@ import R3FErrorBoundary from './R3FErrorBoundary'
 import { bvToRGB } from '../lib/starColor'
 import { townPlace } from '../lib/townPlace.js'
 import useTownPlace from '../hooks/useTownPlace.js'
-import { bodyLights, celestialToPosition, LIGHT_RADIUS, SUN_VISUAL_RADIUS, MOON_RADIUS, moonSky, moonSunDir3D } from './celestialLights.js'
+import { bodyLights, celestialToPosition, LIGHT_RADIUS, MOON_RADIUS, moonSky, moonSunDir3D } from './celestialLights.js'
 import { MILKY_WAY_GLSL, SKY_GRADIENT_GLSL } from './skyGradient.js'
 import { onSceneStencil, shadowHalfExtent, shadowMetresPerTexel, SHADOW_MAP_SIZE } from './sceneStencilState'
 import { lookOf } from '../lib/lookOf.js'
@@ -783,74 +782,6 @@ function Moon({ position, phase, illumination, sunDirection, dayFactor, visible 
       <mesh ref={moonRef} material={moonMaterial} renderOrder={2}>
         <planeGeometry args={[moonSize, moonSize]} />
       </mesh>
-    </group>
-  )
-}
-
-// MilkyWaySphere — equirectangular Brunier panorama wrapped on a sphere
-// just inside the sky dome. Sidereal rotation matches the bright-star
-// renderer so the band rises/sets correctly. Opacity = milkyWay channel
-// × nightFactor (only visible when sky is dark).
-function MilkyWaySphere({ nightFactor, milkyWayChannel }) {
-  const groupRef = useRef()
-  const matRef   = useRef()
-  const mwTexture = useTexture(kitUrl('textures/milky_way.jpg'))
-
-  // Filtering: disable mipmaps + max anisotropy so the panorama stays
-  // sharp at Hero/Street FOV (default LinearMipmapLinear blurs star
-  // detail into mush). Equirectangular wrap + sRGB color space.
-  useEffect(() => {
-    mwTexture.wrapS = THREE.RepeatWrapping
-    mwTexture.colorSpace = THREE.SRGBColorSpace
-    mwTexture.minFilter = THREE.LinearFilter
-    mwTexture.magFilter = THREE.LinearFilter
-    mwTexture.generateMipmaps = false
-    mwTexture.anisotropy = 16
-    mwTexture.needsUpdate = true
-  }, [mwTexture])
-
-  // NormalBlending (not Additive) — the panorama IS the sky at night,
-  // not "extra light on top of black sky." Additive over-saturated and
-  // shifted hue (warm yellows + cool ambient → milky green).
-  const material = useMemo(() => new THREE.MeshBasicMaterial({
-    map: mwTexture,
-    side: THREE.BackSide,
-    transparent: true,
-    depthWrite: false,
-    opacity: 0,
-    fog: false,  // sky elements are infinitely far — opt out of scene fog
-  }), [mwTexture])
-
-  // Sidereal spin + opacity per frame.
-  useFrame(() => {
-    const tod = useTimeOfDay.getState()
-    const currentTime = tod.currentTime
-    const J2000 = Date.UTC(2000, 0, 1, 12, 0, 0)
-    const daysSinceJ2000 = (currentTime.getTime() - J2000) / 86400000
-    const GMST = (280.46061837 + 360.98564736629 * daysSinceJ2000) % 360
-    const LST = ((GMST + townPlace().lon) % 360 + 360) % 360
-    const lstRad = LST * (Math.PI / 180)
-    if (groupRef.current) groupRef.current.children[0].rotation.y = -lstRad
-
-    const slotMins = milkyWayChannel?.animated ? getTodSlotMinutes(currentTime) : null
-    const mw = milkyWayChannel ? resolveGroupAtMinute(
-      milkyWayChannel, tod.getMinuteOfDay(), slotMins,
-      MILKYWAY_FIELD_KEYS, MILKYWAY_FLAT_DEFAULTS,
-    ) : { value: 0 }
-    matRef.current && (matRef.current.opacity = (mw.value || 0) * nightFactor)
-  })
-
-  // Outer group tilts the celestial pole to its actual altitude (latitude
-  // above the northern horizon). Inner group spins around the pole.
-  const latRad = useTownPlace().lat * (Math.PI / 180)
-  return (
-    <group ref={groupRef} rotation-x={latRad - Math.PI / 2}>
-      <group>
-        <mesh renderOrder={-995}>
-          <sphereGeometry args={[SKY_RADIUS - 200, 64, 32]} />
-          <primitive object={material} ref={matRef} attach="material" />
-        </mesh>
-      </group>
     </group>
   )
 }
@@ -1745,10 +1676,6 @@ function CelestialBodies({
     <>
       {!skipSkyDome && debugLevel < 1 && <GradientSky sunAltitude={lighting.sunAlt} sunDirection={lighting.sunDir} moonGlow={lighting.moonGlow} skyChannel={skyChannel} constellationsChannel={constellationsChannel} skyGainChannel={skyGainChannel} starsChannel={starsChannel} milkyWayChannel={milkyWayChannel} />}
       {debugLevel < 1 && <Suspense fallback={null}><Moon {...lighting.moon} /></Suspense>}
-      {/* Milky Way mount hidden from runtime 2026-05-02 — see comment in
-          CartographSkyLight.jsx. MilkyWaySphere component preserved; takes
-          a milkyWayChannel prop for the eventual re-mount path. */}
-      {/* {debugLevel < 1 && <MilkyWaySphere nightFactor={lighting.nightFactor} milkyWayChannel={milkyWayChannel} />} */}
       <ambientLight ref={floorWhiteRef} color="#ffffff" intensity={0.45 * (1 - lighting.nightFactor)} />
       {debugLevel < 99 && <ambientLight
         ref={ambientRef}

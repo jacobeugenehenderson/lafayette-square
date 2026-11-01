@@ -147,12 +147,10 @@ export default function CartographSkyLight() {
       <StoreChannel name="neon" label="Neon"
         fields={NEON_FIELDS} flatDefaults={NEON_FLAT_DEFAULTS} />
       <NeonForceOnToggle />
-      {/* Milky Way hidden from operator UI 2026-05-02. Brunier panorama
-          shows visible JPEG artifacting + stretched/oversized stars at
-          Hero/Street FOV; needs higher-res source or cubemap rebuild
-          before re-exposing. Channel state, store actions, and
-          MilkyWaySphere component are preserved (dormant) for return.
-          See project_milkyway_parked.md + BACKLOG.md. */}
+      {/* Milky Way control hidden 2026-05-02, for the photo panorama (JPEG blocks, stretched stars). The photo is
+          retired (Jacob, 2026-11-01: "Retire it"); the band on screen is procedural (skyGradient.js#MILKY_WAY_GLSL)
+          and reads this channel at its kit default. Whether to show the control again is OPEN, Jacob's: the photo
+          was its only stated reason. */}
       {/* <StoreChannel name="milkyWay" label="Milky Way"
         fields={MILKYWAY_FIELDS} flatDefaults={MILKYWAY_FLAT_DEFAULTS} /> */}
     </div>

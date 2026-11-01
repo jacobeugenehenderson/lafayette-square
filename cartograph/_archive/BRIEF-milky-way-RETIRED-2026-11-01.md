@@ -1,11 +1,13 @@
 <!-- BRIEF-STATE
-status: OPEN
+status: RETIRED 2026-11-01
 dispatched: no
 written: 2026-09-26
 evict-when: the Milky Way is on in every app, reads as a soft band with sharp stars at the Hero and Street cameras (no JPEG blocks, no stretched stars), sits where the real one is for the town's latitude and time, fits the phone budget, and Jacob has seen it at night.
 -->
 
 # The Milky Way, once and for all
+
+> **RETIRED 2026-11-01 (Sigil, Boz's ruling).** Its photo half was retired by Jacob ("Retire it", 2026-11-01: the panorama and `MilkyWaySphere` are deleted, `39866b3a`); the band on screen is procedural (`skyGradient.js#MILKY_WAY_GLSL`). The sky's next direction is "photographic drama later", not this brief. Its two unbuilt asks are in `cartograph/BACKLOG.md §NEXT`. Kept here verbatim as written.
 
 **You are the dispatched agent. Name yourself: one word, not a name another RUNNING session holds**
 (check `ListAgents`, then ask Jacob to `/rename`). **Agent: FRESH.**

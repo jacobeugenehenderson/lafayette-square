@@ -128,7 +128,7 @@ Comparing the current branch build inventory ([INVENTORY-DATA §G](INVENTORY-DAT
 | Dep | Consumer | Verdict |
 |---|---|---|
 | `src/data/planetarium/{constellations,named_stars,planets}.json` | `CelestialBodies`, `StageSky`, `PlanetariumOverlay` | ⚠️ **CORRECTED 2026-06-17: `PlanetariumOverlay` IS mounted** — via `CelestialBodies.jsx:962` (gated `viewMode!=browse && constellations×night>0.05`; channel defaults 0). The K.3/RD.3 "unmounted" claim below is **stale** (grepped Scene/LafayetteScene/App, missed the one-level-down mount). **keep all three.** Home: `ls/STREET-VIEW.md §3.2`. |
-| `public/textures/milky_way.jpg` (17 MB) | `CelestialBodies` background star field (TO VERIFY consumer) | **keep + verify gzip/CDN behavior** — 17 MB raw, will be heavy on mobile cellular if not gated |
+| `public/textures/milky_way.jpg` (17 MB) | none (never mounted) | **deleted 2026-11-01** (`39866b3a`, RD.9 moot) |
 | `cartograph/data/lafayettesquare/content/listings.json` (was `src/data/landmarks.json`, +31 lines) | `useInit`, `useListings`, cartograph `SurveyorPanel` | keep |
 | `src/data/park_species_map.json` (+148) | `arborist/bake-trees.js`, scripts | **strip from prod build** — authoring input, not runtime |
 | `public/clouds/{presets,almanac}.json` (611 lines new) | none in runtime | **strip** unless `CloudDome` is wired to consume in Phase B (K.2 carry-over) |
@@ -261,7 +261,7 @@ Items the read pass surfaced but cannot resolve in Phase A. These feed Phase B's
 | RD.6 | `lampLightmap.js` shader-glow `DataTexture` still reads live `src/data/street_lamps.json` even though `BakedLamps` switched in production (L1.1 shipped). Half-migration | LS runtime | Phase B (close L1.1 with an `L1.1b` follow-on) or memorialize as deliberate |
 | RD.7 | `LafayettePark` live mounts (water, paths, banks, island, fence, grass) double-paint over the same surfaces now also baked into `ground.json`. Park bake landed; live mounts not retired | LS runtime | Phase B (`ls_basemap_swap` L1.2) |
 | RD.8 | `StreetLights.jsx` (+232 lines on branch) exists but is not imported by `Scene.jsx` on this branch. Verify no other consumer (`grep` says clean except `lampLightmap.js` doesn't import it). Probable orphan, but per `feedback_orphan_audit_full_repo` discipline: do not delete, do not assert orphan, until full-repo grep is run including non-`src/` paths | LS runtime | Phase B sterilize pass |
-| RD.9 | `public/textures/milky_way.jpg` is 17 MB unminified. If `CelestialBodies` mounts it on first paint, mobile cellular will feel it. Verify mount + gate | LS runtime | Phase B perf gate |
+| RD.9 | ~~`public/textures/milky_way.jpg` is 17 MB unminified~~ **MOOT 2026-11-01** (`39866b3a`): it was never mounted, and the photo is retired and deleted (Jacob: "Retire it") | LS runtime | — |
 | RD.10 | Branch's `dev` script depends on `concurrently` + runs three Node servers (`vite`, `cartograph/serve.js`, `arborist/serve.js`). Build step is just `vite build`, no server. **No prod concern**, flagged so Phase B doesn't re-discover it | Dev DX | n/a |
 
 ---
