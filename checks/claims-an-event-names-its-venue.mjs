@@ -48,7 +48,7 @@ const PASSES = [
   { ...D, listing_id: 'L1' }, { ...D, listing_id: 'L1', venue: { listing: 'L1' }, host: { listing: 'L1' } },
 ]
 
-async function verdict({ bake, ticker, guardian, plant } = {}) {
+async function verdict({ bake, ticker, guardian, plant, pick = (ts) => ts } = {}) {
   const fails = [], F = (c, m) => { if (!c) fails.push(m) }
   const B = await importSource('cartograph/bake-content.js', bake ? { transform: bake } : {})
   const ctx = { listings, roster, inRadius: () => B.townRadius('provincetown') }
@@ -61,7 +61,7 @@ async function verdict({ bake, ticker, guardian, plant } = {}) {
   // every town that keeps a calendar, read from the data dir (never a list): its own rows against its own listings, roster and radius
   const towns = readdirSync('cartograph/data').filter(t => existsSync(`cartograph/data/${t}/content/events.json`))
   F(towns.length >= 2, `only ${towns.length} town(s) keep a calendar: the real-data clause would pass on almost nothing`)
-  for (const t of towns) {
+  for (const t of pick(towns)) {
     const real = JSON.parse(sourceOf(`cartograph/data/${t}/content/events.json`))
     const rows = [...(Array.isArray(real) ? real : real.events), ...(plant?.town === t ? [plant.row] : [])]
     if (!rows.length) continue
@@ -87,19 +87,26 @@ async function verdict({ bake, ticker, guardian, plant } = {}) {
   return fails
 }
 
-const fails = await verdict()
-// ⭐ The loop is proven to reach past Provincetown: a bad row planted IN MEMORY in another town's calendar must turn the
-// check red, naming that town (Zob: no mutant showed the loop could fail).
-{
-  const other = readdirSync('cartograph/data').filter(t => t !== 'provincetown' && existsSync(`cartograph/data/${t}/content/events.json`) && existsSync(`cartograph/data/${t}/content/roster.json`))[0]
-  const planted = other ? await verdict({ plant: { town: other, row: { id: 'planted', title: 't', start_date: '2026-11-11', venue: { name: 'Boston', point: { lat: 42.3601, lon: -71.0589 } } } } }) : []
-  if (!other || !planted.some(f => f.startsWith(`${other}'s own calendar`))) fails.push(`a bad row planted in ${other ?? 'another town'}'s calendar did not turn the check red: the loop does not reach past Provincetown`)
+// ⭐ The loop is proven to reach EVERY town (Zob): a bad row planted IN MEMORY into each town's calendar, one at a time,
+// must turn the check red naming THAT town: its own calendar refused, or (no roster/listings) the refusal of the missing
+// file, which this also proves can fail.
+const PLANT = { id: 'planted', title: 't', start_date: '2026-11-11', venue: { name: 'Boston', point: { lat: 42.3601, lon: -71.0589 } } }
+async function full(m = {}) {
+  const f = await verdict(m)
+  for (const t of readdirSync('cartograph/data').filter(t => existsSync(`cartograph/data/${t}/content/events.json`))) {
+    const planted = await verdict({ ...m, plant: { town: t, row: PLANT } })
+    if (!planted.some(x => x.startsWith(`${t}'s own calendar`) || x.startsWith(`${t} keeps a calendar`))) f.push(`a bad row planted in ${t}'s calendar did not turn the check red: the loop does not reach ${t}`)
+  }
+  return f
 }
+const fails = await full()
 if (fails.length) { console.log('⛔ an event does not name its venue:\n  · ' + fails.join('\n  · ')); process.exitCode = 1 }
 else console.log(`✅ every event names where it happens: ${REFUSED.length} wrong rows refused by name, ${PASSES.length} good forms pass, every town's own calendar validates; the ticker opens the venue and draws a scene show as text; the guardian path (repo copy) cannot name the scene`)
 
 if (process.argv.includes('--mutants')) {
   const mutants = [
+    ['the loop reading only the first town', { pick: (ts) => ts.slice(0, 1) }],
+    ['the loop skipping Provincetown', { pick: (ts) => ts.filter(t => t !== 'provincetown') }],
     ['links_to accepted', { bake: (s) => s.replace("if ('links_to' in e) err(", "if (false) err(") }],
     ['a null links_to passing', { bake: (s) => s.replace("if ('links_to' in e) err(", "if (e.links_to) err(") }],
     ['the venue not required', { bake: (s) => s.replace("if (!e.venue) err('no `venue`", "if (false) err('no `venue`") }],
@@ -113,6 +120,6 @@ if (process.argv.includes('--mutants')) {
     ['the guardian path taking a venue', { guardian: (s) => s.replace('const { device_hash, listing_id, title, description, start_date, end_date, type } = body', 'const { device_hash, listing_id, title, description, start_date, end_date, type, venue } = body') }],
   ]
   let bad = 0
-  for (const [name, m] of mutants) { const f = await verdict(m); console.log(`${f.length ? '🔴' : '⚪ SURVIVED'} mutant: ${name}${f.length ? ` (${f.length})` : ''}`); if (!f.length) bad++ }
+  for (const [name, m] of mutants) { const f = await full(m); console.log(`${f.length ? '🔴' : '⚪ SURVIVED'} mutant: ${name}${f.length ? ` (${f.length})` : ''}`); if (!f.length) bad++ }
   if (bad) process.exitCode = 1
 }
