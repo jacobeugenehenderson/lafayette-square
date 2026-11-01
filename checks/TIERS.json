@@ -321,7 +321,7 @@
         "importSource of cartograph/bake-scene.js (its span: displayRecordsOf) — read, safe",
         "importSource of src/instances/registry.js — read, safe",
         "import of a data: module built at run time — its body cannot be read (use checks/_importSource.mjs)",
-        "runs `git` — not a known-local command"
+        "runs `git show 1b833418b98ce845c53ec22f0618d17` — a pinned blob, read-only"
       ]
     },
     {
