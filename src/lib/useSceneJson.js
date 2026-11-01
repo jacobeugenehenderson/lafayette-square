@@ -3,6 +3,7 @@ import { useTownShot } from '../components/townContext.js'
 import { shotKeyForViewMode, resolveShotScene } from './shotScene.js'
 import { slabFetch } from './slabUrl.js'
 import { sceneFor } from './sceneFor.js'
+import { Refusal, Transient, httpFailure } from './refusal.js'
 
 /**
  * useSceneJson — the production-side slab data adapter.
@@ -21,6 +22,7 @@ import { sceneFor } from './sceneFor.js'
  */
 
 const _cache = new Map() // `${lookId}@${reread}` → Promise<scene>
+const _failed = new Map() // `${lookId}@${reread}` → the Refusal | Transient a failed read ended in
 
 // In dev a re-bake rewrites scene.json under the same URL; the browser's memory
 // cache could serve the old one ("edited the slab but the app shows the old
@@ -32,14 +34,25 @@ function fetchSceneOnce(lookId, reread) {
   const key = `${lookId}@${reread}`
   if (_cache.has(key)) return _cache.get(key)
   const p = slabFetch(lookId, 'scene.json', _fetchOpts)
-    .then(r => (r.ok ? r.json() : null))
+    .then(async (r) => {
+      if (!r.ok) throw httpFailure(r, `${lookId}'s scene.json answered ${r.status}`)
+      try { return await r.json() } catch (e) { throw new Refusal(`${lookId}'s scene.json is not JSON: ${e.message}`) }
+    })
     .catch(e => {
+      _failed.set(key, e instanceof Refusal || e instanceof Transient ? e : new Transient(`${lookId}'s scene.json could not be read: ${e.message}`))
       console.warn(`[useSceneJson] load failed for ${lookId}:`, e)
       return null
     })
   _cache.set(key, p)
   return p
 }
+
+/**
+ * Why this Look's scene.json read FAILED (a Refusal, or a Transient for the network / a 5xx), or null: not read yet, or
+ * read. useSceneJson returns null for both "not yet" and "failed"; a reader that must not go silent on a failure (a
+ * display: <Displays>) asks here, and refuses by name.
+ */
+export function sceneReadFailure(lookId, reread) { return _failed.get(`${lookId}@${reread ?? 0}`) || null }
 
 /**
  * @param {string} lookId — which slab to read: the Look the caller is drawing (never a default town's).

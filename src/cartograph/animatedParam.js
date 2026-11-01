@@ -34,8 +34,9 @@
 // The TOD slots — eight sun moments, their order and their minutes — are src/lib/todSlots.js's (one home, shared
 // with the site Workers' share card). Per-Look serialization stores slot ids; minutes are computed live each frame
 // so the envelope shifts seasonally with the real sun.
-import { TOD_SLOT_IDS, todSlotMinutesAt, todSlotNearest } from '../lib/todSlots.js'
+import { TOD_SLOT_IDS, todSlotMinutesAt, todSlotReachedAt, todSlotNearest } from '../lib/todSlots.js'
 import { townPlace } from '../lib/townPlace.js'
+import { Refusal } from '../lib/refusal.js'
 import { LAMPGLOW_FLAT_DEFAULTS, LAMPGLOW_RADIUS_V } from './skyLightChannels.js'
 
 
@@ -49,12 +50,38 @@ export const NAMED_TOD_SLOTS_BY_ID = Object.fromEntries(
 export function getTodSlotLabel(id) { return NAMED_TOD_SLOTS_BY_ID[id]?.label ?? id }
 export function getTodSlotColor(id) { return NAMED_TOD_SLOTS_BY_ID[id]?.color }
 
-// Each named slot's minute-of-day on the placed town's clock for the given Date (src/lib/todSlots.js).
-// A moment the sun does not reach that day (high latitude) is null and its keys drop out.
+// Each named slot's minute-of-day on the placed town's clock for the given Date (src/lib/todSlots.js). Never null: a
+// moment the sun does not reach that day sits at its closest approach (solar noon or the nadir), so every key occurs.
 export function getTodSlotMinutes(date) {
   const { lat, lon, timezone } = townPlace()
   return todSlotMinutesAt(date || new Date(), { lat, lon, tz: timezone })
 }
+// Which slots the sun really reached that day: so the editor's playhead never parks on, and the share card never captures,
+// a moment that did not happen. Never shown as a refusal of the sun's.
+export function getTodSlotReached(date) {
+  const { lat, lon, timezone } = townPlace()
+  return todSlotReachedAt(date || new Date(), { lat, lon, tz: timezone })
+}
+
+/**
+ * KEYS ON ONE MINUTE (Boz, 2026-11-01): slots the sun did not reach meet at the nadir or at noon, so keys can share a
+ * minute. They keep the DAY's own sequence about that moment, so the later in time is the one in force after it: at the
+ * nadir dusk · night · deep · dawn (the evening's, then the next morning's: a white night's Dawn ▼ wins, the lights stay
+ * off), at noon dawn · sunrise · noon · golden · sunset · dusk (a polar night's Dusk ▲ wins, they stay on). Which
+ * moment a tie is about is read off the day's own noon and nadir minutes. ⛔ A fixed slot order gets one of the two
+ * backwards. ▶ node checks/claims-every-slot-has-a-time-every-day.mjs
+ */
+const NOON_ORDER = TOD_SLOT_IDS                                                    // dawn … dusk, night, deep
+const NADIR_ORDER = ['golden', 'sunset', 'dusk', 'night', 'deep', 'dawn', 'sunrise', 'noon']
+const arc = (a, b) => { const d = Math.abs(a - b) % TOD_DAY_MIN; return Math.min(d, TOD_DAY_MIN - d) }
+function byDay(mins) {
+  return (a, b) => {
+    if (a.minute !== b.minute) return a.minute - b.minute
+    const order = mins && Number.isFinite(mins.noon) && Number.isFinite(mins.deep) && arc(a.minute, mins.deep) < arc(a.minute, mins.noon) ? NADIR_ORDER : NOON_ORDER
+    return order.indexOf(a.id) - order.indexOf(b.id)
+  }
+}
+const minsOfList = (todSlots) => Object.fromEntries((todSlots || []).map(s => [s.id, s.minute]))
 
 // "Playhead in slot" tolerance — minutes either side of a slot's
 // canonical minute that count as parked. 30 min is forgiving enough for
@@ -66,7 +93,7 @@ export const TOD_SLOT_TOLERANCE_MIN = 30
 // Find the named TOD slot whose computed minute is within tolerance of
 // `minute`. Returns slot id, or null.
 export function todSlotAtMinute(minute, date) {
-  return todSlotNearest(minute, getTodSlotMinutes(date), TOD_SLOT_TOLERANCE_MIN)
+  return todSlotNearest(minute, getTodSlotMinutes(date), TOD_SLOT_TOLERANCE_MIN, getTodSlotReached(date))
 }
 
 // TOD is CYCLIC. The gap between the LAST authored slot (evening) and the FIRST
@@ -125,6 +152,21 @@ export function todEdgePatch(ch, slotId, fade, minutes) {
  * Returns null (no mark in play → plain tween), or { key, scale } (value = key's value × scale),
  * or { tween: scale } (value = the plain tween × scale).
  */
+// ⭐ A FADE-DOWN STARTS FROM THE LEVEL THE FADE-UP REACHED (2026-11-01). When the run since the last ▲ is shorter than its
+// fade (a short night, or none: the sun's crossings meet at the nadir), the ▼ began from FULL, so the light popped on
+// at the ▼ and faded from there. The level at the ▼ key is the ▲'s ramp after the minutes since it: walk back to the
+// last marked key; a ▲ gives its progress, anything else full.
+function reachedAt(channel, points, i) {
+  const n = points.length, K = points[i]
+  for (let k = 1; k < n; k++) {
+    const P = points[(i - k + n) % n], e = todEdge(channel, P.id)
+    if (!e) continue
+    if (e.fade !== 'up') return 1
+    const elapsed = ((K.minute - P.minute) % TOD_DAY_MIN + TOD_DAY_MIN) % TOD_DAY_MIN, w = Math.max(0, e.minutes ?? TOD_FADE_DEFAULT_MIN)
+    return w <= 0 ? 1 : Math.min(1, elapsed / w)
+  }
+  return 1
+}
 function edgeEnvelope(channel, points, minute) {
   if (!channel?.edges || points.length < 2) return null
   const n = points.length
@@ -135,7 +177,7 @@ function edgeEnvelope(channel, points, minute) {
   const gap = ((N.minute - K.minute) % TOD_DAY_MIN + TOD_DAY_MIN) % TOD_DAY_MIN || TOD_DAY_MIN
   const eK = todEdge(channel, K.id), eN = todEdge(channel, N.id)
   const ramp = (e) => { const w = Math.min(gap, Math.max(0, e.minutes ?? TOD_FADE_DEFAULT_MIN)); return w <= 0 ? 1 : Math.min(1, since / w) }
-  if (eK?.fade === 'down') return { key: K, scale: 1 - ramp(eK) }
+  if (eK?.fade === 'down') return { key: K, scale: reachedAt(channel, points, i) * (1 - ramp(eK)) }
   if (eN?.fade === 'up') return eK?.fade === 'up' ? { key: K, scale: ramp(eK) } : { key: K, scale: 0 }
   if (eK?.fade === 'up') return { tween: ramp(eK) }
   return null
@@ -151,7 +193,7 @@ function tweenAnimatedAtMinute(channel, minute, todSlots) {
       return slot ? { id, minute: slot.minute, value: Number(v) || 0 } : null
     })
     .filter(Boolean)
-    .sort((a, b) => a.minute - b.minute)
+    .sort(byDay(minsOfList(todSlots)))
   if (points.length === 0) return 0
   if (points.length === 1) return points[0].value
   const first = points[0]
@@ -194,7 +236,7 @@ export function resolveAnimatedAtMinute(channel, minute, todSlots) {
   const byId = new Map((todSlots || []).map(sl => [sl.id, sl.minute]))
   const points = Object.entries(channel.values || {})
     .filter(([id]) => byId.has(id)).map(([id, v]) => ({ id, minute: byId.get(id), value: Number(v) || 0 }))
-    .sort((a, b) => a.minute - b.minute)
+    .sort(byDay(minsOfList(todSlots)))
   const env = edgeEnvelope(channel, points, minute)
   if (!env) return base
   return env.key ? env.key.value * env.scale : base * env.tween
@@ -358,7 +400,7 @@ function tweenGroupAtMinute(channel, minute, slotMinutes, fieldKeys, defaults = 
       return p
     })
     .filter(Boolean)
-    .sort((a, b) => a.minute - b.minute)
+    .sort(byDay(mins))
   if (points.length === 0) return fallback()
   const pick = (p) => {
     const out = {}
@@ -397,7 +439,7 @@ export function resolveGroupAtMinute(channel, minute, slotMinutes, fieldKeys, de
   const points = Object.entries(channel.values || {})
     .filter(([id]) => mins[id] != null)
     .map(([id, tuple]) => { const p = { id, minute: mins[id] }; for (const k of fieldKeys) p[k] = readField(tuple, k, defaults); return p })
-    .sort((a, b) => a.minute - b.minute)
+    .sort(byDay(mins))
   const env = edgeEnvelope(channel, points, minute)
   if (!env) return base
   const out = { ...base }
@@ -406,6 +448,27 @@ export function resolveGroupAtMinute(channel, minute, slotMinutes, fieldKeys, de
     out[k] = env.key ? env.key[k] * env.scale : base[k] * env.tween
   }
   return out
+}
+
+/**
+ * A STEP-HELD field of a tod channel: the value of the last key at or before `minute`, held until the next, never
+ * tweened (a count, e.g. a display's minutes between shows: a tweened 45 between keys of 30 and 60 is a value nobody
+ * keyed). Before the day's first key, the day's last key holds across midnight. Fades do not touch it. Keys on one
+ * minute keep the day's sequence about it (byDay). Every slot has a minute every day (src/lib/todSlots.js), so every key
+ * occurs. ⛔ A channel not keyed on the day, a key without the field, or one on no slot throws by name.
+ * ▶ node checks/claims-a-display-is-authored-on-its-own-channel.mjs
+ */
+export function keyedStepAt(channel, field, minute, slotMinutes) {
+  if (channel?.animated !== 'tod') throw new Refusal(`[keyedStepAt] ⛔ a step is read off a channel keyed on the day`)
+  const pts = Object.entries(channel.values || {}).map(([id, tuple]) => {
+    if (!Number.isFinite(slotMinutes[id])) throw new Refusal(`[keyedStepAt] ⛔ the key at "${id}" is on no slot with a minute`)
+    if (tuple?.[field] == null) throw new Refusal(`[keyedStepAt] ⛔ the key at "${id}" has no "${field}"`)
+    return { id, minute: slotMinutes[id], v: tuple[field] }
+  }).sort(byDay(slotMinutes))
+  if (!pts.length) throw new Refusal(`[keyedStepAt] ⛔ the channel has no keys`)
+  let held = pts[pts.length - 1]
+  for (const p of pts) if (p.minute <= minute) held = p
+  return held.v
 }
 
 // Generic group-channel migrate. Used by new channels (Bloom, Sky, etc.)

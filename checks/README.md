@@ -15,7 +15,7 @@ gated without anyone remembering to gate it, which is what makes this work on to
 
 A non-zero exit is a **finding for the board**, not a runner fault. The suite reports; it does not fix.
 
-## ⛔ live — 142. Never in a default run.
+## ⛔ live — 143. Never in a default run.
 
 Two reason classes, and they are not the same thing. **outbound** — a demonstrated call out.
 **unreadable** — runs code the parser cannot read, so it *may* contact nothing but cannot be shown
@@ -41,6 +41,7 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `checks/claims-a-dead-tile-is-named.mjs` | outbound | imports a network module · imports cartograph/elevationSources.mjs, which can: calls fetch() · imports package(s) geotiff — not read from source |
 | `checks/claims-a-dem-is-chosen-by-its-data.mjs` | outbound | imports cartograph/fetch-dem.mjs, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/elevationSources.mjs, which can: calls fetch() |
 | `checks/claims-a-dike-is-one-line-with-the-coast.mjs` | unreadable | writeFileSync · computed import() with no readable target — runs arbitrary modules |
+| `checks/claims-a-display-is-authored-on-its-own-channel.mjs` | unreadable | importSource of src/displays/showChannel.js — read, safe · importSource of src/displays/lightShow/engine.js — read, safe · importSource of src/lib/todSlots.js — read, safe · importSource of src/lib/useSceneJson.js (its span: fetchSceneOnce, sceneReadFailure) — read, safe · importSource of src/lib/townClock.js — read, safe · importSource of src/cartograph/stores/useCartographStore.js (its span: displayChannelActions) — read, safe · importSource of cartograph/bake-scene.js (its span: displayRecordsOf) — read, safe · importSource of src/instances/registry.js — read, safe · import of a data: module built at run time — its body cannot be read (use checks/_importSource.mjs) · runs `git show 1b833418b98ce845c53ec22f0618d17` — a pinned blob, read-only |
 | `checks/claims-a-failed-read-names-its-cause.mjs` | outbound | imports a network module · importSource of cartograph/elevationSources.mjs, which can: calls fetch() · imports package(s) geotiff — not read from source |
 | `checks/claims-a-hashed-town-loads-end-to-end.mjs` | outbound | calls fetch() · opens a WebSocket · writeFileSync · deletes files · runs `npx` — reaches out · runs `/Applications/Google Chrome.app/Contents` — not a known-local command |
 | `checks/claims-a-label-change-ends-no-leg.mjs` | unreadable | writeFileSync · computed import() with no readable target — runs arbitrary modules |
@@ -249,7 +250,6 @@ Writes into the repo or a scratch dir.
 | `checks/claims-a-keyframe-carries-its-aim.mjs` | IS EVERY SHOT THE OPERATOR'S OWN? |
 | `checks/claims-a-kink-recovers-but-a-corner-does-not.mjs` | WHY THIS EXISTS. Jacob, 2026-09-08: "streets should continue their predominant direction into an |
 | `checks/claims-a-level-body-has-one-surface.mjs` | IS THE LAKE FLAT IN OUR OWN HEIGHTFIELD? |
-| `checks/claims-a-light-show-runs-dusk-to-dawn-on-the-hour.mjs` | "DOES THE LIGHT SHOW GLOW DUSK TO DAWN AND PLAY ON THE HOUR?" (r-the-lights-run-dusk-to-dawn-and-the-show-plays-on- |
 | `checks/claims-a-listing-keeps-its-id.mjs` | a business keeps its display id across every bake, whatever else |
 | `checks/claims-a-listing-names-only-its-own-assets.mjs` | every file a listing names (its photos and its logo) is published in its |
 | `checks/claims-a-look-authors-its-curb-width.mjs` | DOES EVERY LOOK RESOLVE ONE CURB, FROM ONE HOME, AND SAY WHICH RUNG DECIDED? |
@@ -365,6 +365,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-every-proto-edge-lies-on-its-owner.mjs` | CLAIM — EVERY ① EDGE LIES ON THE CHAIN THAT OWNS IT (one owner per edge, and it is the right one). |
 | `checks/claims-every-shadowed-placement-renders.mjs` | EVERY PLACEMENT THE GROUND SHADOWS MUST RENDER A TREE. |
 | `checks/claims-every-slab-url-is-resolved.mjs` | "DOES EVERY SLAB URL IN THE PLAYER COME FROM THE ONE RESOLVER?" |
+| `checks/claims-every-slot-has-a-time-every-day.mjs` | "DOES EVERY TIME-OF-DAY SLOT HAVE A TIME, EVERY DAY, EVERYWHERE, AND DO THE LIGHTS DO TODAY'S THING WHERE THE SUN DOES NOT |
 | `checks/claims-every-tile-edge-names-its-owner.mjs` | EACH ① EDGE OF A TILE CARRIES THE OWNER ① STRUCK IT WITH (`tile.ringOwner`). |
 | `checks/claims-every-town-has-a-mark.mjs` | boots as LAFAYETTE SQUARE (`src/instance.js`), so its tab, loader, badge and legal pages were |
 | `checks/claims-every-turn-in-the-protopolygon-gets-an-arc.mjs` | ⭐⭐⭐ THE COMPLEMENT OF `claims-the-ease-is-the-corner`, AND THE HALF THAT WAS NEVER BUILT. |

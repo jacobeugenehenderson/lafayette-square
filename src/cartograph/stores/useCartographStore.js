@@ -47,8 +47,9 @@ import {
   migrateLampGlow, resolveLampGlowAtMinute,
   resolveGroupAtMinute, migrateGroupChannel,
   NAMED_TOD_SLOTS_BY_ID, getTodSlotMinutes, todSlotAtMinute, todEdgePatch,
-  stampLampGlowRadius,
+  stampLampGlowRadius, keyedStepAt,
 } from '../animatedParam.js'
+import { defaultDisplayChannel, validateDisplayChannel } from '../../displays/showChannel.js'
 import {
   BLOOM_FIELD_KEYS, BLOOM_FLAT_DEFAULTS,
   WARMTH_FIELD_KEYS, WARMTH_FLAT_DEFAULTS,
@@ -271,6 +272,43 @@ function createGroupChannelActions({ name, fieldKeys, flatDefaults }, set, get) 
     // never a card-level "reset everything," never a per-slider revert.
     [`revert${cap}`]: () => {
       set(s => channelRevert(s, name, kitDayChannel(name) || { values: { ...flatDefaults } }))
+      get()._saveDesignDebounced()
+    },
+  }
+}
+
+// A display's channel, edited (Stage › Displays; src/displays/showChannel.js). Always keyed on the day: the first edit
+// copies the neutral default, a key is never removed below one, and every write is validated, so a channel Stage holds
+// is one the bake and <Displays> accept. Revert drops the Look's channel: the display is lit by the default again.
+function displayChannelActions(set, get) {
+  const write = (id, fn) => {
+    set(s => {
+      const cur = s.displays?.[id] || defaultDisplayChannel()
+      const next = fn(cur)
+      if (!next || next === cur) return s
+      validateDisplayChannel(next, `Stage › Displays › ${id}`)
+      return { displays: { ...(s.displays || {}), [id]: next } }
+    })
+    get()._saveDesignDebounced()
+  }
+  return {
+    setDisplayValue: (id, key, value, slotId) => write(id, (ch) => (slotId && slotId in ch.values)
+      ? { ...ch, values: { ...ch.values, [slotId]: { ...ch.values[slotId], [key]: value } } } : null),
+    addDisplaySlot: (id, slotId) => write(id, (ch) => {
+      if (!NAMED_TOD_SLOTS_BY_ID[slotId] || slotId in ch.values) return null
+      const sm = getTodSlotMinutes(useTimeOfDay.getState().currentTime), m = sm[slotId]
+      const seed = { ...resolveGroupAtMinute({ ...ch, edges: undefined }, m, sm, ['glow', 'show', 'kelvin']), showEvery: keyedStepAt(ch, 'showEvery', m, sm) }
+      return { ...ch, values: { ...ch.values, [slotId]: seed } }
+    }),
+    removeDisplaySlot: (id, slotId) => write(id, (ch) => {
+      if (!(slotId in ch.values) || Object.keys(ch.values).length < 2) return null
+      const values = { ...ch.values }; delete values[slotId]
+      const edges = { ...(ch.edges || {}) }; delete edges[slotId]
+      return { ...ch, values, edges }
+    }),
+    setDisplayTransition: (id, slotId, fade, minutes) => write(id, (ch) => ({ animated: 'tod', ...todEdgePatch(ch, slotId, fade, minutes) })),
+    revertDisplay: (id) => {
+      set(s => { const next = { ...(s.displays || {}) }; delete next[id]; return { displays: next } })
       get()._saveDesignDebounced()
     },
   }
@@ -500,6 +538,9 @@ const DESIGN_FIELDS = [
   { key: 'archLight', hydrate: (d) => migrateArchLight(d) },
   _grp('setPieceLight',  ARCHLIGHT_FIELD_KEYS,      ARCHLIGHT_FLAT_DEFAULTS),   // the town's set-piece uplights (same fields)
   _grp('lantern',        LANTERN_FIELD_KEYS,        LANTERN_FLAT_DEFAULTS),
+  // The town's displays, each on its own channel (src/displays/showChannel.js): only what this Look AUTHORED, by display
+  // id. A display it has not touched is lit by the neutral default (displayChannelsFor, at the bake and in <Displays>).
+  { key: 'displays', hydrate: (d) => (_isObj(d.displays) ? JSON.parse(JSON.stringify(d.displays)) : {}) },
   { key: 'clouds', hydrate: (d) => d.clouds?.values
     ? { values: { ...CLOUDS_FLAT_DEFAULTS, ...d.clouds.values } }
     : { values: { ...CLOUDS_FLAT_DEFAULTS } } },
@@ -1536,6 +1577,7 @@ const useCartographStore = create((set, get) => ({
     fieldKeys: LANTERN_FIELD_KEYS,
     flatDefaults: LANTERN_FLAT_DEFAULTS,
   }, set, get),
+  ...displayChannelActions(set, get),
 
   // SC.6 — clouds hand-rolled actions. Values aren't flat scalars
   // (preset is a string, overrides is null|object) so the

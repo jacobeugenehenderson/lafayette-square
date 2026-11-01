@@ -81,7 +81,7 @@ if (process.argv.includes('--mutants')) {
     ['a 404 read as absence', { hook: (s) => s.replace("if (!res.ok) return { error:", "if (!res.ok) return { absent: true, was:") }],
     ['SetPiece dropping the calendar', { files: { 'src/components/SetPiece.jsx': (s) => s.replace(' dim={dim} calendar={calendar} drawerSource', ' dim={dim} drawerSource') } }],
     ['Preview not passing it', { files: { 'src/preview/PreviewApp.jsx': (s) => s.replace(' interactive={false} calendar={calendar}', ' interactive={false}') } }],
-    ['the default restored', { files: { 'src/displays/Displays.jsx': (s) => s.replace('dim, calendar, drawerSource }) {', 'dim, calendar = null, drawerSource }) {') } }],
+    ['the default restored', { files: { 'src/displays/Displays.jsx': (s) => s.replace('dim, calendar, drawerSource, channels: live }) {', 'dim, calendar = null, drawerSource, channels: live }) {') } }],
     ['the absent refusal dropped', { files: { 'src/displays/Displays.jsx': (s) => s.replace('calendar?.absent && d.season ?', 'false ?') } }],
     ["Huron's row back", { loader: (s) => s.replace("    landmarks: () => import('../../cartograph/data/huron/content/listings.json'),", "    landmarks: () => import('../../cartograph/data/huron/content/listings.json'),\n    seedEvents: () => import('../../cartograph/data/huron/content/events.json'),") }],
   ]
