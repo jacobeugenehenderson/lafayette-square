@@ -47,7 +47,7 @@
       "name": "huron",
       "scene": "huron",
       "createdAt": 1789875167347,
-      "bakedAt": 1793370220313,
+      "bakedAt": 1793548042394,
       "updatedAt": 1791426710708,
       "migrated": {
         "arch-stands": 1793250984372
@@ -59,7 +59,7 @@
       "scene": "provincetown",
       "createdAt": 1790285800621,
       "bakedAt": 1793371758238,
-      "updatedAt": 1793284128569,
+      "updatedAt": 1793479541649,
       "migrated": {
         "arch-stands": 1793250984372
       }
