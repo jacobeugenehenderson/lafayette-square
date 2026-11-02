@@ -13,16 +13,24 @@
  * Measured on staging 2026-11-01: the asset host omits `Vary: Origin` when no Origin is sent, so a browser that drew a
  * frame through an <img> (the player before this) holds an immutable copy the CORS fetch cannot use; that frame then
  * "did not answer" in that browser, named here, until its cache is cleared.
- * `env` is the browser's (fetch, Image, URL); the check plants one. ▶ node checks/claims-a-failing-display-is-named-and-contained.mjs
+ * ⚠️ KNOWN, not handled: a fetch that stalls (no answer, no close) never settles, so the display stays absent with no
+ * entry until the browser's own network timeout (Zob, 2026-11-01; the code before this had the same hole). A timeout of
+ * our own is a ruling about a number, and none is made.
+ * `env` is REQUIRED: { get (fetch), Image, URL }, handed in by LightShow.jsx. This module names no global, so it can
+ * reach only what it is given (Zob's tier ruling: that is what keeps its check in npm test, and the check asserts it).
+ * ▶ node checks/claims-a-failing-display-is-named-and-contained.mjs
  */
 import { Refusal, Transient, httpFailure } from '../../lib/refusal.js'
 
-export async function rasterFrame(src, w, h, ctx, env = globalThis) {
+export async function rasterFrame(src, w, h, ctx, env) {
+  if (typeof env?.get !== 'function' || !env.Image || !env.URL) throw new Refusal(`the look frame ${src}: rasterFrame was handed no { get, Image, URL } to read it with`)
   let res
-  try { res = await env.fetch(src) } catch (e) { throw new Transient(`the look frame ${src} did not answer: ${e?.message || e}`) }
+  try { res = await env.get(src) } catch (e) { throw new Transient(`the look frame ${src} did not answer: ${e?.message || e}`) }
   if (!res.ok) throw httpFailure(res, `the look frame ${src} answered ${res.status}`)
   const im = new env.Image()
-  im.src = env.URL.createObjectURL(await res.blob())
+  let blob
+  try { blob = await res.blob() } catch (e) { throw new Transient(`the look frame ${src} broke off: ${e?.message || e}`) }
+  im.src = env.URL.createObjectURL(blob)
   try {
     await im.decode()
     ctx.clearRect(0, 0, w, h); ctx.drawImage(im, 0, 0, w, h)

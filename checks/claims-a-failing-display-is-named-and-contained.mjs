@@ -73,7 +73,7 @@ async function verdict({ boundary, displays, frame, raster } = {}) {
     const ctx = { tainted: false, clearRect() {}, drawImage(im) { if (tainting(im.src)) this.tainted = true },
       getImageData() { if (canvasDies) throw new Error('canvas lost'); if (this.tainted) { const e = new Error("Failed to execute 'getImageData': The canvas has been tainted by cross-origin data"); e.name = 'SecurityError'; throw e } return { data: new Uint8ClampedArray(4) } } }
     const env = { Image, URL: { createObjectURL: () => { const u = `blob:${PAGE}/${++n}`; live.add(u); return u }, revokeObjectURL: (u) => live.delete(u) },
-      fetch: async (u) => u.endsWith('unanswered.svg') ? Promise.reject(new TypeError('Failed to fetch')) : u.endsWith('missing.svg') ? { ok: false, status: 404 } : { ok: true, status: 200, blob: async () => ({ from: u }) } }
+      get: async (u) => u.endsWith('broken.svg') ? { ok: true, status: 200, blob: async () => { throw new TypeError('network error') } } : u.endsWith('unanswered.svg') ? Promise.reject(new TypeError('Failed to fetch')) : u.endsWith('missing.svg') ? { ok: false, status: 404 } : { ok: true, status: 200, blob: async () => ({ from: u }) } }
     return { env, ctx, live }
   }
   const settle = (p) => Promise.race([p.then(v => ({ v }), e => ({ e })), new Promise(ok => setTimeout(() => ok({ hung: true }), 200))])
@@ -87,6 +87,15 @@ async function verdict({ boundary, displays, frame, raster } = {}) {
   { const b = browser(), r = await settle(RF.rasterFrame(ASSET.replace('0.svg', 'unanswered.svg'), 1, 1, b.ctx, b.env))
     const { Transient: T } = await importSource('src/lib/refusal.js')
     if (!(r.e instanceof T && r.e.message.includes('unanswered.svg'))) fails.push(`a frame that does not answer (a dead network, or a host that does not admit the origin) is not a Transient naming the frame (${r.hung ? 'never settled' : r.e?.message ?? 'it drew'})`) }
+  { const b = browser(), r = await settle(RF.rasterFrame(ASSET.replace('0.svg', 'broken.svg'), 1, 1, b.ctx, b.env))
+    const { Transient: T } = await importSource('src/lib/refusal.js')
+    if (!(r.e instanceof T && r.e.message.includes('broken.svg'))) fails.push(`a frame whose body breaks off is not a Transient naming the frame (${r.hung ? 'never settled' : r.e?.message ?? 'it drew'})`) }
+  { const r = await settle(RF.rasterFrame(ASSET, 1, 1, browser().ctx))
+    if (!(r.e instanceof Refusal)) fails.push(`rasterFrame called with no env does not refuse (${r.hung ? 'never settled' : r.e?.message ?? 'it drew'}): it must reach only what it is handed`) }
+  // NO ROUTE OUT: the module names no global, so it can reach only the env it is handed. The tier (safe) rests on this.
+  const rfs = code(raster ? raster(sourceOf('src/displays/lightShow/rasterFrame.js')) : sourceOf('src/displays/lightShow/rasterFrame.js'))
+  const route = rfs.match(/\b(globalThis|window|self)\b|(?<![.\w])fetch\s*\(/)
+  if (route) fails.push(`rasterFrame.js names "${route[0]}": it has a route to the network the check did not hand it (its tier rests on having none)`)
   // …and a frame that 404s reaches the SINK, as a refusal: rasterFrame's rejection, through useDrawer's own rethrow (read
   // from LightShow.jsx, not copied), into DisplayBoundary, into src/lib/failures.js.
   { const b = browser(), r = await settle(RF.rasterFrame(ASSET.replace('0.svg', 'missing.svg'), 1, 1, b.ctx, b.env))
@@ -101,7 +110,7 @@ async function verdict({ boundary, displays, frame, raster } = {}) {
     const got = failures.getState().failed['a-town/display:monument-lights']
     if (!(got?.kind === 'refusal' && /missing\.svg/.test(got.reason) && /404/.test(got.reason))) fails.push(`a frame that 404s does not reach the sink as a refusal naming it (${got ? `${got.kind}: ${got.reason}` : 'nothing in the sink'})`) }
   const lsx = code(sourceOf('src/displays/lightShow/LightShow.jsx'))
-  if (!/const raster = \(rel\) => rasterFrame\(frame\(rel\), w, h, ctx\)/.test(lsx) || /new Image\(/.test(lsx)) fails.push('LightShow.jsx does not read its frames through rasterFrame alone')
+  if (!/const env = \{ get: \(u\) => fetch\(u\), Image, URL \}\s*const raster = \(rel\) => rasterFrame\(frame\(rel\), w, h, ctx, env\)/.test(lsx) || /new Image\(/.test(lsx)) fails.push('LightShow.jsx does not read its frames through rasterFrame alone')
   return fails
 }
 
@@ -115,10 +124,12 @@ if (process.argv.includes('--mutants')) {
     ['a boundary that throws on', { boundary: (s) => s.replace("return this.state.failed ? null : this.props.children", "if (this.state.failed) throw new Error(this.state.failed)\n    return this.props.children") }],
     ['Displays without the boundary', { displays: (s) => s.replace(/<DisplayBoundary key=\{d\.id\} lookId=\{lookId\} id=\{d\.id\}>|<\/DisplayBoundary>/g, '') }],
     ['a refusal thrown outside the boundary', { displays: (s) => s.replace("    const where = `\"${lookId}\" display \"${d.id}\"`\n", "    const where = `\"${lookId}\" display \"${d.id}\"`\n    if (!P) throw new Error(`[Displays] ⛔ ${where} has no plugin`)\n") }],
-    ["the frame's own URL given to the Image (no-CORS: the canvas taints)", { raster: (s) => s.replace('im.src = env.URL.createObjectURL(await res.blob())', 'im.src = src') }],
+    ["the frame's own URL given to the Image (no-CORS: the canvas taints)", { raster: (s) => s.replace('im.src = env.URL.createObjectURL(blob)', 'im.src = src') }],
     ['the drawing back inside onload (a throw there never rejects)', { raster: (s) => s.replace(/  try \{\n    await im\.decode\(\)\n    ctx\.clearRect\(0, 0, w, h\); ctx\.drawImage\(im, 0, 0, w, h\)\n    return ctx\.getImageData\(0, 0, w, h\)\.data\n  \}/, '  try {\n    return await new Promise((ok) => { im.onload = () => { ctx.clearRect(0, 0, w, h); ctx.drawImage(im, 0, 0, w, h); ok(ctx.getImageData(0, 0, w, h).data) }; im.decode().then(() => { try { im.onload() } catch { /* the browser reports an onload throw to window.onerror, never to the promise */ } }) })\n  }') }],
     ['a frame that does not draw left untyped (it reaches the sink as gave-up)', { raster: (s) => s.replace('throw new Refusal(`the look frame ${src} did not draw', 'throw new Error(`the look frame ${src} did not draw') }],
-    ['a frame that does not answer left unnamed', { raster: (s) => s.replace(/  let res\n  try \{ res = await env\.fetch\(src\) \} catch \(e\) \{[^\n]*\n/, '  const res = await env.fetch(src)\n') }],
+    ['a frame that does not answer left unnamed', { raster: (s) => s.replace(/  let res\n  try \{ res = await env\.get\(src\) \} catch \(e\) \{[^\n]*\n/, '  const res = await env.get(src)\n') }],
+    ['the default env restored (a route to the network)', { raster: (s) => s.replace('export async function rasterFrame(src, w, h, ctx, env) {', 'export async function rasterFrame(src, w, h, ctx, env = globalThis) {') }],
+    ['a body that breaks off left unnamed', { raster: (s) => s.replace(/  let blob\n  try \{ blob = await res\.blob\(\) \} catch \(e\) \{[^\n]*\n  im\.src = env\.URL\.createObjectURL\(blob\)/, '  im.src = env.URL.createObjectURL(await res.blob())') }],
     ['the status unread', { raster: (s) => s.replace("  if (!res.ok) throw httpFailure(res, `the look frame ${src} answered ${res.status}`)\n", '') }],
     ['a frame loop that lets its throws escape', { frame: (s) => s.replace('    if (frameDead.current) return\n    try {\n', '    if (frameDead.current) return\n    {\n').replace(' catch (e) { frameDead.current = true; setFrameErr(e) }', '') }],
   ]

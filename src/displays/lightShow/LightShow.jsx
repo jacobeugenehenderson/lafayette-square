@@ -57,7 +57,8 @@ function useDrawer(on, source, { lookId, display, contentRoot, where }) {
       const { w, h } = d.frame
       const canvas = document.createElement('canvas'); canvas.width = w; canvas.height = h
       const ctx = canvas.getContext('2d', { willReadFrequently: true })
-      const raster = (rel) => rasterFrame(frame(rel), w, h, ctx)
+      const env = { get: (u) => fetch(u), Image, URL }
+      const raster = (rel) => rasterFrame(frame(rel), w, h, ctx, env)
       for (const L of d.looks) for (const layer of L.layers) layer.px = await Promise.all(layer.frames.map(raster))
       if (!dead) setDrawer({ ...d, byId: Object.fromEntries(d.looks.map(L => [L.id, L])) })
     })().catch(e => { if (!dead) setErr(e) })
