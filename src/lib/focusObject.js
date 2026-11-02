@@ -85,7 +85,10 @@ function buildingSpan(geom, num) {
 export function focusMeshes(id, { scene, index }) {
   if (!scene) return null
   const node = namedNode(scene, `focus:${id}`)
-  if (node) { const out = []; node.traverse(o => { if (o.isMesh) out.push({ mesh: o, start: 0, count: Infinity }) }); return out.length ? out : null }
+  // A mesh marked `userData.coverage === false` adds (almost) nothing to the image where it stands (a Light Show's clear
+  // glass at 0.22, its small dark sockets and cords), so it is not drawn into the hero's COVERAGE mask (HeroLadder.jsx:
+  // the mask is what the hero adds to the scene, subtracted from the shared blur). Boz's ruling, 2026-11-02, Sigil's read.
+  if (node) { const out = []; node.traverse(o => { if (o.isMesh && o.userData?.coverage !== false) out.push({ mesh: o, start: 0, count: Infinity }) }); return out.length ? out : null }
   const num = index?.idToNum?.get(id)
   if (num == null) return null
   const out = []

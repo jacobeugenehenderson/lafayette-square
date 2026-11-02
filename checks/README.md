@@ -209,7 +209,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-deadend-look.mjs` | RENDER THE NINE. Read-only. |
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 
-## safe — 394. This is `npm test`.
+## safe — 398. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -217,6 +217,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-a-bare-edge-paints-no-curb-sliver.mjs` | CLAIM — A BARE EDGE PAINTS NO CURB. An edge whose curb depth is 0 (a highway's, a shore's, a verge's) contributes no curb |
 | `checks/claims-a-brief-declares-how-it-dies.mjs` | EVERY BRIEF ON THE ROSTER SAYS WHEN IT LEAVES IT. |
 | `checks/claims-a-building-carries-its-register-records.mjs` | DOES EVERY REGISTER FACT ON A TOWN'S CARDS COME FROM A WELL THE |
+| `checks/claims-a-bulb-is-drawn-to-its-size.mjs` | "IS A BULB DRAWN TO ITS SIZE: IN FULL ABOVE A PIXEL, AS ITS LIGHT ALONE BELOW ONE, READING THE SAME?" (Boz's (2), |
 | `checks/claims-a-cap-carries-one-section.mjs` | DOES A DEAD-END CAP CARRY ITS OWNER'S WALK ALL THE WAY ROUND? |
 | `checks/claims-a-capture-run-finishes-what-it-started.mjs` | CAN A GROVE CAPTURE RUN BE RESTARTED MID-LIST, OR UPLOAD AFTER IT WAS TORN DOWN? |
 | `checks/claims-a-chain-cut-keeps-its-owner-change.mjs` | CLAIM — WHERE A STREET IS CUT INTO TWO CHAINS, ① KEEPS THE OWNER CHANGE. A chain cut (a skeleton node of degree 2, where |
@@ -231,7 +232,9 @@ Writes into the repo or a scratch dir.
 | `checks/claims-a-corner-is-where-one-turns.mjs` | ⭐⭐⭐ A CORNER IS WHERE ① TURNS — THE LABEL NEVER DECIDES IT. A CENSUS, not a gate: where the owner label changes on |
 | `checks/claims-a-curb-arc-belongs-to-one-tile.mjs` | CLAIM — IN THE FROZEN SHAPE, A CURB CONTOUR BELONGS TO ONE TILE, SO A RUN (skelId · side · poly) IS LISTED ONCE. |
 | `checks/claims-a-deck-is-every-object-that-covers-it.mjs` | IS EVERY POINT A DECK OBJECT COVERS ON THE DECK? |
+| `checks/claims-a-display-dims-its-far-side.mjs` | "DOES A DISPLAY DIM ITS FAR SIDE FROM THE EYE, BY ITS OWN AUTHORED AMOUNT, FROM THE CAMERA EVERY FRAME?" (Jacob, |
 | `checks/claims-a-display-dims-its-set-piece-only-while-lit.mjs` | "DO A SET-PIECE'S UPLIGHTS DIM ONLY WHILE ITS DISPLAY IS LIT?" (Jacob, 2026-10-31: "it's only during the show/glow that |
+| `checks/claims-a-display-draws-only-what-hangs.mjs` | "DOES THE LIGHT SHOW DRAW ONLY WHAT HANGS, AND NOTHING WHILE IT IS DARK?" (Boz's (3), 2026-11-02, after the PTown frame |
 | `checks/claims-a-display-hangs-only-in-season.mjs` | "ARE THE STRANDS THERE ONLY WHEN THEY WOULD BE?" (Jacob, 2026-10-31: "hide the strands out of season"; "All cords |
 | `checks/claims-a-display-is-authored-on-its-own-channel.mjs` | "IS A DISPLAY AUTHORED ON ITS OWN LOOK CHANNEL, AND DOES THE DEFAULT DO WHAT THE SHOW DID?" (Jacob, 2026-11-01, |
 | `checks/claims-a-display-is-the-same-for-every-viewer.mjs` | "DOES EVERY VIEWER SEE THE SAME LIGHT AT THE SAME INSTANT?" (BRIEF-the-monument-lights-up §4, gate 1) |
@@ -534,6 +537,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-the-ground-is-painted-once.mjs` | IS EVERY POINT OF THE GROUND PAINTED BY EXACTLY ONE GROUP? |
 | `checks/claims-the-ground-tiles-without-a-gap.mjs` | DOES THE DRAWN GROUND TILE THE DISC, WITH NO SEAM LEFT OPEN? |
 | `checks/claims-the-grove-shows-only-finished-trees.mjs` | CAN THE GROVE SHOW A TREE THAT ISN'T THIS TOWN'S, OR ISN'T BAKED? |
+| `checks/claims-the-hero-mask-is-what-the-hero-adds.mjs` | "IS THE HERO'S COVERAGE MASK WHAT THE HERO ADDS TO THE IMAGE, AND IS IT SKIPPED WHEN NOTHING BLURS?" (Boz's ruling, |
 | `checks/claims-the-hero-matte-is-coverage.mjs` | CLAIM — THE HERO LADDER TAKES THE HERO OUT BY ITS COVERAGE (2026-10-28, Ferrule; Zob's plan PASS with four edits). |
 | `checks/claims-the-horizon-takes-the-towns-cover.mjs` | DOES THE HORIZON CARRY THE TOWN'S COVER, NEVER A ROAD? |
 | `checks/claims-the-impostor-shoots-a-tree-whose-leaves-touch-wood.mjs` | DO THE LEAVES IN THE TREE THE IMPOSTOR PHOTOGRAPHS HANG ON WOOD? |
