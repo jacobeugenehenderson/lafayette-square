@@ -12,7 +12,7 @@
 
 ## ▶ 2026-10-04 — THE OVERHEAD IMPOSTOR, REDESIGNED: BAKED RINGS WITH A DEEP CORE, ON THE WIND SHEET *(Jacob's design; with the depth work)*
 
-**The cost it answers (measured 2026-10-04):** trees ≈48% of LS Browse's GPU time on desktop, ≈71% on phone-hi; 25.36M of ~28M tris (Plumb). Read in source: each overhead band is a full quad tessellated 28×28 (`impostorGeometry.js#buildOverheadBandDisc`, *"the tessellation is only for wind flutter"*) ×3 bands = 4,704 tris per tree. ⏳ Grain's forensic confirms by measurement and splits geometry from overdraw (`docs/briefs/BRIEF-tree-cost-forensic.md`).
+**The cost it answers (measured 2026-10-04):** trees ≈48% of LS Browse's GPU time on desktop, ≈71% on phone-hi; 25.36M of ~28M tris (Plumb). Read in source: each overhead band is a full quad tessellated 28×28 (`impostorGeometry.js#buildOverheadBandDisc`, *"the tessellation is only for wind flutter"*) ×3 bands = 4,704 tris per tree. ⏳ Grain's forensic confirms by measurement and splits geometry from overdraw (`docs/briefs/BRIEF-a-frame-budget-for-every-shot.md (was BRIEF-tree-cost-forensic)`).
 
 **Jacob's design, in three moves:**
 1. **Punch out the hidden core at the Grove bake.** From overhead the canopy band hides most of the bands beneath it. Take the top band's silhouette from its alpha, inset it (*"maybe a circle but also maybe an irregular offset shape made from the top shape"*), and cut that region from the lower bands: *"eliminating pixels **and** triangles."*

@@ -1,6 +1,6 @@
 # Tree-cost forensic: verdict (Grain, 2026-10-04)
 
-Brief: `docs/briefs/BRIEF-tree-cost-forensic.md`. Measure only; no fix.
+Brief: `docs/briefs/BRIEF-a-frame-budget-for-every-shot.md (was BRIEF-tree-cost-forensic)`. Measure only; no fix.
 Reproduce any row: `node scratch/tree-cost/probe.mjs --town=<town> --shot=<browse|hero|street> --mode=<desktop|phone-hi>`
 (`--tris-only` skips the timing). Raw runs are in `runs/*.json`.
 
