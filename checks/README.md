@@ -210,7 +210,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-deadend-look.mjs` | RENDER THE NINE. Read-only. |
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 
-## safe — 398. This is `npm test`.
+## safe — 399. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -552,6 +552,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-the-light-follows-the-weather.mjs` | one weather state drives the rain AND the light. |
 | `checks/claims-the-mark-palette-is-never-live.mjs` | IS "SUGGEST FROM MARK" AUTHORING-ONLY? |
 | `checks/claims-the-mint-refuses-no-outline.mjs` | CLAIM — THE MINT REFUSED NO NODE'S OUTLINE. Where ① cannot build a node's outline (an acute meeting, a degenerate one, or a |
+| `checks/claims-the-neon-card-shows-what-jacob-ruled.mjs` | THE NEON CARD SHOWS WHAT JACOB RULED, AND HIDES NOTHING FROM THE TOWN (Jacob, 2026-11-02: "I don't think the 3D (close |
 | `checks/claims-the-open-close-cuts-once-huron.mjs` | ⭐ THE OPEN/CLOSE CUTS ONCE, HURON'S RATCHET (the heavy half of checks/claims-the-open-close-cuts-once.mjs; Zob, 2026-10-29). |
 | `checks/claims-the-open-close-cuts-once.mjs` | ⭐ THE OPEN/CLOSE CUTS ONCE (BRIEF-cut-once-in-full-precision §4; Zob's finish list, 2026-10-29). structures.mjs#openCloseAtStep |
 | `checks/claims-the-overhead-band-is-two-triangles.mjs` | IS EVERY OVERHEAD BAND A 2-TRIANGLE QUAD, AND DOES ITS FLUTTER SLIDE THE PICTURE? |
