@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 567,
+  "total": 568,
   "counts": {
-    "safe": 393,
+    "safe": 394,
     "local-effect": 32,
     "live": 142
   },
@@ -929,6 +929,15 @@
         "mkdirSync",
         "deletes files",
         "imports package(s) vite — not read from source"
+      ]
+    },
+    {
+      "file": "checks/claims-a-show-advances-every-frame.mjs",
+      "tier": "safe",
+      "why": [
+        "importSource of src/lib/townClock.js — read, safe",
+        "importSource of src/displays/showSchedule.js — read, safe",
+        "importSource of src/displays/showChannel.js — read, safe"
       ]
     },
     {
