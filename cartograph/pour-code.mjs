@@ -67,20 +67,54 @@ export const pourCodeClosure = () => importClosure([POUR_ENTRY], { stopAt: [TOWN
 // source text and whether a line break precedes it (automatic semicolon insertion reads line breaks), never its comments or
 // its other whitespace. Data files hash their bytes. ⛔ A code file the parser refuses is not hashed at all: it records
 // `unparseable: <why>`, and `contentChanged` names it as changed EVERY time, so it can never read as clean.
+// ⭐ x2: A REFUSAL'S WORDING IS NOT WHAT RUNS (2026-11-01: the chain-names pass reworded one `new Refusal(…)` and every town's
+// Foundry owed all 18 steps). The literal text inside the arguments of `new Refusal(…)` / `new <X>Error(…)` hashes as one
+// placeholder; every `${…}` in it, the callee and the argument structure still hash. ⛔ ONLY those two: a console line is
+// OUTPUT another step parses (promote-ribbons' PROMOTE-DIFF, read by serve.js through runStep's onLine), and a returned
+// string is a value. Sound only while no judge or runner matches a message's text and no code stores `.message`:
+// ▶ node checks/claims-a-wording-edit-owes-nothing.mjs (the census and its mutants).
 const CODE_FILE = /\.[mc]?js$/
-export const EXEC_PREFIX = 'x1:'
-export function executedHash(src) {
-  const ast = parse(src, { sourceType: 'module', tokens: true, errorRecovery: false, allowHashBang: true })
+export const EXEC_PREFIX = 'x2:'
+const X1_PREFIX = 'x1:'
+const MESSAGE_CALLEE = /^(Refusal|\w*Error)$/
+const tokensOf = (src) => parse(src, { sourceType: 'module', tokens: true, errorRecovery: false, allowHashBang: true })
+/** The [start, end) of every literal text inside a message argument: StringLiteral and TemplateElement under the arguments
+ *  of `new Refusal(…)` / `new <X>Error(…)`. A template's `${…}` is code and stays outside. */
+export function messageTextRanges(ast) {
+  const out = []
+  const walk = (n, inMsg) => {
+    if (!n || typeof n.type !== 'string') return
+    if (inMsg && (n.type === 'StringLiteral' || n.type === 'TemplateElement')) out.push([n.start, n.end])
+    const isMsg = n.type === 'NewExpression' && n.callee?.type === 'Identifier' && MESSAGE_CALLEE.test(n.callee.name)
+    for (const k in n) {
+      if (k === 'loc' || k === 'start' || k === 'end' || k === 'extra' || k === 'leadingComments' || k === 'trailingComments' || k === 'innerComments') continue
+      const v = n[k], deeper = inMsg || (isMsg && k === 'arguments')
+      if (Array.isArray(v)) for (const c of v) walk(c, deeper)
+      else if (v && typeof v === 'object') walk(v, deeper)
+    }
+  }
+  walk(ast.program, false)
+  return out
+}
+function tokenHash(src, prefix, exempt) {
+  const ast = tokensOf(src)
+  const R = exempt ? messageTextRanges(ast) : []
+  let ri = 0
   const h = createHash('sha1')
   let prevLine = null
   for (const t of ast.tokens) {
     if (t.type === 'CommentLine' || t.type === 'CommentBlock') continue
     if (t.type?.label === 'eof') break
-    h.update(`${prevLine != null && t.loc.start.line > prevLine ? '\n' : ' '}${src.slice(t.start, t.end)}\0`)
+    while (ri < R.length && R[ri][1] <= t.start) ri++
+    const words = ri < R.length && t.start >= R[ri][0] && t.end <= R[ri][1]
+    h.update(`${prevLine != null && t.loc.start.line > prevLine ? '\n' : ' '}${words ? '\u0001message-text' : src.slice(t.start, t.end)}\0`)
     prevLine = t.loc.end.line
   }
-  return EXEC_PREFIX + h.digest('hex')
+  return prefix + h.digest('hex')
 }
+export const executedHash = (src) => tokenHash(src, EXEC_PREFIX, true)
+/** The x1 judge (every token's text, messages included), kept ONLY to read records written before x2. */
+export const executedHashX1 = (src) => tokenHash(src, X1_PREFIX, false)
 const _hashCache = new Map()
 function contentHash(f) {
   let st; try { st = statSync(f) } catch { return null }
@@ -88,30 +122,61 @@ function contentHash(f) {
   if (_hashCache.has(key)) return _hashCache.get(key)
   let out
   if (st.isDirectory()) { const h = createHash('sha1'); for (const e of readdirSync(f).sort()) h.update(`${e}:${contentHash(join(f, e))}\n`); out = h.digest('hex') }
+  // message-flow(8fea236b): the parser's refusal into an `unparseable:` record, which contentChanged names as changed every time
   else if (CODE_FILE.test(f)) { try { out = executedHash(readFileSync(f, 'utf-8')) } catch (e) { out = `unparseable: ${String(e.message).split('\n')[0]}` } }
   else out = createHash('sha1').update(readFileSync(f)).digest('hex')
   _hashCache.set(key, out); return out
 }
-// ⭐ A RECORD WRITTEN BEFORE CODE WAS HASHED BY WHAT RUNS holds the sha1 of the file's BYTES. It is judged exactly, never
-// re-recorded by assumption: the bytes as they stand now (equal ⇒ unchanged), else the version in git history whose bytes
-// hash to the record, compared by what runs. ⛔ Not found in history ⇒ changed, named. Read-only: `git log` and `git show`.
+// ⭐ A RECORD WRITTEN BY AN OLDER JUDGE is judged exactly, never re-recorded by assumption. Two older forms: the sha1 of the
+// file's BYTES (before code was hashed by what runs) and x1 (before message text was set aside). Find the version in git
+// history that the record describes, take ITS x2, and compare with now's. ⛔ Not found ⇒ changed, named (a record taken on a
+// tree git does not hold: a dirty one). Read-only: one `git log --raw` per file for its blob ids, one `git cat-file --batch`
+// for their bytes, read newest first in batches of 16 and hashed only in the form the record needs, stopping at the first
+// match. Forms are memoised by blob id (blobs repeat across steps and towns); bytes are not kept.
 const rawSha1 = (buf) => createHash('sha1').update(buf).digest('hex')
-const _bridged = new Map()
-function oldRecordRunsAs(f, oldSha) {
-  const key = `${f}|${oldSha}`
+const _blobForm = new Map(), _fileBlobs = new Map(), _bridged = new Map()
+const FORMS = { raw: (bytes) => rawSha1(bytes), x1: (bytes) => executedHashX1(bytes.toString('utf-8')), x2: (bytes) => executedHash(bytes.toString('utf-8')) }
+const tryForm = (form, bytes) => { try { return FORMS[form](bytes) } catch { return null } }   // unparseable: it judges as changed
+function blobsOf(rel) {
+  if (!_fileBlobs.has(rel)) _fileBlobs.set(rel, [...new Set(gitRead(['log', '-n', '400', '--format=', '--raw', '--no-abbrev', '--', rel]).toString('utf-8')
+    .split('\n').map((l) => l.split(/\s+/)[3]).filter((b) => b && /^[0-9a-f]{40}$/.test(b) && !/^0+$/.test(b)))])
+  return _fileBlobs.get(rel)
+}
+/** git's bytes for blob ids, read in one `git cat-file --batch` → Map(id → Buffer). Nothing keeps them. */
+function blobBytes(rel, ids) {
+  const buf = gitRead(['cat-file', '--batch'], ids.join('\n') + '\n')
+  const out = new Map(); let at = 0
+  for (const b of ids) {
+    const nl = buf.indexOf(10, at), head = buf.subarray(at, nl).toString().split(' '), size = +head[2]
+    if (head[0] !== b || head[1] !== 'blob' || !Number.isFinite(size)) throw new Error(`[pour-code] git cat-file answered "${head.join(' ')}" for ${rel}'s blob ${b}`)
+    out.set(b, Buffer.from(buf.subarray(nl + 1, nl + 1 + size))); at = nl + 1 + size + 1
+  }
+  return out
+}
+const memoForm = (rel, ids, form) => {
+  const todo = ids.filter((b) => !_blobForm.has(`${b}|${form}`))
+  if (todo.length) for (const [b, bytes] of blobBytes(rel, todo)) _blobForm.set(`${b}|${form}`, tryForm(form, bytes))
+  return ids.map((b) => _blobForm.get(`${b}|${form}`))
+}
+function oldRecordRunsAs(f, was) {
+  const key = `${f}|${was}`
   if (_bridged.has(key)) return _bridged.get(key)
+  const form = was.startsWith(X1_PREFIX) ? 'x1' : 'raw'
   let out = null
-  if (rawSha1(readFileSync(f)) === oldSha) out = contentHash(f)
-  else try {
-    const rel = relative(REPO_ROOT, f)
-    const revs = execFileSync('git', ['-C', REPO_ROOT, 'log', '--format=%H', '-n', '400', '--', rel], { encoding: 'utf-8' }).split('\n').filter(Boolean)
-    for (const r of revs) {
-      let buf; try { buf = execFileSync('git', ['-C', REPO_ROOT, 'show', `${r}:${rel}`], { maxBuffer: 1 << 28 }) } catch { continue }
-      if (rawSha1(buf) === oldSha) { try { out = executedHash(buf.toString('utf-8')) } catch { out = null } break }
+  try {
+    if (tryForm(form, readFileSync(f)) === was) out = contentHash(f)
+    else {
+      const rel = relative(REPO_ROOT, f), ids = blobsOf(rel)
+      for (let i = 0; i < ids.length; i += 16) {
+        const batch = ids.slice(i, i + 16), got = memoForm(rel, batch, form), at = got.indexOf(was)
+        if (at >= 0) { out = memoForm(rel, [batch[at]], 'x2')[0]; break }
+      }
     }
-  } catch { out = null }
+  // message-flow(08af776c): git's failure, named as an owed reason (contentChanged), never read as "not found"
+  } catch (e) { out = { error: String(e.message).split('\n')[0] } }   // ⛔ never read as "not found": named below
   _bridged.set(key, out); return out
 }
+const OLDER_FORM = (was) => typeof was === 'string' && (was.startsWith(X1_PREFIX) || /^[0-9a-f]{40}$/.test(was))
 
 // → { path: sha1 | null } for a set of files as they stand now — CODE (the pour's `codeRead`, a step's closure) or
 // DATA (a step's declared inputs). Every bake step keeps one in clean/bake-reads.json (serve.js `runIfDirty`), so it
@@ -134,11 +199,21 @@ export function contentChanged(record, files, who = 'this step') {
     if (record[p] === h) continue
     const was = record[p]
     if (!(p in record)) { out.push(`${p} (new to ${who})`); continue }
-    if (typeof was === 'string' && typeof h === 'string' && h.startsWith(EXEC_PREFIX) && /^[0-9a-f]{40}$/.test(was) && abs.has(p) && oldRecordRunsAs(abs.get(p), was) === h) continue
+    if (typeof h === 'string' && h.startsWith(EXEC_PREFIX) && OLDER_FORM(was) && abs.has(p)) {
+      const then = oldRecordRunsAs(abs.get(p), was)
+      if (then === h) continue
+      if (then == null) { out.push(`${p} (recorded by an older judge from a version git does not hold, e.g. a dirty tree: one run is owed, as expected)`); continue }
+      if (then.error) { out.push(`${p} (its older record could not be read from git: ${then.error})`); continue }
+    }
     out.push(p)
   }
   for (const p of Object.keys(record)) if (!(p in now)) out.push(`${p} (no longer read by ${who})`)
   return out
+}
+
+/** The bridge's one way into git history: `git -C <repo> <args>` (read-only: `log --raw` and `cat-file --batch`) → a Buffer. */
+function gitRead(args, input) {
+  return execFileSync('git', ['-C', REPO_ROOT, ...args], { maxBuffer: 1 << 30, ...(input != null && { input }) })
 }
 
 // ⭐ THE JUDGE IS CURRENT. `staleJudge(files)` hashes `files` by what runs, NOW, and returns a function that names any of them
@@ -147,6 +222,7 @@ export function staleJudge(files) {
   const at = new Map(files.map(f => [f, executedHash(readFileSync(f, 'utf-8'))]))
   return () => {
     const out = []
+    // message-flow(96da58c0): an unreadable judge file, compared only for inequality: it is named as stale
     for (const [f, h] of at) { let now; try { now = executedHash(readFileSync(f, 'utf-8')) } catch (e) { now = `unreadable: ${e.message}` }
       if (now !== h) out.push(relative(REPO_ROOT, f)) }
     return out
@@ -194,6 +270,7 @@ export function pourArgvReads({ elevation }) {
 export function geographyReadChanged(record, scene) {
   if (!record || typeof record !== 'object') return '(no record of the geography the last pour read)'
   let now
+  // message-flow(517f7d0c): the geography refusal, as the owed reason contentChanged returns
   try { now = geographyFor(scene) } catch (e) { return `(geography unreadable: ${e.message.trim().split('\n')[0]})` }
   return JSON.stringify(now) === JSON.stringify(record) ? null : `the town's geography (lat/lon/bbox/scale) changed`
 }

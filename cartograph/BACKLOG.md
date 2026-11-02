@@ -229,7 +229,10 @@ out in the MAIN checkout (Jacob's), stays.
 - **THE WATER TINT READS THE FIELD, NOT THE PINNED GROUND** (Ward-seat review (c)): measured in the combined bake by
   `scratch/water-tint/probe.mjs` on the shader's composite (diffuseColor.a and makeWaterAbsorption's T/T.g, at the town's own look); over
   one 8-bit step on a post-bake slab is a second shoreline, to Boz (the fix then: pins on the water sheet through drawnPinsOf).
-- **THE DIRTY DETECTOR HAS NO DISCRETION** (cited by `pour-code.mjs`, `claims-the-bake-watches-its-code`): the record is in the archive.
+- **THE DIRTY DETECTOR HAS NO DISCRETION** (cited by `pour-code.mjs`, `claims-the-bake-watches-its-code`): the record is in the archive. Open: the
+  code record is FILE-granular, so a file imported for one function owes every step that imports it for another (7195a290 reworded
+  `streetProfiles.js#registryReadChanged`'s returned string, which only serve.js's judge calls). Cure: a function-granular closure
+  (Boz, 2026-11-02, filed as its own item). Owner: Fuse.
 - **THE CUT-SEPARATELY CENSUS** (cited by `tileGround.js`): its site list is in the archive; still open.
 - **ON_EDGE_M** (groundConformity's 5 mm weld): HELD; Zob's derived form √2/2·LATTICE + the float32 ulp opens 85 LS seams (363 m) the
   weld closes; re-measured after M1. Class D, not ruled.
