@@ -185,7 +185,7 @@ function EdgeToggle({ fade, options, minutes, onChange }) {
 
 // ── Animation row (8 chips, each with its fade where it borders a blank) ────
 
-function TodAnimationRow({ attachedIds, parkedSlotId, onScrub, onFill, onRemove, channel, onEdge }) {
+function TodAnimationRow({ attachedIds, parkedSlotId, onScrub, onFill, onRemove, channel, onEdge, noEdges }) {
   const order = NAMED_TOD_SLOTS.map(s => s.id), n = order.length
   return (
     <div className="flex items-start pt-1" style={{ gap: 3 }}>
@@ -195,7 +195,7 @@ function TodAnimationRow({ attachedIds, parkedSlotId, onScrub, onFill, onRemove,
         const blankBefore = on && attachedIds.size > 1 && !attachedIds.has(order[(i - 1 + n) % n])
         const blankAfter  = on && attachedIds.size > 1 && !attachedIds.has(order[(i + 1) % n])
         const edge = on ? todEdge(channel, slot.id) : null
-        const options = [null, ...(blankBefore ? ['up'] : []), ...(blankAfter ? ['down'] : [])]
+        const options = noEdges ? [null] : [null, ...(blankBefore ? ['up'] : []), ...(blankAfter ? ['down'] : [])]
         return (
           <div key={slot.id} style={{ flex: '1 1 0', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
             <SlotChip
@@ -322,6 +322,7 @@ export default function TodChannel({
   label, fields, channel, flatDefaults,
   onSetValue, onFillSlot, onRemoveSlot, onSetTransition, onRevert,
   children,   // a control that belongs to this channel alone (e.g. Focus › Focus on), shown at the top when open
+  noEdges,    // no ▲/▼ fade marks on the keys: the channel's on and off are elsewhere (a display's Ambient, its Schedule)
 }) {
   const scrubToTodSlot = useCartographStore(s => s.scrubToTodSlot)
   const currentTime    = useTimeOfDay(s => s.currentTime)
@@ -485,6 +486,7 @@ export default function TodChannel({
             onRemove={onRemoveSlot}
             channel={channel}
             onEdge={onSetTransition}
+            noEdges={noEdges}
           />
           {hint && (
             <div className="text-caption" style={{ color: 'var(--on-surface-subtle)', fontSize: 'var(--type-caption)' }}>

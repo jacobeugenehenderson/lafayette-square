@@ -168,68 +168,13 @@ export const runSeconds = (run) => OPEN_SECONDS * 2 + run.reduce((a, s) => {
   return a + TRANSITION[s.transition].seconds
 }, 0)
 
-/**
- * THE SCHEDULE IS THE DISPLAY'S OWN LOOK CHANNEL (r-a-display-is-authored-on-its-own-look-channel; Boz's rulings and Zob's
- * conditions, 2026-11-01). `at(minute)` is the channel on the town's day, { glow, show, kelvin, showEvery, open }
- * (../showChannel.js#displayAt over that day's slot minutes; `open`, inside one of its show windows); the engine keeps
- * no clock and no sun of its own.
- *   · A SHOWTIME is a minute m of the town's clock with m % showEvery = 0 (from the town's midnight; showEvery is the
- *     one in force at m) at which the WHOLE run has show > 0 and lies inside a window: a show is never clipped, so a run
- *     the channel's show would fall to 0 under, or that a window would end, is no showtime. Inside a run, its level
- *     follows the channel.
- *   · Off the shows it GLOWS while the channel's glow > 0, and is off otherwise.
- * `showtimesOn` reads one day; a run that starts late crosses midnight on that day's channel (the next day's slots differ
- * by a minute or two).
- */
 const DAY_MIN = 1440
-export function showtimesOn(at, seconds) {
-  const out = [], len = seconds / 60
-  const plays = (m) => { const a = at(m); return a.show > 0 && a.open }   // Show above 0, inside a window (displayAt#open)
-  for (let m = 0; m < DAY_MIN; m++) {
-    if (m % at(m).showEvery || !plays(m)) continue
-    let whole = true
-    for (let k = 1; k < len && whole; k++) if (!plays((m + k) % DAY_MIN)) whole = false
-    if (whole && !plays((m + len - 1e-6) % DAY_MIN)) whole = false
-    if (whole) out.push(m)
-  }
-  return out
-}
-/**
- * ⛔ A cadence that crowds its own show is refused (Zob's C2): two successive showtimes of a day, the last and the next
- * day's first included, closer than the show runs. `days` is [[label, at], …], every day the season can play (the bake
- * passes every day of the year at the town's position), so a step in showEvery that only overlaps in June is caught.
- */
-export function refuseCrowdedShows(days, seconds, where) {
-  const len = seconds / 60
-  for (const [label, at] of days) {
-    const t = showtimesOn(at, seconds)
-    for (let i = 0; i < t.length; i++) {
-      const next = i + 1 < t.length ? t[i + 1] : t[0] + DAY_MIN
-      if (t.length > 1 && next - t[i] < len) throw new Refusal(`[lightShow] ⛔ ${where}: on ${label} the shows at ${hhmm(t[i])} and ${hhmm(next)} are ${next - t[i]} minutes apart, and a show runs ${len.toFixed(1)}: a show would cut into the next`)
-    }
-  }
-}
 /** A minute of the town's day as HH:MM: the whole minute first, then split, so 1199.6 is 20:00, never 19:60 (Jacob saw it
  *  in Stage, 2026-11-01). ▶ node checks/claims-a-display-is-authored-on-its-own-channel.mjs */
 export const hhmm = (minute) => { const m = (Math.round(minute) % DAY_MIN + DAY_MIN) % DAY_MIN; return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}` }
-/**
- * LIVE: what the display is doing at a town instant. `clock` is townClockOf(instant); `at` the channel on the town's
- * day; `times` showtimesOn(at, the show's seconds) for that day (the renderer computes it once a day). Off out of
- * season; a show from each showtime for as long as it runs (t, the seconds since it began); else the glow while the
- * channel's glow > 0; else off. Returns { mode: 'off' | 'glow' | 'show', t, up }: `up` whether the strands hang at all,
- * in season (by day they hang dark), never out of it (Jacob, 2026-10-31).
- */
-export function liveState(display, compiled, clock, calendar, at, times, where) {
-  const up = inSeason(calendar, display.season, clock.date, where)
-  if (!up) return { mode: 'off', t: 0, up }
-  const minute = clock.hours * 60 + clock.minutes + clock.seconds / 60, seconds = showSeconds(compiled)
-  for (const m of times) {
-    const since = ((minute - m) % DAY_MIN + DAY_MIN) % DAY_MIN * 60
-    if (since < seconds) return { mode: 'show', t: since, up }
-  }
-  return at(minute).glow > 0 ? { mode: 'glow', t: 0, up } : { mode: 'off', t: 0, up }
-}
-
+/** A length in seconds as M:SS: the whole second first, then split, so 299.6 s is 5:00, never 4:60 (Zob, 2026-11-01; the
+ *  class of hhmm's 19:60). ▶ node checks/claims-a-display-is-authored-on-its-own-channel.mjs */
+export const mmss = (seconds) => { const t = Math.round(seconds); return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}` }
 /**
  * The glow's light in one bulb: `base` the colour of the channel's temperature (showChannel.js#kelvinToRgb, 0…255),
  * `level` the channel's glow, and a gentle shimmer (a motion, centred on 1, so `level` is the glow's time-averaged

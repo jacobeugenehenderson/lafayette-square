@@ -14,7 +14,7 @@ import { lazy, Suspense } from 'react'
 import DisplayBoundary from './DisplayBoundary.js'
 import { Refusal, Transient } from '../lib/refusal.js'
 import { useSceneRead } from '../lib/useSceneJson.js'
-import { displayChannelsFor } from './showChannel.js'
+import { displayChannelsFor, readPreDisplaySlab } from './showChannel.js'
 
 export const PLUGINS = {
   'light-show': { label: 'Light Show', attaches: ['setPiece'], Renderer: lazy(() => import('./lightShow/LightShow.jsx')) },
@@ -27,16 +27,20 @@ export const PLUGINS = {
  * name, inside the display's boundary, so a display that could never go live cannot ship silently.
  * Each display is lit by its Look's own channel (./showChannel.js). In Stage, `channels` is the live store's (the Look's
  * authored channels; the rest get the default, through displayChannelsFor, as the bake does), so an edit shows without a
- * bake. Elsewhere it is what the scene bake carried (scene.json#displays): nothing mounts until the scene is read; a scene that could not be read (useSceneJson.js#useSceneRead's failure, this mount's own read) is refused by
- * name, keeping its kind (a Transient for the network), and so is a scene that carries no channel for a display (re-bake).
+ * bake. Elsewhere it is what the scene bake carried, read by showChannel.js#readPreDisplaySlab (the one reader): a slab
+ * from before displays had a channel (no `displays` key) plays each declared display on the default, the light of its day
+ * (a player update never breaks a published slab); a `displays` block missing a declared display is refused by name.
+ * Nothing mounts until the scene is read; a scene that could not be read (useSceneJson.js#useSceneRead's failure, this
+ * mount's own read) is refused by name, keeping its kind (a Transient for the network).
  */
 export default function Displays({ town, lookId, attach, extent, dim, calendar, drawerSource, channels: live }) {
   const { scene, failure } = useSceneRead(lookId), failed = live || scene ? null : failure
   const list = (town?.displays || []).filter(d => d.attach === attach)
   if (!list.length || (!live && !scene && !failed)) return null
   let lit = null, liveErr = null
-  if (live) { try { lit = displayChannelsFor(Object.fromEntries((town.displays || []).map(d => [d.id, d])), live, `"${lookId}" in Stage`) } catch (e) { liveErr = e } }
-  else lit = scene?.displays ?? null
+  const declared = Object.fromEntries((town.displays || []).map(d => [d.id, d]))
+  if (live) { try { lit = displayChannelsFor(declared, live, `"${lookId}" in Stage`) } catch (e) { liveErr = e } }
+  else if (scene) { try { lit = readPreDisplaySlab(scene, declared, `"${lookId}"'s published scene`) } catch (e) { liveErr = e } }
   return list.map(d => {
     const P = PLUGINS[d.kind]
     const where = `"${lookId}" display "${d.id}"`
@@ -49,7 +53,6 @@ export default function Displays({ town, lookId, attach, extent, dim, calendar, 
       : drawerSource !== 'authoring' && drawerSource !== 'published' ? `${where}: the app names no drawer source to <Town> (displaySource: 'authoring' in Stage, 'published' in Preview and the player)`
       : liveErr ? liveErr
       : failed ? failed
-      : !lit?.[d.id] ? `${where}: the Look's scene.json carries no channel for it (baked before displays had one): re-bake the Look's scene`
       : null
     return (
       <DisplayBoundary key={d.id} lookId={lookId} id={d.id}>

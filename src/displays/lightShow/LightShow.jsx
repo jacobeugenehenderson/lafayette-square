@@ -17,8 +17,9 @@
  *     its `show`, the glow at its `kelvin` × its `glow`. No gain of our own (r-a-display-is-authored-on-its-own-look-channel).
  * The strands end at a ring `strands.footHeightM` above the set-piece's base (the display's authored value: on the
  * Pilgrim Monument, about 20 ft up, Jacob 2026-10-31), never on the terrain.
- * The clock: LIVE reads the town's one clock (useTimeOfDay.currentTime) and the display's own channel for the schedule
- * (engine.js#liveState, #showtimesOn: worked out once a town day, its crowding refused that day too); Stage's preview
+ * The clock: LIVE reads the town's one clock (useTimeOfDay.currentTime) and the display's own schedule (../showSchedule.js:
+ * the nights of the day before and of today, worked out once a town day; the state at the instant, displayStateAt; the
+ * year judged once per schedule, refuseScheduleSense, the player's last line); Stage's preview
  * (./preview.js) plays the glow or the show from the moment it is pressed, on the page's own time, Stage only.
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -26,9 +27,10 @@ import { useTownFrame } from '../../lib/useTownFrame.js'
 import * as THREE from 'three'
 import useTimeOfDay from '../../hooks/useTimeOfDay'
 import { townClockOf } from '../../lib/townClock.js'
-import { validateDrawer, compileRun, showAt, showSeconds, glowColour, liveState, showtimesOn, refuseCrowdedShows, uplightTarget } from './engine.js'
-import { displayAt, kelvinToRgb, validateDisplayChannel, refuseWindowSense } from '../showChannel.js'
-import { getTodSlotMinutes, getTodSlotYear } from '../../cartograph/animatedParam.js'
+import { validateDrawer, compileRun, showAt, showSeconds, glowColour, inSeason, uplightTarget, OPEN_SECONDS } from './engine.js'
+import { kelvinToRgb, validateDisplayChannel } from '../showChannel.js'
+import { nightsOn, displayStateAt, refuseScheduleSense, prevDate } from '../showSchedule.js'
+import { getTodSlotRow, getTodSlotDaysAhead } from '../../cartograph/animatedParam.js'
 import { checkFaces, strandEnds, pinnacleFace, pinnacleWash, bulbRadius, cordRadius, SOCKET_OF_BULB, avgGlow } from './geometry.js'
 import useDisplayPreview from '../preview.js'
 import { drawerUrls } from '../drawerUrl.js'
@@ -85,8 +87,10 @@ function Strands({ count, strands, glassRef, coreRef, socketRef, cordRef }) {
   </>)
 }
 
-export default function LightShow({ display, channel, extent, calendar, contentRoot, lookId, drawerSource, dim, where }) {
-  validateDisplayChannel(channel, where)   // the display's own Look channel (../showChannel.js), from <Displays>
+export default function LightShow({ display, channel: given, extent, calendar, contentRoot, lookId, drawerSource, dim, where }) {
+  // The display's own Look channel (../showChannel.js), from <Displays>: validated, and a published per-key cadence read
+  // into the schedule's shape (a player update never breaks a published slab). Everything below uses what it returns.
+  const channel = useMemo(() => validateDisplayChannel(given, where), [given, where])
   if (!extent?.ridge || !extent?.pinnacle) throw new Refusal(`[LightShow] ⛔ ${where}: the set-piece declares no ridge and pinnacle in its extent, so the strands have nowhere to hang`)
   const st = display.strands
   if (!(st?.glow > 0 && st?.show > 0 && st?.ringRadiusM > 0)) throw new Refusal(`[LightShow] ⛔ ${where}: strands needs glow, show and ringRadiusM`)
@@ -100,12 +104,16 @@ export default function LightShow({ display, channel, extent, calendar, contentR
   const F = drawer?.frame, rows = F ? F.h - F.pinH : 0
   if (F) checkFaces(F.faces, extent, where)
 
+  // The schedule over the year ahead at the town (the player's last line; Stage and the bake refuse first), judged in
+  // render so a refusal reaches the boundary, and only when what it judges changes (the schedule, and where Show is 0).
+  const judged = JSON.stringify([channel.schedule, Object.values(channel.values).map(k => k.show > 0)])
+  useMemo(() => { if (compiled) refuseScheduleSense(channel, getTodSlotDaysAhead(useTimeOfDay.getState().currentTime, 366), showSeconds(compiled), where) }, [judged, compiled, where])   // eslint-disable-line react-hooks/exhaustive-deps
   const ends = useMemo(() => F ? strandEnds(st.show, extent.ridge.sides, extent.ridge.halfWidthM, st.ringRadiusM) : [], [F, st, extent])
   const every = st.show / st.glow, isGlow = (s) => s % every === Math.floor(every / 2)   // the real strands among the show's
 
   const root = useRef(), glassRef = useRef(), coreRef = useRef(), socketRef = useRef(), cordRef = useRef(), pinRef = useRef(), lightRef = useRef()
   const hung = useRef(null)                                     // which strands hang now: 'none' | 'glow' | 'all'
-  const day = useRef(null)                                      // the town day's channel and showtimes, once a day
+  const day = useRef(null)                                      // the nights of the day before and of today, once a day
 
   const pinFaces = useMemo(() => {
     if (!F) return null
@@ -128,23 +136,25 @@ export default function LightShow({ display, channel, extent, calendar, contentR
     // ── when: live by the town's clock and schedule, or Stage's preview from the moment it was pressed ───────────────
     const instant = useTimeOfDay.getState().currentTime, clock = townClockOf(instant)
     if (day.current?.date !== clock.date || day.current.channel !== channel || day.current.compiled !== compiled) {
-      const sm = getTodSlotMinutes(instant), at = (m) => displayAt(channel, m, sm), secs = showSeconds(compiled)
-      refuseCrowdedShows([[clock.date, at]], secs, where)
-      // The windows over the town's year: the last line, for a slab baked under an older rule (the store and the bake
-      // refuse first). Only a channel with windows reads the year (cached: once per town and year).
-      if (channel.showWindows) refuseWindowSense(channel.showWindows, getTodSlotYear(clock.year), where)
-      day.current = { date: clock.date, channel, compiled, at, times: showtimesOn(at, secs) }
+      const secs = showSeconds(compiled)
+      day.current = { date: clock.date, channel, compiled, before: nightsOn(channel, prevDate(clock.date), getTodSlotRow, secs), today: nightsOn(channel, clock.date, getTodSlotRow, secs) }
     }
-    let mode, t, now, up = true                                                         // Stage's preview hangs them
+    const state = displayStateAt(channel, day.current.before, day.current.today, clock.date, clock.hours * 60 + clock.minutes + clock.seconds / 60, getTodSlotRow)
+    let mode, t, now, up = true, dark = false                                           // Stage's preview hangs them
     if (preview) {
       const since = (performance.now() - preview.at) / 1000
       mode = preview.mode; now = instant.getTime() / 1000 + since; t = since % (showSeconds(compiled) + 4)
       if (mode === 'show' && t > showSeconds(compiled)) mode = 'glow'                   // a breath of glow between plays
     } else {
-      ;({ mode, t, up } = liveState(display, compiled, clock, calendar, day.current.at, day.current.times, where)); now = instant.getTime() / 1000
+      // The season gates by the clock's date, as before; the schedule's nights by their first event's.
+      up = inSeason(calendar, display.season, clock.date, where); now = instant.getTime() / 1000
+      ;({ mode, t, dark } = up ? state : { mode: 'off', t: 0, dark: false })
     }
     // ── how bright, what colour: the display's own Look channel at the town's minute (levels HDR, so the bulbs bloom) ─
-    const lit = day.current.at(useTimeOfDay.getState().getMinuteOfDay()), warm = kelvinToRgb(lit.kelvin)
+    const lit = state, warm = kelvinToRgb(lit.kelvin)
+    // The night's last show, when Ambient ends after it, closes to BLACK: the same spiral, toward dark (every other close
+    // stays white: Jacob, 2026-10-31).
+    const toDark = dark && t > showSeconds(compiled) - OPEN_SECONDS
     const show = mode === 'show' ? showAt(F, compiled, drawer.byId, t, now) : null
     if (pinRef.current) pinRef.current.visible = !!show
     // ── where: hang the strands (ridge to foot ring): none out of season, the glow's by day and at glow, all in a show ─
@@ -177,7 +187,7 @@ export default function LightShow({ display, channel, extent, calendar, contentR
       const c = Math.floor(s * F.w / st.show), real = isGlow(s)
       for (let j = 0; j < rows; j++) {
         const row = F.pinH + j, r = show ? (show.reveal ? show.reveal(c, row) : 'on') : 'off'
-        const rgb = r === 'spark' ? [255, 246, 228] : r === 'on' ? show.colour(c, row).map(v => v * lit.show) : real && mode !== 'off' ? glowColour(warm, lit.glow, c, j, now) : [0, 0, 0]
+        const rgb = r === 'spark' ? [255, 246, 228] : r === 'on' ? show.colour(c, row).map(v => v * lit.show) : real && mode !== 'off' && !toDark ? glowColour(warm, lit.glow, c, j, now) : [0, 0, 0]
         tmp.c.setRGB(rgb[0] / 255, rgb[1] / 255, rgb[2] / 255)          // the light inside the glass (additive: unlit adds nothing)
         coreRef.current.setColorAt(s * rows + j, tmp.c)
         if (rgb[0] + rgb[1] + rgb[2] > 0) { avg[0] += rgb[0]; avg[1] += rgb[1]; avg[2] += rgb[2]; n++ }

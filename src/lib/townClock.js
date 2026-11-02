@@ -97,3 +97,22 @@ export function townDateAtDayOfYear(base, doy, tz = townTimeZone()) {
   const d = new Date(Date.UTC(c.year, 0, 1) + (doy - 1) * 86400000)
   return townDateAt({ year: d.getUTCFullYear(), month: d.getUTCMonth() + 1, day: d.getUTCDate(), minute: c.minuteOfDay + c.seconds / 60 }, tz)
 }
+/**
+ * Does the town's clock change between two instants, and how? → null, or { kind: 'skip' | 'repeat', from, to } with
+ * from/to the wall times ('HH:MM') of the hour it skips (02:00–02:59 on the spring day) or reads twice (01:00–01:59 in the
+ * autumn). Measured, never assumed: the wall clock is read every minute of real time, and a jump forward or back is the
+ * change. What Stage's Tonight says ("clocks change tonight"; Jacob, 2026-11-01: on the day it reads 1 AM twice the 1 AM
+ * show plays twice). ▶ node checks/claims-a-display-keeps-its-schedule.mjs
+ */
+const wallHHMM = (m) => { const x = ((m % 1440) + 1440) % 1440; return `${String(Math.floor(x / 60)).padStart(2, '0')}:${String(x % 60).padStart(2, '0')}` }
+export function townClockChange(from, to, tz = townTimeZone()) {
+  // The clock's offset from UTC, in minutes, at an instant: equal at both ends, no change between (the zones change at
+  // most once in a night). Otherwise the change is found to the minute by halving, never by reading every minute.
+  const offset = (t) => { const c = townClockOf(new Date(t), tz); return Math.round((Date.UTC(c.year, c.month - 1, c.day) + (c.minuteOfDay * 60 + c.seconds) * 1000 - t) / 60000) }
+  let lo = Math.floor(from.getTime() / 60000) * 60000, hi = Math.floor(to.getTime() / 60000) * 60000
+  const before = offset(lo), after = offset(hi)
+  if (before === after) return null
+  while (hi - lo > 60000) { const mid = lo + Math.floor((hi - lo) / 120000) * 60000; if (offset(mid) === before) lo = mid; else hi = mid }
+  const last = townClockOf(new Date(lo), tz).minuteOfDay, first = townClockOf(new Date(hi), tz).minuteOfDay, shift = after - before
+  return shift > 0 ? { kind: 'skip', from: wallHHMM(last + 1), to: wallHHMM(first - 1) } : { kind: 'repeat', from: wallHHMM(first), to: wallHHMM(first - shift - 1) }
+}

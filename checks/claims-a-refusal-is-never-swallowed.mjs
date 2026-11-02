@@ -275,7 +275,7 @@ async function sceneRead(transform, displaysT) {
   // …and Displays and Refuse (Displays to the file's end) reading it, with a planted plugin (a Renderer that draws
   // nothing): the check judges refusal against display, never the plugin, so the real one (a lazy LightShow) is not imported.
   const D = await importSource('src/displays/Displays.jsx', { span: { from: 'export default function Displays(' },
-    prefix: "import { createElement as __h, Fragment as __F, Suspense } from 'react'\nimport DisplayBoundary from './DisplayBoundary.js'\nimport { Refusal, Transient } from '../lib/refusal.js'\nimport { displayChannelsFor } from './showChannel.js'\nconst useSceneRead = (...a) => globalThis.__useSceneRead(...a)\nconst PLUGINS = { 'light-show': { label: 'Light Show', attaches: ['setPiece'], Renderer: () => null } }",
+    prefix: "import { createElement as __h, Fragment as __F, Suspense } from 'react'\nimport DisplayBoundary from './DisplayBoundary.js'\nimport { Refusal, Transient } from '../lib/refusal.js'\nimport { displayChannelsFor, readPreDisplaySlab } from './showChannel.js'\nconst useSceneRead = (...a) => globalThis.__useSceneRead(...a)\nconst PLUGINS = { 'light-show': { label: 'Light Show', attaches: ['setPiece'], Renderer: () => null } }",
     transform: jsx })
   const mount = hookRunner(), was = console.warn
   const town = { displays: [{ id: 'd1', kind: 'light-show', attach: 'setPiece' }], contentRoot: '' }
@@ -291,7 +291,7 @@ async function sceneRead(transform, displaysT) {
     const a = mount(D.default); a.render(props(A)); await a.settle(props(A)); a.unmount()
     if (shown(a.outs.at(-1)) !== 'a refusal') fails.push(`a scene read that answered 503 renders ${shown(a.outs.at(-1))}, not a refusal (the check cannot reach what follows)`)
     // the same Look REMOUNTED, the file now reads: read again, and no render of the new mount refuses
-    globalThis.__slabFetch = async () => { calls++; return { ok: true, status: 200, json: async () => ({ displays: { d1: { animated: 'tod', values: {} } } }) } }
+    globalThis.__slabFetch = async () => { calls++; return { ok: true, status: 200, json: async () => ({ displays: { d1: { animated: 'tod', values: { dusk: { glow: 1, show: 2, kelvin: 3000 } }, schedule: [{ days: 'daily', ambient: { on: 'dusk', fadeIn: 0, off: 'dawn', fadeOut: 0 }, shows: null }] } } }) } }   // a VALID channel: <Displays> reads the slab through showChannel.js#readPreDisplaySlab, which validates
     const b = mount(D.default); b.render(props(A)); await b.settle(props(A)); b.unmount()
     if (calls !== 2) fails.push(`a remount after a failed scene read made ${calls - 1} read(s), not 1: the failure is remembered (useSceneJson.js#fetchSceneOnce)`)
     const seen = b.outs.map(shown)

@@ -1,10 +1,10 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 561,
+  "total": 562,
   "counts": {
-    "safe": 388,
+    "safe": 390,
     "local-effect": 32,
-    "live": 141
+    "live": 140
   },
   "checks": [
     {
@@ -304,23 +304,21 @@
       "tier": "safe",
       "why": [
         "importSource of src/displays/lightShow/engine.js — read, safe",
-        "importSource of src/displays/showChannel.js — read, safe"
+        "importSource of src/displays/showChannel.js — read, safe",
+        "importSource of src/displays/showSchedule.js — read, safe"
       ]
     },
     {
       "file": "checks/claims-a-display-is-authored-on-its-own-channel.mjs",
-      "tier": "live",
-      "reasonClass": "unreadable",
+      "tier": "safe",
       "why": [
         "importSource of src/displays/showChannel.js — read, safe",
         "importSource of src/displays/lightShow/engine.js — read, safe",
-        "importSource of src/lib/todSlots.js — read, safe",
         "importSource of src/lib/useSceneJson.js (its span: fetchSceneOnce) — read, safe",
-        "importSource of src/lib/townClock.js — read, safe",
         "importSource of src/cartograph/stores/useCartographStore.js (its span: displayChannelActions) — read, safe",
+        "importSource of src/displays/showSchedule.js — read, safe",
         "importSource of cartograph/bake-scene.js (its span: displayRecordsOf) — read, safe",
         "importSource of src/instances/registry.js — read, safe",
-        "import of a data: module built at run time — its body cannot be read (use checks/_importSource.mjs)",
         "runs `git show 1b833418b98ce845c53ec22f0618d17` — a pinned blob, read-only"
       ]
     },
@@ -329,6 +327,21 @@
       "tier": "safe",
       "why": [
         "importSource of src/displays/lightShow/engine.js — read, safe"
+      ]
+    },
+    {
+      "file": "checks/claims-a-display-keeps-its-schedule.mjs",
+      "tier": "safe",
+      "why": [
+        "importSource of src/lib/todSlots.js — read, safe",
+        "importSource of src/displays/showSchedule.js — read, safe",
+        "importSource of src/displays/showChannel.js — read, safe",
+        "importSource of src/displays/showChannel.js redirects src/displays/showSchedule.js — read, safe",
+        "importSource of src/displays/showChannel.js — read, safe",
+        "importSource of src/displays/showChannel.js redirects src/cartograph/animatedParam.js — read, safe",
+        "importSource of src/displays/lightShow/engine.js — read, safe",
+        "importSource of src/lib/townClock.js — read, safe",
+        "runs `git show 6cdde136121729936df3e503ac3e6da` — a pinned blob, read-only"
       ]
     },
     {
@@ -358,6 +371,14 @@
       "tier": "safe",
       "why": [
         "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-a-fade-runs-its-full-length.mjs",
+      "tier": "safe",
+      "why": [
+        "importSource of src/cartograph/animatedParam.js — read, safe",
+        "runs `git show 151a63f42b7cc415a8a6bd32c5f33f2` — a pinned blob, read-only"
       ]
     },
     {
@@ -888,16 +909,6 @@
         "mkdirSync",
         "deletes files",
         "imports package(s) vite — not read from source"
-      ]
-    },
-    {
-      "file": "checks/claims-a-show-plays-only-inside-its-windows.mjs",
-      "tier": "safe",
-      "why": [
-        "importSource of src/lib/todSlots.js — read, safe",
-        "importSource of src/displays/showChannel.js — read, safe",
-        "importSource of src/displays/lightShow/engine.js — read, safe",
-        "importSource of src/instances/registry.js — read, safe"
       ]
     },
     {
@@ -1873,7 +1884,11 @@
         "importSource of src/displays/showChannel.js — read, safe",
         "importSource of src/displays/showChannel.js redirects src/cartograph/animatedParam.js — read, safe",
         "importSource of src/cartograph/skyLightChannels.js — read, safe",
-        "importSource of src/lib/todSlots.js — read, safe"
+        "importSource of src/displays/showSchedule.js — read, safe",
+        "importSource of src/displays/showSchedule.js redirects src/cartograph/animatedParam.js — read, safe",
+        "importSource of src/lib/todSlots.js — read, safe",
+        "importSource of src/lib/todSlots.js — read, safe",
+        "importSource of src/instances/registry.js — read, safe"
       ]
     },
     {

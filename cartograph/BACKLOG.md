@@ -35,7 +35,12 @@ NO ROUTINE PURGE: content names give a changed file a fresh name, and our reader
   Ward has SceneBroken) · the Ward owes a check that DRAWS a content-named town end to end (a manifest stamped `names: sha256-16` →
   only content names asked → a drawn frame): the coverage claims-a-hashed-town-loads-end-to-end held for the retired kit player
   (retired 6565b6f2; theward's download-weight counts content names, it draws nothing) · the 130 safe-tier reds have no baseline ·
-  the Ward: `useFailures` not shown to visitors.
+  the Ward: `useFailures` not shown to visitors · **the resolvers' single-day read**: every keyed channel (about 40 call sites)
+  reads ONE day's slot minutes, so a fade, a tween or a show start across MIDNIGHT reads today's minute for yesterday's key;
+  the error is the slot's day-to-day move, ▶ `node checks/claims-every-slot-has-a-time-every-day.mjs --drift` (2026-11-01:
+  median under 1 min, p99 about 2, max about 61 on the clock-change day). Fix: carry yesterday's row from
+  todSlots.js#todSlotYear through the resolvers (Boz's (A), deferred; claims-a-fade-runs-its-full-length then gains the
+  midnight case).
 - **STANDING REDS (Ward):** society-frames-what-it-lights + society-flight-has-no-long-frame fail identically before and after the
   pin (Kalends' A/B; frames went green once on the base); cause not established.
 - **FINDINGS FOR OTHER BANDS:** Arborist: PTown trees near the Monument (37–40 m, upper bound) occlude the strands · Intake: Huron

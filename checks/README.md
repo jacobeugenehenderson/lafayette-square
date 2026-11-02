@@ -15,7 +15,7 @@ gated without anyone remembering to gate it, which is what makes this work on to
 
 A non-zero exit is a **finding for the board**, not a runner fault. The suite reports; it does not fix.
 
-## ⛔ live — 141. Never in a default run.
+## ⛔ live — 140. Never in a default run.
 
 Two reason classes, and they are not the same thing. **outbound** — a demonstrated call out.
 **unreadable** — runs code the parser cannot read, so it *may* contact nothing but cannot be shown
@@ -41,7 +41,6 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `checks/claims-a-dead-tile-is-named.mjs` | outbound | imports a network module · imports cartograph/elevationSources.mjs, which can: calls fetch() · imports package(s) geotiff — not read from source |
 | `checks/claims-a-dem-is-chosen-by-its-data.mjs` | outbound | imports cartograph/fetch-dem.mjs, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/elevationSources.mjs, which can: calls fetch() |
 | `checks/claims-a-dike-is-one-line-with-the-coast.mjs` | unreadable | writeFileSync · computed import() with no readable target — runs arbitrary modules |
-| `checks/claims-a-display-is-authored-on-its-own-channel.mjs` | unreadable | importSource of src/displays/showChannel.js — read, safe · importSource of src/displays/lightShow/engine.js — read, safe · importSource of src/lib/todSlots.js — read, safe · importSource of src/lib/useSceneJson.js (its span: fetchSceneOnce) — read, safe · importSource of src/lib/townClock.js — read, safe · importSource of src/cartograph/stores/useCartographStore.js (its span: displayChannelActions) — read, safe · importSource of cartograph/bake-scene.js (its span: displayRecordsOf) — read, safe · importSource of src/instances/registry.js — read, safe · import of a data: module built at run time — its body cannot be read (use checks/_importSource.mjs) · runs `git show 1b833418b98ce845c53ec22f0618d17` — a pinned blob, read-only |
 | `checks/claims-a-failed-read-names-its-cause.mjs` | outbound | imports a network module · importSource of cartograph/elevationSources.mjs, which can: calls fetch() · imports package(s) geotiff — not read from source |
 | `checks/claims-a-label-change-ends-no-leg.mjs` | unreadable | writeFileSync · computed import() with no readable target — runs arbitrary modules |
 | `checks/claims-a-lake-level-converts-at-its-own-height.mjs` | outbound | writeFileSync — only under its own temp dir · mkdirSync — only under its own temp dir · deletes files — only under its own temp dir · imports cartograph/fetch-water-datums.mjs, which can: calls fetch(), mkdirSync, imports cartograph/io.js, which can: writeFileSync |
@@ -208,7 +207,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-deadend-look.mjs` | RENDER THE NINE. Read-only. |
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 
-## safe — 388. This is `npm test`.
+## safe — 390. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -232,11 +231,14 @@ Writes into the repo or a scratch dir.
 | `checks/claims-a-deck-is-every-object-that-covers-it.mjs` | IS EVERY POINT A DECK OBJECT COVERS ON THE DECK? |
 | `checks/claims-a-display-dims-its-set-piece-only-while-lit.mjs` | "DO A SET-PIECE'S UPLIGHTS DIM ONLY WHILE ITS DISPLAY IS LIT?" (Jacob, 2026-10-31: "it's only during the show/glow that |
 | `checks/claims-a-display-hangs-only-in-season.mjs` | "ARE THE STRANDS THERE ONLY WHEN THEY WOULD BE?" (Jacob, 2026-10-31: "hide the strands out of season"; "All cords |
+| `checks/claims-a-display-is-authored-on-its-own-channel.mjs` | "IS A DISPLAY AUTHORED ON ITS OWN LOOK CHANNEL, AND DOES THE DEFAULT DO WHAT THE SHOW DID?" (Jacob, 2026-11-01, |
 | `checks/claims-a-display-is-the-same-for-every-viewer.mjs` | "DOES EVERY VIEWER SEE THE SAME LIGHT AT THE SAME INSTANT?" (BRIEF-the-monument-lights-up §4, gate 1) |
+| `checks/claims-a-display-keeps-its-schedule.mjs` | "DOES A DISPLAY KEEP ITS SCHEDULE (WHEN), WITH ITS LEVELS AUTHORED AT THE SLOTS, AND DOES EVERY PUBLISHED SLAB STILL PLAY |
 | `checks/claims-a-display-scales-with-its-set-piece.mjs` | "DOES A DISPLAY LOOK RIGHT ON A SET-PIECE NOBODY TUNED IT FOR?" (Zob's review and Boz's ruling, 2026-10-31; Layer 0's |
 | `checks/claims-a-district-is-the-towns-own.mjs` | DOES A TOWN'S ROSTER NAME ITS OWN HISTORIC DISTRICT, OR HI-POINTE–DEMUN'S? |
 | `checks/claims-a-dock-rides-only-its-own-structure.mjs` | CLAIM — A DOCK RIDES ONLY ITS OWN STRUCTURE (Boz's rulings (A) and (A1), 2026-10-30; Jacob: "markings on the sandbed are grass"). |
 | `checks/claims-a-face-takes-the-land-use-that-covers-it.mjs` | ⭐⭐ THREE INVARIANTS — ① and ② ruled by Jacob 2026-09-25, ③ 2026-10-04: |
+| `checks/claims-a-fade-runs-its-full-length.mjs` | "DOES A FADE RUN ITS FULL AUTHORED MINUTES, ACROSS LATER KEYS, FROM WHERE THE LIGHT IS?" (Jacob, 2026-11-01: "It takes |
 | `checks/claims-a-failed-tree-load-names-itself.mjs` | WHEN THE GROVE'S ATLAS (OR THE TREE MATERIALS) FAIL TO LOAD, DOES THE REVEAL SAY SO? |
 | `checks/claims-a-failing-display-is-named-and-contained.mjs` | "WHEN A DISPLAY FAILS AT RUNTIME, IS IT CONTAINED AND NAMED?" (Boz's ruling, 2026-10-31.) |
 | `checks/claims-a-fitted-loop-stays-on-its-road.mjs` | DOES EVERY CLOSED-LOOP STREET CHAIN'S LINE STAY ON ITS ROAD? |
@@ -273,7 +275,6 @@ Writes into the repo or a scratch dir.
 | `checks/claims-a-scene-switch-drops-the-old-town.mjs` | CLAIM — A SCENE SWITCH DROPS THE OLD TOWN, AND ITS DESIGN SAVES TO THE NEW TOWN'S OWN LOOK. |
 | `checks/claims-a-scrubbed-town-keeps-ticking.mjs` | "DOES A TOWN SCRUBBED TO ANOTHER TIME KEEP TICKING FROM THERE?" (Jacob, 2026-11-01: "we never really leave now's time |
 | `checks/claims-a-shore-is-not-traced-twice.mjs` | ⭐⭐ TWO INVARIANTS, one cure and one guard: |
-| `checks/claims-a-show-plays-only-inside-its-windows.mjs` | "DOES A SHOW PLAY ONLY INSIDE ITS WINDOWS, AND IS A WINDOW WHOSE ENDS PASS EACH OTHER REFUSED?" (Jacob, 2026-11-01: |
 | `checks/claims-a-slab-ships-under-content-names.mjs` | every slab upload names its files by their content, and every read of what an |
 | `checks/claims-a-slab-uploads-only-under-its-own-name.mjs` | A SLAB UPLOADS ONLY UNDER THE NAME IT WAS BAKED UNDER (T1). |
 | `checks/claims-a-stale-terrain-is-not-a-town-without-a-coast.mjs` | ⭐⭐ THE INVARIANT: bake-revetment may report "this town has no coast" only when the SLAB |

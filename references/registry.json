@@ -9214,7 +9214,9 @@
         "hardSwitch": "a fade of 0 minutes is a hard switch-off (or on) at the key",
         "season": "the town's authored calendar season still gates: out of season nothing hangs",
         "default": "a town that has not authored the channel gets a stated neutral default (Boz, 2026-11-01, Layer 0's authored-value-with-neutral-default pattern); named in OPERATIONS",
-        "noHeuristic": "an authored value is never scaled by a heuristic: no sun ramp, no gain constant multiplies a keyed level (Jacob, 2026-11-01). This applies to the street lamps' keyed level too"
+        "noHeuristic": "an authored value is never scaled by a heuristic: no sun ramp, no gain constant multiplies a keyed level (Jacob, 2026-11-01). This applies to the street lamps' keyed level too",
+        "clockChange": "a showtime is a reading of the town's clock: on the day it reads 1 AM twice, the 1 AM show plays twice (Jacob, 2026-11-01: \"When there are two 1AMs we play the show twice. It is literally free.\"); on the day it skips 2 AM, a 2 AM show does not play (today's behaviour, kept; not Jacob's words)",
+        "fadeLength": "a fade runs its full authored minutes from its key, starting from the light's level there (dark after a blank, or wherever a fade still running has reached), across any later keys (Jacob, 2026-11-01: \"It takes 30 minutes to fade in and the slot is only 22 minutes; whatever. The next slot gets the 8 minutes\"). This applies to every keyed channel's fades, the lamps' included"
       },
       "by": "Jacob",
       "date": "2026-11-01",
