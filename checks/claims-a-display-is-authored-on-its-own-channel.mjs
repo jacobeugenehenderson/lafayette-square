@@ -23,7 +23,7 @@
  *      with the levels there, never removes the last key, sets a schedule and refuses one that crowds the show or whose
  *      ends pass each other AT THE GESTURE, reads an old Look through its one reader and saves the new shape on its first
  *      write, refuses an invalid write and leaves the store as it was, saves, and reverts; the card's keys carry no ▲/▼;
- *      Stage lights the display from the store; the Tonight strip reads the schedule's nights and says tonight's clock change;
+ *      Stage lights the display from the store (the card's Schedule and Tonight: claims-the-schedule-card-changes-only-what-it-touches);
  *  10. a minute prints HH:MM and a length M:SS from the WHOLE minute / second (never 19:60 or 4:60).
  * Usage: node checks/claims-a-display-is-authored-on-its-own-channel.mjs [--mutants] [--kelvin]
  *   --kelvin: prints the nearest temperature and its residual against the old glow colour.
@@ -115,7 +115,6 @@ async function verdict({ chan, param, view, bake, eng, mount, pin, hook, manifes
   let named = false; try { E.runSeconds([{ look: 'a', seconds: 5 }, { transition: 'no-such' }, { look: 'a', seconds: 5 }]) } catch (e) { named = /transition "no-such"/.test(e.message) }
   F(named, "runSeconds (Stage's Tonight strip) does not refuse an unknown transition by name")
   const sa = stage ? stage(sourceOf('src/stage/StageApp.jsx')) : sourceOf('src/stage/StageApp.jsx')
-  F(/authored = useCartographStore\(s => s\.displays\?\.\[display\.id\]\)/.test(sa) && /const read = useMemo\(\(\) => readChannel\(authored, display\.id\), \[authored, display\.id\]\)/.test(sa) && /const ch = read\.channel, at = \(d\) => nightsOn\(ch, d, getTodSlotRow, secs\)/.test(sa) && /const times = nights\.tonight\.flatMap\(n => n\.starts\)/.test(sa), "Stage's Tonight strip does not read the display's schedule, its nights")
   // 9. Stage edits it
   const ST = await importSource('src/cartograph/stores/useCartographStore.js', { span: { functions: ['displayChannelActions'] },
     prefix: "import { defaultDisplayChannel, validateDisplayChannel } from '../../displays/showChannel.js'\nimport { levelsAt, refuseShortCadence, refuseScheduleSense } from '../../displays/showSchedule.js'\nimport { NAMED_TOD_SLOTS_BY_ID } from '../animatedParam.js'\nimport { todSlotDays } from '../../lib/todSlots.js'\nexport let SM = null\nexport const setSM = (m) => { SM = m }\nconst getTodSlotMinutes = () => SM\nconst getTodSlotDaysAhead = (from, n) => todSlotDays({ lat: 42.05, lon: -70.19, tz: 'America/New_York' }, new Date('2026-06-01T16:00:00Z'), n)\nconst useTimeOfDay = { getState: () => ({ currentTime: new Date(0) }) }\n",
@@ -158,7 +157,6 @@ async function verdict({ chan, param, view, bake, eng, mount, pin, hook, manifes
   const tw = w('src/components/Town.jsx')
   F(/'setPieceLight', 'displays',/.test(tw) && /displaysOverride=\{o\.displays\}/.test(tw), '<Town> does not take overrides.displays to <SetPiece>')
   F(/channels=\{displaysOverride\}/.test(w('src/components/SetPiece.jsx')), '<SetPiece> does not hand Stage\'s channels to <Displays>')
-  F(/<ScheduleBlock display=\{display\} channel=\{read\.channel\} \/>/.test(sa) && /const put = \(next\) => \{ try \{ setSchedule\(display\.id, next, secs\); setRefused\(null\) \} catch \(e\) \{ setRefused\(plainReason\(e\)\) \} \}/.test(sa) && /secs = runSeconds\(display\.run\)/.test(sa) && /try \{ refuseShortCadence\(channel, secs, display\.id\) \} catch \(e\) \{ standing = plainReason\(e\) \}/.test(sa) && /\{\(refused \|\| standing\) && <div role="alert"/.test(sa), "the Lit card's Schedule block is not wired to the store with the show's own length, or does not show a refusal (at the gesture and at load)")
   F(/<DisplayChannel display=\{d\} \/>/.test(sa) && /onSetValue=\{\(key, value, slotId\) => setValue\(id, key, value, slotId\)\}/.test(sa) && /fields=\{DISPLAY_FIELDS\}/.test(sa) && /channel=\{read\.channel\}\s*noEdges/.test(sa), "Stage's Displays section has no channel card per display (its keys without ▲/▼), or it is not wired to the store")
   // 10. HH:MM
   let badClock = null
@@ -167,8 +165,6 @@ async function verdict({ chan, param, view, bake, eng, mount, pin, hook, manifes
     if (!m || +m[1] > 23 || +m[2] > 59 || +m[1] * 60 + +m[2] !== want) badClock = `${t.toFixed(1)} prints "${txt}"`
   }
   F(!badClock, `a minute is printed wrong: ${badClock}`)
-  F(/return townClockChange\(noon\(D\), noon\(nextDate\(D\)\)\)/.test(sa) && /\{clock && <div className="text-caption"[^>]*>\{clock\}<\/div>\}/.test(sa) && /change\.kind === 'skip' \? `The clock skips \$\{change\.from\}–\$\{change\.to\} tonight: a show there does not play\.` : `The clock runs \$\{change\.from\}–\$\{change\.to\} twice tonight: a show there plays twice\.`/.test(sa), "Stage's Tonight strip does not say tonight's clock change (townClockChange, noon to noon)")
-  F(/import \{ runSeconds, hhmm, mmss \} from '\.\.\/displays\/lightShow\/engine\.js'/.test(sa) && !/const hhmm = /.test(sa), "Stage's Tonight strip does not print through the engine's one hhmm and mmss")
   let badLen = null
   for (let t = 0; t <= 1000 && !badLen; t += 0.1) { const txt = E.mmss(t), m = txt.match(/^(\d+):(\d\d)$/); if (!m || +m[2] > 59 || +m[1] * 60 + +m[2] !== Math.round(t)) badLen = `${t.toFixed(1)} s prints "${txt}"` }
   F(!badLen, `a show's length is not printed M:SS from the whole second (${badLen})`)
@@ -209,14 +205,10 @@ if (process.argv.includes('--mutants')) {
     ['the shimmer swing changed', { eng: (s) => s.replace('export const GLOW_SHIMMER = 0.25', 'export const GLOW_SHIMMER = 0.2') }],
     ['<Displays> passing no channel', { mount: (s) => s.replace(' channel={lit[d.id]}', '') }],
     ['runSeconds silent on an unknown transition', { eng: (s) => s.replace('if (!TRANSITION[s.transition]) throw', 'if (false) throw') }],
-    ['the Tonight strip on its own schedule', { stage: (s) => s.replace('const times = nights.tonight.flatMap(n => n.starts)', 'const times = [1080]') }],
     ['M:SS rounded per part (4:60)', { eng: (s) => s.replace('export const mmss = (seconds) => { const t = Math.round(seconds); return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, \'0\')}` }', 'export const mmss = (seconds) => `${Math.floor(seconds / 60)}:${String(Math.round(seconds % 60)).padStart(2, \'0\')}`') }],
     ['a level below 0 accepted', { chan: (s) => s.replace('if (k.glow < 0 || k.show < 0) throw', 'if (false) throw') }],
     ['a new key seeded with nothing', { store: (s) => s.replace('[slotId]: levelsAt(ch, sm[slotId], sm) }', '[slotId]: { glow: 0, show: 0, kelvin: 3000 } }') }],
     ['the gesture not judging the schedule', { store: (s) => s.replace('      refuseScheduleSense(next, getTodSlotDaysAhead(useTimeOfDay.getState().currentTime, 366), runSeconds, where)\n', '') }],
-    ['Tonight silent on a clock change', { stage: (s) => s.replace('      {clock && <div className="text-caption" style={{ color: \'var(--on-surface-variant)\' }}>{clock}</div>}\n', '') }],
-    ['the Schedule block not on the card', { stage: (s) => s.replace('      <ScheduleBlock display={display} channel={read.channel} />\n', '') }],
-    ['the Schedule block silent on a refusal', { stage: (s) => s.replace('{(refused || standing) && <div role="alert"', '{false && <div role="alert"') }],
     ['the Lit card offering ▲/▼ on a display', { stage: (s) => s.replace('channel={read.channel}\n      noEdges', 'channel={read.channel}') }],
     ['HH:MM split before rounding (19:60)', { eng: (s) => s.replace("export const hhmm = (minute) => { const m = (Math.round(minute) % DAY_MIN + DAY_MIN) % DAY_MIN; return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}` }", "export const hhmm = (m) => `${String(Math.floor(m / 60) % 24).padStart(2, '0')}:${String(Math.round(m % 60)).padStart(2, '0')}`") }],
     ['an edit written without validation', { store: (s) => s.replace('[id]: validateDisplayChannel(next, where) }', '[id]: next }') }],

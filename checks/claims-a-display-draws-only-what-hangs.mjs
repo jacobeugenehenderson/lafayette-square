@@ -34,8 +34,12 @@ async function verdict({ geo, view } = {}) {
   F(/put\(cordRef\.current, order\.pos\[s\],/.test(ls) && /const i = order\.pos\[s\] \* rows \+ j/.test(ls) && /coreRef\.current\.setColorAt\(order\.pos\[s\] \* rows \+ j, tmp\.c\)/.test(ls) && !/(put\(\w+Ref\.current, |setColorAt\()s \* rows \+ j/.test(ls), 'LightShow places or colours an instance at its unordered index')
   F(/for \(const s of hang === 'all' \? order\.all : order\.glow\) \{/.test(ls), 'LightShow colours strands that do not hang')
   F(/root\.current\.visible = hang !== 'none'/.test(ls), 'out of season the display is still submitted')
-  F(/if \(!show && \(mode === 'off' \|\| hang === 'none'\)\) \{\s*if \(!unlit\.current\) \{ unlit\.current = true; showLight\(\);[^}]*\}\s*return\s*\}/.test(ls) && /if \(unlit\.current\) \{ unlit\.current = false; showLight\(\) \}/.test(ls) && /const lit = !unlit\.current, cards = asCards\.current\s*coreRef\.current\.visible = lit && !cards;/.test(ls), 'while off the light cores are still drawn and coloured, or never come back when lit')
+  F(/if \(!show && \(mode === 'off' \|\| hang === 'none'\)\) \{\s*if \(!unlit\.current\) \{ unlit\.current = true; showLight\(\);[^}]*\}\s*return\s*\}/.test(ls) && /if \(unlit\.current\) \{ unlit\.current = false; showLight\(\) \}/.test(ls) && /const part = bulbParts\(!unlit\.current, asCards\.current\)\s*coreRef\.current\.visible = part\.core;/.test(ls), 'while off the light cores are still drawn and coloured, or never come back when lit')
   F(/if \(show && pinRef\.current && pinFaces\) pinFaces\.forEach/.test(ls), 'the pinnacle is washed outside a show')
+  // Boz, 2026-11-02 (Jacob: "the strands aren't even showing when they're turned off"): in season and off, the strands hang as
+  // they are, at every size; out of season nothing is submitted
+  F([true, false].every(cards => { const p = G.bulbParts(false, cards); return p.glass && p.socket && !p.core && !p.card }), 'in season and off, the strands\' glass and sockets are not drawn at every size')
+  F(!/cordRef\.current\.visible\s*=/.test(ls), 'the cords are hidden by something other than the root (out of season)')
   return fails
 }
 
@@ -52,6 +56,8 @@ if (process.argv.includes('--mutants')) {
     ['colouring every strand at glow', { view: (s) => s.replace("for (const s of hang === 'all' ? order.all : order.glow) {", 'for (const s of order.all) {') }],
     ['submitted out of season', { view: (s) => s.replace("root.current.visible = hang !== 'none'", 'root.current.visible = true') }],
     ['colouring while off', { view: (s) => s.replace("if (!show && (mode === 'off' || hang === 'none')) {", 'if (false) {') }],
+    ['off: the strands gone far off', { geo: (s) => s.replace('glass: !(lit && cards), socket: !(lit && cards)', 'glass: !cards, socket: !cards') }],
+    ['off: the cords hidden', { view: (s) => s.replace('coreRef.current.visible = part.core;', 'coreRef.current.visible = part.core; cordRef.current.visible = !unlit.current;') }],
     ['the pinnacle washed every frame', { view: (s) => s.replace('if (show && pinRef.current && pinFaces) pinFaces.forEach', 'if (pinRef.current && pinFaces) pinFaces.forEach') }],
   ]
   let bad = 0

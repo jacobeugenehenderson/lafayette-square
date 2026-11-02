@@ -94,7 +94,7 @@ const FADE_CLIP = {
   down: 'polygon(0 0, 100% 0, 100% 65%, 50% 100%, 0 65%)',
 }
 
-function SlotChip({ slot, attached, parked, fade, onScrub, onFill, onRemove }) {
+export function SlotChip({ slot, attached, parked, fade, onScrub, onFill, onRemove, title: titleOverride }) {
   const baseStyle = {
     height: 18,
     padding: '0 4px',
@@ -132,9 +132,9 @@ function SlotChip({ slot, attached, parked, fade, onScrub, onFill, onRemove }) {
     e.preventDefault()
     onRemove(slot.id)
   }
-  const title = attached
+  const title = titleOverride ?? (attached
     ? `${slot.label}${parked ? ' (parked)' : ''}${fade ? ` · fades ${fade}` : ''} · right-click or ⌘-click to clear this keyframe`
-    : `Jump to ${slot.label}`
+    : `Jump to ${slot.label}`)
   return (
     <button
       onClick={onClick}
