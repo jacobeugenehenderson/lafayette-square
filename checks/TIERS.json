@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 564,
+  "total": 563,
   "counts": {
-    "safe": 392,
+    "safe": 391,
     "local-effect": 32,
     "live": 140
   },
@@ -1223,13 +1223,6 @@
       "tier": "safe",
       "why": [
         "reads repo files only"
-      ]
-    },
-    {
-      "file": "checks/claims-a-tree-the-frame-cannot-show-is-not-drawn.mjs",
-      "tier": "safe",
-      "why": [
-        "importSource of src/lib/treeCells.js — read, safe"
       ]
     },
     {
