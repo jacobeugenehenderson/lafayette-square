@@ -12,6 +12,7 @@ import { resolveGroupAtMinute, getTodSlotMinutes } from '../cartograph/animatedP
 import { NEON_FIELD_KEYS, NEON_FLAT_DEFAULTS, kitDayChannel } from '../cartograph/skyLightChannels.js'
 import { lookOf } from '../lib/lookOf.js'
 import { useTownContext } from './townContext.js'
+import { NEON_RENDER_ORDER } from '../lib/drawOrder.js'
 
 /**
  * NeonBands — the neon of every open place: TWO DRAWINGS of one sign, handed off by on-screen size
@@ -599,13 +600,13 @@ export default function NeonBands({ places, forceOn = true, lookId, materialColo
   } : {}
   useEffect(() => () => { mats.current?.tube.dispose(); mats.current?.line.dispose() }, [])
 
-  // renderOrder above every baked-ground transparent group (bake max is ~42, plus StreetLights pool at 50). Neon is
+  // renderOrder above every baked-ground transparent group AND the focus matte (src/lib/drawOrder.js, one home for the order). Neon is
   // depthWrite:false, so drawing it LAST puts the ground's depth in the buffer first and the neon depth-tests against
   // it — else a later transparent ground fragment passes against the sky's 1.0 and overdraws the sign.
   return (
     <>
-      <mesh geometry={tubeGeometry} material={mats.current.tube} renderOrder={100} frustumCulled={false} />
-      <mesh ref={lineRef} geometry={lineGeometry} material={mats.current.line} renderOrder={101} frustumCulled={false} {...pickHandlers} />
+      <mesh geometry={tubeGeometry} material={mats.current.tube} renderOrder={NEON_RENDER_ORDER} frustumCulled={false} />
+      <mesh ref={lineRef} geometry={lineGeometry} material={mats.current.line} renderOrder={NEON_RENDER_ORDER + 1} frustumCulled={false} {...pickHandlers} />
     </>
   )
 }

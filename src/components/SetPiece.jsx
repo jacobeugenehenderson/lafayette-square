@@ -37,6 +37,7 @@ import Displays from '../displays/Displays.jsx'
 import useSlabBuildingIndex from '../hooks/useSlabBuildingIndex'
 import { useTownContext } from './townContext.js'
 import { Refusal } from '../lib/refusal.js'
+import FocusMatteOrder from './FocusMatteOrder.jsx'
 
 // kind → renderer. The only place a set-piece component is imported.
 const RENDERERS = {
@@ -69,6 +70,8 @@ export default function SetPiece({ town, lookId, lightOverride, displaysOverride
       onClick={(e) => { e.stopPropagation(); if (e.delta > 6) return; select(id) }}>
       {/* `focusName`: the renderer names its ROOT with it, the root sitting at the set-piece's base centre, and carries
           its `extent` there — so depth of field can focus on it by its building's id (src/lib/focusObject.js). */}
+      {/* The matte draws after the town's environment, every mesh under the focus node, late displays included (drawOrder.js). */}
+      <FocusMatteOrder lookId={lookId} name={`focus:${id}`} />
       <R town={town} lookId={lookId} footprint={b.footprint} focusName={`focus:${id}`} {...props}>
         <SetPieceUplights channel={lightOverride ?? scene?.setPieceLight ?? null} topM={R.extent?.topM} halfWidthM={R.extent?.halfWidthM} dim={dim} />
         {/* The town's displays that hang on its set-piece (src/displays): nothing, for a town that declares none. */}
