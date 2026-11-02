@@ -1868,7 +1868,9 @@ const useCartographStore = create((set, get) => ({
       // already on another town switches through setScene, the one path that drops the old town.
       const sceneUpdate = town.scene && !isValidMapId(cur) ? { scene: town.scene } : {}
       if (sceneUpdate.scene) { try { localStorage.setItem(ADDRESS_STORAGE.scene, sceneUpdate.scene) } catch { /* ignore */ } }
-      set({ looks, defaultLookId, activeLookId: town.lookId, lookMissingForScene: town.missing, _looksHydrated: true, ...sceneUpdate })
+      // lookRefused: null — the fetched index resolved a town. BOOT_TOWN resolves over the BUNDLED index, so a Look made after
+      // the bundle booted refused (/stage/<its town>) and resolves here; a stale refusal would hold Toolbar's self-correction.
+      set({ looks, defaultLookId, activeLookId: town.lookId, lookRefused: null, lookMissingForScene: town.missing, _looksHydrated: true, ...sceneUpdate })
       get()._measureSlabAge()
       // Not awaited: this may run inside another scene's load, which sees the scene move and stands down.
       if (town.scene && isValidMapId(cur) && town.scene !== cur) get().setScene(town.scene)

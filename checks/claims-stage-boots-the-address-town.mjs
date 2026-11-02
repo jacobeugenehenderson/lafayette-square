@@ -17,11 +17,12 @@
 //       what exists (every town with a Look / every Look id), even with a town remembered; the same Look-less scene on
 //       /cartograph is the Designer's `missing` state, not a refusal.
 //   4 · STAGE SAYS WHY, READ — CartographApp mounts the panel only on a town and <StageNoTown> otherwise, and the store's
-//       lookRefused starts at BOOT_TOWN.refused (so the refusal shows from the first render).
+//       lookRefused starts at BOOT_TOWN.refused (so the refusal shows from the first render), and a hydration that resolves
+//       a town clears it (a Look the bundle lacked boots refused and resolves over the fetched index).
 // ⭐ MUTANTS (--mutants), each must go RED: (a) the old initializer `url.look || stored.look` back → 1 · (b) the old scene
 // rule (stored.scene, ignoring ?look=) back → 1 · (c) a resolver that takes the remembered Look first → 2 · (d) the stage
 // refusal removed → 3 · (e) a refusal that names nothing → 3 · (f) the panel mounted with no town → 4 · (g) lookRefused
-// starting null → 4.
+// starting null → 4 · (h) a hydration that resolves a town keeping the boot's refusal → 4.
 //   node checks/claims-stage-boots-the-address-town.mjs [--mutants]
 // Read-only. Exits 1 on any failing judge or any mutant left GREEN.
 import { readFileSync } from 'node:fs'
@@ -81,6 +82,13 @@ function judgeStageSays(appText, store) {
   if (!/\{!inDesigner && !activeLookId && <StageNoTown \/>\}/.test(a)) why.push(`${APP} does not show <StageNoTown> when no town is open`)
   if (!/\{!inDesigner && activeLookId && \(\s*<StagePanelReal\b/.test(a)) why.push(`${APP} mounts Stage's panel with no town open: its controls read the town's place, and a throw there blanks the page`)
   if (!/^\s*lookRefused: BOOT_TOWN\.refused,/m.test(st)) why.push(`${STORE}'s lookRefused does not start at BOOT_TOWN.refused: Stage shows no reason until the Looks load`)
+  // A Look made after the bundle: the boot (bundled index) refuses it, the fetched index resolves it, and the
+  // hydration's success must clear the boot's refusal (Zob, 2026-11-01). The resolver half RUN, the store half read.
+  const late = towns[0], without = looksIndex.looks.filter((l) => l.scene !== late?.scene)
+  const addr = { url: { scene: late?.scene, look: null, shot: 'hero', stage: true }, stored: { scene: null, look: null, shot: null } }
+  if (!resolveTown(without, addr).refused || resolveTown(looksIndex.looks, addr).lookId !== late?.id) why.push(`a Look missing from the bundle and present when fetched (${late?.id}) is not refused at boot and resolved at hydration: the case cannot be judged`)
+  const ok = st.slice(st.indexOf('_loadLooks: async'), st.indexOf('_loadLooks: async') + 4000).match(/set\(\{ looks, defaultLookId, activeLookId: town\.lookId,[^\n]*\}\)/)?.[0] || ''
+  if (!/\blookRefused: null\b/.test(ok)) why.push(`${STORE}#_loadLooks resolves a town without clearing lookRefused: a Look the bundle lacked boots refused and STAYS refused (Toolbar's self-correction stands down) after it resolves`)
   return why
 }
 
@@ -104,6 +112,7 @@ if (process.argv.includes('--mutants')) {
     ['e · a stage refusal that names nothing', 3, async () => judgeStageRefusal(await resolverOf((t) => t.replace('(towns with one: ${have})', '')))],
     ['f · the panel mounted with no town', 4, () => judgeStageSays(appText.replace('{!inDesigner && activeLookId && (', '{!inDesigner && ('), storeText)],
     ['g · lookRefused starting null', 4, () => judgeStageSays(appText, storeText.replace('lookRefused: BOOT_TOWN.refused,', 'lookRefused: null,'))],
+    ['h · a resolved town keeps the boot refusal', 4, () => judgeStageSays(appText, storeText.replace('activeLookId: town.lookId, lookRefused: null,', 'activeLookId: town.lookId,'))],
   ]
   console.log('\n  mutants:')
   for (const [name, judge, run] of MUTANTS) {
