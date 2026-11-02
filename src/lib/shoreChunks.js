@@ -203,6 +203,19 @@ function candidatesOf(ctx, ci) {
 }
 
 /**
+ * Keep the candidate memo to the chunks a window around `centres` reads (each centre ± `margin`), and drop the rest.
+ * ⭐ The memo changes cost only (candidatesOf is pure in (ctx, ci)), so dropping a chunk's candidates loses nothing: it is
+ * re-thrown, identically, if a window reaches it again. ⛔ Unbounded it grew with every chunk a session's windows touched
+ * (~168 KB a chunk on Huron). The player calls this with its near set (src/lib/revetmentNear.js#retainStones), so the
+ * memo and the stones it settles hold one bounded policy.
+ */
+export function retainCandidates(ctx, centres, margin = 2) {
+  const keep = new Set()
+  for (const ci of centres) for (let c = ci - margin; c <= ci + margin; c++) keep.add(c)
+  for (const c of [...ctx._cand.keys()]) if (!keep.has(c)) ctx._cand.delete(c)
+}
+
+/**
  * Generate the stones that BELONG to chunk `ci`, using `margin` chunks of context
  * on each side. ⭐ Returns only the ones inside `ci`, but computes them exactly as
  * chunk `ci±1` would, because the priority order is global.

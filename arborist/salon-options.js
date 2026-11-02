@@ -113,6 +113,7 @@ function recommendations(dossier, parts, rubric) {
     }
     return { recommend: out }
   } catch (e) {
+    // message-flow(debb5c7f): the matcher's refusal, said beside the Salon's options in the Arborist UI; bake-trees reads only dossierForSalonSpecies
     return { recommend: null, recommendError: e.message }   // ⛔ said, never swallowed (e.g. an unlabelled part-index)
   }
 }

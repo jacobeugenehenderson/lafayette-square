@@ -656,7 +656,6 @@ function PublishPanel({ lookId }) {
   const [deploys, setDeploys] = useState({ staging: null, prod: null }) // {status:'building'|'ready', bakedAt, url}
   // A bake that would RE-POUR the town (the server's 428: the pour's code changed) is a question, never "bake failed"
   // (Jacob, 2026-09-29: Provincetown's Publish printed the raw JSON). { files } while the operator decides.
-  const [repour, setRepour] = useState(null)
   // ⭐ WHAT A BAKE STILL OWES, asked of the bake itself (GET /bake: the plan, nothing runs). Publish bakes first only when
   // this lists a step, because a bake that owes nothing still re-stamps the slab and so would re-ship it for no reason.
   // null = not read yet, or a bake is running (409): the label says so rather than guessing.
@@ -737,35 +736,16 @@ function PublishPanel({ lookId }) {
     return () => { cancelled = true; clearInterval(iv) }
   }, [deploys, API])  // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ⭐ PUBLISH IS THE UPLOAD (Jacob, 2026-10-04). A bake ends on disk; this bakes first only when the bake check owes a
-  // step (asked fresh, never from the label's copy), then the server freezes the manifest — which is where what you set in
-  // the deployment panel is accepted — and uploads the slab, and the player if staging's is behind the source.
-  async function publishStaging(confirmRepour = false) {
-    setBusy('staging'); setMsg(null); setRepour(null)
+  // ⭐ PUBLISH ONLY PUBLISHES (Jacob, 2026-11-01: "3 discrete functions: Stage, Preview, and Publish"). Preview inspects the
+  // exact deliverable, so Publish ships what you previewed or nothing: while the Foundry owes a step the button is off and
+  // says "Run the Foundry first", with a way to Stage. ⛔ It used to run the Foundry itself (and ask to re-pour), which
+  // shipped a Slab nobody had previewed. The server refuses the same way (serve.js POST …/publish, 409 { owed }).
+  async function publishStaging() {
+    setBusy('staging'); setMsg(null)
     try {
-      const stale = await readOwed(), blocker = stale.filter(x => x.blocker)
-      // ⛔ a required input missing: the Bake would refuse, so Publish says what must happen first instead of baking into a failure
-      if (blocker.length) { setMsg({ kind: 'err', text: `The Foundry can't run until: ${blocker.flatMap(x => x.why).join(' · ')}` }); setBusy(null); return }
-      const steps = stale.map(x => x.step)
-      if (status.unbaked || steps.length || confirmRepour) {
-        const bake = await fetch(`${API}/bake${confirmRepour ? '?repour=1' : ''}`, { method: 'POST' })
-        // 428 = this bake would re-pour the town because the pour's code changed; nothing ran. Ask, as BakeModal does.
-        if (bake.status === 428) {
-          const body = await bake.json().catch(() => ({}))
-          // …or the coast step stopped on its open/close residual: its pieces are signed in Stage, where they can be seen and framed
-          if (body.coastResidual) { const c = body.coastResidual
-            setMsg({ kind: 'err', text: `Not published: ${c.scene}'s coast differs from its definition in ${c.n} place${c.n === 1 ? '' : 's'}. Run the Foundry in the Look step to see them and accept them, then publish.` })
-            setBusy(null)
-            return
-          }
-          setRepour({ files: body.repour?.files || [] })
-          setBusy(null)
-          return
-        }
-        if (!bake.ok) throw new Error(`the Foundry stopped: ${(await bake.text()).slice(0, 160)}`)
-      }
       const pub = await fetch(`${API}/publish`, { method: 'POST' })
-      const data = await pub.json()
+      const data = await pub.json().catch(() => ({}))
+      if (pub.status === 409 && data.owed) { setMsg({ kind: 'err', text: data.error }); await load(); setBusy(null); return }
       if (!pub.ok || data.error) throw new Error(data.error || 'publish failed')
       const n = data.changed?.length || 0
       setMsg({ kind: 'ok', text: `Pushed to staging${data.committed ? ` · ${n} file${n === 1 ? '' : 's'}` : ' · no slab change'}` })
@@ -832,6 +812,10 @@ function PublishPanel({ lookId }) {
   // stale when a bake is owed, when the site serves an older pour, or when it serves another deployment than the one the
   // panel holds (a toggle edit ships in the manifest, and bakedAt cannot see it). ⛔ Unknown counts as stale.
   const bakeOwed = !!status.unbaked || owed === null || owed.length > 0
+  // Publish is off while the Foundry owes anything (or it cannot be read): it runs nothing itself.
+  const foundryOwed = bakeOwed
+  const stageScene = (looksIndex.looks || []).find(l => l.id === lookId)?.scene
+  const stageHref = stageScene ? stagePath(looksIndex.looks || [], { scene: stageScene, lookId, shot: 'hero' }) : null
   const stagingSlab = !clean || bakeOwed || !slabCurrent('staging') || status.deployment?.shipped !== true
   const stagingDone = !stagingSlab
   const shipping = (verb, slab, player) => `${verb} ${slab && player ? 'slab + player' : slab ? 'slab' : 'player'}`
@@ -910,12 +894,11 @@ function PublishPanel({ lookId }) {
         </button>
       </div>
       {owed?.some(x => x.blocker) && <div style={{ color: '#f87171', marginBottom: 6 }}>⛔ The Foundry can't run until: {owed.filter(x => x.blocker).flatMap(x => x.why).join(' · ')}</div>}
-      {(status.unbaked || owed?.length > 0) && !owed?.some(x => x.blocker) && <div style={{ color: '#fbbf24', marginBottom: 6 }}>⚠ Publish runs the Foundry first{owed?.length ? `: ${owed.length} step${owed.length === 1 ? '' : 's'} (${stepList(owed.map(x => x.step))})` : ' (edits it has not run on)'}.</div>}
-      {owed === null && <div style={{ color: '#fbbf24', marginBottom: 6 }}>⚠ What the Foundry owes could not be read (it may be running): Publish asks again.</div>}
+      {foundryOwed && <div style={{ color: '#fbbf24', marginBottom: 6 }}>⛔ Run the Foundry first{owed?.length ? `: ${stepList(owed.map(x => x.step))}` : owed === null ? ' (what it owes could not be read: it may be running)' : ''}. Publish ships only what Preview shows. {stageHref && <a href={stageHref} style={{ color: '#bfdbfe' }}>Run the Foundry in Stage →</a>}</div>}
 
-      {targetRow('staging', <button disabled={!!busy || stagingDone || !!repour} onClick={() => publishStaging()}
-        style={btn({ background: busy === 'staging' ? 'rgba(96,165,250,0.25)' : 'rgba(96,165,250,0.18)', color: '#bfdbfe', opacity: (busy || stagingDone) ? 0.45 : 1, cursor: stagingDone ? 'default' : 'pointer' })}>
-        {busy === 'staging' ? 'Publishing…' : stagingDone ? 'Published to Staging' : shipping('Publish', stagingSlab, false)}
+      {targetRow('staging', <button disabled={!!busy || stagingDone || foundryOwed} onClick={() => publishStaging()}
+        style={btn({ background: busy === 'staging' ? 'rgba(96,165,250,0.25)' : 'rgba(96,165,250,0.18)', color: '#bfdbfe', opacity: (busy || stagingDone || foundryOwed) ? 0.45 : 1, cursor: (stagingDone || foundryOwed) ? 'default' : 'pointer' })}>
+        {busy === 'staging' ? 'Publishing…' : stagingDone ? 'Published to Staging' : foundryOwed ? 'Run the Foundry first' : shipping('Publish', stagingSlab, false)}
       </button>)}
       {targetRow('prod', <button disabled={!!busy || prodDone || prodBlocked} onClick={promoteProd}
         style={btn({ background: 'rgba(74,222,128,0.16)', color: '#bbf7d0', opacity: (busy || prodDone || prodBlocked) ? 0.45 : 1, cursor: (prodDone || prodBlocked) ? 'default' : 'pointer' })}>
@@ -928,15 +911,6 @@ function PublishPanel({ lookId }) {
           panel's no-git rule forbids in as many words. A thing that
           worked needs no receipt; a thing that failed does. */}
       {msg && msg.kind === 'err' && <div style={{ marginTop: 8, color: '#f87171', wordBreak: 'break-word' }}>{msg.text}</div>}
-      {repour && (
-        <div style={{ marginTop: 8, color: '#fde68a', wordBreak: 'break-word' }}>
-          This runs every step for {lookId} because the Foundry's code changed{repour.files.length ? `: ${repour.files.join(', ')}` : ''}.
-          <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
-            <button onClick={() => publishStaging(true)} style={btn({ background: 'rgba(250,204,21,0.18)', color: '#fde68a' })}>Run every step and publish</button>
-            <button onClick={() => setRepour(null)} style={btn({ background: 'rgba(255,255,255,0.06)', color: '#e5e7eb' })}>Cancel</button>
-          </div>
-        </div>
-      )}
     </div>
     {/* ⛔⛔ THE DEV DRAWER — TWO SHIPMENTS PER TARGET, NEVER ONE.
         Code ships in a commit; the SLAB ships to R2 and is in no commit at all. Reading

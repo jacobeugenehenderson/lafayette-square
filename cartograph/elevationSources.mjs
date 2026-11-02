@@ -236,6 +236,7 @@ async function withNetRetry(label, read, { url = null, client = null } = {}) {
  */
 export async function deadTile(url, label, cause, refetch) {
   let status = 'no answer'
+  // message-flow(b5931fd6): the fetch failure's cause, into the thrown "could not be opened" message
   try { const r = await fetch(url, { headers: { Range: 'bytes=0-0' } }); status = `HTTP ${r.status}` } catch (e) { status = `unreachable (${e?.cause?.code || e.message})` }
   throw new Error(`⛔ ${label} could not be opened (${status}): ${url}\n   The town's list names a tile that is gone or has moved (sources re-version their tiles). Re-derive the list${refetch ? `: ▶ ${refetch}` : ' with the acquirer that wrote it'}.\n   (underlying: ${cause?.message || cause})`)
 }

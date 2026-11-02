@@ -1,10 +1,10 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 565,
+  "total": 572,
   "counts": {
-    "safe": 393,
+    "safe": 398,
     "local-effect": 32,
-    "live": 140
+    "live": 142
   },
   "checks": [
     {
@@ -19,7 +19,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports cartograph/pour-code.mjs, which can: runs `git` — not a known read-only git subcommand, runs `git` — not a known read-only git subcommand",
+        "imports cartograph/pour-code.mjs, which can: runs `git` — not a known read-only git subcommand",
         "computed import of cartograph/lookDesign.mjs — read, safe"
       ]
     },
@@ -37,7 +37,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports cartograph/pour-code.mjs, which can: runs `git` — not a known read-only git subcommand, runs `git` — not a known read-only git subcommand",
+        "imports cartograph/pour-code.mjs, which can: runs `git` — not a known read-only git subcommand",
         "computed import() with no readable target — runs arbitrary modules",
         "re-runs its own file (process.execPath + its own path) — the same tier as itself"
       ]
@@ -215,7 +215,7 @@
         "deletes files",
         "computed import() with no readable target — runs arbitrary modules",
         "computed import() with no readable target — runs arbitrary modules",
-        "imports cartograph/bake-coast.mjs, which can: writeFileSync, mkdirSync, deletes files, imports cartograph/io.js, which can: writeFileSync, imports cartograph/elevationSources.mjs, which can: calls fetch(), imports cartograph/pour-code.mjs, which can: runs `git` — not a known read-only git subcommand, runs `git` — not a known read-only git subcommand, imports cartograph/fetch-lidar-flights.mjs, which can: mkdirSync"
+        "imports cartograph/bake-coast.mjs, which can: writeFileSync, mkdirSync, deletes files, imports cartograph/io.js, which can: writeFileSync, imports cartograph/elevationSources.mjs, which can: calls fetch(), imports cartograph/pour-code.mjs, which can: runs `git` — not a known read-only git subcommand, imports cartograph/fetch-lidar-flights.mjs, which can: mkdirSync"
       ]
     },
     {
@@ -649,6 +649,13 @@
       ]
     },
     {
+      "file": "checks/claims-a-merge-cannot-hide-a-red.mjs",
+      "tier": "safe",
+      "why": [
+        "importSource of checks/_redsDelta.mjs — read, safe"
+      ]
+    },
+    {
       "file": "checks/claims-a-missing-height-fails-loudly.mjs",
       "tier": "live",
       "reasonClass": "outbound",
@@ -832,6 +839,19 @@
       ]
     },
     {
+      "file": "checks/claims-a-reselect-reuses-what-it-built.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "writeFileSync — only under its own temp dir",
+        "imports cartograph/bake-revetment-far.js, which can: deletes files, imports scripts/slab-wire.mjs, which can: writeFileSync, imports cartograph/io.js, which can: writeFileSync",
+        "computed import of src/lib/shoreChunks.js — read, safe",
+        "computed import of src/lib/boulderGeometry.js — read, safe",
+        "computed import of a temp-dir module whose source cannot be read",
+        "child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
       "file": "checks/claims-a-road-marking-lies-inside-its-road.mjs",
       "tier": "local-effect",
       "why": [
@@ -934,6 +954,15 @@
       ]
     },
     {
+      "file": "checks/claims-a-show-advances-every-frame.mjs",
+      "tier": "safe",
+      "why": [
+        "importSource of src/lib/townClock.js — read, safe",
+        "importSource of src/displays/showSchedule.js — read, safe",
+        "importSource of src/displays/showChannel.js — read, safe"
+      ]
+    },
+    {
       "file": "checks/claims-a-slab-name-is-its-content.mjs",
       "tier": "live",
       "reasonClass": "outbound",
@@ -1012,7 +1041,7 @@
       "reasonClass": "unreadable",
       "why": [
         "importSource of cartograph/authoredKeys.mjs — read, safe",
-        "importSource of cartograph/pourSteps.mjs, which can: writeFileSync, imports cartograph/pour-code.mjs, which can: runs `git` — not a known read-only git subcommand, runs `git` — not a known read-only git subcommand",
+        "importSource of cartograph/pourSteps.mjs, which can: writeFileSync, imports cartograph/pour-code.mjs, which can: runs `git` — not a known read-only git subcommand",
         "computed import of cartograph/pour-code.mjs — read, safe",
         "computed import of cartograph/pourSteps.mjs — read, safe",
         "computed import of src/instances/registry.js — read, safe",
@@ -1282,6 +1311,15 @@
         "imports a mutated copy of src/cartograph/streetClass.js from its own temp dir — read as src/cartograph/streetClass.js, safe",
         "imports a mutated copy of src/lib/tileGround.js from its own temp dir — read as src/lib/tileGround.js, safe",
         "imports a mutated copy of src/lib/tileGround.js from its own temp dir — read as src/lib/tileGround.js, safe"
+      ]
+    },
+    {
+      "file": "checks/claims-a-wording-edit-owes-nothing.mjs",
+      "tier": "safe",
+      "why": [
+        "importSource of cartograph/pour-code.mjs (its span: // ⭐ CODE IS JUDGED BY WHAT RUNS → /** The bridge's one way into git history) — read, safe",
+        "importSource of cartograph/pour-code.mjs (its span: importClosure) — read, safe",
+        "imports package(s) @babel/parser — not read from source"
       ]
     },
     {
@@ -2425,7 +2463,7 @@
       "why": [
         "writeFileSync",
         "deletes files",
-        "imports cartograph/pour-code.mjs, which can: runs `git` — not a known read-only git subcommand, runs `git` — not a known read-only git subcommand",
+        "imports cartograph/pour-code.mjs, which can: runs `git` — not a known read-only git subcommand",
         "imports cartograph/pourSteps.mjs, which can: writeFileSync"
       ]
     },
@@ -2819,6 +2857,16 @@
       ]
     },
     {
+      "file": "checks/claims-publish-only-publishes.mjs",
+      "tier": "safe",
+      "why": [
+        "importSource of cartograph/serve.js (its span: foundryOwed) — read, safe",
+        "importSource of cartograph/pourSteps.mjs (its span: export const promoteDiffOf → end) — read, safe",
+        "importSource of cartograph/serve.js (its span: runStep) — read, safe",
+        "importSource of src/cartograph/BakeModal.jsx (its span: streetLayoutWords) — read, safe"
+      ]
+    },
+    {
       "file": "checks/claims-radius-has-one-home.mjs",
       "tier": "safe",
       "why": [
@@ -2922,7 +2970,7 @@
         "writeFileSync",
         "deletes files",
         "computed import() with no readable target — runs arbitrary modules",
-        "imports cartograph/bake-coast.mjs, which can: writeFileSync, mkdirSync, deletes files, imports cartograph/io.js, which can: writeFileSync, imports cartograph/elevationSources.mjs, which can: calls fetch(), imports cartograph/pour-code.mjs, which can: runs `git` — not a known read-only git subcommand, runs `git` — not a known read-only git subcommand, imports cartograph/fetch-lidar-flights.mjs, which can: mkdirSync"
+        "imports cartograph/bake-coast.mjs, which can: writeFileSync, mkdirSync, deletes files, imports cartograph/io.js, which can: writeFileSync, imports cartograph/elevationSources.mjs, which can: calls fetch(), imports cartograph/pour-code.mjs, which can: runs `git` — not a known read-only git subcommand, imports cartograph/fetch-lidar-flights.mjs, which can: mkdirSync"
       ]
     },
     {
@@ -3145,7 +3193,7 @@
         "deletes files",
         "computed import of a temp-dir module, and not every write is shown to stay in its temp dir",
         "child_process with a non-literal command — cannot be read",
-        "imports cartograph/pourSteps.mjs, which can: writeFileSync, imports cartograph/pour-code.mjs, which can: runs `git` — not a known read-only git subcommand, runs `git` — not a known read-only git subcommand"
+        "imports cartograph/pourSteps.mjs, which can: writeFileSync, imports cartograph/pour-code.mjs, which can: runs `git` — not a known read-only git subcommand"
       ]
     },
     {
@@ -3258,7 +3306,7 @@
       "why": [
         "writeFileSync",
         "deletes files",
-        "imports cartograph/pour-code.mjs, which can: runs `git` — not a known read-only git subcommand, runs `git` — not a known read-only git subcommand",
+        "imports cartograph/pour-code.mjs, which can: runs `git` — not a known read-only git subcommand",
         "imports cartograph/elevationSources.mjs, which can: calls fetch()",
         "imports cartograph/bake-coast.mjs, which can: writeFileSync, mkdirSync, deletes files, imports cartograph/io.js, which can: writeFileSync, imports cartograph/fetch-lidar-flights.mjs, which can: mkdirSync",
         "imports package(s) clipper-lib — not read from source"
@@ -3271,7 +3319,7 @@
       "why": [
         "writeFileSync",
         "deletes files",
-        "imports cartograph/bake-coast.mjs, which can: writeFileSync, mkdirSync, deletes files, imports cartograph/io.js, which can: writeFileSync, imports cartograph/elevationSources.mjs, which can: calls fetch(), imports cartograph/pour-code.mjs, which can: runs `git` — not a known read-only git subcommand, runs `git` — not a known read-only git subcommand, imports cartograph/fetch-lidar-flights.mjs, which can: mkdirSync",
+        "imports cartograph/bake-coast.mjs, which can: writeFileSync, mkdirSync, deletes files, imports cartograph/io.js, which can: writeFileSync, imports cartograph/elevationSources.mjs, which can: calls fetch(), imports cartograph/pour-code.mjs, which can: runs `git` — not a known read-only git subcommand, imports cartograph/fetch-lidar-flights.mjs, which can: mkdirSync",
         "imports cartograph/pourSteps.mjs, which can: writeFileSync"
       ]
     },
@@ -3800,16 +3848,14 @@
       ]
     },
     {
-      "file": "checks/claims-the-pour-records-itself-once.mjs",
+      "file": "checks/claims-the-pour-runs-in-one-place.mjs",
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
         "writeFileSync",
         "mkdirSync",
         "deletes files",
-        "computed import of a temp-dir module, and not every write is shown to stay in its temp dir",
-        "imports cartograph/pour-code.mjs, which can: runs `git` — not a known read-only git subcommand, runs `git` — not a known read-only git subcommand",
-        "imports cartograph/pourSteps.mjs, which can: writeFileSync"
+        "imports cartograph/pourSteps.mjs, which can: writeFileSync, imports cartograph/pour-code.mjs, which can: runs `git` — not a known read-only git subcommand"
       ]
     },
     {
@@ -3839,6 +3885,22 @@
       "tier": "safe",
       "why": [
         "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-the-pure-entry-loads-no-renderer.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-the-pure-entry-loads-without-a-browser.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "imports vite — its server resolves localhost over DNS (caught by the no-network guard)",
+        "imports package(s) vite — not read from source"
       ]
     },
     {
@@ -4158,7 +4220,7 @@
       "reasonClass": "unreadable",
       "why": [
         "computed import of src/instances/registry.js — read, safe",
-        "imports cartograph/pour-code.mjs, which can: runs `git` — not a known read-only git subcommand, runs `git` — not a known read-only git subcommand"
+        "imports cartograph/pour-code.mjs, which can: runs `git` — not a known read-only git subcommand"
       ]
     },
     {

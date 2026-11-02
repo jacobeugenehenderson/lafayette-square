@@ -72,6 +72,7 @@ If these drift apart you get "Unknown-action" errors, because an older deploymen
 - ⛔ **Deploy order for a Worker: (a) publish every town it serves WITH its `manifest.json`, THEN (b) deploy.**
   Both Workers decide a town is live by its manifest, so the reverse order darkens the town. Each
   `wrangler deploy` runs the check first and refuses. ▶ `node checks/claims-a-worker-deploy-darkens-no-town.mjs`
+- ⭐ **Every town's link preview, a place's included, is written by the site Workers** through `src/lib/shareCard.js` (the `.com`'s own `/place/*` proxy and its DNS retired with its 301: `cartograph/_archive/LEGACY-PLAYER-register-RETIRED-2026-11-01.md`).
 - ⛔ **No fallback across towns, anywhere.** A host with no record, a town with no prod slab, another town's
   key — each 404s by name. ▶ `node checks/claims-a-production-host-serves-only-its-own-town.mjs`
 - **Lafayette Square is served like every town:** `lafayette-square.com` and `www.` answer 301 → `https://lafayettesquare.online/`
@@ -136,14 +137,6 @@ The Apps Script reads/writes to a Google Sheets workbook. Key sheets:
 | LobbyPosts | Per-building resident-only posts |
 | Handles | Device → handle/avatar mapping |
 | QRDesigns | Styled QR images per listing |
-
-## 3. Cloudflare Worker (`worker.js`) — RETIRED with Lafayette Square's `.com`
-
-`lafayette-square.com` and `www.` answer 301 → `https://lafayettesquare.online/` (measured 2026-11-01), so the `.com` zone's
-`/place/*` proxy and its DNS (§4) serve nothing a visitor reaches. Every town's link preview, a place's included, is written by
-the kit's site Workers through `src/lib/shareCard.js`. The old procedure: `cartograph/_archive/LEGACY-PLAYER-register-RETIRED-2026-11-01.md`.
-
-## 4. DNS (Cloudflare) — RETIRED with the `.com` (§3)
 
 ## 5. Supabase (Cary — not yet live)
 

@@ -1,0 +1,327 @@
+{
+ "town": "huron",
+ "shot": "browse",
+ "close": false,
+ "mode": "phone-hi",
+ "tier": {
+  "stored": "phone-hi",
+  "target": "phone-hi",
+  "dpr": 1,
+  "buf": "242x525",
+  "logDepth": false
+ },
+ "cam": {
+  "pos": [
+   -877,
+   3635,
+   -231
+  ],
+  "near": 3607.0270423100446,
+  "far": 60500.00000000001,
+  "fov": 45
+ },
+ "frame0": {
+  "target": "phone-hi",
+  "wallMs": 28.8,
+  "calls": 306,
+  "tris": 1665327,
+  "gpuSupported": true,
+  "gpuMs": 24.284623200000002,
+  "mainMs": 6.060000010331472,
+  "lastMainMs": 4.600000023841858,
+  "loaf": {
+   "n": 52,
+   "worstMs": 484.2000000476837,
+   "scriptMs": 2024.400000333786,
+   "last": [
+    {
+     "at": 7475.200000047684,
+     "ms": 55.89999997615814,
+     "scriptMs": 7,
+     "blockingMs": 0
+    },
+    {
+     "at": 7592.300000071526,
+     "ms": 54.199999928474426,
+     "scriptMs": 6.899999976158142,
+     "blockingMs": 0
+    },
+    {
+     "at": 7698.700000047684,
+     "ms": 60.799999952316284,
+     "scriptMs": 6.800000071525574,
+     "blockingMs": 0
+    },
+    {
+     "at": 7814.700000047684,
+     "ms": 58.299999952316284,
+     "scriptMs": 7,
+     "blockingMs": 0
+    },
+    {
+     "at": 7930.300000071526,
+     "ms": 56.299999952316284,
+     "scriptMs": 6.700000047683716,
+     "blockingMs": 0
+    },
+    {
+     "at": 8042,
+     "ms": 57.300000071525574,
+     "scriptMs": 7,
+     "blockingMs": 0
+    },
+    {
+     "at": 8374.5,
+     "ms": 57.90000009536743,
+     "scriptMs": 10.5,
+     "blockingMs": 0
+    },
+    {
+     "at": 8480.700000047684,
+     "ms": 56.89999997615814,
+     "scriptMs": 7.100000023841858,
+     "blockingMs": 0
+    },
+    {
+     "at": 8704.300000071526,
+     "ms": 56.199999928474426,
+     "scriptMs": 7.100000023841858,
+     "blockingMs": 0
+    },
+    {
+     "at": 8817.600000023842,
+     "ms": 52.39999997615814,
+     "scriptMs": 7.300000071525574,
+     "blockingMs": 0
+    },
+    {
+     "at": 8925.5,
+     "ms": 52.700000047683716,
+     "scriptMs": 7,
+     "blockingMs": 0
+    },
+    {
+     "at": 9040.400000095367,
+     "ms": 60.09999990463257,
+     "scriptMs": 8.399999976158142,
+     "blockingMs": 0
+    },
+    {
+     "at": 9139,
+     "ms": 53,
+     "scriptMs": 6.700000047683716,
+     "blockingMs": 0
+    },
+    {
+     "at": 9271,
+     "ms": 50.10000002384186,
+     "scriptMs": 9.100000023841858,
+     "blockingMs": 0
+    },
+    {
+     "at": 9384.400000095367,
+     "ms": 59.39999997615814,
+     "scriptMs": 10.299999952316284,
+     "blockingMs": 0
+    },
+    {
+     "at": 9740.300000071526,
+     "ms": 52,
+     "scriptMs": 5.900000095367432,
+     "blockingMs": 0
+    },
+    {
+     "at": 9857.800000071526,
+     "ms": 51.60000002384186,
+     "scriptMs": 6.700000047683716,
+     "blockingMs": 0
+    },
+    {
+     "at": 10078.400000095367,
+     "ms": 54.39999997615814,
+     "scriptMs": 6.899999976158142,
+     "blockingMs": 0
+    },
+    {
+     "at": 10191.700000047684,
+     "ms": 53.299999952316284,
+     "scriptMs": 6.899999976158142,
+     "blockingMs": 0
+    },
+    {
+     "at": 10648.400000095367,
+     "ms": 53,
+     "scriptMs": 7.299999952316284,
+     "blockingMs": 0
+    }
+   ]
+  }
+ },
+ "rows": [
+  {
+   "cls": "ground",
+   "meshes": 2754,
+   "instances": 2754,
+   "tris": 1315077,
+   "inFrustumShare": 0.124,
+   "sampled": 400,
+   "unoccludedShare": 1,
+   "subPixel": 0,
+   "visibleEst": 0.124,
+   "dGpuMs": 8.56,
+   "noise": 0.74,
+   "restMs": 23.2
+  },
+  {
+   "cls": "lamps",
+   "meshes": 1,
+   "instances": 3208,
+   "tris": 513280,
+   "inFrustumShare": 0.192,
+   "sampled": 400,
+   "unoccludedShare": 0,
+   "subPixel": 400,
+   "visibleEst": 0,
+   "dGpuMs": 2.84,
+   "noise": 0.12,
+   "restMs": 23.67
+  },
+  {
+   "cls": "trees",
+   "meshes": 24,
+   "instances": 55104,
+   "tris": 110208,
+   "inFrustumShare": 0.107,
+   "sampled": 400,
+   "unoccludedShare": 1,
+   "subPixel": 0,
+   "visibleEst": 0.107,
+   "dGpuMs": 8.94,
+   "noise": 0.93,
+   "restMs": 24.3
+  },
+  {
+   "cls": "buildings",
+   "meshes": 4,
+   "instances": 4,
+   "tris": 103630,
+   "inFrustumShare": 0.249,
+   "sampled": 227,
+   "unoccludedShare": 1,
+   "subPixel": 0,
+   "visibleEst": 0.249,
+   "dGpuMs": -1.31,
+   "noise": 0.67,
+   "restMs": 22.45
+  },
+  {
+   "cls": "water",
+   "meshes": 2,
+   "instances": 2,
+   "tris": 17692,
+   "inFrustumShare": 0.026,
+   "sampled": 6,
+   "unoccludedShare": 1,
+   "subPixel": 0,
+   "visibleEst": 0.026,
+   "dGpuMs": 0.02,
+   "noise": 0.97,
+   "restMs": 22.14
+  },
+  {
+   "cls": "displays",
+   "meshes": 2,
+   "instances": 2,
+   "tris": 13374,
+   "inFrustumShare": 0.024,
+   "sampled": 12,
+   "unoccludedShare": 1,
+   "subPixel": 0,
+   "visibleEst": 0.024,
+   "dGpuMs": 2.18,
+   "noise": 0.91,
+   "restMs": 23.97
+  },
+  {
+   "cls": "sky",
+   "meshes": 5,
+   "instances": 5,
+   "tris": 10242.333333333334,
+   "inFrustumShare": 0.086,
+   "sampled": 30,
+   "unoccludedShare": 1,
+   "subPixel": 0,
+   "visibleEst": 0.086,
+   "dGpuMs": -0.59,
+   "noise": 0.77,
+   "restMs": 24.36
+  }
+ ],
+ "px": [
+  {
+   "k": 1,
+   "buf": "281x611",
+   "ms": 23.835748533333334
+  },
+  {
+   "k": 0.5,
+   "buf": "132x286",
+   "ms": 17.43101573728813
+  }
+ ],
+ "targets": {
+  "atRatio": 1,
+  "full": {
+   "canvas": "242x525",
+   "targets": [
+    [
+     "427x427",
+     2
+    ],
+    [
+     "242x525",
+     14
+    ]
+   ]
+  },
+  "half": {
+   "canvas": "121x262",
+   "targets": [
+    [
+     "427x427",
+     2
+    ],
+    [
+     "242x525",
+     14
+    ]
+   ]
+  }
+ },
+ "load": [
+  5.8291015625,
+  3.55859375,
+  3.0302734375
+ ],
+ "log": [
+  "== huron · browse · phone-hi · headless Chrome, this desktop's GPU · load 2.83 2.75 2.73 ==",
+  "  settled at t+11s (306 draws stable 6 s)",
+  "  tier: {\"stored\":\"phone-hi\",\"target\":\"phone-hi\",\"dpr\":1,\"buf\":\"242x525\",\"logDepth\":false}",
+  "  camera {\"pos\":[-877,3635,-231],\"near\":3607.0270423100446,\"far\":60500.00000000001,\"fov\":45} · buffer 242x525 · occluder meshes 2709",
+  "  frame (all passes): 306 draws · 1.67M tris · gpu 24.3 ms",
+  "  ground        2754m    2754 inst   1.32M tris · in frustum 12% · unoccluded 100% of 400 (sub-px 0) · visible≈12% · Δgpu 8.6 ms ±0.7 of 23.2",
+  "  lamps            1m    3208 inst   0.51M tris · in frustum 19% · unoccluded 0% of 400 (sub-px 400) · visible≈0% · Δgpu 2.8 ms ±0.1 of 23.67",
+  "  trees           24m   55104 inst   0.11M tris · in frustum 11% · unoccluded 100% of 400 (sub-px 0) · visible≈11% · Δgpu 8.9 ms ±0.9 of 24.3",
+  "  buildings        4m       4 inst   0.10M tris · in frustum 25% · unoccluded 100% of 227 (sub-px 0) · visible≈25% · Δgpu -1.3 ms ±0.7 of 22.45",
+  "  water            2m       2 inst   0.02M tris · in frustum 3% · unoccluded 100% of 6 (sub-px 0) · visible≈3% · Δgpu 0.0 ms ±1.0 of 22.14",
+  "  displays         2m       2 inst   0.01M tris · in frustum 2% · unoccluded 100% of 12 (sub-px 0) · visible≈2% · Δgpu 2.2 ms ±0.9 of 23.97",
+  "  sky              5m       5 inst   0.01M tris · in frustum 9% · unoccluded 100% of 30 (sub-px 0) · visible≈9% · Δgpu -0.6 ms ±0.8 of 24.36",
+  "  window ×1 (canvas 281x611): gpu 23.8 ms",
+  "  window ×0.5 (canvas 132x286): gpu 17.4 ms",
+  "  targets @ ratio 1: canvas 242x525 · 427x427×2 242x525×14",
+  "  targets @ ratio 0.5: canvas 121x262 · 427x427×2 242x525×14",
+  "  page ERR [instance] \"huron\" has no contact.email, cary.email, cary.smsNumber. These are PUBLIC — they render on the legal page, which every installation shows and which no module flag gates. Unset, the page shows a labelled gap instead of a contact; before this check it rendered a dead \"mailto:null\" link wit",
+  "  page ERR Warning: Cannot update a component (`%s`) while rendering a different component (`%s`). To locate the bad setState() call inside `%s`, follow the stack trace as described in https://reactjs.org/link/setstate-in-render%s SlabRevetment GroundMeshes GroundMeshes \n    at GroundMeshes (http://localhost:5",
+  "  page ERR [BakedGround] ⛔ \"huron\": surface \"sand\" is drawn WITHOUT rippleSpacingM (m, physics — no source); rippleHeightM (m, physics — no source). Those features are ABSENT, not defaulted — ▶ cartograph/surfaces.mjs"
+ ]
+}

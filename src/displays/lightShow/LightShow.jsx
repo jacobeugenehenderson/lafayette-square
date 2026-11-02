@@ -26,7 +26,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTownFrame } from '../../lib/useTownFrame.js'
 import * as THREE from 'three'
 import useTimeOfDay from '../../hooks/useTimeOfDay'
-import { townClockOf } from '../../lib/townClock.js'
+import { townClockOf, townMinuteOf } from '../../lib/townClock.js'
 import { validateDrawer, compileRun, showAt, showSeconds, glowColour, inSeason, uplightTarget, OPEN_SECONDS, backDimFactor } from './engine.js'
 import { kelvinToRgb, validateDisplayChannel } from '../showChannel.js'
 import { nightsOn, displayStateAt, refuseScheduleSense, prevDate } from '../showSchedule.js'
@@ -185,7 +185,7 @@ export default function LightShow({ display, channel: given, extent, calendar, c
       const secs = showSeconds(compiled)
       day.current = { date: clock.date, channel, compiled, before: nightsOn(channel, prevDate(clock.date), getTodSlotRow, secs), today: nightsOn(channel, clock.date, getTodSlotRow, secs) }
     }
-    const state = displayStateAt(channel, day.current.before, day.current.today, clock.date, clock.hours * 60 + clock.minutes + clock.seconds / 60, getTodSlotRow)
+    const state = displayStateAt(channel, day.current.before, day.current.today, clock.date, townMinuteOf(instant), getTodSlotRow)
     let mode, t, now, up = true, dark = false                                           // Stage's preview hangs them
     if (preview) {
       const since = (performance.now() - preview.at) / 1000

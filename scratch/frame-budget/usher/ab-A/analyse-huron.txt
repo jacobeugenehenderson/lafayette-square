@@ -1,0 +1,168 @@
+
+=== flight 1 (3 busy spans)
+-- span 2455 ms
+  task:  1971ms loop dep:chunk-NBSWMX6K:17285 | 235ms performWorkUntilDeadline dep:chunk-NBSWMX6K:457 | 90ms (program) (native) | 67ms (anon) dep:chunk-NUMECXU6:18625
+  self:  929ms resolveWindow kit:src/lib/shoreChunks.js:223
+         411ms sample kit:src/lib/drawnGround.js:96
+         90ms (program) (native)
+         88ms at kit:src/lib/shoreChunks.js:99
+         61ms updateHostComponent dep:chunk-NBSWMX6K:8067
+         45ms (anon) kit:src/components/SlabRevetment.jsx:210
+         44ms (anon) kit:src/lib/revetmentFromSlab.js:324
+         37ms hash3 kit:src/lib/revetmentDrape.js:119
+  kit:   929ms resolveWindow kit:src/lib/shoreChunks.js:223
+         411ms sample kit:src/lib/drawnGround.js:96
+         103ms walk kit:src/components/Town.jsx:488
+         90ms (no kit/ward frame: (program))
+         88ms at kit:src/lib/shoreChunks.js:99
+         61ms (no kit/ward frame: updateHostComponent)
+         47ms (anon) kit:src/components/SlabRevetment.jsx:210
+         44ms (anon) kit:src/lib/revetmentFromSlab.js:324
+-- span 1263 ms
+  task:  766ms loop dep:chunk-NBSWMX6K:17285 | 370ms performWorkUntilDeadline dep:chunk-NBSWMX6K:457 | 73ms (program) (native) | 24ms (anon) dep:chunk-NUMECXU6:18625
+  self:  144ms updateHostComponent dep:chunk-NBSWMX6K:8067
+         73ms (program) (native)
+         64ms jsxDEV dep:react_jsx-dev-runtime:605
+         51ms setProgram dep:chunk-TIG2MKL5:18029
+         47ms projectObject dep:chunk-TIG2MKL5:17781
+         37ms setMaterial dep:chunk-TIG2MKL5:14495
+         36ms WebGLRenderer.renderBufferDirect dep:chunk-TIG2MKL5:17542
+         32ms renderObjects dep:chunk-TIG2MKL5:17911
+  kit:   144ms (no kit/ward frame: updateHostComponent)
+         73ms (no kit/ward frame: (program))
+         60ms (anon) kit:src/components/SlabRevetment.jsx:267
+         50ms (no kit/ward frame: setProgram)
+         47ms (no kit/ward frame: projectObject)
+         39ms (no kit/ward frame: update)
+         37ms (no kit/ward frame: setMaterial)
+         36ms (no kit/ward frame: WebGLRenderer.renderBufferDirect)
+-- span 907 ms
+  task:  712ms loop dep:chunk-NBSWMX6K:17285 | 141ms performWorkUntilDeadline dep:chunk-NBSWMX6K:457 | 30ms (program) (native) | 9ms (garbage collector) (native)
+  self:  66ms WebGLRenderer.renderBufferDirect dep:chunk-TIG2MKL5:17542
+         54ms bindVertexArray (native)
+         52ms renderObjects dep:chunk-TIG2MKL5:17911
+         48ms updateHostComponent dep:chunk-NBSWMX6K:8067
+         43ms setMaterial dep:chunk-TIG2MKL5:14495
+         36ms bindVertexArrayObject dep:chunk-TIG2MKL5:9605
+         36ms setProgram dep:chunk-TIG2MKL5:18029
+         35ms projectObject dep:chunk-TIG2MKL5:17781
+  kit:   66ms (no kit/ward frame: WebGLRenderer.renderBufferDirect)
+         54ms (no kit/ward frame: bindVertexArray)
+         52ms (no kit/ward frame: renderObjects)
+         48ms (no kit/ward frame: updateHostComponent)
+         43ms (no kit/ward frame: setMaterial)
+         36ms (no kit/ward frame: bindVertexArrayObject)
+         36ms (no kit/ward frame: setProgram)
+         35ms (no kit/ward frame: projectObject)
+
+=== flight 2 (7 busy spans)
+-- span 1549 ms
+  task:  782ms loop dep:chunk-NBSWMX6K:17285 | 580ms performWorkUntilDeadline dep:chunk-NBSWMX6K:457 | 88ms (program) (native) | 32ms (anon) dep:chunk-NUMECXU6:18625
+  self:  233ms resolveWindow kit:src/lib/shoreChunks.js:223
+         208ms updateHostComponent dep:chunk-NBSWMX6K:8067
+         92ms jsxDEV dep:react_jsx-dev-runtime:605
+         88ms (program) (native)
+         59ms now (native)
+         53ms projectObject dep:chunk-TIG2MKL5:17781
+         34ms sample kit:src/lib/drawnGround.js:96
+         32ms wants kit:src/components/SlabRevetment.jsx:220
+  kit:   233ms resolveWindow kit:src/lib/shoreChunks.js:223
+         208ms (no kit/ward frame: updateHostComponent)
+         88ms (no kit/ward frame: (program))
+         79ms (anon) kit:src/components/SlabRevetment.jsx:267
+         64ms walk kit:src/components/Town.jsx:488
+         59ms (no kit/ward frame: now)
+         52ms (no kit/ward frame: projectObject)
+         34ms sample kit:src/lib/drawnGround.js:96
+-- span 672 ms
+  task:  544ms loop dep:chunk-NBSWMX6K:17285 | 91ms performWorkUntilDeadline dep:chunk-NBSWMX6K:457 | 27ms (program) (native) | 5ms (garbage collector) (native)
+  self:  52ms renderObjects dep:chunk-TIG2MKL5:17911
+         43ms WebGLRenderer.renderBufferDirect dep:chunk-TIG2MKL5:17542
+         36ms updateHostComponent dep:chunk-NBSWMX6K:8067
+         36ms bindVertexArray (native)
+         32ms setProgram dep:chunk-TIG2MKL5:18029
+         29ms projectObject dep:chunk-TIG2MKL5:17781
+         27ms bindVertexArrayObject dep:chunk-TIG2MKL5:9605
+         27ms (program) (native)
+  kit:   51ms (no kit/ward frame: renderObjects)
+         43ms (no kit/ward frame: WebGLRenderer.renderBufferDirect)
+         36ms (no kit/ward frame: updateHostComponent)
+         36ms (no kit/ward frame: bindVertexArray)
+         32ms (no kit/ward frame: setProgram)
+         29ms (no kit/ward frame: projectObject)
+         27ms (no kit/ward frame: bindVertexArrayObject)
+         27ms (no kit/ward frame: (program))
+-- span 596 ms
+  task:  343ms loop dep:chunk-NBSWMX6K:17285 | 197ms performWorkUntilDeadline dep:chunk-NBSWMX6K:457 | 42ms (program) (native) | 7ms performWorkUntilDeadline dep:chunk-NUMECXU6:377
+  self:  82ms updateHostComponent dep:chunk-NBSWMX6K:8067
+         42ms (program) (native)
+         35ms jsxDEV dep:react_jsx-dev-runtime:605
+         33ms renderObjects dep:chunk-TIG2MKL5:17911
+         25ms refreshUniformsCommon dep:chunk-TIG2MKL5:16716
+         22ms projectObject dep:chunk-TIG2MKL5:17781
+         20ms setProgram dep:chunk-TIG2MKL5:18029
+         17ms WebGLRenderer.renderBufferDirect dep:chunk-TIG2MKL5:17542
+  kit:   82ms (no kit/ward frame: updateHostComponent)
+         42ms (no kit/ward frame: (program))
+         33ms (no kit/ward frame: renderObjects)
+         30ms (anon) kit:src/components/SlabRevetment.jsx:267
+         25ms (no kit/ward frame: refreshUniformsCommon)
+         22ms (no kit/ward frame: projectObject)
+         20ms (no kit/ward frame: setProgram)
+         17ms (no kit/ward frame: WebGLRenderer.renderBufferDirect)
+
+=== flight 3 (4 busy spans)
+-- span 3153 ms
+  task:  2827ms loop dep:chunk-NBSWMX6K:17285 | 171ms performWorkUntilDeadline dep:chunk-NBSWMX6K:457 | 46ms (garbage collector) (native) | 31ms (anon) dep:chunk-NUMECXU6:18625
+  self:  1090ms resolveWindow kit:src/lib/shoreChunks.js:223
+         1006ms sample kit:src/lib/drawnGround.js:96
+         117ms hash3 kit:src/lib/revetmentDrape.js:119
+         101ms at kit:src/lib/shoreChunks.js:99
+         97ms valueNoise3 kit:src/lib/revetmentDrape.js:125
+         74ms partsAt kit:src/lib/drawnGround.js:118
+         67ms chunkStones kit:src/lib/shoreChunks.js:210
+         65ms (anon) kit:src/lib/revetmentFromSlab.js:324
+  kit:   1090ms resolveWindow kit:src/lib/shoreChunks.js:223
+         1006ms sample kit:src/lib/drawnGround.js:96
+         117ms hash3 kit:src/lib/revetmentDrape.js:119
+         101ms at kit:src/lib/shoreChunks.js:99
+         97ms valueNoise3 kit:src/lib/revetmentDrape.js:125
+         74ms partsAt kit:src/lib/drawnGround.js:118
+         67ms chunkStones kit:src/lib/shoreChunks.js:210
+         65ms (anon) kit:src/lib/revetmentFromSlab.js:324
+-- span 397 ms
+  task:  269ms loop dep:chunk-NBSWMX6K:17285 | 96ms performWorkUntilDeadline dep:chunk-NBSWMX6K:457 | 14ms (program) (native) | 5ms performWorkUntilDeadline dep:chunk-NUMECXU6:377
+  self:  23ms updateHostComponent dep:chunk-NBSWMX6K:8067
+         20ms renderObjects dep:chunk-TIG2MKL5:17911
+         16ms projectObject dep:chunk-TIG2MKL5:17781
+         14ms (program) (native)
+         14ms bindVertexArray (native)
+         14ms jsxDEV dep:react_jsx-dev-runtime:605
+         13ms setProgram dep:chunk-TIG2MKL5:18029
+         13ms bindVertexArrayObject dep:chunk-TIG2MKL5:9605
+  kit:   23ms (no kit/ward frame: updateHostComponent)
+         20ms (no kit/ward frame: renderObjects)
+         19ms contentTop kit:src/components/Town.jsx:486
+         16ms (no kit/ward frame: projectObject)
+         14ms (no kit/ward frame: (program))
+         13ms (no kit/ward frame: setProgram)
+         13ms (no kit/ward frame: bindVertexArrayObject)
+         13ms (no kit/ward frame: bindVertexArray)
+-- span 313 ms
+  task:  297ms loop dep:chunk-NBSWMX6K:17285 | 7ms (program) (native) | 5ms performWorkUntilDeadline dep:chunk-NBSWMX6K:457 | 1ms (anon) (native)
+  self:  31ms renderObjects dep:chunk-TIG2MKL5:17911
+         29ms WebGLRenderer.renderBufferDirect dep:chunk-TIG2MKL5:17542
+         18ms bindVertexArray (native)
+         17ms projectObject dep:chunk-TIG2MKL5:17781
+         14ms setMaterial dep:chunk-TIG2MKL5:14495
+         13ms refreshUniformsCommon dep:chunk-TIG2MKL5:16716
+         12ms update dep:chunk-TIG2MKL5:11361
+         11ms setProgram dep:chunk-TIG2MKL5:18029
+  kit:   31ms (no kit/ward frame: renderObjects)
+         29ms (no kit/ward frame: WebGLRenderer.renderBufferDirect)
+         18ms (no kit/ward frame: bindVertexArray)
+         17ms (no kit/ward frame: projectObject)
+         15ms (no kit/ward frame: update)
+         14ms (no kit/ward frame: setMaterial)
+         13ms (no kit/ward frame: refreshUniformsCommon)
+         11ms (no kit/ward frame: setProgram)

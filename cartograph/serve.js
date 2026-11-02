@@ -23,7 +23,7 @@ import { treeBakeInputsForMap, treeLibraryFiles } from './tree-bake-inputs.mjs'
 import { terrainValueReads } from './terrainReads.mjs'
 import { COAST_FILE } from './coastFile.mjs'
 import { pendingPathOf, tolerancePathOf, recordIdentity, coastReadsOf } from './bake-coast.mjs'   // the coast's residual record: one home
-import { pourSteps, skeletonStep, runSkeleton, stepReads, recordStep, readBakeReads, runPour, groundForReaders, sceneForReaders, townPourElevation, pourGuardRefusals, townRecordFor } from './pourSteps.mjs'
+import { pourSteps, skeletonStep, runSkeleton, stepReads, recordStep, readBakeReads, promoteDiffOf, streetLayoutOf, groundForReaders, sceneForReaders, townPourElevation, pourGuardRefusals, townRecordFor } from './pourSteps.mjs'
 import { readBakeDesign, SEED_STRIPPED_FIELDS } from './lookDesign.mjs'
 import { productionDomainFor, askOperations } from './operations-domain.mjs'
 import { lookIdFor, isDeclaredOnly, planJoin, executeJoin } from './scene-address.mjs'
@@ -44,6 +44,7 @@ import { TOD_SLOT_IDS } from '../src/lib/todSlots.js'
 import { parcelParts } from './parcelParts.js'
 import { stagedSlabStep, publishSlab, refuseTornCommit } from './slabStage.mjs'
 import { stagingPlayerOf } from '../src/lib/stagingPlayer.js'
+import { stepList } from '../src/lib/stepWords.js'
 import { slabAnchorRefusals } from './anchorGate.mjs'
 
 // Promise wrapper around spawn with shell: true. Matches execSync's
@@ -68,7 +69,7 @@ function runShell(cmd, opts = {}) {
     })
     opts.onChild?.(child)
     if (piped) {
-      const line = (l) => { if (l.includes('⛔')) refusal = l.replace(/\x1b\[[0-9;]*m/g, '').trim(); opts.onLine?.(l) }
+      const line = (l) => { /* message-flow(54527ccf): a step's ⛔ line, relayed into the thrown step failure, message to message */ if (l.includes('⛔')) refusal = l.replace(/\x1b\[[0-9;]*m/g, '').trim(); opts.onLine?.(l) }
       for (const [src, sink] of [[child.stdout, process.stdout], [child.stderr, process.stderr]]) {
         let buf = ''
         src.on('data', (d) => { sink.write(d); buf += d; const parts = buf.split('\n'); buf = parts.pop(); for (const l of parts) if (l.trim()) line(l) })
@@ -143,7 +144,7 @@ function markStep(P, label, state, extra = {}) {
 async function runStep(P, label, cmd, opts = {}) {
   if (P.plan) return   // a PLAN (GET /looks/<id>/bake) runs nothing: runIfDirty has already recorded why the step would run
   if (P.cancel) throw new Error(`cancelled by operator before step "${label}"`)
-  const { timeout, ...rest } = opts        // ⛔ no wall-clock kill on a bake step (see above)
+  const { timeout, onLine: tap, ...rest } = opts        // ⛔ no wall-clock kill on a bake step (see above); `onLine`: the step's own output, line by line
   const st = markStep(P, label, 'running', { t0: Date.now(), lastLine: null, frac: null, sub: null })
   P.current = label
   try {
@@ -151,6 +152,7 @@ async function runStep(P, label, cmd, opts = {}) {
       st.lastLine = ln.replace(/\x1b\[[0-9;]*m/g, '').slice(0, 240)
       const m = /\[progress\]\s+(.*?)\s*(\d+)\s*\/\s*(\d+)/.exec(ln)
       if (m && +m[3] > 0) { st.frac = +m[2] / +m[3]; st.sub = `${m[1]} ${m[2]}/${m[3]}`.trim() }
+      if (tap) tap(ln)
     } })
   } catch (e) {
     const why = P.cancel ? `cancelled by operator at step "${label}"` : `step "${label}" failed: ${e.message}`
@@ -337,19 +339,13 @@ const _bakesInFlight = new Set()
 // Per-scene file resolver. Every scene resolves through here. The raw/ +
 // clean/ split inside each scene matches the existing LS layout (raw = OSM
 // ingestion / authored input; clean = derived).
-// ⭐ THE POUR OUTSIDE THE BAKE (Extent's re-apply and its first pour) runs the Bake's own steps (pourSteps.mjs) and RECORDS each one
-// it runs, under every Look of the scene, so the next Bake judges them done (2026-10-28: LS's Extent Bake asked to re-pour right
-// after its own pour). The pipeline's elevation is the town's own `pour.elevation`, agreed across its Looks or refused, read as the
-// Bake reads it (pourSteps.mjs#townPourElevation).
+// The scene's pour steps and Looks, as the Foundry reads them (the skeleton step outside the Foundry records under every Look).
+// The pipeline's elevation is the town's own `pour.elevation`, agreed across its Looks or refused (pourSteps.mjs#townPourElevation).
+// (Extent ran these steps itself, outside the Foundry, until 2026-11-01: Extent ends at its own work.)
 function extentPour(scene) {
   const looks = readLooksIndex().looks.filter(l => l.scene === scene).map(l => l.id)
   const elevation = townPourElevation(scene, looks, (lid) => readBakeDesign(lid, scene, `extent pour ${scene}`))
   return { steps: pourSteps(scene, mapDataPaths(scene), ribbonsPathOf(scene), { elevation }), looks }
-}
-function runExtentPour(scene, { cwd, env }) {
-  const pour = extentPour(scene)
-  return runPour(pour.steps, { scene, mapJson: mapDataPaths(scene).map, lookIds: pour.looks,
-    run: (st, onLine) => runShell(st.cmd, { cwd, env, timeout: st.timeout, ...(onLine && { onLine }) }) })
 }
 // the skeleton step outside the Bake (Extent's commit and rollback): the same step, recorded under every Look of the scene
 function runExtentSkeleton(scene, { cwd, env }) {
@@ -406,6 +402,28 @@ function newestMtime(p) {
     if (m > max) max = m
   }
   return max
+}
+
+/**
+ * What the Foundry owes this Look before it may be published → [{ step, why, blocker? }], [] when nothing. ⛔ One rule: the
+ * Foundry's own plan, asked through its own route (GET /looks/<id>/bake: the bake body with P.plan, which runs nothing), so
+ * there is no second staleness model. A Foundry running for the Look, or Extent pouring its scene, is owed too (a Slab being
+ * rewritten is not the Slab Preview showed); so is a plan that cannot be read: unknown is never "nothing owed".
+ * The rule is here; `readPlan` only carries the question to the plan route (askFoundryPlan, below).
+ */
+async function foundryOwed(id, readPlan = askFoundryPlan) {
+  if (_bakesInFlight.has(id)) return [{ step: null, why: ['the Foundry is running for this Look'] }]
+  const scene = readLooksIndex().looks.find(l => l.id === id)?.scene
+  if (scene && _seedsInFlight.has(scene)) return [{ step: null, why: [`Extent is pouring ${scene}`] }]
+  const { ok, status, body: j } = await readPlan(id)
+  if (!ok) return [{ step: null, why: [`the Foundry's plan could not be read: ${j?.error || `HTTP ${status}`}`] }]
+  return Array.isArray(j?.stale) ? j.stale : [{ step: null, why: ["the Foundry's plan named no steps"] }]
+}
+/** The Foundry's plan for a Look, from its own route (GET /looks/<id>/bake runs nothing) → { ok, status, body }. ⛔ A loopback:
+ *  the plan is the bake body walked with P.plan, ~650 lines bound to the route, so it is asked, not copied. */
+async function askFoundryPlan(id) {
+  const r = await fetch(`http://127.0.0.1:${PORT}/looks/${encodeURIComponent(id)}/bake`)
+  return { ok: r.ok, status: r.status, body: await r.json().catch(() => ({})) }
 }
 
 /**
@@ -2106,32 +2124,6 @@ createServer(async (req, res) => {
     return
   }
 
-  // POST /<scene>/pour — the one-click pour: pipeline.js (derive → map.json,
-  // clipped to the committed boundary) → promote-ribbons.js (→ clean/ribbons.json
-  // the Designer renders). Long-running (the derive stage); guarded per scene.
-  const pourMatch = path.match(/^\/([a-z0-9][a-z0-9-]*)\/pour$/)
-  if (req.method === 'POST' && pourMatch && !RESERVED_PREFIXES.has(pourMatch[1])) {
-    const scene = pourMatch[1]
-    if (_seedsInFlight.has(scene)) {
-      res.writeHead(409, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: 'busy' })); return
-    }
-    _seedsInFlight.add(scene)
-    ;(async () => {
-      try {
-        const here = import.meta.dirname
-        const env = { ...process.env, CARTOGRAPH_SCENE: scene }
-        // the Bake's own steps, each recorded (pourSteps.mjs). promote-ribbons runs with --yes: the Bake that called this IS the
-        // operator's decision, and the change is RETURNED, not hidden.
-        const { promoteDiff } = await runExtentPour(scene, { cwd: here, env })
-        res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ ok: true, promoteDiff }))
-      } catch (err) {
-        res.writeHead(400, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: err.message }))
-      } finally {
-        _seedsInFlight.delete(scene)
-      }
-    })()
-    return
-  }
 
   // POST /<scene>/rollback-extent — undo a failed commit (§6 atomicity). commit
   // re-centers geography + reprojects raw destructively; if the ensuing Pour/bake
@@ -2270,8 +2262,8 @@ createServer(async (req, res) => {
           disc, membership, exclusions: excl,
           carry: priorRecs.carry, keyOrder: priorRecs.keyOrder,
         })
-        // Snapshot EVERYTHING this apply changes (boundary, draft, and the pour's outputs), and
-        // restore it if the pour fails — one consistent state either way (applySnapshotPaths).
+        // Snapshot what this apply changes (the boundary and the draft; applySnapshotPaths also covers the pour's outputs, which
+        // a save no longer writes), and restore it if a write fails: one consistent state either way.
         snapshotApply(scene, 'prebak-rescope')
         rescopeSnapshotted = true
         writeFileSync(bPath, JSON.stringify(boundary, null, 2))
@@ -2279,11 +2271,11 @@ createServer(async (req, res) => {
         if (existsSync(nPath)) {
           try { const nb = JSON.parse(readFileSync(nPath, 'utf8')); nb.draftRadius = Math.round(radius); delete nb.radius; if (Array.isArray(exclusions)) nb.exclusions = exclusions; writeFileSync(nPath, JSON.stringify(nb, null, 2)) } catch { /* leave nb */ }
         }
-        const here = import.meta.dirname
-        const env = { ...process.env, CARTOGRAPH_SCENE: scene }
-        const { promoteDiff } = await runExtentPour(scene, { cwd: here, env })   // the Bake's own steps, each recorded (the mint reads clean/coast.json)
+        // ⭐ EXTENT ENDS AT ITS OWN WORK (Boz's ruling, 2026-11-01): the records are written and nothing is poured. The
+        // Foundry (Stage) re-derives from them: it reads the boundary and the overrides as data (pour-code.mjs#pourDataReads),
+        // so they are owed until it runs.
         clearApplySnapshot(scene, 'prebak-rescope')
-        res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ ok: true, radius: Math.round(radius), promoteDiff }))
+        res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ ok: true, radius: Math.round(radius) }))
       } catch (err) {
         // ⛔ A failed rescope RESTORES — it used to leave the new boundary beside old pour outputs.
         const restored = rescopeSnapshotted ? restoreApply(scene, 'prebak-rescope') : false
@@ -2630,6 +2622,7 @@ createServer(async (req, res) => {
       refuseTornCommit(undefined, id)   // ⛔ a torn slab commit (slabStage.mjs's journal) stops this look's Bake, by name
       const sceneFlag = `--scene=${bakeScene}`
       const ranSteps = []
+      let promoteDiff = null   // promote-ribbons' street-layout change, when it ran (below)
       const skipped = []
       // a step skipped as clean (or not applicable) is MARKED — the modal shows it, never leaves it waiting
       const skip = (text) => { skipped.push(text); for (const l of text.split(/ [(—]/)[0].split(' + ')) markStep(P, l.trim(), 'skipped', { why: text }) }
@@ -2788,17 +2781,24 @@ createServer(async (req, res) => {
           ? [`${relative(REPO_ROOT, RIBBONS)} → promote-ribbons has no record yet, so this Bake would re-promote ${bakeScene}'s committed ribbons (its pour is held: ${bakeDesign.pour.held})`] : []
         // a plan cannot know whether the re-made skeleton differs, so a stale skeleton lists the pour after it
         const afterSkel = skel?.stale ? [`${relative(REPO_ROOT, POUR.skeleton.outputs[0])} → re-made by the skeleton step first; the pour re-runs if it changed`] : []
-        if (P.plan && (codeNewer.length || lsAsks.length || afterSkel.length)) P.plan.stale.push({ step: 'pipeline', repour: true, why: [...codeNewer, ...lsAsks, ...afterSkel] })
-        else if ((codeNewer.length || lsAsks.length) && !repourConfirmed) {
+        // ⭐ THE PRESS IS THE CONSENT (Boz's ruling, 2026-11-01: one button per step). A Foundry run is the operator's own
+        // explicit press, so a re-run because the pour's code, data, geography or registry changed is NOT asked again: it
+        // runs, and its reasons are listed (in a plan, as stale). ⛔ Kept: the held pour's question (lsAsks, Boz's ruling Q3:
+        // nothing rewrites a held scene's committed runtime files unasked), a protection, not a confirmation.
+        if (P.plan && (codeNewer.length || lsAsks.length || afterSkel.length)) P.plan.stale.push({ step: 'pipeline', ...(lsAsks.length && { repour: true }), why: [...codeNewer, ...lsAsks, ...afterSkel] })
+        else if (lsAsks.length && !repourConfirmed) {
           res.writeHead(428, { 'Content-Type': 'application/json' })
-          res.end(JSON.stringify({ lookId: id, repour: { scene: bakeScene, files: [...codeNewer, ...lsAsks] } }))
+          res.end(JSON.stringify({ lookId: id, repour: { scene: bakeScene, files: lsAsks } }))
           return
         }
         // a code, geography or registry change leaves the authoring inputs' mtimes alone, so it re-pours explicitly;
         // otherwise the pour re-runs only when an AUTHORING input (overlay, skeleton, measurements …) is newer
         if (codeNewer.length) { await runStep(P, 'pipeline', POUR.pipeline.cmd, { cwd: here, timeout: POUR.pipeline.timeout }); ran('pipeline') }
         else await runIfDirty('pipeline', POUR.pipeline.inputs, POUR.pipeline.outputs, POUR.pipeline.cmd, { cwd: here, timeout: POUR.pipeline.timeout, judge: 'mtime' })
-        await runIfDirty('promote-ribbons', POUR['promote-ribbons'].inputs, POUR['promote-ribbons'].outputs, POUR['promote-ribbons'].cmd, { cwd: here, timeout: POUR['promote-ribbons'].timeout })   // the Bake is the decision; the diff streams into this step's output
+        // ⭐ THE STREET-LAYOUT CHANGE IS REPORTED BY THE FOUNDRY (Zob, 2026-11-01): Extent's own pour used to report it, and Extent
+        // no longer pours. promote-ribbons' PROMOTE-DIFF line, read through the one parser (pourSteps.mjs#promoteDiffOf).
+        await runIfDirty('promote-ribbons', POUR['promote-ribbons'].inputs, POUR['promote-ribbons'].outputs, POUR['promote-ribbons'].cmd, { cwd: here, timeout: POUR['promote-ribbons'].timeout,
+          onLine: (l) => { const d = promoteDiffOf(l); if (d !== undefined) promoteDiff = d } })   // the Bake is the decision; the diff streams into this step's output
       } else {
         skip(`pipeline + promote-ribbons (${bakeScene} has no raw/osm.json to derive from)`)
       }
@@ -3218,7 +3218,10 @@ createServer(async (req, res) => {
       // uploaded the same slab a second time. Publish is the upload now; it carries the move's comment and its loud failure.
       // ▶ node checks/claims-a-bake-never-uploads.mjs
       res.writeHead(200, { 'Content-Type': 'application/json' })
-      res.end(JSON.stringify({ ok: true, ms, lookId: id, ran: ranSteps, skipped, force }))
+      // ⭐ THREE OUTCOMES, NEVER TWO (Zob): promote-ribbons ran and changed the street layout, ran and changed nothing, or was not
+      // owed. "No report" stands for none of them.
+      const streetLayout = streetLayoutOf(ranSteps.includes('promote-ribbons'), promoteDiff)
+      res.end(JSON.stringify({ ok: true, ms, lookId: id, ran: ranSteps, skipped, force, streetLayout }))
     } catch (err) {
       // ⭐ the failing step NAMES itself (runStep), and an operator's Cancel is its own answer, not a 500
       res.writeHead(P.cancel ? 499 : 500, { 'Content-Type': 'application/json' })
@@ -3449,9 +3452,14 @@ createServer(async (req, res) => {
   // somebody poured a different town. Ruled out: one address per Map, the Publish button
   // is the unit. Now the button ships to R2, which is where both artifacts already live.
   //
-  // ⭐ PUBLISH IS THE UPLOAD (Jacob, 2026-10-04). A bake ends on disk; what the operator adjusts in Preview (the
+  // ⭐ PUBLISH IS THE UPLOAD (Jacob, 2026-10-04). The Foundry ends on disk; what the operator adjusts in Preview (the
   // deployment panel: which effects each surface ships) is ACCEPTED here, because the manifest step runs again before the
-  // upload and freezes deployment.json into what ships. The panel bakes first only when the bake check says a step is owed.
+  // upload and freezes deployment.json into what ships.
+  // ⭐⭐ PUBLISH ONLY PUBLISHES (Jacob, 2026-11-01: "3 discrete functions: Stage, Preview, and Publish"). Preview inspects the
+  // exact deliverable, so a Publish-time Foundry run would ship a Slab nobody previewed. While the Foundry owes ANY step, or
+  // is running (or Extent is pouring the scene), this refuses 409 `{ owed }`, "Run the Foundry first", before git and before
+  // any upload, and runs nothing. "Owed" is ONE rule: the Foundry's own plan, asked through its own route (GET …/bake), so
+  // Stage's stale bar, Preview's button and this guard cannot disagree. ▶ node checks/claims-publish-only-publishes.mjs
   //
   // IT SHIPS THE SLAB — this town's, `public/baked/<look>/` → `staging/baked/<look>/`. Uploaded here, then proven in the
   // bucket, never assumed. The player is the Ward's, which publishes itself (staging/ward/current.json); the kit's own
@@ -3463,6 +3471,13 @@ createServer(async (req, res) => {
     const id = m[1]
     const REPO_ROOT = join(import.meta.dirname, '..')
     try {
+      const owed = await foundryOwed(id)
+      if (owed.length) {
+        const steps = owed.filter(x => x.step).map(x => x.step), held = owed.filter(x => !x.step).flatMap(x => x.why)
+        res.writeHead(409, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ owed, error: `Run the Foundry first${steps.length ? `: ${stepList(steps)}` : ''}${held.length ? ` (${held.join('; ')})` : ''}. Publish ships only what Preview shows; nothing was committed or uploaded.` }))
+        return
+      }
       await runCapture(`git fetch origin --quiet`, { cwd: REPO_ROOT, timeout: 30000 })
       const branch = (await runCapture(`git rev-parse --abbrev-ref HEAD`, { cwd: REPO_ROOT })).stdout.trim()
       // ⛔ A TOWN WITHOUT ITS SHARE IMAGES DOES NOT PUBLISH: its link would send no picture, silently. Refused by

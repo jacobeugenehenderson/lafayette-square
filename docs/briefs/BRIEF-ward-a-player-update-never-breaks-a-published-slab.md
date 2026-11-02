@@ -56,6 +56,13 @@ against the old slab before the press.
   goes out; Boz sequences it. No drawer-version verdict is needed: the check covers only what is published now. (PTown's
   pre-drawer slab isn't live: both of its manifests carry `displays.<id>.drawer`, measured by Ward 2026-11-02.)
 
+- **A break is a REGRESSION (Boz, 2026-11-02, from Tinsel's Huron read):** a console `⛔` that the LIVE player already
+  produces on the same slab is a standing disclosure (Huron: `[BakedGround] ⛔ "huron": surface "sand" is drawn WITHOUT
+  rippleSpacingM…`, kit `BakedGround.jsx`, absent and not defaulted, by design). It is LISTED, not red. Red is a `⛔` the
+  candidate produces that the live player doesn't, on the same slab. ⛔ The baseline is a run, never a list of known
+  messages (that's a skip list). A SINK entry stays red outright under (ii) (confirmed by Boz, 2026-11-02): a standing
+  "isn't drawn" on a live town is the breakage (ii) names, so the diff covers console `⛔` only.
+
 ## The work
 
 1. **`checks/a-player-update-never-breaks-a-published-slab.mjs`**, wired into `run.mjs` and into
@@ -69,8 +76,9 @@ against the old slab before the press.
    `RENDERER_ASSETS`) are left alone, or a path the host doesn't serve reads as the slab's failure. ⛔ No hook in src,
    and no edit to `.env.local` during the run.
 3. **RED on any** of: a sink entry for the town (read through the page's module URL, as Placard's check does); the
-   scene error screen (`role="alert"`); a console `⛔` from the town's own layers or slab; the town not drawn within the budget (a stated number, with its
-   reason in the source). **Green** only when every listed slab loaded clean. A host that doesn't answer is NOT
+   scene error screen (`role="alert"`); a console `⛔` from the town's own layers or slab that the
+   baseline (5) doesn't produce; the town not drawn within the budget (a stated number, with its
+   reason in the source). **Green** only when no listed slab shows a red; standing `⛔` lines are listed beside it. A host that doesn't answer is NOT
    CHECKED for that slab, named, and the whole run exits 2 unless something is red. ⛔ Never green by omission.
    - **A `⛔` is attributed** to the request or module that raised it. A `⛔` from a failure at a non-slab ORIGIN (the
      weather feed, wind tiles, a third party) makes that slab NOT CHECKED with the origin named, never red or green.
@@ -79,13 +87,26 @@ against the old slab before the press.
 4. **It proves its own reach:** per slab, report the slab bytes fetched through the intercept, the manifest etag, and
    the count of kit requests left untouched. A slab whose page fetched nothing from the host is NOT CHECKED (the
    intercept missed it), not green.
-5. **Mutants**, by the intercept rewriting served bytes (never by editing src):
+5. **The baseline run:** for each slab, the LIVE player on its own page (`https://<domain>/`, or
+   `https://staging.theward.online/<map>/`) is the same slab under the published build and kit, same-origin, through the
+   same intercept as a pass-through (so a mutant can be served to both runs). Collect its attributed `⛔` lines the same way. Diff by key = (the module tag, e.g. `[BakedGround]`, and
+   the message with masks only where TWO loads of the live page differ). ⛔ Never mask every number: "refused 3
+   tiles" and "refused 30 tiles" are different messages. Load the live page twice, mask only the number positions
+   that differ between those two loads (timings, ids), and keep every number that's stable. The masks are measured,
+   not chosen, and the check's header says how to reproduce them. A wording change between pins reads as new,
+   so it's RED, which is the safe side. A `⛔` from a non-slab origin's failure, in EITHER run, makes that slab NOT
+   CHECKED (3), never standing and never red. A live page that doesn't load is NOT CHECKED for that slab, named. Each line
+   reports both builds' shas.
+6. **Mutants**, by the intercept rewriting served bytes (never by editing src):
    - Tinsel's: drop one show from a town's channel. The check asserts the shows the page schedules equal what the
      kit's own engine gives for the slab's channel (`engine.js#showtimesOn` and `displayAt`, imported from ward-kit,
      the same module the page runs), never a copy of the schedule rule and never a constant. It must go RED.
    - **An old slab plays:** `displays` deleted from a display town's `scene.json` (PTown's 10-29 shape). It must
      load clean, with no sink entry. Run it once at `ea8bd519` first and report the RED: that's the violation the kit
      fix closes.
+   - A `⛔` planted only in the candidate's run (through the intercept: a slab byte change the live run doesn't see)
+     must go RED; the same change served to both runs must be listed as standing, not red; a planted `⛔` whose
+     COUNT changes between the runs (3 → 30) must go RED.
    - A slab's `manifest.json` with its drawer index removed (tonight's PTown shape before the republish) must go RED.
    Report each line.
 
@@ -106,3 +127,7 @@ they contradict this brief, stop and flag.
 Zob, 2026-11-02: co-signed at integration 09a4c8ae; Q2 answered from Displays.jsx (a display town with no channel
 refuses at ea8bd519); conditions 1–4 (the slab is routed and the kit is not; the show count from the kit's engine; a
 ⛔ attributed by origin; the kit gap named in every green).
+
+Zob, 2026-11-02: co-signed the regression refinement (e9ffce6a): sink entries red outright, console `⛔` by the diff
+against the live page; condition: mask only what differs between two loads of the same build, and a count-change
+mutant.

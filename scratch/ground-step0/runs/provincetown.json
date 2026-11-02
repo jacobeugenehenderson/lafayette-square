@@ -1,0 +1,421 @@
+{
+ "town": "provincetown",
+ "info": {
+  "meshes": 667,
+  "transparent": 53,
+  "kinds": {
+   "face": 629,
+   "mat": 37,
+   "?": 1
+  },
+  "roRange": [
+   0,
+   51
+  ]
+ },
+ "cams": {
+  "far": {
+   "pos": [
+    0.23,
+    423.2,
+    4496.23
+   ],
+   "tgt": [
+    0.23,
+    0,
+    -0.27
+   ]
+  },
+  "high": {
+   "pos": [
+    0.23,
+    3174,
+    264.23
+   ],
+   "tgt": [
+    0.23,
+    0,
+    -0.27
+   ]
+  },
+  "close": {
+   "pos": [
+    0.23,
+    30,
+    634.53
+   ],
+   "tgt": [
+    0.23,
+    10,
+    -0.27
+   ]
+  }
+ },
+ "rows": [
+  {
+   "cam": "far",
+   "base": {
+    "ms": 171.77,
+    "c": 1386,
+    "t": 21035382
+   },
+   "noise": {
+    "changedPct": 4.7,
+    "meanAbs": 2.15
+   },
+   "v": {
+    "V1": {
+     "ms": 178.08,
+     "c": 1386,
+     "t": 21035382,
+     "d": {
+      "changedPct": 14.82,
+      "meanAbs": 11.9
+     }
+    },
+    "V1r": {
+     "ms": 181.39,
+     "c": 1386,
+     "t": 21035382,
+     "d": {
+      "changedPct": 15.05,
+      "meanAbs": 12.02
+     }
+    },
+    "V2": {
+     "ms": 121.53,
+     "c": 1310,
+     "t": 18974314,
+     "d": {
+      "changedPct": 48.26,
+      "meanAbs": 60.55
+     }
+    },
+    "V3": {
+     "ms": 87.26,
+     "c": 498,
+     "t": 15779130,
+     "d": {
+      "changedPct": 53.18,
+      "meanAbs": 79.32
+     }
+    }
+   }
+  },
+  {
+   "cam": "high",
+   "base": {
+    "ms": 130.6,
+    "c": 972,
+    "t": 21539686
+   },
+   "noise": {
+    "changedPct": 0.76,
+    "meanAbs": 1.26
+   },
+   "v": {
+    "V1": {
+     "ms": 125.79,
+     "c": 972,
+     "t": 21539686,
+     "d": {
+      "changedPct": 14.28,
+      "meanAbs": 10.2
+     }
+    },
+    "V1r": {
+     "ms": 132.59,
+     "c": 992,
+     "t": 21542034,
+     "d": {
+      "changedPct": 14.37,
+      "meanAbs": 10.2
+     }
+    },
+    "V2": {
+     "ms": 91.29,
+     "c": 926,
+     "t": 19481954,
+     "d": {
+      "changedPct": 60.89,
+      "meanAbs": 95.08
+     }
+    },
+    "V3": {
+     "ms": 58.7,
+     "c": 480,
+     "t": 15778602,
+     "d": {
+      "changedPct": 95.15,
+      "meanAbs": 157.53
+     }
+    }
+   }
+  },
+  {
+   "cam": "close",
+   "base": {
+    "ms": 162.19,
+    "c": 630,
+    "t": 20903418
+   },
+   "noise": {
+    "changedPct": 1.96,
+    "meanAbs": 1.13
+   },
+   "v": {
+    "V1": {
+     "ms": 151.96,
+     "c": 630,
+     "t": 20903418,
+     "d": {
+      "changedPct": 5.01,
+      "meanAbs": 3.55
+     }
+    },
+    "V1r": {
+     "ms": 149.29,
+     "c": 630,
+     "t": 20903418,
+     "d": {
+      "changedPct": 4.65,
+      "meanAbs": 3.4
+     }
+    },
+    "V2": {
+     "ms": 112.43,
+     "c": 564,
+     "t": 18842790,
+     "d": {
+      "changedPct": 42.95,
+      "meanAbs": 49
+     }
+    },
+    "V3": {
+     "ms": 82.04,
+     "c": 472,
+     "t": 15778534,
+     "d": {
+      "changedPct": 45.94,
+      "meanAbs": 50.98
+     }
+    }
+   }
+  }
+ ],
+ "perGroup": [
+  {
+   "ro": 50,
+   "dMs": 17.26,
+   "coverPct": 41.69
+  },
+  {
+   "ro": 21,
+   "dMs": 10.69,
+   "coverPct": 3.15
+  },
+  {
+   "ro": 20,
+   "dMs": 5.56,
+   "coverPct": 3.91
+  },
+  {
+   "ro": 32,
+   "dMs": 5.54,
+   "coverPct": 3.89
+  },
+  {
+   "ro": 27,
+   "dMs": 4.42,
+   "coverPct": 3.55
+  },
+  {
+   "ro": 15,
+   "dMs": 4.31,
+   "coverPct": 3.25
+  },
+  {
+   "ro": 42,
+   "dMs": 4.14,
+   "coverPct": 9.08
+  },
+  {
+   "ro": 40,
+   "dMs": 3.23,
+   "coverPct": 7.67
+  },
+  {
+   "ro": 47,
+   "dMs": 3.23,
+   "coverPct": 13.93
+  },
+  {
+   "ro": 45,
+   "dMs": 3.07,
+   "coverPct": 12.36
+  },
+  {
+   "ro": 28,
+   "dMs": 2.86,
+   "coverPct": 3.55
+  },
+  {
+   "ro": 26,
+   "dMs": 2.55,
+   "coverPct": 3.51
+  },
+  {
+   "ro": 29,
+   "dMs": 2.53,
+   "coverPct": 3.59
+  },
+  {
+   "ro": 16,
+   "dMs": 2.01,
+   "coverPct": 3.52
+  },
+  {
+   "ro": 22,
+   "dMs": 1.64,
+   "coverPct": 3.26
+  },
+  {
+   "ro": 48,
+   "dMs": 1.54,
+   "coverPct": 14.57
+  },
+  {
+   "ro": 39,
+   "dMs": 1.16,
+   "coverPct": 6.6
+  },
+  {
+   "ro": 17,
+   "dMs": 1.02,
+   "coverPct": 3.23
+  },
+  {
+   "ro": 44,
+   "dMs": 0.4,
+   "coverPct": 11.14
+  },
+  {
+   "ro": 38,
+   "dMs": 0.35,
+   "coverPct": 6.15
+  },
+  {
+   "ro": 23,
+   "dMs": -0.22,
+   "coverPct": 3.17
+  },
+  {
+   "ro": 31,
+   "dMs": -0.27,
+   "coverPct": 3.55
+  },
+  {
+   "ro": 34,
+   "dMs": -0.49,
+   "coverPct": 4.47
+  },
+  {
+   "ro": 33,
+   "dMs": -0.84,
+   "coverPct": 4.24
+  },
+  {
+   "ro": 36,
+   "dMs": -1.02,
+   "coverPct": 4.74
+  },
+  {
+   "ro": 25,
+   "dMs": -1.13,
+   "coverPct": 3.29
+  },
+  {
+   "ro": 19,
+   "dMs": -1.31,
+   "coverPct": 3.25
+  },
+  {
+   "ro": 43,
+   "dMs": -1.42,
+   "coverPct": 10.79
+  },
+  {
+   "ro": 24,
+   "dMs": -1.56,
+   "coverPct": 3.32
+  },
+  {
+   "ro": 18,
+   "dMs": -1.71,
+   "coverPct": 3.58
+  },
+  {
+   "ro": 41,
+   "dMs": -1.99,
+   "coverPct": 8.59
+  },
+  {
+   "ro": 37,
+   "dMs": -2.81,
+   "coverPct": 5.56
+  },
+  {
+   "ro": 46,
+   "dMs": -3.01,
+   "coverPct": 12.94
+  },
+  {
+   "ro": 35,
+   "dMs": -5.38,
+   "coverPct": 4.86
+  },
+  {
+   "ro": 30,
+   "dMs": -7.45,
+   "coverPct": 3.52
+  },
+  {
+   "ro": 49,
+   "dMs": -9.88,
+   "coverPct": 15.48
+  }
+ ],
+ "half": {
+  "cam": "close",
+  "v0": 61.14,
+  "v3": 39.48
+ },
+ "load": [
+  3.42919921875,
+  3.28759765625,
+  7.88427734375
+ ],
+ "log": [
+  "== ground step 0 · provincetown · Stage headless, this M1 · load 2.7 5.0 10.7 ==",
+  "  ground: 667 meshes, 53 transparent (the fade), kinds {\"face\":629,\"mat\":37,\"?\":1}, renderOrder 0…51",
+  "  disc centre [0.23,-0.27] radius 5290 m → cameras {\"far\":[0,423,4496],\"high\":[0,3174,264],\"close\":[0,30,635]}",
+  "  far   cam [0,423,4496] · V0 171.77 ms GPU 1386 calls · uptime 3.1 21.04M tris · noise 4.7% (mean 2.15)",
+  "        V1   178.08 ms GPU (   6.3) · 1386 calls · diff 14.82% (mean 11.9)",
+  "        V1r  181.39 ms GPU (   9.6) · 1386 calls · diff 15.05% (mean 12.02)",
+  "        V2   121.53 ms GPU ( -50.2) · 1310 calls · diff 48.26% (mean 60.55)",
+  "        V3    87.26 ms GPU ( -84.5) · 498 calls · diff 53.18% (mean 79.32)",
+  "  high  cam [0,3174,264] · V0 130.6 ms GPU 972 calls · uptime 4.6 21.54M tris · noise 0.76% (mean 1.26)",
+  "        V1   125.79 ms GPU (  -4.8) · 972 calls · diff 14.28% (mean 10.2)",
+  "        V1r  132.59 ms GPU (   2.0) · 992 calls · diff 14.37% (mean 10.2)",
+  "        V2    91.29 ms GPU ( -39.3) · 926 calls · diff 60.89% (mean 95.08)",
+  "        V3     58.7 ms GPU ( -71.9) · 480 calls · diff 95.15% (mean 157.53)",
+  "  close cam [0,30,635] · V0 162.19 ms GPU 630 calls · uptime 3.2 20.90M tris · noise 1.96% (mean 1.13)",
+  "        V1   151.96 ms GPU ( -10.2) · 630 calls · diff 5.01% (mean 3.55)",
+  "        V1r  149.29 ms GPU ( -12.9) · 630 calls · diff 4.65% (mean 3.4)",
+  "        V2   112.43 ms GPU ( -49.8) · 564 calls · diff 42.95% (mean 49)",
+  "        V3    82.04 ms GPU ( -80.1) · 472 calls · diff 45.94% (mean 50.98)",
+  "  per ribbon group (last cam), top by Δ GPU ms: ro50 17.26ms/41.69% · ro21 10.69ms/3.15% · ro20 5.56ms/3.91% · ro32 5.54ms/3.89% · ro27 4.42ms/3.55% · ro15 4.31ms/3.25% · ro42 4.14ms/9.08% · ro40 3.23ms/7.67%",
+  "  sum of per-group Δ 37.0 ms over 36 groups",
+  "  half window (close cam): V0 61.14 ms · ground hidden 39.48 ms (-21.7)"
+ ]
+}

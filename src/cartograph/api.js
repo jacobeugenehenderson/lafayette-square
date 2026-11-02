@@ -198,14 +198,6 @@ export async function saveNeighborhood(scene, data) {
   })
 }
 
-// Extent editor: the one-click pour — pipeline (clipped to the boundary) →
-// promote-ribbons → the map the Designer renders. Long-running.
-export async function pourMap(scene) {
-  const res = await fetch(sceneUrl(scene, 'pour'), { method: 'POST' })
-  const j = await res.json().catch(() => ({}))
-  if (!res.ok) throw new Error(j.error || `the Foundry (Extent): ${res.status}`)
-  return j
-}
 
 // Extent editor: the deliberate finalize — the frame never moves; skeleton.js runs in the frozen frame and the disc,
 // loops and metadata are written (serve.js commit-extent → cartograph/commitExtent.mjs). Long-running.
@@ -218,8 +210,8 @@ export async function commitExtent(scene, payload) {
   return j
 }
 
-// Extent editor: live radius re-scope — rewrite the boundary circle (membership
-// polygon preserved) + re-clip + ribbons, no re-name/re-center. Client re-bakes.
+// Extent editor: live radius re-scope — rewrite the boundary circle (membership polygon preserved), no re-name/re-center.
+// It runs no pour: the Foundry (Stage) re-derives from the new boundary, which it sees as owed (pour-code.mjs#pourDataReads).
 export async function rescopeMap(scene, radius, exclusions, opts = {}) {
   const body = { radius, exclusions }
   // The inclusion polygon (lon/lat anchors) rides the rescope too — a committed
@@ -393,8 +385,8 @@ export async function bakeLook(lookId, { force = false, repour = false } = {}) {
   const q = [force && 'force=1', repour && 'repour=1'].filter(Boolean).join('&')
   const url = `${BASE}/looks/${encodeURIComponent(lookId)}/bake${q ? '?' + q : ''}`
   const res = await fetch(url, { method: 'POST' })
-  // 428 = the pour's CODE changed since this town was last poured, so this Bake would RE-POUR it. Nothing ran;
-  // the server names the files and waits for the operator's confirm (`repour=1`). Tagged so runBake can ask.
+  // 428 = this run would rewrite a file a HELD scene keeps committed (Boz's ruling Q3). Nothing ran; the server names the files
+  // and waits for the operator's confirm (`repour=1`). Tagged so runBake can ask. (A code change no longer asks: the press is the consent.)
   if (res.status === 428) {
     const body = await res.json().catch(() => ({}))
     // ⭐ …or the coast step STOPPED on its open/close residual (serve.js#coastResidualAsk): the pieces it found, for the operator to look
@@ -405,7 +397,7 @@ export async function bakeLook(lookId, { force = false, repour = false } = {}) {
       err.coastResidual = body.coastResidual
       throw err
     }
-    const err = new Error('The Foundry\'s code changed — this run would run every step for the scene.')
+    const err = new Error('The Foundry would rewrite a file a held scene keeps committed.')
     err.code = 'REPOUR_CONFIRM'
     err.repour = body.repour || null
     throw err

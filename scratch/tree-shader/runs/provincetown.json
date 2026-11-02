@@ -1,0 +1,47 @@
+{
+ "town": "provincetown",
+ "margin": {
+  "layers": 144,
+  "unread": 0,
+  "coverage": 0.106,
+  "leaf": 0.121,
+  "bark": 0.076,
+  "min": 0.017,
+  "max": 0.29
+ },
+ "rows": [
+  {
+   "cam": "far",
+   "v0": 166.31,
+   "off": 129.92,
+   "bare": 153.87,
+   "back": 168.32
+  },
+  {
+   "cam": "mid",
+   "v0": 160.88,
+   "off": 128.09,
+   "bare": 148.78,
+   "back": 160.35
+  },
+  {
+   "cam": "close",
+   "v0": 145.16,
+   "off": 112.23,
+   "bare": 134.84,
+   "back": 146.03
+  }
+ ],
+ "load": [
+  1.94970703125,
+  2.36669921875,
+  2.5166015625
+ ],
+ "log": [
+  "== trees shader + margin · provincetown · Stage headless, this M1 · load 1.6 2.4 2.5 ==",
+  "  card pictures passing alphaTest 0.4 (texels, mean over 144 layer pictures): all 0.106 · leaf 0.121 · bark 0.076 · min 0.017 / max 0.29 · unreadable 0 → empty margin ≈ 89% of a card quad",
+  "  far   V0 166.31 · trees hidden 129.92 (trees 36.4 ms) · bare fragment 153.87 (shading 12.4 ms = 34% of the trees) · restored 168.32 · uptime 2.4",
+  "  mid   V0 160.88 · trees hidden 128.09 (trees 32.8 ms) · bare fragment 148.78 (shading 12.1 ms = 37% of the trees) · restored 160.35 · uptime 2.1",
+  "  close V0 145.16 · trees hidden 112.23 (trees 32.9 ms) · bare fragment 134.84 (shading 10.3 ms = 31% of the trees) · restored 146.03 · uptime 1.9"
+ ]
+}

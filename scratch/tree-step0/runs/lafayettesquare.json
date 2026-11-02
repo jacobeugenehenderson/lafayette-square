@@ -1,0 +1,150 @@
+{
+ "town": "lafayettesquare",
+ "counts": {
+  "heroDraws": 162,
+  "front": 162,
+  "back": 0,
+  "bark": 0,
+  "instances": 17652
+ },
+ "rows": [
+  {
+   "cam": "far",
+   "v0": 132.37,
+   "noise": 2.66,
+   "frustum": {
+    "n": 17652,
+    "inside": 5373
+   },
+   "v": {
+    "front": {
+     "ms": 78.41,
+     "d": 77.94
+    },
+    "back": {
+     "ms": 144.46,
+     "d": 22.48
+    },
+    "bark": {
+     "ms": 146.23,
+     "d": 8.72
+    },
+    "heroAll": {
+     "ms": 81.66,
+     "d": 77.94
+    },
+    "trees": {
+     "ms": 79.76,
+     "d": 77.95
+    }
+   }
+  },
+  {
+   "cam": "mid",
+   "v0": 80.5,
+   "noise": 0,
+   "frustum": {
+    "n": 17652,
+    "inside": 2334
+   },
+   "v": {
+    "front": {
+     "ms": 65.94,
+     "d": 0
+    },
+    "back": {
+     "ms": 82.67,
+     "d": 0
+    },
+    "bark": {
+     "ms": 79.81,
+     "d": 0
+    },
+    "heroAll": {
+     "ms": 64.7,
+     "d": 0
+    },
+    "trees": {
+     "ms": 64.46,
+     "d": 0
+    }
+   }
+  },
+  {
+   "cam": "close",
+   "v0": 52.88,
+   "noise": 0,
+   "frustum": {
+    "n": 17652,
+    "inside": 903
+   },
+   "v": {
+    "front": {
+     "ms": 47.97,
+     "d": 0
+    },
+    "back": {
+     "ms": 54.85,
+     "d": 0
+    },
+    "bark": {
+     "ms": 55.04,
+     "d": 0
+    },
+    "heroAll": {
+     "ms": 49.39,
+     "d": 0
+    },
+    "trees": {
+     "ms": 48.89,
+     "d": 0
+    }
+   }
+  }
+ ],
+ "half": {
+  "v0": 17.15,
+  "treesOff": 16.73
+ },
+ "cpu": {
+  "x1": {
+   "ms": 0.705,
+   "n": 17652,
+   "inside": 903
+  },
+  "x4": {
+   "ms": 4.59,
+   "n": 17652,
+   "inside": 903
+  }
+ },
+ "load": [
+  3.6708984375,
+  3,
+  3.46533203125
+ ],
+ "log": [
+  "== trees step 0 · lafayettesquare · Stage headless, this M1 · load 2.2 2.6 3.4 ==",
+  "  hero impostor draws 162 (front 162 · back 0 · bark 0) · 17652 instance draws in all",
+  "  far   cam [-15,71,743] · V0 132.37 ms GPU · uptime 2.1 · noise 2.66% · hero instances in frustum 5373/17652 (30%)",
+  "        front   Δ  -54.0 ms · covers 77.94%",
+  "        back    Δ   12.1 ms · covers 22.48%",
+  "        bark    Δ   13.9 ms · covers 8.72%",
+  "        heroAll Δ  -50.7 ms · covers 77.94%",
+  "        trees   Δ  -52.6 ms · covers 77.95%",
+  "  mid   cam [-15,36,297] · V0 80.5 ms GPU · uptime 2.5 · noise 0% · hero instances in frustum 2334/17652 (13%)",
+  "        front   Δ  -14.6 ms · covers 0%",
+  "        back    Δ    2.2 ms · covers 0%",
+  "        bark    Δ   -0.7 ms · covers 0%",
+  "        heroAll Δ  -15.8 ms · covers 0%",
+  "        trees   Δ  -16.0 ms · covers 0%",
+  "  close cam [-15,30,92] · V0 52.88 ms GPU · uptime 3.8 · noise 0% · hero instances in frustum 903/17652 (5%)",
+  "        front   Δ   -4.9 ms · covers 0%",
+  "        back    Δ    2.0 ms · covers 0%",
+  "        bark    Δ    2.2 ms · covers 0%",
+  "        heroAll Δ   -3.5 ms · covers 0%",
+  "        trees   Δ   -4.0 ms · covers 0%",
+  "  half window (close cam): V0 17.15 ms · trees hidden 16.73 ms (Δ -0.4) — compare with the full-window Δ above",
+  "  per-instance frustum pass over 17652 hero-impostor instances: 0.705 ms per frame at 1× CPU, 4.59 ms at 4× (a compaction would add the buffer writes on top)"
+ ]
+}

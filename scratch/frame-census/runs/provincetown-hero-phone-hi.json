@@ -1,0 +1,329 @@
+{
+ "town": "provincetown",
+ "shot": "hero",
+ "close": false,
+ "mode": "phone-hi",
+ "tier": {
+  "stored": "phone-hi",
+  "target": "phone-hi",
+  "dpr": 1,
+  "buf": "242x525",
+  "logDepth": false
+ },
+ "cam": {
+  "pos": [
+   465,
+   70,
+   448
+  ],
+  "near": 10,
+  "far": 60500.00000000001,
+  "fov": 22
+ },
+ "frame0": {
+  "target": "phone-hi",
+  "wallMs": 42.6,
+  "calls": 232,
+  "tris": 9325744,
+  "gpuSupported": true,
+  "gpuMs": 39.01349806666668,
+  "mainMs": 5.853333334128062,
+  "lastMainMs": 4.100000023841858,
+  "loaf": {
+   "n": 360,
+   "worstMs": 891.9000000953674,
+   "scriptMs": 5712.100000500679,
+   "last": [
+    {
+     "at": 59276.5,
+     "ms": 63.800000071525574,
+     "scriptMs": 9.100000023841858,
+     "blockingMs": 0
+    },
+    {
+     "at": 59514.5,
+     "ms": 67.5,
+     "scriptMs": 7.200000047683716,
+     "blockingMs": 0
+    },
+    {
+     "at": 59757.10000002384,
+     "ms": 66.10000002384186,
+     "scriptMs": 9.300000071525574,
+     "blockingMs": 0
+    },
+    {
+     "at": 59861.300000071526,
+     "ms": 69.69999992847443,
+     "scriptMs": 9.399999976158142,
+     "blockingMs": 0
+    },
+    {
+     "at": 60027.700000047684,
+     "ms": 53,
+     "scriptMs": 6.399999976158142,
+     "blockingMs": 0
+    },
+    {
+     "at": 60105.800000071526,
+     "ms": 61.89999997615814,
+     "scriptMs": 6.399999976158142,
+     "blockingMs": 0
+    },
+    {
+     "at": 60710.60000002384,
+     "ms": 67,
+     "scriptMs": 5.700000047683716,
+     "blockingMs": 0
+    },
+    {
+     "at": 60986.5,
+     "ms": 51.700000047683716,
+     "scriptMs": 8.199999928474426,
+     "blockingMs": 0
+    },
+    {
+     "at": 61060.60000002384,
+     "ms": 64.5,
+     "scriptMs": 6.899999976158142,
+     "blockingMs": 0
+    },
+    {
+     "at": 61222.700000047684,
+     "ms": 55.699999928474426,
+     "scriptMs": 6.600000023841858,
+     "blockingMs": 0
+    },
+    {
+     "at": 61302,
+     "ms": 62.700000047683716,
+     "scriptMs": 6,
+     "blockingMs": 0
+    },
+    {
+     "at": 61539.700000047684,
+     "ms": 65.69999992847443,
+     "scriptMs": 7.700000047683716,
+     "blockingMs": 0
+    },
+    {
+     "at": 61786,
+     "ms": 63.39999997615814,
+     "scriptMs": 5.299999952316284,
+     "blockingMs": 0
+    },
+    {
+     "at": 62029.300000071526,
+     "ms": 64.5,
+     "scriptMs": 7.399999976158142,
+     "blockingMs": 0
+    },
+    {
+     "at": 62134.10000002384,
+     "ms": 73.20000004768372,
+     "scriptMs": 10.399999976158142,
+     "blockingMs": 0
+    },
+    {
+     "at": 62245.300000071526,
+     "ms": 69.19999992847443,
+     "scriptMs": 9.800000071525574,
+     "blockingMs": 0
+    },
+    {
+     "at": 62352.300000071526,
+     "ms": 74.29999995231628,
+     "scriptMs": 10.600000023841858,
+     "blockingMs": 0
+    },
+    {
+     "at": 62463,
+     "ms": 69.39999997615814,
+     "scriptMs": 9.5,
+     "blockingMs": 0
+    },
+    {
+     "at": 62709.300000071526,
+     "ms": 59,
+     "scriptMs": 0,
+     "blockingMs": 0
+    },
+    {
+     "at": 62947.60000002384,
+     "ms": 64.20000004768372,
+     "scriptMs": 7,
+     "blockingMs": 0
+    }
+   ]
+  }
+ },
+ "rows": [
+  {
+   "cls": "trees",
+   "meshes": 144,
+   "instances": 110853,
+   "tris": 5320944,
+   "inFrustumShare": 0.103,
+   "sampled": 400,
+   "unoccludedShare": 0.99,
+   "subPixel": 0,
+   "visibleEst": 0.102,
+   "dGpuMs": 7.49,
+   "noise": 0.16,
+   "restMs": 36.36
+  },
+  {
+   "cls": "ground",
+   "meshes": 665,
+   "instances": 665,
+   "tris": 2644406,
+   "inFrustumShare": 0.059,
+   "sampled": 400,
+   "unoccludedShare": 0.77,
+   "subPixel": 0,
+   "visibleEst": 0.046,
+   "dGpuMs": 4.37,
+   "noise": 0.03,
+   "restMs": 36.7
+  },
+  {
+   "cls": "displays",
+   "meshes": 14,
+   "instances": 17350,
+   "tris": 1074758,
+   "inFrustumShare": 0.018,
+   "sampled": 400,
+   "unoccludedShare": 0.733,
+   "subPixel": 107,
+   "visibleEst": 0.013,
+   "dGpuMs": 0.83,
+   "noise": 0.75,
+   "restMs": 35.69
+  },
+  {
+   "cls": "lamps",
+   "meshes": 1,
+   "instances": 1789,
+   "tris": 286240,
+   "inFrustumShare": 0.041,
+   "sampled": 74,
+   "unoccludedShare": 0.595,
+   "subPixel": 0,
+   "visibleEst": 0.025,
+   "dGpuMs": 0.34,
+   "noise": 0.09,
+   "restMs": 35.5
+  },
+  {
+   "cls": "buildings",
+   "meshes": 4,
+   "instances": 4,
+   "tris": 71671,
+   "inFrustumShare": 0.028,
+   "sampled": 25,
+   "unoccludedShare": 0.48,
+   "subPixel": 0,
+   "visibleEst": 0.013,
+   "dGpuMs": 0.57,
+   "noise": 0.04,
+   "restMs": 36.11
+  },
+  {
+   "cls": "water",
+   "meshes": 2,
+   "instances": 2,
+   "tris": 16880,
+   "inFrustumShare": 0.094,
+   "sampled": 35,
+   "unoccludedShare": 0.886,
+   "subPixel": 0,
+   "visibleEst": 0.084,
+   "dGpuMs": -0.44,
+   "noise": 0.29,
+   "restMs": 35.84
+  },
+  {
+   "cls": "sky",
+   "meshes": 6,
+   "instances": 6,
+   "tris": 14210.333333333334,
+   "inFrustumShare": 0.004,
+   "sampled": 3,
+   "unoccludedShare": 1,
+   "subPixel": 0,
+   "visibleEst": 0.004,
+   "dGpuMs": 0.47,
+   "noise": 0.89,
+   "restMs": 36.52
+  }
+ ],
+ "px": [
+  {
+   "k": 1,
+   "buf": "281x611",
+   "ms": 37.08070010169492
+  },
+  {
+   "k": 0.5,
+   "buf": "132x286",
+   "ms": 34.27517088709677
+  }
+ ],
+ "targets": {
+  "atRatio": 1,
+  "full": {
+   "canvas": "242x525",
+   "targets": [
+    [
+     "637x637",
+     2
+    ],
+    [
+     "242x525",
+     14
+    ]
+   ]
+  },
+  "half": {
+   "canvas": "121x262",
+   "targets": [
+    [
+     "637x637",
+     2
+    ],
+    [
+     "242x525",
+     14
+    ]
+   ]
+  }
+ },
+ "load": [
+  2.1455078125,
+  4.265625,
+  4.078125
+ ],
+ "log": [
+  "== provincetown · hero · phone-hi · headless Chrome, this desktop's GPU · load 6.49 5.59 4.42 ==",
+  "  settled at t+63s (232 draws stable 6 s)",
+  "  tier: {\"stored\":\"phone-hi\",\"target\":\"phone-hi\",\"dpr\":1,\"buf\":\"242x525\",\"logDepth\":false}",
+  "  camera {\"pos\":[465,70,448],\"near\":10,\"far\":60500.00000000001,\"fov\":22} · buffer 242x525 · occluder meshes 618",
+  "  frame (all passes): 232 draws · 9.33M tris · gpu 39.0 ms",
+  "  trees          144m  110853 inst   5.32M tris · in frustum 10% · unoccluded 99% of 400 (sub-px 0) · visible≈10% · Δgpu 7.5 ms ±0.2 of 36.36",
+  "  ground         665m     665 inst   2.64M tris · in frustum 6% · unoccluded 77% of 400 (sub-px 0) · visible≈5% · Δgpu 4.4 ms ±0.0 of 36.7",
+  "  displays        14m   17350 inst   1.07M tris · in frustum 2% · unoccluded 73% of 400 (sub-px 107) · visible≈1% · Δgpu 0.8 ms ±0.7 of 35.69",
+  "  lamps            1m    1789 inst   0.29M tris · in frustum 4% · unoccluded 59% of 74 (sub-px 0) · visible≈3% · Δgpu 0.3 ms ±0.1 of 35.5",
+  "  buildings        4m       4 inst   0.07M tris · in frustum 3% · unoccluded 48% of 25 (sub-px 0) · visible≈1% · Δgpu 0.6 ms ±0.0 of 36.11",
+  "  water            2m       2 inst   0.02M tris · in frustum 9% · unoccluded 89% of 35 (sub-px 0) · visible≈8% · Δgpu -0.4 ms ±0.3 of 35.84",
+  "  sky              6m       6 inst   0.01M tris · in frustum 0% · unoccluded 100% of 3 (sub-px 0) · visible≈0% · Δgpu 0.5 ms ±0.9 of 36.52",
+  "  window ×1 (canvas 281x611): gpu 37.1 ms",
+  "  window ×0.5 (canvas 132x286): gpu 34.3 ms",
+  "  targets @ ratio 1: canvas 242x525 · 637x637×2 242x525×14",
+  "  targets @ ratio 0.5: canvas 121x262 · 637x637×2 242x525×14",
+  "  page ERR [instance] \"provincetown\" has no contact.email, cary.email, cary.smsNumber. These are PUBLIC — they render on the legal page, which every installation shows and which no module flag gates. Unset, the page shows a labelled gap instead of a contact; before this check it rendered a dead \"mailto:null\" l",
+  "  page ERR [BakedGround] ⛔ provincetown: 1 outer-coast piece(s) continue no water body at the rim — not drawn",
+  "  page ERR Warning: Cannot update a component (`%s`) while rendering a different component (`%s`). To locate the bad setState() call inside `%s`, follow the stack trace as described in https://reactjs.org/link/setstate-in-render%s SlabRevetment GroundMeshes GroundMeshes \n    at GroundMeshes (http://localhost:5",
+  "  page ERR [BakedGround] ⛔ \"provincetown\": surface \"crop\" is drawn WITHOUT calendar (day of year, physics — finding f-usda-corn-grain-dates-MA missing). Those features are ABSENT, not defaulted — ▶ cartograph/surfaces.mjs",
+  "  page ERR [BakedGround] ⛔ \"provincetown\": surface \"sand\" is drawn WITHOUT rippleSpacingM (m, physics — no source); rippleHeightM (m, physics — no source). Those features are ABSENT, not defaulted — ▶ cartograph/surfaces.mjs"
+ ]
+}
