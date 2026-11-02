@@ -29,6 +29,10 @@ import { groundPairs } from '../utils/elevation'
 import { anchoredRaw } from '../lib/anchorGate.js'
 import { treeDbg } from './OverheadTrees.jsx'
 import { slabUrl } from '../lib/slabUrl.js'
+import { buildCells, planesOf, visibleCells, sameSet, windReachM, floorReachPx, treeCull } from '../lib/treeCells.js'
+import { treeWindUniforms } from './treeAtlasMaterial.js'
+import { terrainExag } from '../utils/terrainShader.js'
+import { getLiveWind, WIND_SPRING } from '../lib/windSheet.js'
 
 // ⭐ THE CARD STACK — canopy <> trunk/branches <> canopy.
 // Jacob's intended design is a SANDWICH: the trunk sits BETWEEN two canopy
@@ -183,6 +187,15 @@ const _q = (k, d) => {
 // cards' parallax carries the canopy, so the fine grid is paying for something the shot
 // hides. ⛔ AMPLITUDE IS FREE — the Look's treeWind figures are uniforms, so
 // a coarser grid is compensated by turning Amplitude UP, not by more triangles.
+const _PV = new THREE.Matrix4()
+// The extent the cells tile: this draw's OWN instances, always (Zob, 2026-11-02): the cells partition the instances, so their
+// bounds are the input — never the town's stencil, which would make a fresh pour and a published town partition differently.
+function discRadiusOf(list) {
+  let r = 0, cx = 0, cz = 0
+  for (const t of list) { cx += t.x; cz += t.z } cx /= Math.max(1, list.length); cz /= Math.max(1, list.length)
+  for (const t of list) r = Math.max(r, Math.hypot(t.x - cx, t.z - cz))
+  return Math.max(r, 1)
+}
 const FRONT_GRID = _q('frontGrid', 8)
 const BACK_GRID  = _q('backGrid', 1)
 
@@ -289,14 +302,65 @@ export function HeroImpostorSpecies({ asset, instances, visible = true, opacity 
       }
       im.instanceMatrix.needsUpdate = true
       // The RAW ground under each card (pre-exag); the shader multiplies by the live uExag.
-      d.geo.setAttribute('aGround', new THREE.InstancedBufferAttribute(groundPairs(d.instances, t => anchoredRaw(t, 'tree')), 2))
+      const ground = groundPairs(d.instances, t => anchoredRaw(t, 'tree'))
+      d.geo.setAttribute('aGround', new THREE.InstancedBufferAttribute(ground.slice(), 2))
       // The per-tree lamp light the bake stamped (`lampGlow`, src/lib/lampPool.js) — the same value the mesh path reads.
       const glow = new Float32Array(d.instances.length)
       for (let i = 0; i < d.instances.length; i++) glow[i] = Number(d.instances[i].lampGlow) || 0
-      d.geo.setAttribute('aLampGlow', new THREE.InstancedBufferAttribute(glow, 1))
+      d.geo.setAttribute('aLampGlow', new THREE.InstancedBufferAttribute(glow.slice(), 1))
+      // ⭐ THE CULL'S SOURCE (src/lib/treeCells.js): the full arrays, kept, and the cells built once over this draw's instances.
+      // A card's static reach = half its card at its own scale (the card spans the canopy: max(height, 2 × canopy radius) / 2).
+      const half = Math.max(rec.heightM, 2 * rec.canopyRadiusM) / 2
+      let rawLo = Infinity, rawHi = -Infinity, yLo = Infinity, yHi = -Infinity, sMax = 0
+      for (let i = 0; i < d.instances.length; i++) { const r = ground[2 * i], y = ground[2 * i + 1], sc = d.instances[i].scale || 1
+        rawLo = Math.min(rawLo, r); rawHi = Math.max(rawHi, r); yLo = Math.min(yLo, y); yHi = Math.max(yHi, y); sMax = Math.max(sMax, sc) }
+      d.full = { mat: im.instanceMatrix.array.slice(), ground, glow, n: d.instances.length, rawLo, rawHi, yLo, yHi, topM: rec.heightM * sMax }
+      d.cells = buildCells(d.instances.map((t) => ({ x: t.x, z: t.z, reach: half * (t.scale || 1) })), discRadiusOf(d.instances)).cells
+      d.vis = null
     }
     invalidate()
   }, [draws, invalidate])
+
+  // ⭐ DRAW ONLY THE TREES THE FRAME CAN SHOW (src/lib/treeCells.js). Each frame tests the cells; a draw's buffers are rewritten
+  // only when its set of visible cells changes. ⛔ Not-yet (no live wind: the sheet is not mounted) culls nothing.
+  useTownFrame(({ camera, gl }) => {
+    // OFF (the probe's A/B, or ?treeDebug=noCull): every instance, once, then nothing.
+    if (!treeCull.on || treeDbg('noCull')) {
+      for (const d of draws) { const im = refs.current[d.key]; if (!im || !d.full || d.vis === 'all') continue
+        im.instanceMatrix.array.set(d.full.mat); d.geo.attributes.aGround.array.set(d.full.ground); d.geo.attributes.aLampGlow.array.set(d.full.glow)
+        im.count = d.full.n; im.instanceMatrix.needsUpdate = true; d.geo.attributes.aGround.needsUpdate = true; d.geo.attributes.aLampGlow.needsUpdate = true; d.vis = 'all' }
+      return
+    }
+    const live = getLiveWind()
+    if (!live?.ws || !camera.isPerspectiveCamera) return
+    const ws = live.ws, z = WIND_SPRING.DAMPING
+    // the strongest felt wind: base + the gust peak, × the sheet spring's own overshoot (a damped spring: e^(−ζπ/√(1−ζ²)))
+    const feltMax = (ws.baseSpeedMps + ws.gustsScale * (ws.gustEnvelope ?? 1)) * (1 + Math.exp(-z * Math.PI / Math.sqrt(1 - z * z)))
+    const tw = { leanRefM: treeWindUniforms.uTreeWindLeanRefM.value, leanPerMps: treeWindUniforms.uTreeWindLeanPerMps.value,
+      flutterRefM: treeWindUniforms.uTreeWindFlutRefM.value, flutterPerMps: treeWindUniforms.uTreeWindFlutPerMps.value, floorPx: treeWindUniforms.uTreeWindFloorPx.value }
+    camera.updateMatrixWorld()
+    const planes = planesOf(_PV.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse).elements)
+    const H = gl.domElement.height, k = 2 * Math.tan((camera.fov * Math.PI) / 360) / Math.max(1, H)
+    const ex = terrainExag.value, camPos = [camera.position.x, camera.position.y, camera.position.z]
+    const windM = windReachM(tw, feltMax), pxMargin = floorReachPx(tw)
+    for (const d of draws) {
+      const im = refs.current[d.key]
+      if (!im || !d.full || !d.cells) continue
+      const f = d.full
+      const yLo = Math.min(f.rawLo * ex, f.rawHi * ex) + f.yLo, yHi = Math.max(f.rawLo * ex, f.rawHi * ex) + f.yHi + f.topM
+      const vis = visibleCells(d.cells, planes, { yLo, yHi, windM, pxMargin, camPos, metresPerPx: (dist) => dist * k })
+      if (sameSet(vis, d.vis)) continue
+      d.vis = vis
+      const mat = im.instanceMatrix.array, gr = d.geo.attributes.aGround.array, gw = d.geo.attributes.aLampGlow.array
+      let n = 0
+      for (let c = 0; c < d.cells.length; c++) {
+        if (!vis[c]) continue
+        for (const i of d.cells[c].idx) { mat.set(f.mat.subarray(16 * i, 16 * i + 16), 16 * n); gr[2 * n] = f.ground[2 * i]; gr[2 * n + 1] = f.ground[2 * i + 1]; gw[n] = f.glow[i]; n++ }
+      }
+      im.count = n
+      im.instanceMatrix.needsUpdate = true; d.geo.attributes.aGround.needsUpdate = true; d.geo.attributes.aLampGlow.needsUpdate = true
+    }
+  }, undefined, 'hero impostor cull')
 
   if (!instances.length || !draws.length) return null
   return (
