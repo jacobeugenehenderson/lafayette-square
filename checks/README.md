@@ -15,7 +15,7 @@ gated without anyone remembering to gate it, which is what makes this work on to
 
 A non-zero exit is a **finding for the board**, not a runner fault. The suite reports; it does not fix.
 
-## ⛔ live — 144. Never in a default run.
+## ⛔ live — 143. Never in a default run.
 
 Two reason classes, and they are not the same thing. **outbound** — a demonstrated call out.
 **unreadable** — runs code the parser cannot read, so it *may* contact nothing but cannot be shown
@@ -121,7 +121,6 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `checks/claims-the-faces-are-walked-once.mjs` | unreadable | import of a data: module built at run time — its body cannot be read (use checks/_importSource.mjs) |
 | `checks/claims-the-flight-builds-no-ao.mjs` | outbound | calls fetch() · opens a WebSocket · deletes files — only under its own temp dir · runs `/Applications/Google Chrome.app/Contents` — not a known-local command · runs `pkill -9 -f 'user-data-dir=${profile}'` — a ${…} spliced in before the shell parses: its stages cannot be read |
 | `checks/claims-the-floor-is-read-only-from-a-permitted-survey.mjs` | outbound | imports cartograph/fetch-bathymetry.mjs, which can: writeFileSync, mkdirSync, deletes files, imports cartograph/io.js, which can: writeFileSync, imports cartograph/elevationSources.mjs, which can: calls fetch() |
-| `checks/claims-the-focus-matte-draws-after-the-environment.mjs` | unreadable | writeFileSync · deletes files · computed import() with no readable target — runs arbitrary modules |
 | `checks/claims-the-focus-object-is-everything-hung-on-it.mjs` | unreadable | imports vite — its server resolves localhost over DNS (caught by the no-network guard) · imports package(s) vite — not read from source |
 | `checks/claims-the-kerb-along-the-water-is-the-coast-line.mjs` | unreadable | writeFileSync · deletes files · computed import of a temp-dir module, and not every write is shown to stay in its temp dir · computed import() with no readable target — runs arbitrary modules · declares @args --slot=<granted> |
 | `checks/claims-the-kit-bundle-names-no-town.mjs` | unreadable | importSource of scripts/kit-bundle-set.mjs — read, safe · computed import of src/instances/registry.js — read, safe · runs `git` — not a known read-only git subcommand |
@@ -211,7 +210,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-deadend-look.mjs` | RENDER THE NINE. Read-only. |
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 
-## safe — 384. This is `npm test`.
+## safe — 385. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -520,6 +519,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-the-ease-is-the-corner.mjs` | ⭐⭐⭐ THE EASE IS THE CORNER TEST. `iaCorner` used to be "① TURNS *and* the owner changes" — a |
 | `checks/claims-the-fade-tracks-the-active-disc.mjs` | WHOSE CIRCLE IS THE MAP FADING OVER? |
 | `checks/claims-the-far-shore-is-not-built-at-load.mjs` | NO GEOMETRY IS GENERATED FROM THE GROUND ON THE MAIN THREAD WITHOUT A CAMERA. |
+| `checks/claims-the-focus-matte-draws-after-the-environment.mjs` | DOES EVERYTHING HUNG ON A HERO DRAW AFTER ITS TOWN'S ENVIRONMENT? |
 | `checks/claims-the-frame-makes-no-intersection.mjs` | IS EVERY `ribbons.intersections` ENTRY A PLACE WHERE STREETS MEET? |
 | `checks/claims-the-frame-owns-only-the-frame.mjs` | CLAIM — ON ①'S BLOCK RINGS, THE FRAME (`__boundary__`) OWNS ONLY EDGES THAT LIE ON THE FRAME. The frame is the bb rectangle |
 | `checks/claims-the-ground-covers-every-block.mjs` | CLAIM — THE GROUND COVERS EVERY BLOCK: nothing inside a block is painted by NOBODY. |

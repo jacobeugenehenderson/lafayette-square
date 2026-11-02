@@ -2,9 +2,9 @@
   "generated_by": "node checks/tier.mjs --json",
   "total": 560,
   "counts": {
-    "safe": 384,
+    "safe": 385,
     "local-effect": 32,
-    "live": 144
+    "live": 143
   },
   "checks": [
     {
@@ -3403,12 +3403,9 @@
     },
     {
       "file": "checks/claims-the-focus-matte-draws-after-the-environment.mjs",
-      "tier": "live",
-      "reasonClass": "unreadable",
+      "tier": "safe",
       "why": [
-        "writeFileSync",
-        "deletes files",
-        "computed import() with no readable target — runs arbitrary modules"
+        "importSource of src/lib/drawOrder.js — read, safe"
       ]
     },
     {

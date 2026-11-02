@@ -22,10 +22,10 @@
 // (f) no failure report → 4 · (g) the orders not keyed by town → 1 · (h) the enforcer run once, at mount → 4.
 //   node checks/claims-the-focus-matte-draws-after-the-environment.mjs [--mutants]
 // Read-only. Exits 1 on a failing judge or a GREEN mutant; 2 if only judge 2 could not run (no baked grounds here).
-import { readFileSync, readdirSync, existsSync, writeFileSync, mkdtempSync, rmSync } from 'node:fs'
+import { readFileSync, readdirSync, existsSync } from 'node:fs'
 import { join, dirname } from 'node:path'
-import { tmpdir } from 'node:os'
-import { fileURLToPath, pathToFileURL } from 'node:url'
+import { fileURLToPath } from 'node:url'
+import { importSource } from './_importSource.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const read = (p) => readFileSync(join(ROOT, p), 'utf8')
@@ -35,9 +35,8 @@ const SRC = {
   ground: read('src/components/BakedGround.jsx'), neon: read('src/components/NeonBands.jsx'),
   rain: read('src/components/weather/RainParticles.jsx'), snow: read('src/components/weather/SnowParticles.jsx'),
 }
-const tmp = mkdtempSync(join(tmpdir(), 'matte-order-'))
-let n = 0
-const load = async (orderSrc) => { const f = join(tmp, `drawOrder-${++n}.mjs`); writeFileSync(f, orderSrc); return import(pathToFileURL(f).href) }
+// drawOrder.js run through the one sanctioned loader; a mutant is its text, transformed. A module's state is fresh per text.
+const load = (orderSrc) => importSource('src/lib/drawOrder.js', { transform: () => orderSrc })
 
 // ── 1 · the order, run ───────────────────────────────────────────────────────
 async function judgeOrder(orderSrc) {
@@ -128,5 +127,4 @@ if (process.argv.includes('--mutants')) {
     else { bad++; console.log(`    ⛔ GREEN ${name} → ${judge} did not catch it`) }
   }
 }
-rmSync(tmp, { recursive: true, force: true })
 process.exit(bad ? 1 : unjudged ? 2 : 0)
