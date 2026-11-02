@@ -41,7 +41,8 @@ import { makeRevetmentMaterial } from './revetmentMaterial.js'
 import { boulderPalette } from '../lib/boulderGeometry.js'
 import { revetmentDrape, drapeLattices, drapeRelative, FAR_OCTAVES, NEAR_OCTAVES, VERTS_PER_WAVELENGTH } from '../lib/revetmentDrape.js'
 import { decodeFarChunk } from '../lib/farQuant.js'
-import { shoreContext, chunkStones, drapeChunks, CHUNK_M } from '../lib/shoreChunks.js'
+import { drapeChunks, CHUNK_M } from '../lib/shoreChunks.js'
+import { stonesOf, retainStones, stoneContext, nearSignature } from '../lib/revetmentNear.js'
 import { revetmentFaces, loadRevetment, loadRevetmentFar, loadRevetmentFarUnseen, toeFromBaked, chunkBox } from '../lib/revetmentFromSlab.js'
 import { overheadResolves } from '../lib/cameraRegimes.js'
 import { useTownShot } from './townContext.js'
@@ -198,13 +199,16 @@ export default function SlabRevetment({ lookId, bakeLastMs, visible = true }) {
         const m = f.poly[Math.min(f.poly.length - 1, Math.round(((a + b) / 2 / (G.nAlong - 1)) * (f.poly.length - 1)))]
         return m || f.poly[0]
       })
-      const ctx = shoreContext({ poly: f.poly, crestAt: f.crestAt, taperAt: f.taperAt, toeAt: f.toeAt, berm: f.berm, groundAt: f.groundAt, waterY: f.waterY, oversample: 10, paletteSize: palette.length, seed: doc.seed })
-      return { ...f, G, G1, ranges, at, ctx, step: doc.far.quant.step, cache: new Map() }
+      const ctx = stoneContext(f, { paletteSize: palette.length, seed: doc.seed })
+      // `cache`: the drape per chunk · `stones`: the stones per stone chunk (revetmentNear.js#stonesOf). Both are cleared by
+      // exactly what rebuilds the faces: this memo's [doc, palette, groundGen].
+      return { ...f, G, G1, ranges, at, ctx, step: doc.far.quant.step, cache: new Map(), stones: new Map() }
     })
   }, [doc, palette, groundGen])
 
   const [built, setBuilt] = useState({ drape: [], stones: [], nearKeys: new Set() })
   const lastAt = useRef(null)
+  const lastSet = useRef(null)          // { faces, sig, stoneAt }: what `built` was made from, so an unchanged near set hands React nothing
 
   // ── THE FAR LAYER — the whole armoured shore, always, at every distance ─────
   // ⭐ BAKED, mounted here as views on the fetched bins: one mesh per chunk of the near layer's lattice, so a near chunk
@@ -268,7 +272,7 @@ export default function SlabRevetment({ lookId, bakeLastMs, visible = true }) {
       return overheadResolves(camera, viewH, frustum, _c, Math.hypot(x1 - x0, y1 - y0, z1 - z0) / 2, info.d50, VERTS_PER_WAVELENGTH)
     }
 
-    const drape = [], stones = [], nearKeys = new Set()
+    const drape = [], nearKeys = new Set(), stoneAt = []
     for (const f of faces) {
       const chosen = new Set()
       for (let k = 0; k < f.ranges.length; k++) {
@@ -280,7 +284,7 @@ export default function SlabRevetment({ lookId, bakeLastMs, visible = true }) {
           } catch (e) { console.error(`[revetment] drape chunk ${f.key}#${k} failed —`, e); continue }
         }
         const built = f.cache.get(k)
-        if (built?.stats?.tris) { drape.push(built); nearKeys.add(`${f.key}#${k}`) }
+        if (built?.stats?.tris) { drape.push({ key: `${f.key}#${k}`, geometry: built.geometry }); nearKeys.add(`${f.key}#${k}`) }
       }
       // Stones, where a drape chunk their span overlaps is chosen. A stone chunk spans the arc [ci·CHUNK_M, (ci+1)·CHUNK_M]
       // (shoreChunks.js; the last is short), a drape chunk the arc of its stations: matched by ARC LENGTH, never by the
@@ -293,10 +297,18 @@ export default function SlabRevetment({ lookId, bakeLastMs, visible = true }) {
         let any = false
         for (let k = kAt(sA); k <= kAt(sB) && !any; k++) any = chosen.has(k)
         if (!any) continue
-        // ground-relative, like the drape: the drawn ground's two parts ride along as `ground` + `groundY` (the lift's aGround)
-        for (const st of chunkStones(f.ctx, ci, 2)) { const g = drawnGroundParts(st.p[0], st.p[2]); stones.push({ ...st, p: [st.p[0], st.p[1] - g.raw - g.y, st.p[2]], ground: g.raw, groundY: g.y }) }
+        stoneAt.push([f, ci])
       }
     }
+    // ⭐ AN UNCHANGED NEAR SET HANDS REACT NOTHING: same faces, same drape chunks, same stone chunks → the same `built`.
+    const sig = nearSignature([...nearKeys], stoneAt.map(([f, ci]) => `${f.key}@${ci}`))
+    if (lastSet.current && lastSet.current.faces === faces && lastSet.current.sig === sig) return
+    // ground-relative, like the drape: built once per stone chunk and kept on the face while it is in this near set or the
+    // one before (revetmentNear.js#stonesOf, #retainStones)
+    const stones = []
+    for (const [f, ci] of stoneAt) for (const st of stonesOf(f, ci, drawnGroundParts)) stones.push(st)
+    retainStones(faces, stoneAt, lastSet.current?.stoneAt)
+    lastSet.current = { faces, sig, stoneAt }
     setBuilt({ drape, stones, nearKeys })
   })
 
@@ -311,8 +323,8 @@ export default function SlabRevetment({ lookId, bakeLastMs, visible = true }) {
         <mesh key={`far-${m.key}`} geometry={overhead ? m.band : m.far} material={drapeMaterial}
           visible={!built.nearKeys?.has(m.key)} receiveShadow />
       ))}
-      {built.drape.map((d, i) => (
-        <mesh key={i} geometry={d.geometry} material={drapeMaterial} customDepthMaterial={drapeDepth} castShadow receiveShadow />
+      {built.drape.map(d => (
+        <mesh key={d.key} geometry={d.geometry} material={drapeMaterial} customDepthMaterial={drapeDepth} castShadow receiveShadow />
       ))}
       {!!built.stones.length && (
         <InstancedBoulders palette={palette} instances={built.stones} material={stoneMaterial} depthMaterial={stoneDepth} />

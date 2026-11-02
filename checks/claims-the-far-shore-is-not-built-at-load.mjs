@@ -303,7 +303,7 @@ if (process.argv.includes('--mutants')) {
   let alive = 0
   // ⭐ Zob: the far build moved INTO the near useFrame — a hook that reads the camera, where the build used to live. The camera
   // must select what is built there, so this is RED too.
-  const nearAnchor = '    const drape = [], stones = [], nearKeys = new Set()\n'
+  const nearAnchor = '    const drape = [], nearKeys = new Set(), stoneAt = []\n'
   if (!src.includes(nearAnchor)) throw new Error('⛔ near-useFrame mutant anchor gone from SlabRevetment.jsx')
   const INTO = nearAnchor + `    for (const f of faces) groundRelative(revetmentDrape({ poly: f.poly, crestAt: f.crestAt, toeAt: f.toeAt, berm: f.berm, groundAt: f.groundAt, waterY: f.waterY, globals: f.G1 }))\n`
   for (const [name, s2] of [['the far useFrame restored', src.replace(anchor, FAR + anchor)], ['the far build gated by a timer', src.replace(anchor, TIMER + anchor)],
