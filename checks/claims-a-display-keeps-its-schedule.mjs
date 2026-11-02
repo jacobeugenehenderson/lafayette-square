@@ -21,7 +21,7 @@
  *      kelvin) and every date's showtimes (Zob 2); a pre-display slab plays its declared displays on the default, a
  *      displays block missing one is refused;
  *   7. KEPT: the year cache (keyed by place values, frozen, consecutive dates), SLOT_DAY_MOVE_MAX_MIN's one home, the
- *      clock-change reader (townClockChange: New York, Lord Howe, London, Santiago at midnight).
+ *      clock-change reader Stage's Tonight says (townClockChange: New York, Lord Howe, London, Santiago at midnight).
  * Usage: node checks/claims-a-display-keeps-its-schedule.mjs [--mutants]
  */
 import { execFileSync } from 'node:child_process'

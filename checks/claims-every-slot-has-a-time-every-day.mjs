@@ -9,7 +9,7 @@
  *   1. every slot has a finite minute (never null), and the slots keep the day's own order from the nadir round
  *      (dawn ≤ sunrise ≤ noon ≤ golden ≤ sunset ≤ dusk ≤ night, a setting slot met at the nadir being the day's end);
  *   2. a slot moves smoothly with the date: no day-to-day jump beyond todSlots.js#SLOT_DAY_MOVE_MAX_MIN (its one home; a
- *      show window's judgement rests on it, showChannel.js#refuseWindowSense), the worst printed;
+ *      display schedule's judgement rests on it, showSchedule.js#refuseScheduleSense), the worst printed;
  *   3. a slot the sun does not reach sits at its closest approach: on a polar night (80°N, Dec 21) Dusk and Dawn at
  *      noon; on a white night (80°N, Jun 21) at the nadir; at 62°N, Jun 21 Sunset is real while Dusk and Dawn are
  *      at the nadir;
