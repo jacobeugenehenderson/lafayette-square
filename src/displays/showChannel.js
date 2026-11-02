@@ -29,7 +29,7 @@ export const DISPLAY_CHANNEL_FIELDS = ['glow', 'show', 'kelvin']
 /** The editor's faders (Stage › Displays, cartograph/TodChannel.jsx). WHEN is the Schedule block's, not a fader's. */
 export const DISPLAY_FIELDS = [
   { key: 'glow',   label: 'Ambient',        min: 0,    max: 4,    step: 0.02, title: 'The Ambient light between shows' },
-  { key: 'show',   label: 'Show',           min: 0,    max: 4,    step: 0.02, title: 'The show\'s brightness; 0 is no show' },
+  { key: 'show',   label: 'Show',           min: 0,    max: 4,    step: 0.02, title: 'The show\'s brightness (0 plays dark; the Schedule says when)' },
   { key: 'kelvin', label: 'Ambient colour', min: 1800, max: 6500, step: 50,   unit: ' K', title: 'Ambient\'s colour temperature' },
 ]
 const DAY = 1440

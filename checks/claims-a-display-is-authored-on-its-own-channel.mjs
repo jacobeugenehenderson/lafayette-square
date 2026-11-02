@@ -157,7 +157,8 @@ async function verdict({ chan, param, view, bake, eng, mount, pin, hook, manifes
   const tw = w('src/components/Town.jsx')
   F(/'setPieceLight', 'displays',/.test(tw) && /displaysOverride=\{o\.displays\}/.test(tw), '<Town> does not take overrides.displays to <SetPiece>')
   F(/channels=\{displaysOverride\}/.test(w('src/components/SetPiece.jsx')), '<SetPiece> does not hand Stage\'s channels to <Displays>')
-  F(/<DisplayChannel display=\{d\} \/>/.test(sa) && /onSetValue=\{\(key, value, slotId\) => setValue\(id, key, value, slotId\)\}/.test(sa) && /fields=\{DISPLAY_FIELDS\}/.test(sa) && /channel=\{read\.channel\}\s*noEdges/.test(sa), "Stage's Displays section has no channel card per display (its keys without ▲/▼), or it is not wired to the store")
+  const lit = sa.slice(sa.indexOf('function DisplayChannel('), sa.indexOf('const CAPTION = '))
+  F(/<DisplayChannel display=\{d\} \/>/.test(sa) && /DISPLAY_FIELDS\.map\(f => \(/.test(lit) && /onChange=\{\(v\) => put\(\(\) => setValue\(id, f\.key, v, selected\)\)\}/.test(lit) && !/<TodChannel/.test(lit), "Stage's Displays section has no Lit card per display editing the selected key's levels through the store (not TodChannel: no ▲/▼, no clock-scrubbed chips)")
   // 10. HH:MM
   let badClock = null
   for (let t = -1; t <= 1441 && !badClock; t += 0.1) {
@@ -209,7 +210,7 @@ if (process.argv.includes('--mutants')) {
     ['a level below 0 accepted', { chan: (s) => s.replace('if (k.glow < 0 || k.show < 0) throw', 'if (false) throw') }],
     ['a new key seeded with nothing', { store: (s) => s.replace('[slotId]: levelsAt(ch, sm[slotId], sm) }', '[slotId]: { glow: 0, show: 0, kelvin: 3000 } }') }],
     ['the gesture not judging the schedule', { store: (s) => s.replace('      refuseScheduleSense(next, getTodSlotDaysAhead(useTimeOfDay.getState().currentTime, 366), runSeconds, where)\n', '') }],
-    ['the Lit card offering ▲/▼ on a display', { stage: (s) => s.replace('channel={read.channel}\n      noEdges', 'channel={read.channel}') }],
+    ['a slider writing a key not selected', { stage: (s) => s.replace('onChange={(v) => put(() => setValue(id, f.key, v, selected))}', 'onChange={(v) => put(() => setValue(id, f.key, v, keys[0]))}') }],
     ['HH:MM split before rounding (19:60)', { eng: (s) => s.replace("export const hhmm = (minute) => { const m = (Math.round(minute) % DAY_MIN + DAY_MIN) % DAY_MIN; return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}` }", "export const hhmm = (m) => `${String(Math.floor(m / 60) % 24).padStart(2, '0')}:${String(Math.round(m % 60)).padStart(2, '0')}`") }],
     ['an edit written without validation', { store: (s) => s.replace('[id]: validateDisplayChannel(next, where) }', '[id]: next }') }],
     ['the last key removable', { store: (s) => s.replace(' || Object.keys(ch.values).length < 2) return null', ') return null') }],

@@ -25,7 +25,7 @@ const code = (t) => t.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, 
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b)
 const PT = { lat: 42.0525, lon: -70.1886, tz: 'America/New_York' }
 
-async function verdict({ card, sched, view } = {}) {
+async function verdict({ card, sched, view, store } = {}) {
   const fails = [], F = (c, m) => { if (!c) fails.push(m) }
   const schedRedirect = { 'src/displays/showSchedule.js': sched ? { transform: sched } : {} }
   const S = await importSource('src/displays/showChannel.js', { redirect: schedRedirect })
@@ -34,7 +34,7 @@ async function verdict({ card, sched, view } = {}) {
   const K = await importSource('src/stage/scheduleCard.js', { ...(card ? { transform: card } : {}), redirect: schedRedirect })
   const ST = await importSource('src/cartograph/stores/useCartographStore.js', { span: { functions: ['displayChannelActions'] },
     prefix: "import { defaultDisplayChannel, validateDisplayChannel } from '../../displays/showChannel.js'\nimport { levelsAt, refuseShortCadence, refuseScheduleSense } from '../../displays/showSchedule.js'\nimport { NAMED_TOD_SLOTS_BY_ID } from '../animatedParam.js'\nimport { todSlotDays } from '../../lib/todSlots.js'\nconst getTodSlotMinutes = () => null\nconst getTodSlotDaysAhead = (from, n) => todSlotDays({ lat: 42.0525, lon: -70.1886, tz: 'America/New_York' }, new Date('2026-11-02T17:00:00Z'), n)\nconst useTimeOfDay = { getState: () => ({ currentTime: new Date(0) }) }\n",
-    suffix: '\nexport { displayChannelActions }', redirect: schedRedirect })
+    suffix: '\nexport { displayChannelActions }', redirect: schedRedirect, ...(store ? { transform: store } : {}) })
   let state = { displays: {} }
   const set = (f) => { const r = f(state); if (r !== state) state = { ...state, ...r } }
   const A = ST.displayChannelActions(set, () => ({ _saveDesignDebounced: () => {} }))
@@ -101,6 +101,14 @@ async function verdict({ card, sched, view } = {}) {
   fresh(published)
   try { A.setDisplaySchedule('m', K.addEvent(cardList(), today), SECS); F(saved().length === 2 && same(saved()[1].shows, { first: '21:00', last: '21:00', every: 60 }), 'the dated event is not saved') } catch (e) { F(false, `a dated event of one show (first = last) is refused (${String(e.message).slice(0, 160)})`) }
   F(K.clockTyped('0:00') === '00:00' && K.clockTyped('23:59') === '23:59' && K.clockTyped('24:00') === null && K.clockTyped('8pm') === null, 'a typed time is not read as HH:MM (or a bad one accepted)')
+  // 6. THE KEYS (Jacob, 2026-11-02: one home, the levels on the keys he made): keyed in the day's order, "+ key at" the rest;
+  // adding a key seeds it with the levels there, and editing one key leaves every other key as it was
+  F(same(K.keyedSlots({ sunset: 1, dawn: 1, golden: 1 }), ['dawn', 'golden', 'sunset']) && same(K.unkeyedSlots({ dawn: 1, golden: 1, sunset: 1 }), ['sunrise', 'noon', 'dusk', 'night', 'deep']), `the keys are not the keyed slots in the day's order, with the rest offered (${K.keyedSlots({ dawn: 1, golden: 1, sunset: 1 })}; ${K.unkeyedSlots({ dawn: 1, golden: 1, sunset: 1 })})`)
+  fresh(now)
+  const others = JSON.stringify(state.displays.m.values)
+  A.setDisplayValue('m', 'glow', 0.4, 'sunset')
+  const v = state.displays.m.values, was = JSON.parse(others)
+  F(v.sunset.glow === 0.4 && v.sunset.show === was.sunset.show && v.sunset.kelvin === was.sunset.kelvin && same(v.dawn, was.dawn) && same(state.displays.m.schedule, now.schedule), `editing one key's level changes more than that level (${JSON.stringify(v)})`)
   // 5. wired
   const sa = code(view ? view(sourceOf('src/stage/StageApp.jsx')) : sourceOf('src/stage/StageApp.jsx'))
   const block = sa.slice(sa.indexOf('const CAPTION = '), sa.indexOf('function LanternChannel'))
@@ -109,8 +117,12 @@ async function verdict({ card, sched, view } = {}) {
   F(!/<select|type="time"|type="number"/.test(block), 'the card uses a native select, time or number input (not the panel\'s controls)')
   F(/<Pill on=\{showClock\} title=\{`\$\{label\}: a time on the town's clock`\} onClick=\{\(\) => setClockOpen\(true\)\}>clock<\/Pill>/.test(block), '"clock" writes something (it must only open the time)')
   F(/>Remove Ambient<\/Action>/.test(block) && />Remove shows<\/Action>/.test(block) && />\+ Add shows<\/Action>/.test(block) && !/>\s*none[^<]*</.test(block), 'removing is not an action worded as a verb, or "none" is shown')
-  F(/<Tonight display=\{display\} channel=\{read\.channel\} \/>\s*<ScheduleBlock display=\{display\} channel=\{read\.channel\} \/>/.test(sa) && /const t = useMemo\(\(\) => tonightOf\(channel, D, secs, getTodSlotRow\), \[channel, D, secs\]\)/.test(sa) && !/TonightStrip/.test(sa), 'Tonight is not on the Lit card above the Schedule, drawn from tonightOf')
+  F(/<Tonight display=\{display\} channel=\{read\.channel\} keys=\{keys\}[\s\S]*<ScheduleBlock display=\{display\} channel=\{read\.channel\} \/>/.test(sa) && /const t = useMemo\(\(\) => tonightOf\(channel, D, secs, getTodSlotRow\), \[channel, D, secs\]\)/.test(sa) && !/TonightStrip/.test(sa), 'Tonight is not on the Lit card above the levels and the Schedule, drawn from tonightOf')
   F(/return townClockChange\(noon\(D\), noon\(nextDate\(D\)\)\)/.test(sa) && /\{clock && <div className="text-caption" style=\{CAPTION\}>\{clock\}<\/div>\}/.test(sa), "Tonight does not say tonight's clock change (townClockChange, noon to noon)")
+  const lit = sa.slice(sa.indexOf('function DisplayChannel('), sa.indexOf('const CAPTION = '))
+  F(/const values = read\.channel\.values, keys = keyedSlots\(values\), selected = keys\.includes\(picked\) \? picked : keys\[0\]/.test(lit) && /keys\.map\(s => <Pill key=\{s\} on=\{s === selected\}[^>]*onClick=\{\(\) => setPicked\(s\)\}>/.test(lit), 'the keys are not picked by name (the levels shown are not the picked key\'s)')
+  F(/unkeyedSlots\(values\)\.map\(s => <Action key=\{s\}[^>]*onClick=\{\(\) => put\(\(\) => \{ addSlot\(id, s\); setPicked\(s\) \}\)\}>/.test(lit) && /\{keys\.length > 1 && <Action danger[^>]*onClick=\{\(\) => put\(\(\) => removeSlot\(id, selected\)\)\}>Remove key<\/Action>\}/.test(lit), '"+ key at" does not add and pick the slot, or "Remove key" is offered on the last key')
+  F(/<Tonight display=\{display\} channel=\{read\.channel\} keys=\{keys\} selected=\{selected\} onSelect=\{setPicked\} \/>/.test(lit) && /keys\.map\(s => \{\s*const m = getTodSlotRow\(D\)\[s\], on = s === selected/.test(sa) && /onClick=\{\(\) => onSelect\?\.\(s\)\}/.test(sa), 'Tonight does not mark the keys at their times tonight, or a marker does not pick its key')
   return fails
 }
 
@@ -129,8 +141,13 @@ if (process.argv.includes('--mutants')) {
     ['a refusal not left on the card', { view: (s) => s.replace('setTried({ list: next, reason: plainReason(e) })', 'setTried(null)') }],
     ['remove shown as "none"', { view: (s) => s.replace('>Remove shows</Action>', '>none</Action>') }],
     ['an edit made inline', { view: (s) => s.replace("onChange={(v) => put(setShows(list, i, 'every', v))}", "onChange={(v) => put(list.map((x, j) => j === i ? { ...x, shows: { ...x.shows, every: v } } : x))}") }],
-    ['Tonight not on the card', { view: (s) => s.replace('      <Tonight display={display} channel={read.channel} />\n', '') }],
+    ['Tonight not on the card', { view: (s) => s.replace('      <Tonight display={display} channel={read.channel} keys={keys} selected={selected} onSelect={setPicked} />\n', '') }],
     ['Tonight silent on a clock change', { view: (s) => s.replace('      {clock && <div className="text-caption" style={CAPTION}>{clock}</div>}\n', '') }],
+    ['a key edit writing every key', { store: (s) => s.replace("? { ...ch, values: { ...ch.values, [slotId]: { ...ch.values[slotId], [key]: value } } } : null", "? { ...ch, values: Object.fromEntries(Object.entries(ch.values).map(([k, x]) => [k, { ...x, [key]: value }])) } : null") }],
+    ['the keys out of the day\'s order', { card: (s) => s.replace('export const keyedSlots = (values) => TOD_SLOT_IDS.filter(id => id in values)', 'export const keyedSlots = (values) => Object.keys(values)') }],
+    ['"+ key at" not picking the new key', { view: (s) => s.replace('onClick={() => put(() => { addSlot(id, s); setPicked(s) })}', 'onClick={() => put(() => { addSlot(id, s) })}') }],
+    ['the last key removable', { view: (s) => s.replace('{keys.length > 1 && <Action danger', '{<Action danger') }],
+    ['a marker not picking its key', { view: (s) => s.replace('onClick={() => onSelect?.(s)}', 'onClick={() => {}}') }],
     ['a native select', { view: (s) => s.replace('<span style={SUBHEAD}>Schedule</span>', '<span style={SUBHEAD}>Schedule</span><select />') }],
   ]
   let bad = 0
