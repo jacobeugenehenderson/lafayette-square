@@ -33,7 +33,6 @@ import { buildCells, planesOf, visibleCells, sameSet, windReachM, floorReachPx, 
 import { treeWindUniforms } from './treeAtlasMaterial.js'
 import { terrainExag } from '../utils/terrainShader.js'
 import { getLiveWind, WIND_SPRING } from '../lib/windSheet.js'
-import { getSceneStencil } from './sceneStencilState.js'
 
 // ⭐ THE CARD STACK — canopy <> trunk/branches <> canopy.
 // Jacob's intended design is a SANDWICH: the trunk sits BETWEEN two canopy
@@ -189,10 +188,9 @@ const _q = (k, d) => {
 // hides. ⛔ AMPLITUDE IS FREE — the Look's treeWind figures are uniforms, so
 // a coarser grid is compensated by turning Amplitude UP, not by more triangles.
 const _PV = new THREE.Matrix4()
-// The disc the cells tile: the town's stencil radius when the ground has published it, else this draw's own extent.
+// The extent the cells tile: this draw's OWN instances, always (Zob, 2026-11-02): the cells partition the instances, so their
+// bounds are the input — never the town's stencil, which would make a fresh pour and a published town partition differently.
 function discRadiusOf(list) {
-  const st = getSceneStencil()
-  if (st?.radius > 0) return st.radius
   let r = 0, cx = 0, cz = 0
   for (const t of list) { cx += t.x; cz += t.z } cx /= Math.max(1, list.length); cz /= Math.max(1, list.length)
   for (const t of list) r = Math.max(r, Math.hypot(t.x - cx, t.z - cz))

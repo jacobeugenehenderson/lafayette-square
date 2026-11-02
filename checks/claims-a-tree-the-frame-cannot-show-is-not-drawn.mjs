@@ -15,7 +15,7 @@
 //       reflection camera in src/components. Whoever adds either meets the cull's premise in this failure.
 // ⭐ MUTANTS (--mutants), each must go RED: (a) a constant cell edge → 1 · (b) no wind margin → 1 · (c) no pixel margin → 1 ·
 // (d) the shader's lean changed, the factor not → 2 · (e) a rewrite every frame → 3 · (f) a tree mount casting shadows → 4 ·
-// (g) the spring overshoot dropped → 2.
+// (g) the spring overshoot dropped → 2 · (h) the cell size read from the stencil when it is published → 3.
 //   node checks/claims-a-tree-the-frame-cannot-show-is-not-drawn.mjs [--mutants]
 // Read-only. Exits 1 on any failing judge or any mutant left GREEN.
 import { readFileSync, readdirSync } from 'node:fs'
@@ -72,6 +72,8 @@ function judgeWiring(S) {
   if (!/useTownFrame\(\(\{ camera, gl \}\) => \{[\s\S]*visibleCells\(d\.cells, planes,[\s\S]*\}, undefined, 'hero impostor cull'\)/.test(he)) why.push('HeroImpostorTrees does not test its cells in a frame callback')
   if (!/if \(sameSet\(vis, d\.vis\)\) continue/.test(he)) why.push('the buffers are rewritten without checking the visible set changed (a rewrite every frame of a flight)')
   if (!/im\.count = n/.test(he)) why.push('the draw is not limited to the visible instances (im.count)')
+  const disc = (he.match(/function discRadiusOf\(list\) \{[\s\S]*?\n\}/) || [''])[0]
+  if (!disc || /Stencil|stencil/.test(disc) || /getSceneStencil/.test(he)) why.push('the cells are sized from something other than the draw\'s own instances (one source: a fresh pour and a published town must partition alike)')
   if (!/if \(!treeCull\.on \|\| treeDbg\('noCull'\)\)/.test(he) || !/im\.count = d\.full\.n/.test(he)) why.push('the off switch does not restore every instance')
   return why
 }
@@ -104,6 +106,7 @@ if (process.argv.includes('--mutants')) {
     ['d · the shader\'s lean changed, the factor not', 2, () => judgeBound({ ...SRC, atlas: sub(SRC.atlas, 'transformed.xz += hula + ovDir * (amp * 0.7);', 'transformed.xz += hula + ovDir * (amp * 1.2);') })],
     ['e · a rewrite every frame', 3, () => judgeWiring({ ...SRC, hero: sub(SRC.hero, 'if (sameSet(vis, d.vis)) continue', '') })],
     ['f · a tree mount casting shadows', 4, () => judgeAssumption({ ...SRC, hero: sub(SRC.hero, 'castShadow={false}', 'castShadow={true}') }, comps)],
+    ['h · the cell size read from the stencil when published', 3, () => judgeWiring({ ...SRC, hero: sub(SRC.hero, 'function discRadiusOf(list) {\n  let r = 0', 'function discRadiusOf(list) {\n  const st = getSceneStencil()\n  if (st?.radius > 0) return st.radius\n  let r = 0') })],
     ['g · the spring overshoot dropped', 2, () => judgeBound({ ...SRC, hero: sub(SRC.hero, ' * (1 + Math.exp(-z * Math.PI / Math.sqrt(1 - z * z)))', '') })],
   ]
   console.log('\n  mutants:')
