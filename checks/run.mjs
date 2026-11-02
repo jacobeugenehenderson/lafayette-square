@@ -15,6 +15,19 @@
  * ▶ npm run test:all          — `safe` + `local-effect`. Writes to disk; ⛔ not for CI.
  * ▶ npm run test:live         — the `live` tier. ⛔ HITS PRODUCTION. Requires CHECKS_LIVE=i-mean-it.
  * ▶ npm test -- --list        — print what would run, run nothing.
+ * ▶ npm test -- --record      — the safe tier, and its rows recorded as the BASE for this tree (below).
+ * ▶ npm test -- --against <rev> — the safe tier, each red said as before AND judged against <rev>'s record: a red that is
+ *                                new, changed, newly unmeasured or gone fails the run; the reds <rev> already had do not.
+ *
+ * ⭐ RED-BEFORE vs RED-NEW (Boz, 2026-11-01): the base is MEASURED, never authored (a committed list of known reds would
+ *    be a skip list). `--record` writes `.claude/check-runs/<tree>.json` in the MAIN checkout (so it outlives a throwaway
+ *    worktree), keyed by the commit's TREE: a dry-run merge committed in a throwaway worktree and the real merge share a
+ *    tree, so the dry run's record is the new tip's. Each row: label, bucket, and sha1 of stdout and of stderr APART
+ *    (their interleave varies under load, measured) with the root path replaced by <ROOT>. The record also carries the
+ *    DATA it ran on (public/baked, photos, trees: every file's path, size and mtime, hashed), because 51 of 105 reds
+ *    measured on 2026-11-01 change without that data. `--against` refuses, by name: no record for <rev>; a record taken
+ *    on a dirty tree; <rev> not an ancestor of HEAD; the data changed since the record. ▶ checks/_redsDelta.mjs,
+ *    node checks/claims-a-merge-cannot-hide-a-red.mjs [--mutants].
  *
  * EXIT CODES A CHECK MAY USE — the corpus's own convention, now honoured:
  *   0  the claim held.
@@ -24,11 +37,14 @@
  *   1 (or anything else)  the claim is false. A FINDING, not a runner bug.
  * The suite reports; it does not fix.
  */
-import { spawn } from 'node:child_process'
+import { spawn, execFileSync } from 'node:child_process'
+import { createHash } from 'node:crypto'
+import { mkdirSync, writeFileSync, existsSync, readdirSync, statSync } from 'node:fs'
+import { redsDelta, blockingCount, deltaLines } from './_redsDelta.mjs'
 import { cpus } from 'node:os'
 import { fileURLToPath } from 'node:url'
 import { readFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { join, dirname } from 'node:path'
 import { classifyAll, claimOf, blockedReason, bucketOf, runsFor, ROOT } from './tier.mjs'
 import { tiersDrift, driftCount, driftLines } from './_tiersDrift.mjs'
 
@@ -43,6 +59,13 @@ const GUARD = fileURLToPath(new URL('./_no-network.mjs', import.meta.url))
 const argv = process.argv.slice(2)
 const want = argv.includes('--live') ? 'live' : argv.includes('--all') ? 'all' : 'safe'
 const LIST = argv.includes('--list')
+const RECORD = argv.includes('--record')
+const AGAINST = argv.includes('--against') ? argv[argv.indexOf('--against') + 1] : null
+const ACCEPTED = argv.filter(a => a.startsWith('--accept-removed=')).map(a => a.slice('--accept-removed='.length))
+if (ACCEPTED.length && !argv.includes('--against')) { console.error('⛔ --accept-removed is a merger\'s word on one --against run; it means nothing alone'); process.exit(2) }
+if ((RECORD || argv.includes('--against')) && want !== 'safe') { console.error('⛔ --record and --against are the safe tier\'s: the base is what `npm test` runs'); process.exit(2) }
+if (argv.includes('--against') && (!AGAINST || AGAINST.startsWith('--'))) { console.error('⛔ --against needs the base revision: npm test -- --against <rev>'); process.exit(2) }
+if (RECORD && AGAINST) { console.error('⛔ --record and --against are two runs: record the base on its own tree, then judge a branch against it'); process.exit(2) }
 
 const all = classifyAll()
 
@@ -57,6 +80,32 @@ if (driftCount(drift)) {
   for (const l of driftLines(drift)) console.error(`   ${l}`)
   console.error('\n   ▶ npm run test:tiers, look at what moved, and commit the table with the change that moved it. Nothing was run.')
   process.exit(1)
+}
+
+// ── the base record (--record / --against) ───────────────────────────────────────────────────────────────────────
+const git = (...a) => execFileSync('git', a, { cwd: ROOT, encoding: 'utf8' }).trim()
+const RUNS_DIR = join(dirname(git('rev-parse', '--path-format=absolute', '--git-common-dir')), '.claude/check-runs')
+const DATA_ROOTS = ['public/baked', 'public/photos', 'public/trees']
+/** The data a run reads beside the tree: every file under the linked roots (symlinks followed), by path, size, mtime. */
+function dataPrint() {
+  const h = createHash('sha1'), files = {}
+  const walk = (abs, rel, root) => { for (const e of readdirSync(abs).sort()) { const a = join(abs, e), st = statSync(a)
+    if (st.isDirectory()) walk(a, `${rel}/${e}`, root); else { files[root]++; h.update(`${rel}/${e}\t${st.size}\t${st.mtimeMs}\n`) } } }
+  for (const r of DATA_ROOTS) { files[r] = 0; h.update(`#${r}\n`); if (existsSync(join(ROOT, r))) walk(join(ROOT, r), r, r) }
+  return { hash: h.digest('hex'), files }
+}
+const dirtyTracked = () => git('status', '--porcelain', '--untracked-files=no') !== ''
+let base = null
+if (AGAINST) {
+  let tree
+  try { tree = git('rev-parse', `${AGAINST}^{tree}`) } catch { console.error(`⛔ --against ${AGAINST}: not a revision here`); process.exit(2) }
+  try { git('merge-base', '--is-ancestor', AGAINST, 'HEAD') } catch { console.error(`⛔ --against ${AGAINST}: it is not an ancestor of HEAD, so it is not this branch's base`); process.exit(2) }
+  const file = join(RUNS_DIR, `${tree}.json`)
+  if (!existsSync(file)) { console.error(`⛔ --against ${AGAINST}: no record for its tree (${tree.slice(0, 12)}). Record it on a clean checkout of ${AGAINST}: npm test -- --record`); process.exit(2) }
+  base = JSON.parse(readFileSync(file, 'utf8'))
+  if (base.dirty) { console.error(`⛔ --against ${AGAINST}: its record was taken on a dirty tree, so it is not ${AGAINST}'s. Re-record it clean`); process.exit(2) }
+  const d = dataPrint()
+  if (d.hash !== base.data?.hash) { console.error(`⛔ --against ${AGAINST}: the data changed since its record (files then ${JSON.stringify(base.data?.files)}, now ${JSON.stringify(d.files)}): data re-baked since ${AGAINST}; re-record the base on this data`); process.exit(2) }
 }
 
 const tiers = want === 'all' ? ['safe', 'local-effect'] : [want]
@@ -82,6 +131,12 @@ console.log(`${run.length} check(s) in tier(s): ${tiers.join(' + ')}   ` +
 const towns = run.some(r => r.args?.enumerate === 'town') ? (await import('./_scenes.mjs')).declaredScenes() : []
 const runs = run.flatMap(r => runsFor(r, towns))
 const declaredBlocked = run.filter(r => r.args?.unbounded)
+// ⛔ A merger's --accept-removed is judged BEFORE anything runs, by name, like every other --against refusal: it must name a
+//    check the base record ran and that this run no longer runs.
+if (base) for (const a of ACCEPTED) {
+  if (!base.rows.some(r => r.label === a)) { console.error(`⛔ --accept-removed=${a}: the base record never ran it, so there is no removal to accept`); process.exit(2) }
+  if (runs.some(r => r.label === a) || declaredBlocked.some(r => r.file === a)) { console.error(`⛔ --accept-removed=${a}: it still runs here, so it was not removed`); process.exit(2) }
+}
 if (runs.length !== run.length) console.log(`   ${runs.length} run(s): ${run.filter(r => r.args && !r.args.unbounded).length} check(s) declare @args and run once per value · ${declaredBlocked.length} declare an unbounded one (blocked)`)
 
 if (LIST) { for (const r of runs) console.log(`  ${r.label}  — ${claimOf(r.file) || '(no header claim)'}`); for (const r of declaredBlocked) console.log(`  ${r.file}  — BLOCKED: declares @args ${r.args.flag}=${r.args.unbounded}`); process.exit(0) }
@@ -105,9 +160,9 @@ const runOne = (r) => new Promise((resolve) => {
   const child = sh
     ? spawn('bash', [r.file, ...r.argv], { cwd: ROOT })
     : spawn(process.execPath, [...guard, r.file, ...r.argv], { cwd: ROOT })
-  let out = ''
-  child.stdout.on('data', d => { out += d })
-  child.stderr.on('data', d => { out += d })
+  let out = '', stdout = '', stderr = ''
+  child.stdout.on('data', d => { out += d; stdout += d })
+  child.stderr.on('data', d => { out += d; stderr += d })
   const kill = setTimeout(() => { timedOut = true; child.kill('SIGKILL') }, TIMEOUT_MS)
   let timedOut = false
   child.on('close', (code) => {
@@ -115,7 +170,7 @@ const runOne = (r) => new Promise((resolve) => {
     // ⛔ A TIMEOUT IS "NOT CHECKED", NOT "FAILED". A killed check measured nothing; filing it as a
     //    failure invents a result, and filing it as a pass would be worse (Layer 0 q2).
     process.stdout.write(timedOut ? 'T' : code === 0 ? '.' : 'F')
-    resolve({ ...r, code: timedOut ? 124 : code, timedOut, out })
+    resolve({ ...r, code: timedOut ? 124 : code, timedOut, out, stdout, stderr })
   })
 })
 
@@ -185,6 +240,39 @@ if (red.length) {
   console.log(`\n⛔ ${red.length} RED. Each is a FINDING for the board, not a runner fault:`)
   for (const r of red) console.log(`   ${r.label} (exit ${r.code})`)
 }
+// ── record, or judge against the base ─────────────────────────────────────────────────────────────────────────────
+const norm = (t) => t.split(ROOT.replace(/\/$/, '')).join('<ROOT>'), TAIL_LINES = 40
+const fp = (t) => createHash('sha1').update(norm(t)).digest('hex').slice(0, 16)
+const rowsOf = () => [
+  // A failing row also keeps its output's last lines (root-normalised), so a CHANGED red can be SHOWN, not only flagged
+  // (2026-11-02: two rows read CHANGED and the record could not say what had changed).
+  ...results.map(r => { const green = r.code === 0 && !r.timedOut
+    return { label: r.label, bucket: green ? 'green' : r.bucket, code: r.code, out: { stdout: fp(r.stdout), stderr: fp(r.stderr) },
+      ...(green ? {} : { tail: norm(r.stdout).trimEnd().split('\n').slice(-TAIL_LINES), errTail: norm(r.stderr).trimEnd().split('\n').slice(-TAIL_LINES) }) } }),
+  ...declaredBlocked.map(r => ({ label: r.file, bucket: 'blocked', code: null, out: { stdout: '', stderr: '' } })),
+].sort((a, b) => a.label.localeCompare(b.label))
+if (RECORD) {
+  const tree = git('rev-parse', 'HEAD^{tree}'), dirty = dirtyTracked()
+  mkdirSync(RUNS_DIR, { recursive: true })
+  const file = join(RUNS_DIR, `${tree}.json`)
+  writeFileSync(file, JSON.stringify({ head: git('rev-parse', 'HEAD'), tree, dirty, at: new Date().toISOString(), data: dataPrint(), rows: rowsOf() }, null, 1))
+  console.log(`\n${dirty ? '⚠️ RECORDED ON A DIRTY TREE: --against will refuse it. ' : ''}recorded ${results.length} run(s) as the base for tree ${tree.slice(0, 12)} → ${file}`)
+}
+if (base) {
+  const d = redsDelta(base, rowsOf(), ACCEPTED), n = blockingCount(d)
+  console.log(`\n${'─'.repeat(72)}\nAGAINST ${AGAINST} (recorded ${base.at} at ${String(base.head).slice(0, 10)}): ${d.new.length} new · ${d.changed.length} changed · ${d.unmeasured.length} unmeasured · ${d.gone.length} gone · ${d.removed.length} removed${d.accepted.length ? ` (+${d.accepted.length} accepted)` : ''} · ${d.same.length} red before · ${d.fixed.length} fixed`)
+  for (const l of deltaLines(d)) console.log(`   ${l}`)
+  // Each CHANGED red, shown: the lines its base output had that it no longer has (−) and the new ones (+), per stream.
+  const now = new Map(rowsOf().map(r => [r.label, r]))
+  for (const c of d.changed) { const was = base.rows.find(r => r.label === c.label), is = now.get(c.label)
+    for (const [k, name] of [['tail', 'stdout'], ['errTail', 'stderr']]) { const A = was?.[k] || [], B = is?.[k] || []
+      const gone = A.filter(l => !B.includes(l)), added = B.filter(l => !A.includes(l))
+      if (gone.length || added.length) { console.log(`\n   ${c.label} — ${name} (last ${TAIL_LINES} lines):`); for (const l of gone) console.log(`     − ${l}`); for (const l of added) console.log(`     + ${l}`) }
+      else if (!was?.[k]) console.log(`\n   ${c.label} — ${name}: the base record keeps no lines for it (recorded before lines were kept, or green there)`) } }
+  // ⛔ THE GATE IS THE DELTA: the reds the base already had are printed above and do not fail it; anything it names does.
+  process.exit(n ? 1 : 0)
+}
+
 // ⛔ A timeout fails the run too — "we could not check" must never exit 0.
 // ⛔ `notChecked` does NOT fail the run — that is the whole point — but it is never silent:
 //    the summary line states it and the list is printed above, so a run that checked almost
