@@ -23,7 +23,7 @@ import { execFileSync } from 'node:child_process'
 import { importSource, sourceOf, spanOf } from './_importSource.mjs'
 
 // The resolver as it was before the clamp was removed (integration, 2026-11-01), for the "clamp restored" mutant.
-const BEFORE = '151a63f4'
+const BEFORE = '151a63f42b7cc415a8a6bd32c5f33f20bd627e54'
 const oldEnvelope = () => spanOf(execFileSync('git', ['show', `${BEFORE}:src/cartograph/animatedParam.js`], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }), { from: '/**\n * How the edge marks shape the value at `minute`', to: 'function tweenAnimatedAtMinute(' })
 const newEnvelope = (s) => spanOf(s, { from: '/**\n * How the edge marks shape the value at `minute`', to: 'function tweenAnimatedAtMinute(' })
 
