@@ -70,7 +70,8 @@ async function loadOnce(env, plant = {}) {
  * import.meta.env` · an alias of the object (`const env = import.meta.env`, then `env.X`, `env['X']`, or destructured from it)
  * · an alias of a value (`const b = import.meta.env.X`, then `b === '…'`). Values are the literals compared with `===`/`!==`
  * (either side) and the `case` literals of a `switch` on the read (its body walked to its closing brace, braces in strings, templates and
- * comments not counted; a template's `${ }` is skipped whole, so a backtick nested inside one would end it early). ⛔ A read through anything else (a computed key, the object
+ * comments not counted; a template's `${ }` is skipped whole, so a backtick nested inside one would end it early, and a regex literal is not
+ * skipped, so a brace in one (`/[}]/`) ends the walk early too). ⛔ A read through anything else (a computed key, the object
  * passed to a function) and a value reached any other way (an `includes`, a lookup table) are not seen: said as the limit, here. */
 export function modesOf(texts) {
   const modes = new Map()
