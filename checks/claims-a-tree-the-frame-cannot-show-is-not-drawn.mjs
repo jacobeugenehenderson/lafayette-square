@@ -15,7 +15,7 @@
 //       reflection camera in src/components. Whoever adds either meets the cull's premise in this failure.
 // ⭐ MUTANTS (--mutants), each must go RED: (a) a constant cell edge → 1 · (b) no wind margin → 1 · (c) no pixel margin → 1 ·
 // (d) the shader's lean changed, the factor not → 2 · (e) a rewrite every frame → 3 · (f) a tree mount casting shadows → 4 ·
-// (g) the spring overshoot dropped → 2 · (h) the cell size read from the stencil when it is published → 3.
+// (g) the spring overshoot dropped → 2 · (h) cells per draw again, no town edge → 3 · (i) no hysteresis → 1.
 //   node checks/claims-a-tree-the-frame-cannot-show-is-not-drawn.mjs [--mutants]
 // Read-only. Exits 1 on any failing judge or any mutant left GREEN.
 import { readFileSync, readdirSync } from 'node:fs'
@@ -26,16 +26,17 @@ import { importSource } from './_importSource.mjs'
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const read = (p) => readFileSync(join(ROOT, p), 'utf8')
 const code = (t) => t.split('\n').filter((l) => !/^\s*(\/\/|\*)/.test(l)).join('\n')
-const SRC = { cells: read('src/lib/treeCells.js'), hero: read('src/components/HeroImpostorTrees.jsx'), atlas: read('src/components/treeAtlasMaterial.js'),
+const SRC = { cells: read('src/lib/treeCells.js'), hero: read('src/components/HeroImpostorTrees.jsx'), it: read('src/components/InstancedTrees.jsx'), atlas: read('src/components/treeAtlasMaterial.js'),
   sheet: read('src/lib/windSheet.js'), inst: read('src/components/InstancedTrees.jsx'), over: read('src/components/OverheadTrees.jsx') }
 const load = (src) => importSource('src/lib/treeCells.js', { transform: () => src })
 
 // ── 1 · the cells, run ───────────────────────────────────────────────────────
 async function judgeCells(src) {
   const why = [], M = await load(src)
-  const inst = Array.from({ length: 10000 }, (_, i) => ({ x: (i % 100) * 20 - 1000, z: Math.floor(i / 100) * 20 - 1000, reach: 6 }))
-  const { edge, cells } = M.buildCells(inst, 1000), want = Math.max(12, 2000 / Math.pow(10000, 0.25))
-  if (Math.abs(edge - want) > 1e-6) why.push(`the cell edge is ${edge}, not 2R/N^¼ = ${want.toFixed(1)} for N 10000, R 1000`)
+  const inst = Array.from({ length: 10000 }, (_, i) => ({ x: (i % 100) * 20 - 990, z: Math.floor(i / 100) * 20 - 990, reach: 6 }))
+  const edge = M.cellEdgeFor(inst), R = Math.max(...inst.map((t) => Math.hypot(t.x, t.z))), want = Math.max(12, (2 * R) / Math.pow(10000, 0.25))
+  if (Math.abs(edge - want) > 1e-6) why.push(`the town's cell edge is ${edge}, not max(2 × reach, 2R/N^¼) = ${want.toFixed(1)} over its own instances`)
+  const cells = M.buildCells(inst, edge)
   if (cells.reduce((a, c) => a + c.idx.length, 0) !== inst.length) why.push('the cells do not hold every instance exactly once')
   // a camera at the origin looking down −z with a 60° vertical, 1.5 aspect frustum (column-major projection·view by hand)
   const f = 1 / Math.tan(Math.PI / 6), a = 1.5, n = 1, far = 5000
@@ -50,6 +51,10 @@ async function judgeCells(src) {
   if (vis(cell(edgeX + 25, -500)) !== 0) why.push('a cell ~19 m beyond the side plane (bound ~11 m) is kept with no margins: the test is too loose to judge margins')
   if (vis(cell(edgeX + 25, -500), { windM: 10 }) !== 1) why.push('a cell within the wind\'s reach of the frame edge is dropped: a swaying card would pop')
   if (vis(cell(edgeX + 25, -500), { pxMargin: 20 }) !== 1) why.push('a cell within the pixel floor\'s reach of the frame edge is dropped (20 px at 500 m)')
+  // HYSTERESIS: a cell already shown stays while its bound grown by one cell edge reaches the frustum; a new one does not enter
+  const c1 = cell(edgeX + 25, -500)
+  if (M.visibleCells(c1, planes, { windM: 0, pxMargin: 0, ...opts, prev: Uint8Array.of(1), stayM: 15 })[0] !== 1) why.push('a cell already shown leaves the moment it grazes the edge: no hysteresis (a flight rewrites every frame)')
+  if (M.visibleCells(c1, planes, { windM: 0, pxMargin: 0, ...opts, prev: Uint8Array.of(0), stayM: 15 })[0] !== 0) why.push('the hysteresis lets a cell ENTER early (it must only keep one longer)')
   return why
 }
 
@@ -72,8 +77,10 @@ function judgeWiring(S) {
   if (!/useTownFrame\(\(\{ camera, gl \}\) => \{[\s\S]*visibleCells\(d\.cells, planes,[\s\S]*\}, undefined, 'hero impostor cull'\)/.test(he)) why.push('HeroImpostorTrees does not test its cells in a frame callback')
   if (!/if \(sameSet\(vis, d\.vis\)\) continue/.test(he)) why.push('the buffers are rewritten without checking the visible set changed (a rewrite every frame of a flight)')
   if (!/im\.count = n/.test(he)) why.push('the draw is not limited to the visible instances (im.count)')
-  const disc = (he.match(/function discRadiusOf\(list\) \{[\s\S]*?\n\}/) || [''])[0]
-  if (!disc || /Stencil|stencil/.test(disc) || /getSceneStencil/.test(he)) why.push('the cells are sized from something other than the draw\'s own instances (one source: a fresh pour and a published town must partition alike)')
+  const it = code(S.it)
+  if (!/const heroCellEdge = useMemo\(\(\) => \{[\s\S]*return cellEdgeFor\(pts\)/.test(it) || !/cellEdge=\{heroCellEdge\}/.test(it)) why.push('InstancedTrees does not derive ONE cell edge from every hero tree and pass it to every species (per-draw cells keep 81–98 %)')
+  if (!/buildCells\([^\n]*, cellEdge\)/.test(he) || /Stencil|stencil/.test(he.replace(/\/\/.*$/gm, ''))) why.push('a species builds its cells on something other than the town\'s one edge')
+  if (!/prev: d\.vis instanceof Uint8Array \? d\.vis : null, stayM: d\.edge/.test(he)) why.push('the draws do not pass their previous set and the cell edge as hysteresis')
   if (!/if \(!treeCull\.on \|\| treeDbg\('noCull'\)\)/.test(he) || !/im\.count = d\.full\.n/.test(he)) why.push('the off switch does not restore every instance')
   return why
 }
@@ -81,7 +88,7 @@ function judgeWiring(S) {
 // ── 4 · the assumption ───────────────────────────────────────────────────────
 function judgeAssumption(S, comps) {
   const why = []
-  for (const [k, t] of [['HeroImpostorTrees', S.hero], ['InstancedTrees', S.inst], ['OverheadTrees', S.over]]) {
+  for (const [k, t] of [['HeroImpostorTrees', S.hero], ['InstancedTrees', S.inst ?? S.it], ['OverheadTrees', S.over]]) {
     const c = code(t), on = (c.match(/castShadow=\{true\}|castShadow\b(?!=\{false\})(?=[\s>/])/g) || []).length, off = (c.match(/castShadow=\{false\}/g) || []).length
     if (on || !off) why.push(`${k}: a tree mount casts a shadow (or declares none): the cull assumes the main camera is the only view drawing trees`)
   }
@@ -100,13 +107,14 @@ for (const [k, name] of [[1, 'the cells, run'], [2, 'the bound is the shader\'s'
 if (process.argv.includes('--mutants')) {
   const sub = (s, a, b) => { if (!s.includes(a)) throw new Error(`mutant anchor missing: ${a.slice(0, 60)}`); return s.replace(a, b) }
   const MUTANTS = [
-    ['a · a constant cell edge', 1, () => judgeCells(sub(SRC.cells, '(2 * discRadius) / Math.pow(inst.length, 0.25)', '100'))],
-    ['b · no wind margin', 1, () => judgeCells(sub(SRC.cells, 'Math.hypot(c.r + windM, yh)', 'Math.hypot(c.r, yh)'))],
+    ['a · a constant cell edge', 1, () => judgeCells(sub(SRC.cells, '(2 * Math.max(R, 1)) / Math.pow(pts.length, 0.25)', '100'))],
+    ['b · no wind margin', 1, () => judgeCells(sub(SRC.cells, 'Math.hypot(c.r + windM + (prev', 'Math.hypot(c.r + 0 + (prev'))],
     ['c · no pixel margin', 1, () => judgeCells(sub(SRC.cells, ' + pxMargin * metresPerPx(dist)', ''))],
     ['d · the shader\'s lean changed, the factor not', 2, () => judgeBound({ ...SRC, atlas: sub(SRC.atlas, 'transformed.xz += hula + ovDir * (amp * 0.7);', 'transformed.xz += hula + ovDir * (amp * 1.2);') })],
     ['e · a rewrite every frame', 3, () => judgeWiring({ ...SRC, hero: sub(SRC.hero, 'if (sameSet(vis, d.vis)) continue', '') })],
     ['f · a tree mount casting shadows', 4, () => judgeAssumption({ ...SRC, hero: sub(SRC.hero, 'castShadow={false}', 'castShadow={true}') }, comps)],
-    ['h · the cell size read from the stencil when published', 3, () => judgeWiring({ ...SRC, hero: sub(SRC.hero, 'function discRadiusOf(list) {\n  let r = 0', 'function discRadiusOf(list) {\n  const st = getSceneStencil()\n  if (st?.radius > 0) return st.radius\n  let r = 0') })],
+    ['h · cells per draw again (no town edge)', 3, () => judgeWiring({ ...SRC, it: sub(SRC.it, 'cellEdge={heroCellEdge}', '') })],
+    ['i · no hysteresis', 1, () => judgeCells(sub(SRC.cells, ' + (prev && prev[k] ? stayM : 0)', ''))],
     ['g · the spring overshoot dropped', 2, () => judgeBound({ ...SRC, hero: sub(SRC.hero, ' * (1 + Math.exp(-z * Math.PI / Math.sqrt(1 - z * z)))', '') })],
   ]
   console.log('\n  mutants:')
