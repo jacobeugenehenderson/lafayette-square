@@ -43,9 +43,9 @@ import useFailures, { failuresFor } from '../lib/failures.js'
 import { runSeconds, hhmm } from '../displays/lightShow/engine.js'
 import { defaultDisplayChannel, DISPLAY_FIELDS, validateDisplayChannel } from '../displays/showChannel.js'
 import { nextDate, refuseShortCadence } from '../displays/showSchedule.js'
-import { setAmbient, setShows, addAmbient, addShows, removeAmbient, removeShows, setDays, addEvent, removeEntry, clockTyped, tonightOf } from './scheduleCard.js'
+import { setAmbient, setShows, addAmbient, addShows, removeAmbient, removeShows, setDays, addEvent, removeEntry, clockTyped, tonightOf, keyedSlots, unkeyedSlots } from './scheduleCard.js'
 import { townClockOf, townDateAt, townClockChange } from '../lib/townClock.js'
-import { getTodSlotRow, getTodSlotMinutes, NAMED_TOD_SLOTS } from '../cartograph/animatedParam.js'
+import { getTodSlotRow, getTodSlotMinutes, getTodSlotLabel, NAMED_TOD_SLOTS } from '../cartograph/animatedParam.js'
 import { PLUGINS as DISPLAY_PLUGINS } from '../displays/Displays.jsx'
 import { keyframeFocusIds } from '../lib/focusObject.js'
 import useListings from '../hooks/useListings'
@@ -208,7 +208,7 @@ function DisplaysSection() {
  * noon, Ambient's LEVEL as the keys and the Schedule make it (scheduleCard.js#tonightOf, the engine's own functions, so the
  * picture and the show agree), a tick at each showtime, and the clock's change if tonight has one. Read-only.
  */
-function Tonight({ display, channel }) {
+function Tonight({ display, channel, keys = [], selected, onSelect }) {
   const now = useTimeOfDay(s => s.currentTime)
   const D = townClockOf(now).date, secs = runSeconds(display.run)
   const t = useMemo(() => tonightOf(channel, D, secs, getTodSlotRow), [channel, D, secs])
@@ -229,6 +229,14 @@ function Tonight({ display, channel }) {
         </svg>
         {t.times.map(x => <div key={x} title={`A show at ${hhmm(x % 1440)}`} className="absolute" style={{ left: `${((x - 720) / 1440) * 100}%`, top: 0, bottom: 0, width: 2, background: 'var(--on-surface)' }} />)}
       </div>
+      <div className="relative" style={{ height: 12 }} aria-label="The keys, tonight">
+        {keys.map(s => {
+          const m = getTodSlotRow(D)[s], on = s === selected
+          return <button key={s} title={`The key at ${getTodSlotLabel(s)} (${hhmm(Math.round(m) % 1440)})`} onClick={() => onSelect?.(s)} className="absolute cursor-pointer"
+            style={{ left: `calc(${(((m - 720) % 1440 + 1440) % 1440) / 1440 * 100}% - 5px)`, top: 0, width: 10, height: 10, transform: 'rotate(45deg)', padding: 0,
+              background: on ? 'var(--vic-gold)' : 'transparent', border: `1px solid ${on ? 'var(--vic-gold)' : 'var(--on-surface-variant)'}` }} />
+        })}
+      </div>
       <div className="flex justify-between text-caption" style={CAPTION}><span>noon</span><span>6 pm</span><span>midnight</span><span>6 am</span><span>noon</span></div>
     </div>
   )
@@ -242,9 +250,11 @@ function readChannel(authored, id) {
 }
 
 /**
- * A display's own channel, edited (Jacob, 2026-11-01: the show gets "its own in-look scheduler with the same kind of
- * faders"): Ambient, Show and Ambient colour keyed on the day's slots, and its Schedule (ScheduleBlock). The first edit gives this Look its own copy of the default; ↺ drops it, back to the default. Lights the display live
- * (<Town overrides.displays>), and the bake carries it (scene.json#displays).
+ * A display's LIT card (Jacob, 2026-11-02: one home per fact, one picture of the night): Tonight (Ambient's level as the keys
+ * and the Schedule make it, the showtimes, a marker at each key), the KEYS the operator made (picked by marker or name,
+ * never by scrubbing the clock; "+ key at" the slots not keyed), the three levels of the selected key only, and the
+ * Schedule (the WHEN). The lamps keep TodChannel; a display does not. The first edit gives this Look its own copy of the
+ * default; "Back to the default" drops it. Lights the display live (<Town overrides.displays>); the bake carries it.
  */
 function DisplayChannel({ display }) {
   const id = display.id
@@ -253,25 +263,42 @@ function DisplayChannel({ display }) {
   const setValue = useCartographStore(s => s.setDisplayValue), addSlot = useCartographStore(s => s.addDisplaySlot)
   const removeSlot = useCartographStore(s => s.removeDisplaySlot)
   const revert = useCartographStore(s => s.revertDisplay)
+  const [picked, setPicked] = useState(null), [refused, setRefused] = useState(null)
   if (read.refused) return <div role="alert" className="text-caption" style={{ color: 'var(--error)' }}>{read.refused}</div>
+  const values = read.channel.values, keys = keyedSlots(values), selected = keys.includes(picked) ? picked : keys[0]
+  const put = (gesture) => { try { gesture(); setRefused(null) } catch (e) { setRefused(plainReason(e)) } }
   const published = authored && authored !== read.channel   // a Look from before the schedule, shown as read, saved new on the next edit
   return (
-    <TodChannel
-      label="Lit"
-      fields={DISPLAY_FIELDS}
-      flatDefaults={defaultDisplayChannel().values.dusk}
-      channel={read.channel}
-      noEdges
-      onSetValue={(key, value, slotId) => setValue(id, key, value, slotId)}
-      onFillSlot={(slotId) => addSlot(id, slotId)}
-      onRemoveSlot={(slotId) => removeSlot(id, slotId)}
-      onSetTransition={() => {}}
-      onRevert={() => revert(id)}
-    >
-      {published && <div className="text-caption" style={{ color: 'var(--on-surface-variant)' }}>This Look keeps its schedule in the form from before the Schedule block; it is shown as read, and saved in the new form on your next edit.</div>}
-      <Tonight display={display} channel={read.channel} />
+    <div className="py-1 space-y-2" aria-label="Lit">
+      <div className="flex items-center justify-between">
+        <span style={SUBHEAD}>Lit</span>
+        {authored && <Action title="Drop this Look's own channel: the display is lit by the default again" onClick={() => revert(id)}>Back to the default</Action>}
+      </div>
+      {published && <div className="text-caption" style={CAPTION}>This Look keeps its schedule in the form from before the Schedule block; it is shown as read, and saved in the new form on your next edit.</div>}
+      <Tonight display={display} channel={read.channel} keys={keys} selected={selected} onSelect={setPicked} />
+      <div className="space-y-1.5" aria-label="The display's levels">
+        <div className="flex items-center flex-wrap" style={{ gap: 3 }}>
+          <span style={{ ...CAPTION, marginRight: 4 }}>Keys</span>
+          {keys.map(s => <Pill key={s} on={s === selected} title={`Edit the levels at ${getTodSlotLabel(s)}`} onClick={() => setPicked(s)}>{getTodSlotLabel(s)}</Pill>)}
+        </div>
+        {unkeyedSlots(values).length > 0 && (
+          <div className="flex items-center flex-wrap" style={{ gap: 3 }}>
+            <span style={{ ...CAPTION, marginRight: 4 }}>+ key at</span>
+            {unkeyedSlots(values).map(s => <Action key={s} title={`A key at ${getTodSlotLabel(s)}, starting from the levels there now`} onClick={() => put(() => { addSlot(id, s); setPicked(s) })}>{getTodSlotLabel(s)}</Action>)}
+          </div>
+        )}
+        <div className="flex items-center justify-between pt-1">
+          <span style={SUBHEAD}>At {getTodSlotLabel(selected)}</span>
+          {keys.length > 1 && <Action danger title={`Remove the key at ${getTodSlotLabel(selected)}: the levels ease between the keys left`} onClick={() => put(() => removeSlot(id, selected))}>Remove key</Action>}
+        </div>
+        {DISPLAY_FIELDS.map(f => (
+          <SliderRow key={f.key} label={f.label} value={values[selected][f.key]} min={f.min ?? 0} max={f.max} step={f.step} suffix={f.unit ?? ''} title={f.title}
+            onChange={(v) => put(() => setValue(id, f.key, v, selected))} />
+        ))}
+        {refused && <div role="alert" style={{ ...CAPTION, color: 'var(--error)' }}>Not saved: {refused}</div>}
+      </div>
       <ScheduleBlock display={display} channel={read.channel} />
-    </TodChannel>
+    </div>
   )
 }
 

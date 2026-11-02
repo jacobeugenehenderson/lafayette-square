@@ -11,6 +11,7 @@
 import { defaultDisplayChannel } from '../displays/showChannel.js'
 import { nightsOn, displayStateAt, prevDate, nextDate } from '../displays/showSchedule.js'
 import { hhmm, mmss } from '../displays/lightShow/engine.js'
+import { TOD_SLOT_IDS } from '../lib/todSlots.js'
 
 const DEFAULT = () => defaultDisplayChannel().schedule[0]
 const editEntry = (list, i, patch) => list.map((e, j) => (j === i ? { ...e, ...patch } : e))
@@ -26,6 +27,11 @@ export const setDays = (list, i, days, today) => editEntry(list, i, { days: days
 /** A dated event: one show at 21:00 on today's date, no Ambient (fireworks); it replaces the daily entries on its date. */
 export const addEvent = (list, today) => [...list, { days: { dates: [today] }, ambient: null, shows: { first: '21:00', last: '21:00', every: 60 } }]
 export const removeEntry = (list, i) => list.filter((_, j) => j !== i)
+
+/** The display's KEYS (Jacob, 2026-11-02, one home: levels live on the keys he made, picked by name, never by scrubbing the
+ *  clock): the slots it has keyed, in the day's order, and the slots it could key. */
+export const keyedSlots = (values) => TOD_SLOT_IDS.filter(id => id in values)
+export const unkeyedSlots = (values) => TOD_SLOT_IDS.filter(id => !(id in values))
 
 /** A time typed as H:MM or HH:MM (24 h) → 'HH:MM', or null. */
 export function clockTyped(text) {
