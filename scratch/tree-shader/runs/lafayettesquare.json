@@ -1,0 +1,47 @@
+{
+ "town": "lafayettesquare",
+ "margin": {
+  "layers": 162,
+  "unread": 0,
+  "coverage": 0.149,
+  "leaf": 0.173,
+  "bark": 0.101,
+  "min": 0.015,
+  "max": 0.344
+ },
+ "rows": [
+  {
+   "cam": "far",
+   "v0": 121.94,
+   "off": 74.52,
+   "bare": 98.57,
+   "back": 120.24
+  },
+  {
+   "cam": "mid",
+   "v0": 73.16,
+   "off": 59.06,
+   "bare": 67.53,
+   "back": 71.56
+  },
+  {
+   "cam": "close",
+   "v0": 46.34,
+   "off": 42,
+   "bare": 46.98,
+   "back": 46.16
+  }
+ ],
+ "load": [
+  1.6640625,
+  2.16943359375,
+  2.41845703125
+ ],
+ "log": [
+  "== trees shader + margin · lafayettesquare · Stage headless, this M1 · load 1.9 2.4 2.5 ==",
+  "  card pictures passing alphaTest 0.4 (texels, mean over 162 layer pictures): all 0.149 · leaf 0.173 · bark 0.101 · min 0.015 / max 0.344 · unreadable 0 → empty margin ≈ 85% of a card quad",
+  "  far   V0 121.94 · trees hidden 74.52 (trees 47.4 ms) · bare fragment 98.57 (shading 23.4 ms = 49% of the trees) · restored 120.24 · uptime 2.1",
+  "  mid   V0 73.16 · trees hidden 59.06 (trees 14.1 ms) · bare fragment 67.53 (shading 5.6 ms = 40% of the trees) · restored 71.56 · uptime 2.0",
+  "  close V0 46.34 · trees hidden 42 (trees 4.3 ms) · bare fragment 46.98 (shading -0.6 ms = -15% of the trees) · restored 46.16 · uptime 1.7"
+ ]
+}

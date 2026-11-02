@@ -1,0 +1,71 @@
+{
+ "town": "lafayettesquare",
+ "mode": "still",
+ "rows": [
+  {
+   "cam": "far",
+   "noise": 0,
+   "off": 118.91,
+   "on": 118.57,
+   "diff": 0,
+   "borderPct": 0,
+   "innerPct": 0,
+   "drawnOff": 35304,
+   "drawnOn": 25896,
+   "total": 35304,
+   "pass": true
+  },
+  {
+   "cam": "mid",
+   "noise": 0,
+   "off": 69.85,
+   "on": 69.24,
+   "diff": 0,
+   "borderPct": 0,
+   "innerPct": 0,
+   "drawnOff": 35304,
+   "drawnOn": 23046,
+   "total": 35304,
+   "pass": true
+  },
+  {
+   "cam": "close",
+   "noise": 0,
+   "off": 43.17,
+   "on": 44.59,
+   "diff": 0,
+   "borderPct": 0,
+   "innerPct": 0,
+   "drawnOff": 35304,
+   "drawnOn": 21906,
+   "total": 35304,
+   "pass": true
+  },
+  {
+   "cam": "closeLowSun",
+   "noise": 0,
+   "off": 57.77,
+   "on": 57.08,
+   "diff": 0,
+   "borderPct": 0,
+   "innerPct": 0,
+   "drawnOff": 35304,
+   "drawnOn": 22467,
+   "total": 35304,
+   "pass": true
+  }
+ ],
+ "load": [
+  2.51318359375,
+  2.1865234375,
+  2.1767578125
+ ],
+ "log": [
+  "== tree cull A/B · lafayettesquare · Stage still · M1 headless · load 1.9 2.1 2.1 ==",
+  "  far         off 118.91 → on 118.57 ms GPU (Δ -0.3) · drawn 35304 → 25896 of 35304 · frozen diff 0% (border 0% / inner 0%) vs same-instant noise 0% → NO-OP · uptime 1.9",
+  "  mid         off 69.85 → on 69.24 ms GPU (Δ -0.6) · drawn 35304 → 23046 of 35304 · frozen diff 0% (border 0% / inner 0%) vs same-instant noise 0% → NO-OP · uptime 2.1",
+  "  close       off 43.17 → on 44.59 ms GPU (Δ 1.4) · drawn 35304 → 21906 of 35304 · frozen diff 0% (border 0% / inner 0%) vs same-instant noise 0% → NO-OP · uptime 2.1",
+  "  (dusk set)",
+  "  closeLowSun off 57.77 → on 57.08 ms GPU (Δ -0.7) · drawn 35304 → 22467 of 35304 · frozen diff 0% (border 0% / inner 0%) vs same-instant noise 0% → NO-OP · uptime 2.5"
+ ]
+}

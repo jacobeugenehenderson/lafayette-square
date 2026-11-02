@@ -1,0 +1,71 @@
+{
+ "town": "huron",
+ "mode": "still",
+ "rows": [
+  {
+   "cam": "far",
+   "noise": 0,
+   "off": 71.23,
+   "on": 70.02,
+   "diff": 0,
+   "borderPct": 0,
+   "innerPct": 0,
+   "drawnOff": 110208,
+   "drawnOn": 77076,
+   "total": 110208,
+   "pass": true
+  },
+  {
+   "cam": "mid",
+   "noise": 0,
+   "off": 59.2,
+   "on": 57.3,
+   "diff": 0,
+   "borderPct": 0,
+   "innerPct": 0,
+   "drawnOff": 110208,
+   "drawnOn": 65661,
+   "total": 110208,
+   "pass": true
+  },
+  {
+   "cam": "close",
+   "noise": 0,
+   "off": 52.31,
+   "on": 50.76,
+   "diff": 0,
+   "borderPct": 0,
+   "innerPct": 0,
+   "drawnOff": 110208,
+   "drawnOn": 61053,
+   "total": 110208,
+   "pass": true
+  },
+  {
+   "cam": "closeLowSun",
+   "noise": 0,
+   "off": 60.03,
+   "on": 58.35,
+   "diff": 0,
+   "borderPct": 0,
+   "innerPct": 0,
+   "drawnOff": 110208,
+   "drawnOn": 66834,
+   "total": 110208,
+   "pass": true
+  }
+ ],
+ "load": [
+  1.23876953125,
+  1.8671875,
+  2.05322265625
+ ],
+ "log": [
+  "== tree cull A/B · huron · Stage still · M1 headless · load 2.5 2.2 2.2 ==",
+  "  far         off 71.23 → on 70.02 ms GPU (Δ -1.2) · drawn 110208 → 77076 of 110208 · frozen diff 0% (border 0% / inner 0%) vs same-instant noise 0% → NO-OP · uptime 1.9",
+  "  mid         off 59.2 → on 57.3 ms GPU (Δ -1.9) · drawn 110208 → 65661 of 110208 · frozen diff 0% (border 0% / inner 0%) vs same-instant noise 0% → NO-OP · uptime 1.8",
+  "  close       off 52.31 → on 50.76 ms GPU (Δ -1.6) · drawn 110208 → 61053 of 110208 · frozen diff 0% (border 0% / inner 0%) vs same-instant noise 0% → NO-OP · uptime 1.7",
+  "  (dusk set)",
+  "  closeLowSun off 60.03 → on 58.35 ms GPU (Δ -1.7) · drawn 110208 → 66834 of 110208 · frozen diff 0% (border 0% / inner 0%) vs same-instant noise 0% → NO-OP · uptime 1.2"
+ ]
+}

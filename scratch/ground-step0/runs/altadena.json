@@ -1,0 +1,365 @@
+{
+ "town": "altadena",
+ "info": {
+  "meshes": 34,
+  "transparent": 34,
+  "kinds": {
+   "face": 9,
+   "mat": 25
+  },
+  "roRange": [
+   0,
+   33
+  ]
+ },
+ "cams": {
+  "far": {
+   "pos": [
+    0,
+    332.88,
+    3536.85
+   ],
+   "tgt": [
+    0,
+    0,
+    0
+   ]
+  },
+  "high": {
+   "pos": [
+    0,
+    2496.6,
+    208.05
+   ],
+   "tgt": [
+    0,
+    0,
+    0
+   ]
+  },
+  "close": {
+   "pos": [
+    0,
+    30,
+    499.32
+   ],
+   "tgt": [
+    0,
+    10,
+    0
+   ]
+  }
+ },
+ "rows": [
+  {
+   "cam": "far",
+   "base": {
+    "ms": 26.2,
+    "c": 94,
+    "t": 1348310
+   },
+   "noise": {
+    "changedPct": 0,
+    "meanAbs": 0
+   },
+   "v": {
+    "V1": {
+     "ms": 25.98,
+     "c": 94,
+     "t": 1348310,
+     "d": {
+      "changedPct": 0,
+      "meanAbs": 0
+     }
+    },
+    "V1r": {
+     "ms": 44.51,
+     "c": 154,
+     "t": 5531382,
+     "d": {
+      "changedPct": 0,
+      "meanAbs": 0
+     }
+    },
+    "V2": {
+     "ms": 38.69,
+     "c": 112,
+     "t": 4102750,
+     "d": {
+      "changedPct": 0,
+      "meanAbs": 0
+     }
+    },
+    "V3": {
+     "ms": 25.95,
+     "c": 94,
+     "t": 1348310,
+     "d": {
+      "changedPct": 0,
+      "meanAbs": 0
+     }
+    }
+   }
+  },
+  {
+   "cam": "high",
+   "base": {
+    "ms": 36.9,
+    "c": 138,
+    "t": 5530342
+   },
+   "noise": {
+    "changedPct": 0,
+    "meanAbs": 0
+   },
+   "v": {
+    "V1": {
+     "ms": 37.07,
+     "c": 138,
+     "t": 5530342,
+     "d": {
+      "changedPct": 0,
+      "meanAbs": 0
+     }
+    },
+    "V1r": {
+     "ms": 37.58,
+     "c": 138,
+     "t": 5530342,
+     "d": {
+      "changedPct": 0,
+      "meanAbs": 0
+     }
+    },
+    "V2": {
+     "ms": 33.63,
+     "c": 98,
+     "t": 4101762,
+     "d": {
+      "changedPct": 0,
+      "meanAbs": 0
+     }
+    },
+    "V3": {
+     "ms": 24.5,
+     "c": 82,
+     "t": 1347934,
+     "d": {
+      "changedPct": 0,
+      "meanAbs": 0
+     }
+    }
+   }
+  },
+  {
+   "cam": "close",
+   "base": {
+    "ms": 36.28,
+    "c": 134,
+    "t": 5529484
+   },
+   "noise": {
+    "changedPct": 0,
+    "meanAbs": 0
+   },
+   "v": {
+    "V1": {
+     "ms": 36.8,
+     "c": 134,
+     "t": 5529484,
+     "d": {
+      "changedPct": 0,
+      "meanAbs": 0
+     }
+    },
+    "V1r": {
+     "ms": 36.57,
+     "c": 134,
+     "t": 5529484,
+     "d": {
+      "changedPct": 0,
+      "meanAbs": 0
+     }
+    },
+    "V2": {
+     "ms": 33.1,
+     "c": 96,
+     "t": 4101934,
+     "d": {
+      "changedPct": 0,
+      "meanAbs": 0
+     }
+    },
+    "V3": {
+     "ms": 26.5,
+     "c": 82,
+     "t": 1348142,
+     "d": {
+      "changedPct": 0,
+      "meanAbs": 0
+     }
+    }
+   }
+  }
+ ],
+ "perGroup": [
+  {
+   "ro": 26,
+   "dMs": 0.86,
+   "coverPct": 0
+  },
+  {
+   "ro": 15,
+   "dMs": 0.59,
+   "coverPct": 0
+  },
+  {
+   "ro": 24,
+   "dMs": 0.55,
+   "coverPct": 0
+  },
+  {
+   "ro": 25,
+   "dMs": 0.49,
+   "coverPct": 0
+  },
+  {
+   "ro": 23,
+   "dMs": 0.41,
+   "coverPct": 0
+  },
+  {
+   "ro": 33,
+   "dMs": 0.35,
+   "coverPct": 0
+  },
+  {
+   "ro": 18,
+   "dMs": 0.18,
+   "coverPct": 0
+  },
+  {
+   "ro": 11,
+   "dMs": 0.06,
+   "coverPct": 0
+  },
+  {
+   "ro": 32,
+   "dMs": 0.04,
+   "coverPct": 0
+  },
+  {
+   "ro": 10,
+   "dMs": 0.03,
+   "coverPct": 0
+  },
+  {
+   "ro": 20,
+   "dMs": 0.03,
+   "coverPct": 0
+  },
+  {
+   "ro": 21,
+   "dMs": 0.02,
+   "coverPct": 0
+  },
+  {
+   "ro": 28,
+   "dMs": 0.02,
+   "coverPct": 0
+  },
+  {
+   "ro": 9,
+   "dMs": -0.01,
+   "coverPct": 0
+  },
+  {
+   "ro": 12,
+   "dMs": -0.01,
+   "coverPct": 0
+  },
+  {
+   "ro": 14,
+   "dMs": -0.01,
+   "coverPct": 0
+  },
+  {
+   "ro": 29,
+   "dMs": -0.01,
+   "coverPct": 0
+  },
+  {
+   "ro": 22,
+   "dMs": -0.02,
+   "coverPct": 0
+  },
+  {
+   "ro": 13,
+   "dMs": -0.04,
+   "coverPct": 0
+  },
+  {
+   "ro": 16,
+   "dMs": -0.04,
+   "coverPct": 0
+  },
+  {
+   "ro": 17,
+   "dMs": -0.04,
+   "coverPct": 0
+  },
+  {
+   "ro": 31,
+   "dMs": -0.05,
+   "coverPct": 0
+  },
+  {
+   "ro": 27,
+   "dMs": -0.06,
+   "coverPct": 0
+  },
+  {
+   "ro": 30,
+   "dMs": -0.27,
+   "coverPct": 0
+  },
+  {
+   "ro": 19,
+   "dMs": -0.92,
+   "coverPct": 0
+  }
+ ],
+ "half": {
+  "cam": "close",
+  "v0": 14.05,
+  "v3": 8.57
+ },
+ "load": [
+  1.2236328125,
+  1.9189453125,
+  4.81103515625
+ ],
+ "log": [
+  "== ground step 0 · altadena · Stage headless, this M1 · load 2.3 2.4 6.0 ==",
+  "  ground: 34 meshes, 34 transparent (the fade), kinds {\"face\":9,\"mat\":25}, renderOrder 0…33",
+  "  disc centre [0,0] radius 4161 m → cameras {\"far\":[0,333,3537],\"high\":[0,2497,208],\"close\":[0,30,499]}",
+  "  far   cam [0,333,3537] · V0 26.2 ms GPU 94 calls · uptime 2.7 1.35M tris · noise 0% (mean 0)",
+  "        V1    25.98 ms GPU (  -0.2) · 94 calls · diff 0% (mean 0)",
+  "        V1r   44.51 ms GPU (  18.3) · 154 calls · diff 0% (mean 0)",
+  "        V2    38.69 ms GPU (  12.5) · 112 calls · diff 0% (mean 0)",
+  "        V3    25.95 ms GPU (  -0.3) · 94 calls · diff 0% (mean 0)",
+  "  high  cam [0,2497,208] · V0 36.9 ms GPU 138 calls · uptime 2.7 5.53M tris · noise 0% (mean 0)",
+  "        V1    37.07 ms GPU (   0.2) · 138 calls · diff 0% (mean 0)",
+  "        V1r   37.58 ms GPU (   0.7) · 138 calls · diff 0% (mean 0)",
+  "        V2    33.63 ms GPU (  -3.3) · 98 calls · diff 0% (mean 0)",
+  "        V3     24.5 ms GPU ( -12.4) · 82 calls · diff 0% (mean 0)",
+  "  close cam [0,30,499] · V0 36.28 ms GPU 134 calls · uptime 3.0 5.53M tris · noise 0% (mean 0)",
+  "        V1     36.8 ms GPU (   0.5) · 134 calls · diff 0% (mean 0)",
+  "        V1r   36.57 ms GPU (   0.3) · 134 calls · diff 0% (mean 0)",
+  "        V2     33.1 ms GPU (  -3.2) · 96 calls · diff 0% (mean 0)",
+  "        V3     26.5 ms GPU (  -9.8) · 82 calls · diff 0% (mean 0)",
+  "  per ribbon group (last cam), top by Δ GPU ms: ro26 0.86ms/0% · ro15 0.59ms/0% · ro24 0.55ms/0% · ro25 0.49ms/0% · ro23 0.41ms/0% · ro33 0.35ms/0% · ro18 0.18ms/0% · ro11 0.06ms/0%",
+  "  sum of per-group Δ 2.2 ms over 25 groups",
+  "  half window (close cam): V0 14.05 ms · ground hidden 8.57 ms (-5.5)"
+ ]
+}

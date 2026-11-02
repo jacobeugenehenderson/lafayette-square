@@ -1,0 +1,34 @@
+== tree cull A/B · provincetown · Stage still · M1 headless · load 3.0 3.6 3.5 ==
+  far         off 166.59 → on 165.82 ms GPU (Δ -0.8) · drawn 221706 → 217638 of 221706 · diff 7.98% vs noise 4.03% → ⛔ DIFFERS · uptime 2.7
+  mid         off 159.53 → on 157.24 ms GPU (Δ -2.3) · drawn 221706 → 188040 of 221706 · diff 15.33% vs noise 7.7% → ⛔ DIFFERS · uptime 2.6
+  close       off 144.43 → on 141.24 ms GPU (Δ -3.2) · drawn 221706 → 178755 of 221706 · diff 9.45% vs noise 5.17% → ⛔ DIFFERS · uptime 2.7
+  (dusk set)
+  closeLowSun off 144.44 → on 141.89 ms GPU (Δ -2.6) · drawn 221706 → 181338 of 221706 · diff 2.58% vs noise 0.51% → ⛔ DIFFERS · uptime 2.5
+== tree cull A/B · lafayettesquare · Stage still · M1 headless · load 2.5 3.3 3.4 ==
+  far         off 121.34 → on 119.74 ms GPU (Δ -1.6) · drawn 35304 → 31605 of 35304 · diff 21.92% vs noise 1.71% → ⛔ DIFFERS · uptime 3.1
+  mid         off 71.23 → on 68.98 ms GPU (Δ -2.3) · drawn 35304 → 30375 of 35304 · diff 0% vs noise 0% → NO-OP · uptime 3.1
+  close       off 43.07 → on 42.79 ms GPU (Δ -0.3) · drawn 35304 → 30165 of 35304 · diff 0% vs noise 0% → NO-OP · uptime 2.7
+  (dusk set)
+  closeLowSun off 59.32 → on 57.95 ms GPU (Δ -1.4) · drawn 35304 → 27177 of 35304 · diff 0% vs noise 0% → NO-OP · uptime 2.6
+== tree cull A/B · huron · Stage still · M1 headless · load 2.6 3.2 3.3 ==
+  far         off 71.28 → on 70.54 ms GPU (Δ -0.7) · drawn 110208 → 94605 of 110208 · diff 6.62% vs noise 2.57% → ⛔ DIFFERS · uptime 2.2
+  mid         off 58.81 → on 57.58 ms GPU (Δ -1.2) · drawn 110208 → 76932 of 110208 · diff 6.49% vs noise 2.05% → ⛔ DIFFERS · uptime 2.0
+  close       off 52.23 → on 51.38 ms GPU (Δ -0.8) · drawn 110208 → 76932 of 110208 · diff 11.85% vs noise 0.93% → ⛔ DIFFERS · uptime 1.7
+  (dusk set)
+  closeLowSun off 60.11 → on 59.08 ms GPU (Δ -1.0) · drawn 110208 → 82143 of 110208 · diff 14.75% vs noise 2.66% → ⛔ DIFFERS · uptime 1.7
+== tree cull A/B · hipointedemun · Stage still · M1 headless · load 1.7 2.8 3.2 ==
+  far         off 56.68 → on 56.37 ms GPU (Δ -0.3) · drawn 69648 → 59340 of 69648 · diff 4.67% vs noise 0.38% → ⛔ DIFFERS · uptime 2.4
+  mid         off 60.56 → on 60.08 ms GPU (Δ -0.5) · drawn 69648 → 49752 of 69648 · diff 21.23% vs noise 2.97% → ⛔ DIFFERS · uptime 2.4
+  close       off 59.88 → on 59.27 ms GPU (Δ -0.6) · drawn 69648 → 49530 of 69648 · diff 10.71% vs noise 1.12% → ⛔ DIFFERS · uptime 2.1
+  (dusk set)
+  closeLowSun off 62.77 → on 61.98 ms GPU (Δ -0.8) · drawn 69648 → 47970 of 69648 · diff 0.88% vs noise 0.13% → ⛔ DIFFERS · uptime 1.8
+== tree cull A/B · provincetown · Preview flights · M1 headless · load 1.8 2.7 3.1 ==
+  CPU 1× · cull off · main 12.01 ms/frame (30-frame mean) · worst long frame 792 ms · rewrites 0.0/s · uptime 1.6
+  CPU 1× · cull ON  · main 16.12 ms/frame (30-frame mean) · worst long frame 843 ms · rewrites 92.9/s · uptime 2.0
+  CPU 4× · cull off · main 31.38 ms/frame (30-frame mean) · worst long frame 1427 ms · rewrites 0.0/s · uptime 1.8
+  CPU 4× · cull ON  · main 29.84 ms/frame (30-frame mean) · worst long frame 1427 ms · rewrites 152.4/s · uptime 1.8
+== tree cull A/B · huron · Preview flights · M1 headless · load 1.8 2.4 2.9 ==
+  CPU 1× · cull off · main 8.63 ms/frame (30-frame mean) · worst long frame 819 ms · rewrites 0.0/s · uptime 1.5
+  CPU 1× · cull ON  · main 8.73 ms/frame (30-frame mean) · worst long frame 819 ms · rewrites 66.0/s · uptime 1.5
+  CPU 4× · cull off · main 22.15 ms/frame (30-frame mean) · worst long frame 819 ms · rewrites 0.0/s · uptime 1.3
+  CPU 4× · cull ON  · main 38.44 ms/frame (30-frame mean) · worst long frame 1265 ms · rewrites 37.0/s · uptime 1.6

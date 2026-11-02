@@ -1,0 +1,20 @@
+== trees shader + margin · huron · Stage headless, this M1 · load 3.3 3.1 2.8 ==
+  card pictures passing alphaTest 0.4 (texels, mean over 144 layer pictures): all 0.164 · leaf 0.191 · bark 0.109 · min 0.066 / max 0.334 · unreadable 0 → empty margin ≈ 84% of a card quad
+  far   V0 71.38 · trees hidden 62.84 (trees 8.5 ms) · bare fragment 67.25 (shading 4.1 ms = 48% of the trees) · restored 72.07 · uptime 2.6
+  mid   V0 59.68 · trees hidden 51.53 (trees 8.1 ms) · bare fragment 55.7 (shading 4.0 ms = 49% of the trees) · restored 59.16 · uptime 2.3
+  close V0 52.65 · trees hidden 42.48 (trees 10.2 ms) · bare fragment 47.9 (shading 4.8 ms = 47% of the trees) · restored 52.71 · uptime 2.1
+== trees shader + margin · hipointedemun · Stage headless, this M1 · load 2.1 2.7 2.7 ==
+  card pictures passing alphaTest 0.4 (texels, mean over 162 layer pictures): all 0.148 · leaf 0.172 · bark 0.101 · min 0.01 / max 0.34 · unreadable 0 → empty margin ≈ 85% of a card quad
+  far   V0 57 · trees hidden 46.37 (trees 10.6 ms) · bare fragment 51.99 (shading 5.0 ms = 47% of the trees) · restored 57 · uptime 2.0
+  mid   V0 60.83 · trees hidden 43.96 (trees 16.9 ms) · bare fragment 52.88 (shading 7.9 ms = 47% of the trees) · restored 60.71 · uptime 1.6
+  close V0 60.04 · trees hidden 44.18 (trees 15.9 ms) · bare fragment 53.33 (shading 6.7 ms = 42% of the trees) · restored 60.29 · uptime 1.6
+== trees shader + margin · provincetown · Stage headless, this M1 · load 1.6 2.4 2.5 ==
+  card pictures passing alphaTest 0.4 (texels, mean over 144 layer pictures): all 0.106 · leaf 0.121 · bark 0.076 · min 0.017 / max 0.29 · unreadable 0 → empty margin ≈ 89% of a card quad
+  far   V0 166.31 · trees hidden 129.92 (trees 36.4 ms) · bare fragment 153.87 (shading 12.4 ms = 34% of the trees) · restored 168.32 · uptime 2.4
+  mid   V0 160.88 · trees hidden 128.09 (trees 32.8 ms) · bare fragment 148.78 (shading 12.1 ms = 37% of the trees) · restored 160.35 · uptime 2.1
+  close V0 145.16 · trees hidden 112.23 (trees 32.9 ms) · bare fragment 134.84 (shading 10.3 ms = 31% of the trees) · restored 146.03 · uptime 1.9
+== trees shader + margin · lafayettesquare · Stage headless, this M1 · load 1.9 2.4 2.5 ==
+  card pictures passing alphaTest 0.4 (texels, mean over 162 layer pictures): all 0.149 · leaf 0.173 · bark 0.101 · min 0.015 / max 0.344 · unreadable 0 → empty margin ≈ 85% of a card quad
+  far   V0 121.94 · trees hidden 74.52 (trees 47.4 ms) · bare fragment 98.57 (shading 23.4 ms = 49% of the trees) · restored 120.24 · uptime 2.1
+  mid   V0 73.16 · trees hidden 59.06 (trees 14.1 ms) · bare fragment 67.53 (shading 5.6 ms = 40% of the trees) · restored 71.56 · uptime 2.0
+  close V0 46.34 · trees hidden 42 (trees 4.3 ms) · bare fragment 46.98 (shading -0.6 ms = -15% of the trees) · restored 46.16 · uptime 1.7

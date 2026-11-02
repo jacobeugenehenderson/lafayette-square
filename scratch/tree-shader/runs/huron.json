@@ -1,0 +1,47 @@
+{
+ "town": "huron",
+ "margin": {
+  "layers": 144,
+  "unread": 0,
+  "coverage": 0.164,
+  "leaf": 0.191,
+  "bark": 0.109,
+  "min": 0.066,
+  "max": 0.334
+ },
+ "rows": [
+  {
+   "cam": "far",
+   "v0": 71.38,
+   "off": 62.84,
+   "bare": 67.25,
+   "back": 72.07
+  },
+  {
+   "cam": "mid",
+   "v0": 59.68,
+   "off": 51.53,
+   "bare": 55.7,
+   "back": 59.16
+  },
+  {
+   "cam": "close",
+   "v0": 52.65,
+   "off": 42.48,
+   "bare": 47.9,
+   "back": 52.71
+  }
+ ],
+ "load": [
+  2.123046875,
+  2.7001953125,
+  2.65576171875
+ ],
+ "log": [
+  "== trees shader + margin · huron · Stage headless, this M1 · load 3.3 3.1 2.8 ==",
+  "  card pictures passing alphaTest 0.4 (texels, mean over 144 layer pictures): all 0.164 · leaf 0.191 · bark 0.109 · min 0.066 / max 0.334 · unreadable 0 → empty margin ≈ 84% of a card quad",
+  "  far   V0 71.38 · trees hidden 62.84 (trees 8.5 ms) · bare fragment 67.25 (shading 4.1 ms = 48% of the trees) · restored 72.07 · uptime 2.6",
+  "  mid   V0 59.68 · trees hidden 51.53 (trees 8.1 ms) · bare fragment 55.7 (shading 4.0 ms = 49% of the trees) · restored 59.16 · uptime 2.3",
+  "  close V0 52.65 · trees hidden 42.48 (trees 10.2 ms) · bare fragment 47.9 (shading 4.8 ms = 47% of the trees) · restored 52.71 · uptime 2.1"
+ ]
+}
