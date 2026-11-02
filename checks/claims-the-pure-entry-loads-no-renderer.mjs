@@ -96,6 +96,24 @@ export function localReexports(text) {
 }
 const pkgOf = (spec) => spec.startsWith('@') ? spec.split('/').slice(0, 2).join('/') : spec.split('/')[0]
 
+/** A package's manifest as Node finds it from `fromDir`: `<d>/node_modules/<pkg>` for d = fromDir and EVERY parent, to the
+ *  filesystem root. ⛔ Never stopped at the repo root: a worktree's own node_modules may lack a package that the main
+ *  checkout's, directories above, holds (integration's layout, measured by Boz 2026-11-02, when this stopped at ROOT and called
+ *  zustand "installed nowhere"). `fs` is { exists, read } so the layout itself is planted in the self-test.
+ *  → { dir, required: [...], optional: [...] }, or null when no directory up the chain holds it. */
+export function manifestIn(fs, pkg, fromDir) {
+  for (let d = fromDir; ; d = dirname(d)) {
+    const f = resolve(d, 'node_modules', pkg, 'package.json')
+    if (fs.exists(f)) {
+      const j = JSON.parse(fs.read(f)), meta = j.peerDependenciesMeta || {}
+      const peers = Object.keys(j.peerDependencies || {})
+      return { dir: dirname(f), required: [...Object.keys(j.dependencies || {}), ...peers.filter(p => !meta[p]?.optional)],
+        optional: [...Object.keys(j.optionalDependencies || {}), ...peers.filter(p => meta[p]?.optional)] }
+    }
+    if (d === dirname(d)) return null
+  }
+}
+
 /** The real world: repo files and node_modules package manifests. A planted world replaces both. */
 const REAL = {
   rootDir: ROOT,
@@ -105,20 +123,7 @@ const REAL = {
     for (const e of EXTS) { const p = base + e; if (existsSync(p) && statSync(p).isFile()) return p }
     return null
   },
-  /** A package's manifest as Node would find it from `fromDir` (its own node_modules, then each parent's, up to ROOT):
-   *  { dir, required: [...], optional: [...] }, or null when it is installed nowhere Node would look. */
-  manifest(pkg, fromDir = ROOT) {
-    for (let d = fromDir; ; d = dirname(d)) {
-      const f = resolve(d, 'node_modules', pkg, 'package.json')
-      if (existsSync(f)) {
-        const j = JSON.parse(readFileSync(f, 'utf8')), meta = j.peerDependenciesMeta || {}
-        const peers = Object.keys(j.peerDependencies || {})
-        return { dir: dirname(f), required: [...Object.keys(j.dependencies || {}), ...peers.filter(p => !meta[p]?.optional)],
-          optional: [...Object.keys(j.optionalDependencies || {}), ...peers.filter(p => meta[p]?.optional)] }
-      }
-      if (d === ROOT || d === dirname(d)) return null
-    }
-  },
+  manifest: (pkg, fromDir = ROOT) => manifestIn({ exists: existsSync, read: (f) => readFileSync(f, 'utf8') }, pkg, fromDir),
 }
 
 /** Does a bare package reach a renderer through its manifest closure? → { renderer: chain } · { unjudged: chain } (a required
@@ -243,6 +248,15 @@ function selfTest() {
   if (rep.join() !== 'src/lib/c.js') fails.push(`the pure candidate Town.jsx carries alone is not reported (got [${rep}])`)
   if (judge({ ...okWorld, [P('src/lib/a.js')]: "// import * as THREE from 'three'\nexport const a = 1\n" }).length) fails.push('a commented-out import is judged as an edge')
   for (const [why, files, pkgs] of PLANTS) if (!judge(files, pkgs).length) fails.push(`planted: ${why} → judged GREEN`)
+  // ⭐ THE LAYOUT (Boz, 2026-11-02): a near node_modules that lacks the package, the package two directories further up (a
+  // worktree under the main checkout). Node finds it; so must this. And a package nowhere up the chain is still null.
+  // Planted around THIS repo's ROOT, so a walk that stops at ROOT (the bug) is caught, not just one that stops early.
+  const up2 = dirname(dirname(ROOT))
+  const files = { [resolve(up2, 'node_modules/zz/package.json')]: '{"peerDependencies":{"three":"*"}}', [resolve(ROOT, 'node_modules/other/package.json')]: '{}' }
+  const pfs = { exists: (f) => f in files, read: (f) => files[f] }
+  const far = manifestIn(pfs, 'zz', ROOT)
+  if (far?.dir !== resolve(up2, 'node_modules/zz') || far.required.join() !== 'three') fails.push(`layout: a package two directories above the repo, past a near node_modules that lacks it, is not found (got ${JSON.stringify(far)})`)
+  if (manifestIn(pfs, 'ghost', ROOT) !== null) fails.push('layout: a package nowhere up the chain is found')
   // ⭐ REAL-WORLD ANCHORS (Fuse's item 2): the planted worlds prove the logic; these prove it reads THIS repo's files and
   // manifests. Town.jsx IS the renderer, so its graph must be RED and name three; postprocessing names three only as a peer.
   const town = graphFindings(REAL, TOWN)
