@@ -63,14 +63,14 @@ export function validateSchedule(schedule, where) {
     const d = e?.days
     if (!(d === 'daily' || d === 'weekdays' || (d && Array.isArray(d.dates) && d.dates.length && d.dates.every(x => /^\d{4}-\d\d-\d\d$/.test(x) && !isNaN(Date.parse(`${x}T12:00:00Z`))))))
       throw new Refusal(`[showSchedule] ⛔ ${at}: its days (${JSON.stringify(d)}) are 'daily', 'weekdays' or { dates: ['YYYY-MM-DD', …] }`)
-    if (e.ambient == null && e.shows == null) throw new Refusal(`[showSchedule] ⛔ ${at}: it has neither Ambient nor shows, so it does nothing`)
+    if (e.ambient == null && e.shows == null) throw new Refusal(`[showSchedule] ⛔ ${at}: it has neither Ambient nor shows, so it does nothing: add one, or remove the entry`)
     const a = e.ambient
     if (a != null) {
       for (const k of Object.keys(a)) if (!['on', 'fadeIn', 'off', 'fadeOut'].includes(k)) throw new Refusal(`[showSchedule] ⛔ ${at}: "${k}" is not part of Ambient (on, fadeIn, off, fadeOut)`)
       if (!isEnd(a.on)) throw new Refusal(`[showSchedule] ⛔ ${at}: Ambient's on (${JSON.stringify(a.on)}) is neither a time-of-day slot (${TOD_SLOT_IDS.join(', ')}) nor a time on the town's clock (HH:MM, 24 h)`)
       if (!(a.off === 'after-last-show' || isEnd(a.off))) throw new Refusal(`[showSchedule] ⛔ ${at}: Ambient's off (${JSON.stringify(a.off)}) is a slot, a clock time, or 'after-last-show'`)
-      if (a.off === 'after-last-show' && e.shows == null) throw new Refusal(`[showSchedule] ⛔ ${at}: Ambient ends after the last show, and the entry has no shows`)
-      if (a.off === a.on) throw new Refusal(`[showSchedule] ⛔ ${at}: Ambient comes on and goes off at ${endName(a.on)}, so it holds no time`)
+      if (a.off === 'after-last-show' && e.shows == null) throw new Refusal(`[showSchedule] ⛔ ${at}: Ambient ends after the last show, and the entry has no shows: add shows, or choose when Ambient goes off`)
+      if (a.off === a.on) throw new Refusal(`[showSchedule] ⛔ ${at}: Ambient's 'comes on' and 'goes off' are both ${endName(a.on)}, so it would never be lit: choose a different time for it to go off`)
       for (const k of ['fadeIn', 'fadeOut']) if (!(typeof a[k] === 'number' && a[k] >= 0)) throw new Refusal(`[showSchedule] ⛔ ${at}: Ambient's ${k} (${JSON.stringify(a[k])}) is minutes, 0 or more (0 is a switch)`)
     }
     const s = e.shows
@@ -92,7 +92,7 @@ export function refuseShortCadence(ch, runSeconds, where) {
   if (!(runSeconds > 0)) throw new Refusal(`[showSchedule] ⛔ ${where}: the show's length is unknown, so its interval cannot be judged`)
   const t = Math.round(runSeconds), len = `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`
   ch.schedule.forEach((e, i) => {
-    if (e.shows && e.shows.every * 60 < runSeconds) throw new Refusal(`[showSchedule] ⛔ ${where}, schedule entry ${i + 1}: every ${e.shows.every} min is shorter than the show (${len}), so a show would cut into the next`)
+    if (e.shows && e.shows.every * 60 < runSeconds) throw new Refusal(`[showSchedule] ⛔ ${where}, schedule entry ${i + 1}: every ${e.shows.every} min is shorter than the show (${len}), so a show would cut into the next: choose every ${Math.ceil(runSeconds / 60)} min or more`)
   })
 }
 
@@ -204,9 +204,9 @@ export function refuseScheduleSense(ch, days, runSeconds, where) {
   ch.schedule.forEach((e, i) => {
     const at = `${where}, schedule entry ${i + 1}`
     const pairs = []
-    if (e.ambient && e.ambient.off !== 'after-last-show') pairs.push(['Ambient', e.ambient.on, e.ambient.off])
-    if (e.shows) pairs.push(['the shows', e.shows.first, e.shows.last])
-    for (const [what, from, to] of pairs) {
+    if (e.ambient && e.ambient.off !== 'after-last-show') pairs.push(['Ambient', e.ambient.on, e.ambient.off, "Ambient's 'comes on' and 'goes off'"])
+    if (e.shows) pairs.push(['the shows', e.shows.first, e.shows.last, "the 'first show' and 'last show starts'"])
+    for (const [what, from, to, words] of pairs) {
       for (const end of [from, to]) if (!HHMM.test(end)) for (let k = 1; k < days.length; k++) {
         const x = Math.abs(days[k].minutes[end] - days[k - 1].minutes[end]) % DAY, move = Math.min(x, DAY - x)
         if (move > SLOT_DAY_MOVE_MAX_MIN) throw new Refusal(`[showSchedule] ⛔ ${at}: ${endName(end)} moves ${move.toFixed(0)} minutes from ${days[k - 1].date} to ${days[k].date} here, so whether ${what}' ends pass each other cannot be judged`)
@@ -214,14 +214,15 @@ export function refuseScheduleSense(ch, days, runSeconds, where) {
       const sides = [[], []]; let side = 0, prev = null
       for (const d of days) {
         const L = mod(windowEndMinute(to, d.minutes) - windowEndMinute(from, d.minutes))
-        // Two SLOTS may meet (the sun's closest approach: a night of no length, by design); a clock time meeting one may not.
-        if (L === 0 && (HHMM.test(from) || HHMM.test(to))) throw new Refusal(`[showSchedule] ⛔ ${at}: on ${dateRuns([d.date])} ${what}' two ends (${endName(from)} → ${endName(to)}) fall on the same minute`)
+        // Two SLOTS may meet (the sun's closest approach: a night of no length, by design); a clock time meeting one may not,
+        // for Ambient (it would never be lit). The shows' first and last on one minute is ONE show, never refused.
+        if (L === 0 && what === 'Ambient' && (HHMM.test(from) || HHMM.test(to))) throw new Refusal(`[showSchedule] ⛔ ${at}: on ${dateRuns([d.date])} ${words} (${endName(from)} → ${endName(to)}) fall on the same minute, so it would never be lit: choose a different time for one of them`)
         if (prev != null && Math.abs(L - prev) > DAY / 2) side ^= 1
         sides[side].push(d.date); prev = L
       }
       if (sides[1].length) {
         const other = sides[0].length < sides[1].length ? sides[0] : sides[1]
-        throw new Refusal(`[showSchedule] ⛔ ${at}: ${what}' two ends (${endName(from)} → ${endName(to)}) pass each other here, so on ${other.length} days (${dateRuns(other)}) they run the other way round`)
+        throw new Refusal(`[showSchedule] ⛔ ${at}: ${words} (${endName(from)} → ${endName(to)}) pass each other here, so on ${other.length} days (${dateRuns(other)}) they run the other way round: choose times that keep their order all year here (a clock time for one of them, usually)`)
       }
     }
   })
@@ -231,9 +232,9 @@ export function refuseScheduleSense(ch, days, runSeconds, where) {
     const nights = entriesOn(ch.schedule, d.date).map(e => ({ e, n: nightOf(ch, e, d.date, rowOf, runSeconds) }))
     const spans = nights.filter(x => x.n).map(x => [x.n.start, x.n.end ?? x.n.start + DAY])
     for (let i = 0; i < spans.length; i++) for (let j = i + 1; j < spans.length; j++)
-      if (spans[i][0] < spans[j][1] && spans[j][0] < spans[i][1]) throw new Refusal(`[showSchedule] ⛔ ${where}: two entries' nights overlap on ${dateRuns([d.date])}; one night has one entry`)
+      if (spans[i][0] < spans[j][1] && spans[j][0] < spans[i][1]) throw new Refusal(`[showSchedule] ⛔ ${where}: two entries' nights overlap on ${dateRuns([d.date])}; one night has one entry: move one entry's times, or its dates`)
     if (prevNights && prevDateSeen === prevDate(d.date)) for (const [, e0] of prevNights) for (const [s1] of spans)
-      if (e0 > DAY + s1) throw new Refusal(`[showSchedule] ⛔ ${where}: the night of ${dateRuns([prevDateSeen])} runs past ${dateRuns([d.date])}'s night beginning; nights overlap across midnight`)
+      if (e0 > DAY + s1) throw new Refusal(`[showSchedule] ⛔ ${where}: the night of ${dateRuns([prevDateSeen])} runs past ${dateRuns([d.date])}'s night beginning; nights overlap across midnight: end the earlier night sooner, or start the later one later`)
     prevNights = spans; prevDateSeen = d.date
   }
 }
