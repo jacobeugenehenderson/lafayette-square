@@ -86,7 +86,7 @@ const READERS = {
 // ⑤'s table: every runtime reader of the ground's height (src/ and cartograph/), by role
 const RUNTIME = {
   'src/lib/drawnGround.js': 'home', 'src/utils/elevation.js': 'home', 'src/utils/terrainShader.js': 'home',
-  'src/components/BakedGround.jsx': 'drawn', 'src/components/gravelPathMaterial.js': 'drawn', 'src/components/SlabRevetment.jsx': 'drawn',
+  'src/components/BakedGround.jsx': 'drawn', 'src/components/gravelPathMaterial.js': 'drawn', 'src/components/SlabRevetment.jsx': 'drawn', 'src/lib/revetmentNear.js': 'drawn',
   'src/camera/ShotFlight.jsx': 'drawn', 'src/components/Scene.jsx': 'drawn', 'src/stage/StageApp.jsx': 'drawn', 'src/cartograph/CartographApp.jsx': 'drawn',
   'src/components/Movers.jsx': 'drawn', 'src/components/UserDot.jsx': 'drawn', 'src/components/PilgrimMonument.jsx': 'drawn', 'src/setpieces/pilgrimMonument.js': 'drawn',
   'cartograph/groundSampler.js': 'drawn', 'cartograph/bake-lamps.js': 'drawn', 'cartograph/bake-tree-anchors.js': 'drawn', 'cartograph/bake-revetment-far.js': 'drawn', 'cartograph/bake-buildings.js': 'drawn',

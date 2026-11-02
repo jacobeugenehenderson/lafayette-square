@@ -1,0 +1,88 @@
+== trees step 0 · provincetown · Stage headless, this M1 · load 2.9 2.6 3.6 ==
+  hero impostor draws 144 (front 144 · back 0 · bark 0) · 110853 instance draws in all
+  far   cam [0,423,4496] · V0 189.58 ms GPU · uptime 3.5 · noise 4.77% · hero instances in frustum 77697/110853 (70%)
+        front   Δ  -49.6 ms · covers 18.22%
+        back    Δ  -11.2 ms · covers 8.25%
+        bark    Δ  -23.6 ms · covers 8.05%
+        heroAll Δ  -59.1 ms · covers 18.68%
+        trees   Δ  -59.5 ms · covers 18.81%
+  mid   cam [0,212,1851] · V0 159.93 ms GPU · uptime 3.5 · noise 8.03% · hero instances in frustum 43605/110853 (39%)
+        front   Δ  -31.9 ms · covers 30.26%
+        back    Δ    0.8 ms · covers 16.26%
+        bark    Δ    0.4 ms · covers 15.48%
+        heroAll Δ  -30.2 ms · covers 30.74%
+        trees   Δ  -25.2 ms · covers 31.14%
+  close cam [0,30,635] · V0 152.99 ms GPU · uptime 2.3 · noise 1.58% · hero instances in frustum 27279/110853 (25%)
+        front   Δ  -35.4 ms · covers 12.74%
+        back    Δ    1.4 ms · covers 3.65%
+        bark    Δ    2.6 ms · covers 2.89%
+        heroAll Δ  -34.8 ms · covers 12.67%
+        trees   Δ  -36.1 ms · covers 12.67%
+  half window (close cam): V0 73.13 ms · trees hidden 42.92 ms (Δ -30.2) — compare with the full-window Δ above
+  per-instance frustum pass over 110853 hero-impostor instances: 4.255 ms per frame at 1× CPU, 13.75 ms at 4× (a compaction would add the buffer writes on top)
+== trees step 0 · lafayettesquare · Stage headless, this M1 · load 2.2 2.6 3.4 ==
+  hero impostor draws 162 (front 162 · back 0 · bark 0) · 17652 instance draws in all
+  far   cam [-15,71,743] · V0 132.37 ms GPU · uptime 2.1 · noise 2.66% · hero instances in frustum 5373/17652 (30%)
+        front   Δ  -54.0 ms · covers 77.94%
+        back    Δ   12.1 ms · covers 22.48%
+        bark    Δ   13.9 ms · covers 8.72%
+        heroAll Δ  -50.7 ms · covers 77.94%
+        trees   Δ  -52.6 ms · covers 77.95%
+  mid   cam [-15,36,297] · V0 80.5 ms GPU · uptime 2.5 · noise 0% · hero instances in frustum 2334/17652 (13%)
+        front   Δ  -14.6 ms · covers 0%
+        back    Δ    2.2 ms · covers 0%
+        bark    Δ   -0.7 ms · covers 0%
+        heroAll Δ  -15.8 ms · covers 0%
+        trees   Δ  -16.0 ms · covers 0%
+  close cam [-15,30,92] · V0 52.88 ms GPU · uptime 3.8 · noise 0% · hero instances in frustum 903/17652 (5%)
+        front   Δ   -4.9 ms · covers 0%
+        back    Δ    2.0 ms · covers 0%
+        bark    Δ    2.2 ms · covers 0%
+        heroAll Δ   -3.5 ms · covers 0%
+        trees   Δ   -4.0 ms · covers 0%
+  half window (close cam): V0 17.15 ms · trees hidden 16.73 ms (Δ -0.4) — compare with the full-window Δ above
+  per-instance frustum pass over 17652 hero-impostor instances: 0.705 ms per frame at 1× CPU, 4.59 ms at 4× (a compaction would add the buffer writes on top)
+== trees step 0 · huron · Stage headless, this M1 · load 3.7 3.0 3.5 ==
+  hero impostor draws 144 (front 144 · back 0 · bark 0) · 55104 instance draws in all
+  far   cam [-46,283,2972] · V0 74.59 ms GPU · uptime 4.1 · noise 2.67% · hero instances in frustum 14676/55104 (27%)
+        front   Δ   -9.0 ms · covers 43.78%
+        back    Δ    2.0 ms · covers 7.17%
+        bark    Δ   -0.2 ms · covers 5.91%
+        heroAll Δ   -9.9 ms · covers 43.84%
+        trees   Δ   -6.7 ms · covers 44.03%
+  mid   cam [-46,142,1202] · V0 64.81 ms GPU · uptime 3.6 · noise 2.3% · hero instances in frustum 5178/55104 (9%)
+        front   Δ   -8.6 ms · covers 48.12%
+        back    Δ   -1.4 ms · covers 7.78%
+        bark    Δ    0.6 ms · covers 5.51%
+        heroAll Δ   -9.9 ms · covers 48.3%
+        trees   Δ  -10.0 ms · covers 48.41%
+  close cam [-46,30,388] · V0 56.93 ms GPU · uptime 4.4 · noise 1.68% · hero instances in frustum 1788/55104 (3%)
+        front   Δ  -10.9 ms · covers 62.88%
+        back    Δ   -0.1 ms · covers 20.88%
+        bark    Δ   -0.1 ms · covers 7%
+        heroAll Δ   -9.9 ms · covers 62.87%
+        trees   Δ   -6.5 ms · covers 62.87%
+  half window (close cam): V0 22.75 ms · trees hidden 17.09 ms (Δ -5.7) — compare with the full-window Δ above
+  per-instance frustum pass over 55104 hero-impostor instances: 2.465 ms per frame at 1× CPU, 7.21 ms at 4× (a compaction would add the buffer writes on top)
+== trees step 0 · hipointedemun · Stage headless, this M1 · load 5.9 3.9 3.7 ==
+  hero impostor draws 126 (front 126 · back 0 · bark 0) · 34824 instance draws in all
+  far   cam [0,111,1181] · V0 57.08 ms GPU · uptime 6.0 · noise 0.46% · hero instances in frustum 11259/34824 (32%)
+        front   Δ  -10.9 ms · covers 38.48%
+        back    Δ    4.2 ms · covers 5.35%
+        bark    Δ    4.0 ms · covers 1.87%
+        heroAll Δ  -10.9 ms · covers 38.47%
+        trees   Δ  -10.8 ms · covers 38.48%
+  mid   cam [0,56,486] · V0 60.74 ms GPU · uptime 4.3 · noise 4.53% · hero instances in frustum 5985/34824 (17%)
+        front   Δ  -16.3 ms · covers 74.85%
+        back    Δ    0.6 ms · covers 19.66%
+        bark    Δ    0.2 ms · covers 16.17%
+        heroAll Δ  -16.5 ms · covers 74.85%
+        trees   Δ  -17.0 ms · covers 74.84%
+  close cam [0,30,167] · V0 62.9 ms GPU · uptime 3.3 · noise 2.54% · hero instances in frustum 4344/34824 (12%)
+        front   Δ  -18.7 ms · covers 31.33%
+        back    Δ    2.0 ms · covers 8.78%
+        bark    Δ    5.3 ms · covers 6.45%
+        heroAll Δ  -14.7 ms · covers 31.32%
+        trees   Δ  -14.8 ms · covers 31.33%
+  half window (close cam): V0 23.38 ms · trees hidden 17.37 ms (Δ -6.0) — compare with the full-window Δ above
+  per-instance frustum pass over 34824 hero-impostor instances: 2.55 ms per frame at 1× CPU, 5.86 ms at 4× (a compaction would add the buffer writes on top)

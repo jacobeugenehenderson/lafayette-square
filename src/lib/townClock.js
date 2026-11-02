@@ -55,10 +55,13 @@ export function townClockOf(when, tz = townTimeZone()) {
   return v
 }
 
-/** The town's minute of the day at `when`, with seconds as a fraction (what the authored ToD channels key on). */
+/** The town's minute of the day at `when`, its seconds AND milliseconds as the fraction (what the authored ToD channels
+ *  and the Light Show key on). Never the whole second alone: a show read per frame from it would step once a second
+ *  (Jacob, 2026-11-02 on provincetown.online: "about 2 fps"). Zones are offset by whole minutes, so the instant's
+ *  millisecond is the town's. ▶ node checks/claims-a-show-advances-every-frame.mjs */
 export function townMinuteOf(when, tz = townTimeZone()) {
-  const c = townClockOf(when, tz)
-  return c.minuteOfDay + c.seconds / 60
+  const c = townClockOf(when, tz), ms = ((when.getTime() % 1000) + 1000) % 1000
+  return c.minuteOfDay + (c.seconds + ms / 1000) / 60
 }
 
 /** The town's day of the year (1–366) at `when`. */
