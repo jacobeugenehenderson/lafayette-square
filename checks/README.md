@@ -207,7 +207,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-deadend-look.mjs` | RENDER THE NINE. Read-only. |
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 
-## safe — 391. This is `npm test`.
+## safe — 392. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -298,6 +298,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-a-towns-sources-are-its-own.mjs` | DOES SOURCES NAME THIS TOWN'S SOURCE, OR ANOTHER COUNTRY'S? |
 | `checks/claims-a-tree-card-starts-at-the-ground.mjs` | DOES EVERY HERO TREE CARD START AT THE GROUND? |
 | `checks/claims-a-tree-is-refused-for-what-stands-under-it.mjs` | a ground-cover refusal is backed at the POINT. |
+| `checks/claims-a-tree-the-frame-cannot-show-is-not-drawn.mjs` | ARE THE HERO TREE CARDS CULLED TO THE FRAME, AS A VISUAL NO-OP? |
 | `checks/claims-a-verge-span-edge-is-its-street-edge.mjs` | A VERGE BEGINS AT THE CARRIAGEWAY'S EDGE, NEVER ON A STREET'S CENTRELINE. |
 | `checks/claims-a-water-run-join-at-a-right-angle-builds.mjs` | DOES A STREET BAND MEETING A DEPTH-0 WATER RUN AT 90° BUILD, WHEN THE |
 | `checks/claims-a-way-tag-decides-before-the-coast.mjs` | CLAIM — A WAY'S OWN TAG DECIDES BEFORE THE COAST (Jacob, 2026-10-27, `r-a-way-tag-decides-before-byCoast`; Boz's vocabulary). |
