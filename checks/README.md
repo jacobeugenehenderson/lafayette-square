@@ -211,7 +211,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-deadend-look.mjs` | RENDER THE NINE. Read-only. |
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 
-## safe — 381. This is `npm test`.
+## safe — 382. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -257,6 +257,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-a-look-runs-on-its-own-clock.mjs` | "DOES EVERY LOOK START FROM ITS OWN BEGINNING?" (BRIEF-the-monument-lights-up; Jacob, 2026-10-31: the Red Ribbon's |
 | `checks/claims-a-memo-returns-its-value.mjs` | DOES EVERY useMemo HAND BACK WHAT IT COMPUTES? |
 | `checks/claims-a-menu-price-is-in-cents.mjs` | a menu price is an integer count of cents, on every |
+| `checks/claims-a-merge-cannot-hide-a-red.mjs` | A MERGE CANNOT HIDE A NEW RED AMONG OLD ONES (Boz, 2026-11-01: "the safe-tier reds have no baseline"). |
 | `checks/claims-a-missing-revetment-is-not-a-shoreless-town.mjs` | ⭐⭐ THE INVARIANT: the renderer may draw "no shore" only when it has been TOLD there is no shore — and the town's |
 | `checks/claims-a-mover-stands-where-it-is.mjs` | "DOES A LIVE DOT — THE VISITOR, A COURIER — STAND WHERE IT IS, IN ANY TOWN, DRAWN BY THE TOWN?" |
 | `checks/claims-a-mutant-is-never-written-beside-its-source.mjs` | A MUTANT IS NEVER WRITTEN BESIDE ITS SOURCE (Boz's one-loader ruling, 2026-10-30). |

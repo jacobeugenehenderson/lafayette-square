@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 557,
+  "total": 558,
   "counts": {
-    "safe": 381,
+    "safe": 382,
     "local-effect": 32,
     "live": 144
   },
@@ -616,6 +616,13 @@
       "tier": "safe",
       "why": [
         "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-a-merge-cannot-hide-a-red.mjs",
+      "tier": "safe",
+      "why": [
+        "importSource of checks/_redsDelta.mjs — read, safe"
       ]
     },
     {
