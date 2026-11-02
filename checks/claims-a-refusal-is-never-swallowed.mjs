@@ -17,6 +17,8 @@
  *   7. A FAILED SCENE READ IS NOT REMEMBERED, AND ITS FAILURE IS THE ATTEMPT'S: <Displays> rendered through useSceneRead
  *      under a hook runner: a 503 refuses; a REMOUNT reads the file again and no render of it refuses; on a Look switch
  *      the next Look's first render shows nothing yet, never the last Look's failure.
+ *   8. A TOWN'S TERRAIN READ THAT FAILS IS NAMED: TownPlace, run, throws the refused read at render (to <Town>'s terrain
+ *      boundary); a re-bake forces one re-read; <Town> wraps it (both branches); the Designer's read stands down in a shot.
  *   6. THE REVEAL HEARS IT: a boundary around a layer the reveal waits on (Town.jsx's PHYSICAL, read from source) marks
  *      that class failed on a Refusal and on giving up, so the gate says why the town is held; a clean remount clears
  *      a failure it wrote (never another producer's) with a mark of its own (the gate hears only new marks); every class has exactly one such boundary. Stage's
@@ -252,11 +254,15 @@ function hookRunner() {
     useState(init) { const i = cur, k = i.k++; if (!(k in i.s)) i.s[k] = init; return [i.s[k], (v) => { i.s[k] = v; i.dirty = true }] },
     useMemo(f, deps) { const i = cur, k = i.k++, m = i.m[k]; if (m && same(m.deps, deps)) return m.v; const v = f(); i.m[k] = { deps, v }; return v },
     useEffect(f, deps) { const i = cur, k = i.k++, e = i.e[k]; if (e && same(e.deps, deps)) return; i.after.push(() => { e?.cleanup?.(); i.e[k] = { deps, cleanup: f() } }) },
+    useRef(init) { const i = cur, k = i.k++; if (!(k in i.s)) i.s[k] = { current: init }; return i.s[k] },
   }
+  globalThis.__hooks.useLayoutEffect = globalThis.__hooks.useEffect
   return (render) => {
     const i = { s: {}, m: {}, e: {}, k: 0, after: [], dirty: false, outs: [] }
-    const go = (props) => { cur = i; i.k = 0; i.dirty = false; const out = render(props); cur = null; i.outs.push(out); for (const f of i.after.splice(0)) f(); return out }
-    return { outs: i.outs, render: go,
+    const go = (props) => { cur = i; i.k = 0; i.dirty = false; let out
+      try { out = render(props) } catch (e) { cur = null; i.thrown = e; i.after.length = 0; return undefined }
+      cur = null; i.outs.push(out); for (const f of i.after.splice(0)) f(); return out }
+    return { outs: i.outs, render: go, thrown: () => i.thrown,
       async settle(props) { for (let n = 0; n < 20; n++) { await new Promise((r) => setTimeout(r, 0)); if (i.dirty) go(props) } },
       unmount() { for (const e of Object.values(i.e)) e.cleanup?.() } }
   }
@@ -308,11 +314,48 @@ async function sceneRead(transform, displaysT) {
   return fails
 }
 
-async function verdict({ files: mutate, boundary: bt, http: ht, marks: mt, scene: st, displays: dt } = {}) {
+// ── 8. a town's terrain read that fails is named (2026-11-01) ─────────────────────────────────────────────────────────
+// TownPlace's reloadTerrain was floated: a rejection was an unhandled promise, <Town> held its splash (it draws nothing
+// until terrainLook() is its Look) and nothing said why. RUN: TownPlace under the hook runner, its terrain read rejected,
+// must THROW that refusal at render (to <Town>'s terrain boundary, which reports it, §3); a changed `rebake` forces a re-read.
+// READ: <Town> wraps TownPlace in <R3FErrorBoundary name="terrain"> (one element, both branches), and the only other
+// reader is the Designer's, which stands down in a shot: one reader at a time.
+async function terrainRead(transform) {
+  const fails = []
+  const T = await importSource('src/components/TownPlace.jsx', { span: { from: 'function requireTown(' }, transform,
+    prefix: ['useLayoutEffect', 'useRef', 'useState', 'useSyncExternalStore'].map(h => `const ${h} = (...a) => globalThis.__hooks.${h}(...a)`).join('\n') +
+      "\nconst reloadTerrain = (...a) => globalThis.__reloadTerrain(...a)\nconst setTownPlace = () => {}, placedLook = () => null, onPlaceMoved = () => () => {}, terrainLook = () => null, onTerrainReload = () => () => {}\nconst useTimeOfDay = { getState: () => ({}) }\nimport { Refusal } from '../lib/refusal.js'" })
+  const mount = hookRunner(), calls = []
+  const town = { geography: { lat: 0, lon: 0 } }
+  try {
+    const refused = new Refusal('[terrain] ⛔ look "a-town": terrain.json 404, and its ground was baked ON a terrain')
+    globalThis.__reloadTerrain = (lookId, o) => { calls.push([lookId, !!o?.force]); return Promise.reject(refused) }
+    const a = mount(T.TownPlace); a.render({ town, lookId: 'a-town', rebake: null }); await a.settle({ town, lookId: 'a-town', rebake: null }); a.unmount()
+    if (a.thrown() !== refused) fails.push(`a town whose terrain read is refused renders on (${a.thrown() ? `threw ${a.thrown().message}` : 'nothing thrown'}): the rejection floats, the town holds its splash, and nothing says why (TownPlace.jsx)`)
+    calls.length = 0
+    globalThis.__reloadTerrain = (lookId, o) => { calls.push([lookId, !!o?.force]); return Promise.resolve() }
+    const b = mount(T.TownPlace); b.render({ town, lookId: 'a-town', rebake: null }); await b.settle({ town, lookId: 'a-town', rebake: null })
+    b.render({ town, lookId: 'a-town', rebake: 1234 }); await b.settle({ town, lookId: 'a-town', rebake: 1234 }); b.unmount()
+    if (JSON.stringify(calls) !== JSON.stringify([['a-town', false], ['a-town', true]])) fails.push(`a re-bake does not force the terrain to be read again, once (reads: ${JSON.stringify(calls)}): a Look's first bake would not fill in its missing terrain`)
+  } finally { delete globalThis.__reloadTerrain }
+  return fails
+}
+function terrainOwner(files) {
+  const fails = [], get = (f) => files.find(([g]) => g === f)?.[1] || ''
+  const town = get('src/components/Town.jsx')
+  if (!/const terrainPlace = <R3FErrorBoundary name="terrain"><TownPlace\b[^>]*\brebake=\{bakeLastMs\}[^>]*\/><\/R3FErrorBoundary>/.test(town)) fails.push('<Town> does not wrap TownPlace in <R3FErrorBoundary name="terrain"> (with rebake): a terrain read that fails is not reported')
+  if ((town.match(/\{terrainPlace\}/g) || []).length !== 2 || /<TownPlace\b/.test(town.replace(/const terrainPlace = [^\n]*/, ''))) fails.push('<Town> mounts TownPlace outside its terrain boundary in a branch')
+  const readers = files.filter(([f, t]) => /^src\//.test(f) && !/^src\/harness\//.test(f) && f !== 'src/utils/terrainShader.js' && /\breloadTerrain\(\s*\w/.test(t.replace(/\/\/.*$/gm, ''))).map(([f]) => f).sort()
+  if (JSON.stringify(readers) !== JSON.stringify(['src/cartograph/CartographApp.jsx', 'src/components/TownPlace.jsx'])) fails.push(`the terrain is read by ${readers.join(', ')}: one reader per drawn town (TownPlace), and the Designer's`)
+  if (!/if \(!activeLookId \|\| !inDesigner\) return\n[\s\S]{0,40}reloadTerrain\(activeLookId/.test(get('src/cartograph/CartographApp.jsx'))) fails.push("CartographApp's terrain read does not stand down in a shot: two readers race for one town's terrain, and the boundary's clean mount clears the other's report")
+  return fails
+}
+
+async function verdict({ files: mutate, boundary: bt, http: ht, marks: mt, scene: st, displays: dt, terrain: tt } = {}) {
   let files = SRC.map(f => [f, readFileSync(join(ROOT, f), 'utf8')])
   if (mutate) files = mutate(files)
   const c = contract(files)
-  const fails = [...c.fails, ...await http(ht), ...await boundary(bt, mt), ...await sceneRead(st, dt), ...noUrlFlag(files), ...oneSink(files)]
+  const fails = [...c.fails, ...await http(ht), ...await boundary(bt, mt), ...await sceneRead(st, dt), ...await terrainRead(tt), ...terrainOwner(files), ...noUrlFlag(files), ...oneSink(files)]
   return { fails, c }
 }
 
@@ -352,6 +395,10 @@ if (process.argv.includes('--mutants')) {
     ['a Look switch shows the last Look\'s failure', { scene: must('failure = held?.lookId === lookId ? held.failure : null', 'failure = held?.failure ?? null') }],
     ['a display refuses on a module record of the failure', { scene: (t) => must('const p = slabFetch(', 'const p = slabFetch(')(t).replace(/\.catch\(e => \{\n/, '.catch(e => { globalThis.__lastFail = e\n') + '\nexport const lastFail = () => globalThis.__lastFail',
       displays: must('const { scene, failure } = useSceneRead(lookId), failed', "const { scene } = useSceneRead(lookId), failure = globalThis.__lastFail, failed") }],
+    ['a terrain read that fails floats', { terrain: must('.catch((error) => { if (live) setFailed({ lookId, error }) })', '.catch(() => {})') }],
+    ['a re-bake does not force the terrain', { terrain: must('const force = lastRebake.current !== rebake', 'const force = false') }],
+    ['TownPlace outside the terrain boundary', { files: swap('src/components/Town.jsx', '<R3FErrorBoundary name="terrain"><TownPlace town={town} lookId={lookId} time={time} rebake={bakeLastMs} /></R3FErrorBoundary>', '<TownPlace town={town} lookId={lookId} time={time} rebake={bakeLastMs} />') }],
+    ['a second terrain reader in a shot', { files: swap('src/cartograph/CartographApp.jsx', 'if (!activeLookId || !inDesigner) return', 'if (!activeLookId) return') }],
     ['Stage drops the banner', { files: swap('src/stage/StageApp.jsx', '<FailuresBanner />', '') }],
   ]
   let bad = 0

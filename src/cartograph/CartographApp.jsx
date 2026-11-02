@@ -33,6 +33,8 @@ import { shallow } from 'zustand/shallow'
 import { reloadTerrain, onTerrainReload } from '../utils/terrainShader'
 import { streetEyeY } from '../utils/elevation'
 import R3FErrorBoundary from '../components/R3FErrorBoundary'
+import useFailures, { reasonOf } from '../lib/failures.js'
+import { Refusal } from '../lib/refusal.js'
 import { HeroPreview, useStageMovie, StageNoTown } from '../stage/StageApp.jsx'
 import { SHOT_LABELS, streetStandOf } from '../camera/shots.js'
 import { assertKeyframesAimed } from '../preview/heroAnim.js'
@@ -784,11 +786,11 @@ export default function CartographApp() {
     // bumps when runBake succeeds).
   }, [activeLookId, bakeLastMs])
 
-  // Re-point the terrain singleton at the active Look's baked terrain. Terrain
-  // is a per-installation slab artifact now (not a bundled global), so a Stage
-  // switch to another installation must swap the heightfield the same way
-  // BakedGround swaps ground.bin. Force on a re-bake (bakeLastMs) so a Look's
-  // FIRST bake — which fills in previously-404 (flat) terrain — takes effect.
+  // The DESIGNER's terrain read: it draws no <Town>, but its map layers displace by the terrain (MapLayers.jsx,
+  // TERRAIN_DISPLACE). In a shot <Town>'s TownPlace owns the read (force on a re-bake included), so this one stands
+  // down there: one reader at a time, never two racing for the same terrain. Force on a re-bake (bakeLastMs) so a
+  // Look's FIRST bake — which fills in a terrain that was missing — takes effect. ⛔ A failure is named in the one sink
+  // (`<lookId>/terrain`, the key <Town>'s terrain boundary uses), and a read that lands clears it.
   // ⛔ sceneExag() is read during render, and reloadTerrain re-points it ASYNC with no
   // re-render. So after a reload Stage kept the BOOT town's exaggeration (Lafayette
   // Square's 1.5, the page's default town) until some unrelated re-render (Stage's
@@ -798,11 +800,17 @@ export default function CartographApp() {
   useEffect(() => onTerrainReload(() => setTerrainGen(g => g + 1)), [])
   const _prevBakeMs = useRef(bakeLastMs)
   useEffect(() => {
-    if (!activeLookId) return
     const bakeChanged = _prevBakeMs.current !== bakeLastMs
     _prevBakeMs.current = bakeLastMs
-    reloadTerrain(activeLookId, { force: bakeChanged })
-  }, [activeLookId, bakeLastMs])
+    if (!activeLookId || !inDesigner) return
+    let live = true
+    reloadTerrain(activeLookId, { force: bakeChanged }).then(
+      () => { if (live) useFailures.getState().clear(activeLookId, 'terrain') },
+      (e) => { if (!live) return
+        console.error(`[terrain] ⛔ ${reasonOf(e)}`)
+        useFailures.getState().report({ lookId: activeLookId, layer: 'terrain', kind: e instanceof Refusal ? 'refusal' : 'gave-up', reason: e instanceof Refusal ? reasonOf(e) : `not retried in the Designer: ${reasonOf(e)}` }) })
+    return () => { live = false }
+  }, [activeLookId, bakeLastMs, inDesigner])
 
   // Stage shots read visibility from the BAKE (a hidden layer is not poured). ⭐ Except the lamps: they draw from the
   // lamp file already baked, so their switch (Furniture › Lamps) is live in Stage as OPERATIONS says — it read the

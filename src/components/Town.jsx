@@ -705,7 +705,10 @@ export default function Town({
   const revealTiming = resolveGroupAtMinute(scene?.reveal, 0, null, REVEAL_FIELD_KEYS, REVEAL_FLAT_DEFAULTS)
   const splash = <CanvasOverlay><TownSplash title={_titleOf(town)} fadeSeconds={revealTiming.fade} skyAt={skyAt} identity={scene ? (scene.identity ?? null) : undefined} viewInset={viewInset} /></CanvasOverlay>
   const revealed = useSyncExternalStore(subscribeStartup, isRevealed)
-  if (!loaded) return <><TownOptics quality={quality} shot={shot} movieActive={false} /><TownPlace town={town} lookId={lookId} time={time} />{splash}</>
+  // ⛔ The terrain read's failure is the TOWN's (it draws nothing until its terrain is in), named in the one sink by this
+  // boundary under the town's lookId; one element, so the same boundary holds it before and after the town loads.
+  const terrainPlace = <R3FErrorBoundary name="terrain"><TownPlace town={town} lookId={lookId} time={time} rebake={bakeLastMs} /></R3FErrorBoundary>
+  if (!loaded) return <><TownOptics quality={quality} shot={shot} movieActive={false} />{terrainPlace}{splash}</>
   const shotExag = shot === 'plan' ? 0 : shot === 'street' ? 1 : sceneExag()
   // ⭐ THE SWELL (Jacob, 2026-10-06): the town is prepared FLAT and the terrain swells to the shot's height as the
   // reveal's gesture, through the one terrain driver (BakedGround#TerrainExagDriver). A gesture, not a perf lever.
@@ -717,7 +720,7 @@ export default function Town({
     <QualityProvider quality={quality}>
     <TownScope value={scope}>
       <TownOptics quality={quality} shot={shot} movieActive={shot === 'movie' && (movie?.playing ?? true)} />
-      <TownPlace town={town} lookId={lookId} time={time} />
+      {terrainPlace}
       {/* ⭐ THE MOVIE IS TOWN'S (Warden, 2026-09-28): the ONE mount of the driver, playing this town's own baked path
           (Stage's live keys arrive as overrides). Mounted in every shot so an app's tween can sample the path before
           it switches; it plays only in the movie shot. ▶ node checks/claims-one-movie-driver.mjs */}
