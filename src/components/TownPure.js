@@ -10,7 +10,10 @@
 // package whose dependencies reach them; it loads with no browser (vite SSR, as the Ward's checks load it); one door per name;
 // never empty.
 // Must never: re-export a module that draws (a component, a hook over renderer state). Those stay on Town.jsx: useTownWeather
-// (its sky store imports three), useTownMoonImage (TownMoon.jsx, @react-three/fiber), placeTown (TownPlace.jsx, the terrain).
+// (its sky store imports three), useTownMoonImage (TownMoon.jsx, @react-three/fiber), placeTown (TownPlace.jsx, the terrain),
+// adoptSlabManifest (slabUrl.js imports bakedUrl.js, which reads the page's ward-asset-base tag AT LOAD under a runtime build:
+// its doctrine, "a runtime build served without the tag throws here, at load"; Zob's ruling (A), 2026-11-02). Nothing here
+// may read the page when it is imported.
 
 // The kit's one measure of the frame and its one way to spread work across frames (src/lib/frameSlices.js): the town's own
 // first-use work rides it, and an app imports it through a public door, never by path, so there is one instance and one rAF sampler.
@@ -31,7 +34,5 @@ export { tideExtrema, tideAt } from '../../cartograph/tide.mjs'
 // The town's identity record, the kit's way: the backend key and the tab title (src/lib/townRecord.js), one reader for the
 // kit's apps and the Ward.
 export { tenantOf, titleOf } from '../lib/townRecord.js'
-// The manifest a page already fetched, handed over so it is read once (src/lib/slabUrl.js#adoptSlabManifest).
-export { adoptSlabManifest } from '../lib/slabUrl.js'
 // A building's street address from the slab (src/lib/buildingAddress.js).
 export { useBuildingAddress } from '../lib/buildingAddress.js'
