@@ -59,8 +59,8 @@ import { resolve, relative, dirname } from 'node:path'
 import { drawerDir, frameRel } from '../src/displays/drawerPath.js'
 import { indexListingAssets } from './listing-assets.mjs'
 import { compileRun, showSeconds, refuseCrowdedShows } from '../src/displays/lightShow/engine.js'
-import { displayAt, defaultDisplayChannel } from '../src/displays/showChannel.js'
-import { todSlotMinutesAt } from '../src/lib/todSlots.js'
+import { displayAt, defaultDisplayChannel, refuseWindowSense } from '../src/displays/showChannel.js'
+import { todSlotDays } from '../src/lib/todSlots.js'
 const bakedScene = { displays: { show: defaultDisplayChannel() } }
 `
     // bake-manifest's own text, from its copier through its displays step (photos run between them, and find no listings)

@@ -39,7 +39,9 @@
  *               deleted from the drawer is never left published. ▶ node checks/claims-the-bake-carries-its-displays.mjs
  *               ⛔ Its schedule (the Look's channel, scene.json#displays) is refused, exit 2, where two showtimes of a day
  *               fall closer than the show runs, on any day of the year from the bake at the town's own position
- *               (engine.js#refuseCrowdedShows). ▶ node checks/claims-a-display-is-authored-on-its-own-channel.mjs
+ *               (engine.js#refuseCrowdedShows), and where a show window's two ends pass each other on any of those days
+ *               (showChannel.js#refuseWindowSense). The year is the cached one (todSlots.js#todSlotDays).
+ *               ▶ node checks/claims-a-display-is-authored-on-its-own-channel.mjs · node checks/claims-a-show-plays-only-inside-its-windows.mjs
  *   tide      — tidal towns only (terrain.json `water.tidal`): the station's harmonic constituents, MSL above MLLW and
  *               its datums, from raw/tide.json (fetch-water-datums --tide-only). The player times
  *               the tide from them (cartograph/tide.mjs); the levels stay the town's own. Kept whole, unrounded
@@ -71,8 +73,8 @@ import CATEGORIES from '../src/tokens/categories.js'
 import { notPublished } from '../scripts/slab-publish-rule.mjs'
 import { drawerDir, frameRel } from '../src/displays/drawerPath.js'
 import { compileRun, showSeconds, refuseCrowdedShows } from '../src/displays/lightShow/engine.js'
-import { displayAt } from '../src/displays/showChannel.js'
-import { todSlotMinutesAt } from '../src/lib/todSlots.js'
+import { displayAt, refuseWindowSense } from '../src/displays/showChannel.js'
+import { todSlotDays } from '../src/lib/todSlots.js'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const arg = process.argv.find(a => a.startsWith('--town='))
@@ -147,14 +149,8 @@ const { index: photos, outsideTown: photosOutsideTown } = indexListingAssets(
     exists: existsSync, publish: publishBeside })
 
 // ── displays: each declared display's drawer, published beside the content (header) ──
-/** Every day of the year from today, as [date, the channel on that day] at the town's position. */
-function yearOfDays(channel, place) {
-  const t0 = Date.now()
-  return Array.from({ length: 366 }, (_, i) => {
-    const when = new Date(t0 + i * 86400000), sm = todSlotMinutesAt(when, place)
-    return [when.toISOString().slice(0, 10), (m) => displayAt(channel, m, sm)]
-  })
-}
+/** Every day of the year from today at the town's position, out of the cached years (todSlots.js#todSlotDays). */
+const yearAhead = (place) => todSlotDays(place, new Date(), 366)
 const displays = {}
 for (const d of identity.displays || []) {
   const where = `"${town}" display "${d.id}"`
@@ -181,8 +177,9 @@ for (const d of identity.displays || []) {
     if (!channel) throw new Error(`⛔ ${where}: "${town}"'s scene.json carries no channel for it — re-bake its scene first`)
     const g = identity.geography, place = { lat: g.lat, lon: g.lon, tz: g.timezone }
     const secs = showSeconds(compileRun(d.run, Object.fromEntries((looks.looks || []).map(L => [L.id, L])), where))
-    const days = yearOfDays(channel, place)
-    refuseCrowdedShows(days, secs, `${where}, the year ${days[0][0]} … ${days.at(-1)[0]}`)
+    const year = yearAhead(place), span = `the year ${year[0].date} … ${year.at(-1).date}`
+    refuseWindowSense(channel.showWindows, year, `${where}, ${span}`)
+    refuseCrowdedShows(year.map(r => [r.date, (m) => displayAt(channel, m, r.minutes)]), secs, `${where}, ${span}`)
   } catch (e) { console.error(e.message); process.exit(2) }
   displays[d.id] = { drawer: 'content/' + d.drawer, files }
 }

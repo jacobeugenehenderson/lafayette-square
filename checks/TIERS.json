@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 557,
+  "total": 558,
   "counts": {
-    "safe": 382,
+    "safe": 383,
     "local-effect": 32,
     "live": 143
   },
@@ -887,6 +887,16 @@
         "mkdirSync",
         "deletes files",
         "imports package(s) vite — not read from source"
+      ]
+    },
+    {
+      "file": "checks/claims-a-show-plays-only-inside-its-windows.mjs",
+      "tier": "safe",
+      "why": [
+        "importSource of src/lib/todSlots.js — read, safe",
+        "importSource of src/displays/showChannel.js — read, safe",
+        "importSource of src/displays/lightShow/engine.js — read, safe",
+        "importSource of src/instances/registry.js — read, safe"
       ]
     },
     {

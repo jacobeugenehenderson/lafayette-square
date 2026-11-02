@@ -210,7 +210,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-deadend-look.mjs` | RENDER THE NINE. Read-only. |
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 
-## safe — 382. This is `npm test`.
+## safe — 383. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -274,6 +274,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-a-scene-is-its-own-looks.mjs` | DOES THE SCENE HOOK HAND OUT ONLY THE ASKED LOOK'S SCENE, NEVER THE PREVIOUS ONE'S? |
 | `checks/claims-a-scene-switch-drops-the-old-town.mjs` | CLAIM — A SCENE SWITCH DROPS THE OLD TOWN, AND ITS DESIGN SAVES TO THE NEW TOWN'S OWN LOOK. |
 | `checks/claims-a-shore-is-not-traced-twice.mjs` | ⭐⭐ TWO INVARIANTS, one cure and one guard: |
+| `checks/claims-a-show-plays-only-inside-its-windows.mjs` | "DOES A SHOW PLAY ONLY INSIDE ITS WINDOWS, AND IS A WINDOW WHOSE ENDS PASS EACH OTHER REFUSED?" (Jacob, 2026-11-01: |
 | `checks/claims-a-slab-ships-under-content-names.mjs` | every slab upload names its files by their content, and every read of what an |
 | `checks/claims-a-slab-uploads-only-under-its-own-name.mjs` | A SLAB UPLOADS ONLY UNDER THE NAME IT WAS BAKED UNDER (T1). |
 | `checks/claims-a-stale-terrain-is-not-a-town-without-a-coast.mjs` | ⭐⭐ THE INVARIANT: bake-revetment may report "this town has no coast" only when the SLAB |

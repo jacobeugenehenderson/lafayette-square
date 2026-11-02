@@ -27,8 +27,8 @@ import * as THREE from 'three'
 import useTimeOfDay from '../../hooks/useTimeOfDay'
 import { townClockOf } from '../../lib/townClock.js'
 import { validateDrawer, compileRun, showAt, showSeconds, glowColour, liveState, showtimesOn, refuseCrowdedShows, uplightTarget } from './engine.js'
-import { displayAt, kelvinToRgb, validateDisplayChannel } from '../showChannel.js'
-import { getTodSlotMinutes } from '../../cartograph/animatedParam.js'
+import { displayAt, kelvinToRgb, validateDisplayChannel, refuseWindowSense } from '../showChannel.js'
+import { getTodSlotMinutes, getTodSlotYear } from '../../cartograph/animatedParam.js'
 import { checkFaces, strandEnds, pinnacleFace, pinnacleWash, bulbRadius, cordRadius, SOCKET_OF_BULB, avgGlow } from './geometry.js'
 import useDisplayPreview from '../preview.js'
 import { drawerUrls } from '../drawerUrl.js'
@@ -134,6 +134,9 @@ export default function LightShow({ display, channel, extent, calendar, contentR
     if (day.current?.date !== clock.date || day.current.channel !== channel || day.current.compiled !== compiled) {
       const sm = getTodSlotMinutes(instant), at = (m) => displayAt(channel, m, sm), secs = showSeconds(compiled)
       refuseCrowdedShows([[clock.date, at]], secs, where)
+      // The windows over the town's year: the last line, for a slab baked under an older rule (the store and the bake
+      // refuse first). Only a channel with windows reads the year (cached: once per town and year).
+      if (channel.showWindows) refuseWindowSense(channel.showWindows, getTodSlotYear(clock.year), where)
       day.current = { date: clock.date, channel, compiled, at, times: showtimesOn(at, secs) }
     }
     let mode, t, now, up = true                                                         // Stage's preview hangs them
