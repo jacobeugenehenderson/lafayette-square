@@ -20,8 +20,9 @@
  *      (by `export … from` or by import-then-export)
  *      (two doors to one lib invite two import paths, and the one-instance guarantee rests on one module URL).
  *   ④ the entry re-exports something.
- * REPORTED, not failed: a Town.jsx re-export whose own graph is renderer-free but which the entry does not carry (a candidate;
- * which names go in is the entry author's call).
+ * REPORTED, not failed: a Town.jsx re-export whose own graph is renderer-free but which the entry does not carry. Renderer-free
+ * is not import-safe (slabUrl.js: bakedUrl reads the page at load under a runtime build), so the report proposes nothing;
+ * the live check decides, with the lib in the door. Which names go in is the entry author's call.
  * ANCHORED every run on this repo's real files: Town.jsx's own graph must be judged to reach three, the installed postprocessing
  * to reach it by its peer, and the installed zustand (optional peers only) to be renderer-free.
  * Usage: node checks/claims-the-pure-entry-loads-no-renderer.mjs [--mutants]
@@ -272,7 +273,7 @@ const { fails, report } = live()
 const all = [...self.map(s => `[self-test] ${s}`), ...fails]
 if (all.length) { console.log(`⛔ the kit's renderer-free door (${ENTRY_REL}):\n  · ${all.join('\n  · ')}`); process.exitCode = 1 }
 else console.log(`✅ ${ENTRY_REL} reaches no renderer and is the one door for what it carries (${PLANTS.length} planted graphs judged RED)`)
-if (report.length) console.log(`  ℹ️ Town.jsx re-exports these renderer-free libs outside the door (a candidate, not a finding): ${report.join(', ')}`)
+if (report.length) console.log(`  ℹ️ Town.jsx re-exports these libs outside the door whose graph reaches no renderer: ${report.join(', ')}. Not a finding, and not yet a candidate: whether one is safe to IMPORT (no read of the page at load, in any build mode) is claims-the-pure-entry-loads-without-a-browser's verdict, run with it in the door.`)
 
 if (process.argv.includes('--mutants')) {
   let bad = 0
