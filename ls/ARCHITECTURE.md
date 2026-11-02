@@ -180,7 +180,7 @@ All four HTML entries build into `dist/`. Authoring HTML files (`cartograph.html
 
 **GitHub Pages deploy** (`.github/workflows/deploy.yml`): builds `dist/` from `main` branch; deploys via `actions/deploy-pages@v4`; `public/CNAME` binds `lafayette-square.com`.
 
-**Cloudflare** owns DNS (proxied) + Worker (per-`/place/*` OG meta). See `PUBLISH.md §3-4`.
+**Cloudflare** owns DNS (proxied). Every town's link preview, a place's included, is written by the kit's site Workers (`src/lib/shareCard.js`); the `.com`'s own `/place/*` proxy retired with its 301 to `lafayettesquare.online` (`PUBLISH.md §3-4`).
 
 **`public/` weight at dev time** (after spring-cleaning):
 

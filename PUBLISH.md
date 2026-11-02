@@ -137,24 +137,13 @@ The Apps Script reads/writes to a Google Sheets workbook. Key sheets:
 | Handles | Device → handle/avatar mapping |
 | QRDesigns | Styled QR images per listing |
 
-## 3. Cloudflare Worker (`worker.js`)
+## 3. Cloudflare Worker (`worker.js`) — RETIRED with Lafayette Square's `.com`
 
-⛔ **Lafayette Square legacy, until its cutover:** serves lafayette-square.com only. Every Ward town's link preview, the town's and a place's, is written by the kit's site Workers (`workers/production-sites`, `workers/staging-sites`) through `src/lib/shareCard.js`. Injects per-place OG meta tags for social link previews on `/place/*` routes.
+`lafayette-square.com` and `www.` answer 301 → `https://lafayettesquare.online/` (measured 2026-11-01), so the `.com` zone's
+`/place/*` proxy and its DNS (§4) serve nothing a visitor reaches. Every town's link preview, a place's included, is written by
+the kit's site Workers through `src/lib/shareCard.js`. The old procedure: `cartograph/_archive/LEGACY-PLAYER-register-RETIRED-2026-11-01.md`.
 
-Deploy via Cloudflare dashboard: **Workers & Pages > lafayette-square-proxy > Edit Code**, paste `worker.js`, save and deploy.
-
-Route: `lafayette-square.com/place/*` on the `lafayette-square.com` zone.
-
-## 4. DNS (Cloudflare)
-
-`lafayette-square.com` DNS is managed by Cloudflare (proxied):
-
-| Record | Value |
-|--------|-------|
-| `A` (×4) | `185.199.108–111.153` (GitHub Pages) |
-| `CNAME www` | `jacobeugenehenderson.github.io` |
-
-GitHub repo Settings > Pages: custom domain `lafayette-square.com`, Enforce HTTPS on.
+## 4. DNS (Cloudflare) — RETIRED with the `.com` (§3)
 
 ## 5. Supabase (Cary — not yet live)
 

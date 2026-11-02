@@ -70,3 +70,24 @@ taken from `public/baked/<map>/manifest.json` when the player is published (`scr
 ## from `cartograph/OPERATIONS.md` (commit 2, the Workers)
 
 - ⚠️ **Switching a live town to the Ward is a production change:** set its staging record to `ward`, check it on staging, then Promote — e.g. re-promoting provincetown.online after its record says `ward` moves it off the old player. Until a town has a staging record, Promote refuses it.
+
+## from `PUBLISH.md` §3 and §4 (Boz, 2026-11-01: evicted as ROT — `lafayette-square.com` and `www.` answer 301 → lafayettesquare.online, measured with curl -I)
+
+## 3. Cloudflare Worker (`worker.js`)
+
+⛔ **Lafayette Square legacy, until its cutover:** serves lafayette-square.com only. Every Ward town's link preview, the town's and a place's, is written by the kit's site Workers (`workers/production-sites`, `workers/staging-sites`) through `src/lib/shareCard.js`. Injects per-place OG meta tags for social link previews on `/place/*` routes.
+
+Deploy via Cloudflare dashboard: **Workers & Pages > lafayette-square-proxy > Edit Code**, paste `worker.js`, save and deploy.
+
+Route: `lafayette-square.com/place/*` on the `lafayette-square.com` zone.
+
+## 4. DNS (Cloudflare)
+
+`lafayette-square.com` DNS is managed by Cloudflare (proxied):
+
+| Record | Value |
+|--------|-------|
+| `A` (×4) | `185.199.108–111.153` (GitHub Pages) |
+| `CNAME www` | `jacobeugenehenderson.github.io` |
+
+GitHub repo Settings > Pages: custom domain `lafayette-square.com`, Enforce HTTPS on.
