@@ -20,8 +20,9 @@
  *   8. A TOWN'S TERRAIN READ THAT FAILS IS NAMED: TownPlace, run, throws the refused read at render (to <Town>'s terrain
  *      boundary); a re-bake forces one re-read; <Town> wraps it (both branches); the Designer's read stands down in a shot.
  *   9. A FRAME CALLBACK'S THROW IS NAMED: src/lib/useTownFrame.js, run: inside a boundary it is stopped and rethrown at
- *      render as thrown; outside one it is reported to the sink under its town and never rethrown; it is never called
- *      again. Both boundaries provide FrameBoundary; LightShow's own copy is retired.
+ *      render as thrown; outside one it is reported to the sink under its town, keyed to its subscriber (its label), and
+ *      cleared when that unmounts; it is never called again. Read: both boundaries provide FrameBoundary; <Town> resets it
+ *      at its roots and no boundary encloses a <Canvas> (Canvas forwards contexts in); LightShow's own copy is retired.
  *   6. THE REVEAL HEARS IT: a boundary around a layer the reveal waits on (Town.jsx's PHYSICAL, read from source) marks
  *      that class failed on a Refusal and on giving up, so the gate says why the town is held; a clean remount clears
  *      a failure it wrote (never another producer's) with a mark of its own (the gate hears only new marks); every class has exactly one such boundary. Stage's
@@ -41,7 +42,8 @@
  *   · a terrain read that fails floats · a re-bake does not force the terrain · TownPlace outside the terrain boundary
  *   · a second terrain reader in a shot · a frame throw goes unstopped · a frame throw in a boundary is not rethrown
  *   · a frame throw outside a boundary is not reported · a boundary that does not provide FrameBoundary · LightShow
- *   back on a bare useFrame
+ *   back on a bare useFrame · a frame failure never cleared · a frame failure keyed to its reason · Town does not
+ *   reset FrameBoundary · a boundary around a Canvas
  *   → each must go red.
  */
 import { readFileSync } from 'node:fs'
@@ -369,7 +371,7 @@ function terrainOwner(files) {
 async function frameThrow(transform) {
   const fails = []
   const W = await importSource('src/lib/useTownFrame.js', { span: { from: 'export function useTownFrame(' }, transform,
-    prefix: "const useRef = (...a) => globalThis.__hooks.useRef(...a), useState = (...a) => globalThis.__hooks.useState(...a)\nconst FrameBoundary = 'frame-boundary', TownContext = 'town'\nconst useContext = (c) => globalThis.__ctx[c]\nconst useFrame = (fn) => { globalThis.__frame = fn }\nimport useFailures, { reasonOf } from '../lib/failures.js'\nimport { Refusal, Transient } from '../lib/refusal.js'" })
+    prefix: "const useRef = (...a) => globalThis.__hooks.useRef(...a), useState = (...a) => globalThis.__hooks.useState(...a), useEffect = (...a) => globalThis.__hooks.useEffect(...a)\nlet _seq = 0\nconst FrameBoundary = 'frame-boundary', TownContext = 'town'\nconst useContext = (c) => globalThis.__ctx[c]\nconst useFrame = (fn) => { globalThis.__frame = fn }\nimport useFailures, { reasonOf } from '../lib/failures.js'\nimport { Refusal, Transient } from '../lib/refusal.js'" })
   const { Transient } = await import(pathToFileURL(join(ROOT, 'src/lib/refusal.js')))
   const mount = hookRunner(), was = console.error
   console.error = () => {}
@@ -391,6 +393,14 @@ async function frameThrow(transform) {
     if (got?.kind !== 'refusal' || !got.reason.includes('a frame refused')) fails.push(`a frame callback's throw outside any boundary is not reported to the one sink under its town (got ${JSON.stringify(got)})`)
     if (b.thrown()) fails.push('a frame callback\'s throw outside any boundary is rethrown at render: it would take the whole canvas down')
     if (calls !== 1) fails.push(`a frame callback that threw outside a boundary is called again (${calls} calls)`)
+    // …keyed to THIS subscriber (its label), and gone when it unmounts: a banner never outlives the subscriber
+    b.unmount()
+    if (Object.values(failures.getState().failed).some((f) => f.lookId === 'a-town' && /^frame/.test(f.layer))) fails.push('a frame failure reported outside a boundary outlives its subscriber (it never clears on unmount): the banner outlives its cause')
+    failures.setState({ failed: {} })
+    const c = mount(() => W.useTownFrame(() => { throw new Refusal('[x] ⛔ labelled') }, 0, 'the arch light'))
+    c.render(); globalThis.__frame({}, 0.016); await c.settle()
+    if (!failures.getState().failed['a-town/frame: the arch light']) fails.push(`a frame failure outside a boundary is not keyed to its subscriber's label (keys: ${Object.keys(failures.getState().failed).join(', ')})`)
+    c.unmount()
   } finally { console.error = was; delete globalThis.__ctx; delete globalThis.__frame }
   return fails
 }
@@ -398,6 +408,16 @@ function frameProviders(files) {
   const fails = [], get = (f) => files.find(([g]) => g === f)?.[1] || ''
   for (const f of ['src/components/R3FErrorBoundary.jsx', 'src/displays/DisplayBoundary.js'])
     if (!/createElement\(FrameBoundary\.Provider, \{ value: true \}, this\.props\.children\)/.test(get(f))) fails.push(`${f} does not provide FrameBoundary: a frame throw in its subtree goes to the sink, not to the boundary that would refuse or retry it`)
+  // "Inside" is inside THIS R3F tree: <Canvas> forwards outside contexts and rethrows into the DOM tree, so <Town> resets
+  // FrameBoundary at both of its roots, and no boundary that provides it encloses a <Canvas> (Zob, 2026-11-01).
+  const town = get('src/components/Town.jsx')
+  if (!/if \(!loaded\) return <FrameBoundary\.Provider value=\{false\}>/.test(town) || !/return \([\s\S]{0,400}<FrameBoundary\.Provider value=\{false\}>\s*<QualityProvider/.test(town))
+    fails.push('<Town> does not reset FrameBoundary at its roots: a boundary above the Canvas (its context forwarded in) would claim the town\'s frame throws, and its rethrow takes the whole canvas down')
+  for (const [f, t] of files) {
+    if (!/<Canvas\b/.test(t)) continue
+    for (const m of t.matchAll(/<(R3FErrorBoundary|DisplayBoundary|FrameBoundary\.Provider value=\{true\})\b[\s\S]*?<\/(R3FErrorBoundary|DisplayBoundary|FrameBoundary\.Provider)>/g))
+      if (/<Canvas\b/.test(m[0])) fails.push(`${f}: a ${m[1].split(' ')[0]} encloses a <Canvas>: its frame-throw context reaches into the R3F tree, where a rethrow takes the whole canvas down`)
+  }
   const ls = get('src/displays/lightShow/LightShow.jsx')
   if (!/\buseTownFrame\(/.test(ls) || /\bframeErr\b|\bframeDead\b/.test(ls)) fails.push('LightShow keeps its own frame catch-and-rethrow beside useTownFrame (two copies of one rule)')
   return fails
@@ -455,6 +475,10 @@ if (process.argv.includes('--mutants')) {
     ['a frame throw in a boundary is not rethrown', { frame: must('if (inBoundary) { setFailed({ error }); return }', 'if (inBoundary) return') }],
     ['a frame throw outside a boundary is not reported', { frame: must('      useFailures.getState().report(', '      void (') }],
     ['a boundary that does not provide FrameBoundary', { files: swap('src/components/R3FErrorBoundary.jsx', 'return createElement(FrameBoundary.Provider, { value: true }, this.props.children)', 'return this.props.children') }],
+    ['a frame failure never cleared', { frame: must('  useEffect(() => () => { if (reported.current) useFailures.getState().clear(reported.current, key.current) }, [])\n', '') }],
+    ['a frame failure keyed to its reason', { frame: must('layer: key.current,', 'layer: `frame: ${reason.slice(0, 60)}`,') }],
+    ['Town does not reset FrameBoundary', { files: swap('src/components/Town.jsx', 'if (!loaded) return <FrameBoundary.Provider value={false}>', 'if (!loaded) return <FrameBoundary.Provider value={true}>') }],
+    ['a boundary around a Canvas', { files: (fs) => [...fs, ['src/__mutant.jsx', "export const App = () => <R3FErrorBoundary name=\"all\"><Canvas><Town /></Canvas></R3FErrorBoundary>\n"]] }],
     ['LightShow back on a bare useFrame', { files: swap('src/displays/lightShow/LightShow.jsx', 'useTownFrame((_, delta) => {', 'useFrame((_, delta) => {') }],
     ['Stage drops the banner', { files: swap('src/stage/StageApp.jsx', '<FailuresBanner />', '') }],
   ]

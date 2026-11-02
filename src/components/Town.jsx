@@ -117,6 +117,7 @@ import { TownMoonPainter } from './TownMoon.jsx'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import R3FErrorBoundary from './R3FErrorBoundary'
+import { FrameBoundary } from '../lib/frameBoundary.js'
 import { TownPlace, useTownLoaded } from './TownPlace.jsx'
 import TowerLight from './TowerLight.jsx'
 import { TownScope, SHOT_KEY } from './townContext.js'
@@ -710,7 +711,7 @@ export default function Town({
   // they sit at different tree positions, so the town loading REMOUNTS it, and that clean mount clears the entry (the
   // read landed). The remount re-runs TownPlace: placeTown and an unforced reloadTerrain are no-ops, and `time` is applied again.
   const terrainPlace = <R3FErrorBoundary name="terrain"><TownPlace town={town} lookId={lookId} time={time} rebake={bakeLastMs} /></R3FErrorBoundary>
-  if (!loaded) return <><TownOptics quality={quality} shot={shot} movieActive={false} />{terrainPlace}{splash}</>
+  if (!loaded) return <FrameBoundary.Provider value={false}><TownOptics quality={quality} shot={shot} movieActive={false} />{terrainPlace}{splash}</FrameBoundary.Provider>
   const shotExag = shot === 'plan' ? 0 : shot === 'street' ? 1 : sceneExag()
   // ⭐ THE SWELL (Jacob, 2026-10-06): the town is prepared FLAT and the terrain swells to the shot's height as the
   // reveal's gesture, through the one terrain driver (BakedGround#TerrainExagDriver). A gesture, not a perf lever.
@@ -719,6 +720,9 @@ export default function Town({
   const heavy = !quality.heroOnlyPieces || shot === 'movie'
 
   return (
+    // ⛔ A frame callback's throw is "inside a boundary" only inside THIS R3F tree: <Canvas> forwards every outside context,
+    // so a FrameBoundary=true above it would claim this town's frame throws (src/lib/useTownFrame.js). Reset here.
+    <FrameBoundary.Provider value={false}>
     <QualityProvider quality={quality}>
     <TownScope value={scope}>
       <TownOptics quality={quality} shot={shot} movieActive={shot === 'movie' && (movie?.playing ?? true)} />
@@ -828,5 +832,6 @@ export default function Town({
       {children}
     </TownScope>
     </QualityProvider>
+    </FrameBoundary.Provider>
   )
 }
