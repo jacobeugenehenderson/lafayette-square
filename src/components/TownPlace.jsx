@@ -32,16 +32,16 @@ export function placeTown(town, lookId) {
 }
 
 /**
- * Places `town`, loads its terrain, and — when `time` is given — writes the town's clock: a Date is the town's
- * instant (setTime keeps the calendar in step); null returns it to live once; undefined leaves the clock to the
- * app. Mounted by <Town>, inside its `terrain` boundary.
+ * Places `town`, loads its terrain, and — when `time` or `timeOffsetMs` is given — writes the town's clock: a Date is
+ * the town's instant (setTime keeps the calendar in step); null returns it to live once; an offset puts it at now +
+ * offset, from where TimeTicker advances it; undefined leaves the clock to the app. Mounted by <Town>, inside its `terrain` boundary.
  * ⭐ THE ONE OWNER OF A DRAWN TOWN'S TERRAIN READ (2026-11-01). `rebake` (the app's bakeLastMs: Stage's last bake in this
  * session) re-reads it when it changes, so a Look's first bake, which fills in a terrain that was missing, takes effect.
  * ⛔ A FAILED READ IS THROWN HERE, at render, to <Town>'s terrain boundary. It floated (an unhandled rejection): <Town>
  * held its splash forever (it draws nothing until terrainLook() is its Look) and nothing said why. Now a Refusal reaches
  * the one sink, named; a Transient is retried by remount, which reads again.
  */
-export function TownPlace({ town, lookId, time, rebake }) {
+export function TownPlace({ town, lookId, time, timeOffsetMs, rebake }) {
   requireTown(town, lookId)
   useLayoutEffect(() => { placeTown(town, lookId) }, [town, lookId])
   const [failed, setFailed] = useState(null), lastRebake = useRef(rebake)
@@ -60,6 +60,15 @@ export function TownPlace({ town, lookId, time, rebake }) {
     if (instant === null) { if (!tod.isLive) tod.returnToLive() }
     else tod.setTime(new Date(instant))
   }, [instant])
+  // ⭐ AN OFFSET FROM NOW (Town's timeOffsetMs; the Ward's time bar). Written here on a change and on every mount (it is an
+  // offset, so a remount re-anchors at now + offset); TimeTicker, still mounted with no hold, advances it each frame. 0 is
+  // live. ⛔ setTime, so isLive is false off now: the weather reads the shown time's forecast, never the current conditions.
+  useLayoutEffect(() => {
+    if (timeOffsetMs === undefined) return
+    const tod = useTimeOfDay.getState()
+    if (timeOffsetMs === 0) { if (!tod.isLive) tod.returnToLive() }
+    else tod.setTime(new Date(Date.now() + timeOffsetMs))
+  }, [timeOffsetMs])
   return null
 }
 

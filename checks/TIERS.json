@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 558,
+  "total": 559,
   "counts": {
-    "safe": 383,
+    "safe": 384,
     "local-effect": 32,
     "live": 143
   },
@@ -861,6 +861,15 @@
         "opens a WebSocket",
         "deletes files — only under its own temp dir",
         "runs `/Applications/Google Chrome.app/Contents` — not a known-local command"
+      ]
+    },
+    {
+      "file": "checks/claims-a-scrubbed-town-keeps-ticking.mjs",
+      "tier": "safe",
+      "why": [
+        "importSource of src/components/TownPlace.jsx (its span: function requireTown( → end) — read, safe",
+        "importSource of src/components/SkyTickers.jsx (its span: TimeTicker) — read, safe",
+        "computed import of src/hooks/useTimeOfDay.js — read, safe"
       ]
     },
     {
