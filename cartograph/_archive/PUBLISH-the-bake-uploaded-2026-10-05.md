@@ -13,7 +13,7 @@ Live homes: `cartograph/OPERATIONS.md` (*Bake* › THE UPLOAD · *Publish*) · `
 > the whole bake (500)** — a green bake that reached nobody is the one outcome worth refusing, and it is
 > exactly the shape this pipeline refuses everywhere else. ⚠️ **The pour is then live on staging AND
 > production immediately**, at the same URLs, without a push; `PREVIEW.md §0.2` settled that Preview — not
-> staging — is the gate for slab data. Operator view: `cartograph/OPERATIONS.md §Bake`. Mechanics:
+> staging — is the gate for slab data. Operator view: `cartograph/OPERATIONS.md §Foundry`. Mechanics:
 > `PUBLISH.md §6`. It is the boundary between the **authoring** world (cartograph: stores, live re-derivation, the operator's eye) and the **runtime** world (LS: trust the slab, never reach back).
 
 ## `PUBLISH.md` — removed lines

@@ -7,7 +7,7 @@ Marks: ⟦unbuilt⟧ = ruled but not yet the code · ⛔ = a gap.
 
 ## 1. What we are building
 
-A **kit that pours neighborhoods**. Real city data goes in; a **slab** comes out: a flat, fast, trusted map that the
+A **kit that pours neighborhoods**. Real city data goes in; the **Slab** comes out: a flat, fast, trusted map that the
 public app, **The Ward**, plays without recomputing anything. Lafayette Square was the first town off the line, so
 most names in the repo are its names; the subject is always the kit. LS is the mould the kit was cast around
 (`EXTENT-DESIGN §2.1`); every town runs the same pipeline, never a private one.
@@ -35,17 +35,17 @@ completely. A freeze is a performance move as much as a correctness one: authori
 retrace the whole map every frame. The operator works on it with three tools, each at its own place:
 
 ```
-         EXTENT                       SURVEY                         SECTION (opened as Measure)
+         EXTENT                       SURVEY                         SECTION
            ↓                            ↓                                 ↓
-intake → skeleton → ① protopolygon → the fe walk/stamp → ② the curb → ⟦THE WALL⟧ → the ribbons → the bake → slab → The Ward
+intake → skeleton → ① protopolygon → the fe walk/stamp → ② the curb → ⟦THE SEAL⟧ → the ribbons → the Foundry → the Slab → The Ward
                                        + land use stamped → the disc cuts the shape
 ```
 
 | Tool | The operator authors… | It writes | It sits… |
 |---|---|---|---|
-| **Extent** | what the neighborhood *is*: an inclusion polygon of real streets, exclusions, per-building toggles; the radius and hood centre | `neighborhood_boundary.json`, `geography.json`, `neighborhood.json`, `building-overrides.json` (via `commit-extent`) | before the pour: it decides the data and freezes the frame |
-| **Survey** | the SHAPE: each street's width, caps, corner radii, block by block | `overlay.json`, centerlines, measurements, `blockCustoms…pavementHW` | on ① and the stamp, built live; **its exit IS the Wall** (it posts `shape.json`) |
-| **Section** | the FILL: treelawn and sidewalk depths, materials, terminals; corner overrides | `design.json` `blockCustoms` (its own fields) | after the Wall, inside the frozen curb |
+| **Extent** | what the neighborhood *is*: an inclusion polygon of real streets, exclusions, per-building toggles; the radius and hood centre | `neighborhood_boundary.json`, `geography.json`, `neighborhood.json`, `building-overrides.json` (via `commit-extent`) | first: it decides the data and freezes the frame |
+| **Survey** | the SHAPE: each street's width, caps, corner radii, block by block | `overlay.json`, centerlines, measurements, `blockCustoms…pavementHW` | on ① and the stamp, built live; **its exit IS the Seal** (it posts `shape.json`) |
+| **Section** | the FILL: treelawn and sidewalk depths, materials, terminals; corner overrides | `design.json` `blockCustoms` (its own fields) | after the Seal, inside the frozen curb |
 
 Survey and Section write one record, `blockCustoms`, different fields: the one place two tools meet.
 
@@ -70,7 +70,7 @@ make the water); the sand line will be ⟦unbuilt⟧. Home: `src/lib/tileGround.
 
 **The fe walk and stamp.** Every edge of every block knows which street and which side made it, and its place along
 the street: `skelId · side · segOrd`, the **frontage edge (fe)**. Authoring is keyed to it (`design.json`
-`blockCustoms[skelId][side][segOrd]`), so a re-pour keeps the operator's work on the same frontage. Land use is
+`blockCustoms[skelId][side][segOrd]`), so running every step again keeps the operator's work on the same frontage. Land use is
 stamped the same way: evidence (OSM, then parcels; the class order decides contested ground) is built as **one
 partition** (`cartograph/derive.js#layerLandEvidence`), where two classes meet in one line, and stamped per tile
 (`tileGround.js#stampTile`). Where no evidence reaches, the ground is `underived` (ruled 2026-10-05, 9cf113be).
@@ -80,10 +80,10 @@ partition** (`cartograph/derive.js#layerLandEvidence`), where two classes meet i
 for. Fix the line and the curb follows.
 
 **The disc.** The radius cuts the finished shape once (`buildTileGround`'s disc stamp); geometry never reads the
-fade. ⛔ Two producers still apply it early, in the pour (the land-use face walk; water dropped past `discR × 1.25`):
+fade. ⛔ Two producers still apply it early, upstream (the land-use face walk; water dropped past `discR × 1.25`):
 `BRIEF-the-disc-is-one-source` ⟦unbuilt⟧.
 
-**⟦The Wall⟧.** Chains die here. After it there is no "this chain link", only "this edge of this surface". Nothing
+**⟦The Seal⟧** *(older canon: the Wall)*. Chains die here. After it there is no "this chain link", only "this edge of this surface". Nothing
 downstream reaches back across it. Authoring is not a chain: a lookup by street key that returns the operator's
 numbers is legitimate; every polygon comes from the frozen `shape.json`.
 
@@ -105,15 +105,15 @@ born; near-coincident vertices join only within the rounding's own bound, √2/2
 (`src/lib/latticeNode.js#NODE_BOUND`). A line cut twice and rounded twice is the recurring defect of this repo;
 the cure is always to cut it once, never a tolerance.
 
-**The bake.** The painted layers flatten into one plane of non-overlapping pieces, noded to each other
+**The Foundry.** The painted layers flatten into one plane of non-overlapping pieces, noded to each other
 (`cartograph/bake-ground.js#flattenPaintStack`, `#nodeThePlane`). The overlays (paths, parks, scrub, the water bed,
 lane lines, the stripe) are flat and stamped with everything else; the water sheet stays a tint over its bed;
 bridges stay out (`BRIEF-the-rim-is-cut-once §5` ⟦unbuilt⟧). Height is **one field**: drawn = field × exaggeration +
 kerb lift (`src/utils/terrainShader.js`, read on the CPU by `src/lib/drawnGround.js`); relative height matters,
 literal height doesn't. Only what's lit is raised. Everything that stands on the ground (trees, lamps, paths) sits
-on the one drawn surface, by a height baked per object (`cartograph/ARCHITECTURE.md`, "Ground conformance").
+on the one drawn surface, by a height the Foundry records per object (`cartograph/ARCHITECTURE.md`, "Ground conformance").
 
-**The slab and The Ward.** The bake writes the slab: ground, buildings, trees, lamps, labels, terrain, ambient
+**The Slab and The Ward.** The Foundry writes the Slab: ground, buildings, trees, lamps, labels, terrain, ambient
 occlusion, a manifest. One rule decides what's lit, for every family:
 `((polygon − exclusions) ∪ activate) − hide`, ordered so the finest gesture wins (`activate` beats an exclusion,
 `hide` beats everything; `NEIGHBORHOOD-INPUTS §5.2`), the disc where no polygon is authored
@@ -124,9 +124,9 @@ carried in the look's `trees-atlas.json`; a model draws only for a species on th
 `src/lib/treeGeometry.js#slabTreeGeometry`, read by the player, the uploader and the verifier. The models are
 authoring input, never payload. ⛔ A renamed look must carry its hero impostors, or every tree falls back to a model.
 The Ward plays three
-payloads: the slab, the content (names, listings, history) and the installation config (identity, branding, and
+payloads: the Slab, the content (names, listings, history) and the installation config (identity, branding, and
 a manifest that switches features on, never inferred from the data's presence; `ls/ARCHITECTURE.md §6`). If it
-isn't in the slab, the public never sees it. Publish puts a slab on staging; Promote puts it on the town's address.
+isn't in the Slab, the public never sees it. Publish puts the Slab on staging; Promote puts it on the town's address.
 
 ## 4. The canonical items
 
@@ -198,12 +198,12 @@ works the item out) or only **storage**. ⛔ marks a gap. Each home's header wil
 ## 6. Where to go next
 
 `README.md` — where each item lives. `ROADMAP.md` — what's left. `cartograph/BACKLOG.md` — the live front.
-`ONBOARDING.md` — pouring and hydrating a new town. `ACCORDANCE-REVIEW.md` — does the code deliver what the docs claim.
+`ONBOARDING.md` — making and hydrating a new town. `ACCORDANCE-REVIEW.md` — does the code deliver what the docs claim.
 The deep homes: `SKELETON` · `RIBBONS` · `SECTION` · `SURVEY` · `ARCHITECTURE` · `SLAB-CONTRACT` · `EXTENT-DESIGN`.
 
 | The four parts | Live in |
 |---|---|
-| The map kit: streets, blocks, curbs, the bake | `cartograph/` (start `README.md §⭐ START HERE`) |
+| The map kit: streets, blocks, curbs, the Foundry | `cartograph/` (start `README.md §⭐ START HERE`) |
 | The public app, The Ward: place cards, residences, the courier | `ls/` (`FEATURES` · `ARCHITECTURE` · `STATUS`) |
 | The trees | `arborist/` (start `arborist/README.md §⭐ START HERE`) |
 | The weather: clouds and sky | `meteorologist/` (`README` · `WEATHER-MODEL`) |

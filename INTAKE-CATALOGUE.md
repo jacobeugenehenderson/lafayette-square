@@ -1,6 +1,6 @@
 # INTAKE CATALOGUE — every input a town could have, and where you get it
 
-> **What this is.** The cross-domain answer to *"what goes into pouring a town, and where does a
+> **What this is.** The cross-domain answer to *"what goes into making a town, and where does a
 > person obtain it?"* — deliverable #1 of `BRIEF-intake-manifest.md`. Four domains: cartograph
 > render-side · arborist · meteorologist · content/player.
 >
@@ -10,7 +10,7 @@
 > actually been acquired. Where LS's artifact was hand-made, the row's acquisition is **a doc**
 > (§2.1a of the brief), not a dataset — and where that doc doesn't exist yet, writing it is the work.
 >
-> **Standing constraint** (`BRIEF §4`): every input is a **local file**; a pour must be reproducible
+> **Standing constraint** (`BRIEF §4`): every input is a **local file**; a Foundry run must be reproducible
 > with the network unplugged. Fetching *acquires* a file once; it is never how the pipeline reads.
 >
 > ⚠️ **Verification status.** In-repo claims (paths, guards, licence files, on-disk counts) are
@@ -85,7 +85,7 @@ Four wells, unioned by `bake-trees --placements` (`cartograph/tree-bake-inputs.m
 | **Canopy raster** | `raw/canopy.tif` → `clean/derived_trees.json` | synthetic fill in parks/yards no point census covers; `source:'derived'`, no dbh | no fill — **a legitimate opt-out, not a defect** (LS ships real-only) | **US: NLCD Tree Canopy Cover (USDA FS / MRLC)**, 30 m, public domain. ⚠️ **WCS GetCoverage 404s for CONUS TCC — use WMS GetMap `format=image/geotiff`, and discover the versioned layer name from GetCapabilities** (handled in `scripts/16`). **Non-US: ESA WorldCover 10 m** (CC BY 4.0, S3 COGs — the intended swap-in per `TREE-INTAKE.md §5`) or **Hansen/UMD Global Forest Change** **[unverified]**; Copernicus HRL Tree Cover Density for Europe **[unverified]** |
 | **Species routing map** | `tree-species-map.json` (+ `tree-mix.json` shares) | every placement resolving to a real library species | honest zero: routing is EMPTY, never LS's map (`bake-trees.js`, "Refusing to route through LS's map") | **DERIVED** from the census histogram by `scripts/15`. ⚠️ Its collapse table is St-Louis-flavored — audit per region. **No municipal census:** `scripts/15-fia-tree-mix.mjs` — the county's USDA FIA survey, ranked by live stems (Jacob, 2026-09-25) |
 
-*Also read but **derived**, not acquirable:* `neighborhood_boundary.json`, `public/baked/<scene>/shape.json`, `clean/map.json`. ⚠️ No `shape.json` → the bake falls back to the retired paint mask which *"cannot see the road and will scatter trees into the carriageway"* — loud-on-purpose, not a bleed.
+*Also read but **derived**, not acquirable:* `neighborhood_boundary.json`, `public/baked/<scene>/shape.json`, `clean/map.json`. ⚠️ No `shape.json` → the Foundry falls back to the retired paint mask which *"cannot see the road and will scatter trees into the carriageway"* — loud-on-purpose, not a bleed.
 
 ### 1.2 Asset side (WHAT a tree looks like)
 
@@ -104,7 +104,7 @@ Vendor tree GLBs. `arborist/ORIENTATION.md`: *"A tree's identity is mostly its b
 **B3 · Leaf shape packs.** `public/textures/leaves/shapes/<pack>/` — 18 packs, **tracked**. Hi-res sources (`assets/botanical-reference-hires/`, `assets/leaf-packs-2026/`) are **gitignored**.
 ✅ **Absence is honest and visible — the good pattern:** missing packs render as **dimmed "needed" plates**, so the Salon grid doubles as its own coverage map (`arborist/NOTES.md:68`). ~6 bases empty: `fan, compound, fine_compound, palmate_compound, tulip, short_needle`.
 **Acquisition, both verified in-repo:** (a) **ambientCG LeafSet001/004/005/007/010/012/013/016/019 + Leaf001**, CC0 (`arborist/SPEC.md:52`), README pre-tags each pack to a morphology. (b) **Hand-scanned by Jacob 2026-06-19** — `meta.json#source.vendor` confirms `american_sweetgum`, `bigleaf_maple`, `california_black_oak`, `eastern_black_oak`…: ~20 physical leaves flatbed-scanned per species, composited by `scratch/compose-leaf-packs.mjs`.
-⭐ **Procedure for a new region — genuinely required, not optional:** a Łódź pour needs European leaf morphologies the STL packs don't carry. *Pick the ~10 morphologies your regional mix needs → pull what ambientCG covers → for the rest, go outside with a bag and a flatbed scanner, collect ~20 leaves of a species, scan on white, key out the background, run `compose-leaf-packs.mjs`.*
+⭐ **Procedure for a new region — genuinely required, not optional:** a Łódź Slab needs European leaf morphologies the STL packs don't carry. *Pick the ~10 morphologies your regional mix needs → pull what ambientCG covers → for the rest, go outside with a bag and a flatbed scanner, collect ~20 leaves of a species, scan on white, key out the background, run `compose-leaf-packs.mjs`.*
 
 **B4 · Dossiers + rubric.** `arborist/rubric.json` (19 axes + similarity matrices) + `arborist/dossiers/*.json` — **only 10 species exist**; the LS roster is ~18–20. **HAND-AUTHORED; there is no downloadable dossier corpus.**
 ✅ Degrades gracefully — `mature-heights.json` is the explicit STOPGAP for `normalizeScale`, then per-category `TARGET_HEIGHT`. No bleed.
@@ -117,13 +117,13 @@ Vendor tree GLBs. `arborist/ORIENTATION.md`: *"A tree's identity is mostly its b
 
 **B7 · Curation state** — `_chassis-curation.json`, `state/<id>/compositions.json`, `part-index.json`, `roster-name-canon.json`, `low-poly-mapping.json`, `species-map.json`. All **tracked**. **Pure human judgment; no net source, ever.** Chassis curation + rubric carry over globally; compositions re-author per species.
 
-**Soft bleeds — closed 2026-10-21:** Arborist's coverage, routing write, lidar-publish and variant-rating re-bakes take the town from the named Look or refuse; there is no default town (`ROADMAP A00`).
+**Soft bleeds — closed 2026-10-21:** Arborist's coverage, routing write, lidar-publish and variant-rating runs take the town from the named Look or refuse; there is no default town (`ROADMAP A00`).
 
 ---
 
 ## 2. METEOROLOGIST — *Fathom*
 
-### 2.0 ⛔ Bleed #6 — the canonical sky mosaic is baked at St. Louis's latitude
+### 2.0 ⛔ Bleed #6 — the canonical sky mosaic is rendered at St. Louis's latitude
 `cartograph/pipeline/hydrate-anchor-cards.js:28-30` hardcodes `LAT = 38.6160 / LON = -90.2161 /
 TIMEZONE_OFFSET_HOURS = -6`, under a comment reading *"keeping this script self-contained… **Update
 both if a different instance is ever added.**"* **Three instances have been added; it was never
@@ -135,7 +135,7 @@ sun from the instance's true lat/lon via SunCalc, but the dome is painted from t
 is already down.** A day-length error, not a tint. It grows with distance from 38.6°N; a
 southern-hemisphere town would get inverted seasons in the sky (§2.3).
 
-**And Bleed #2 (data):** all **16 of 16** sky/atmosphere channels in Łódź's baked `scene.json` are
+**And Bleed #2 (data):** all **16 of 16** sky/atmosphere channels in Łódź's `scene.json` (in the Slab) are
 **byte-identical** to LS's — `sky · skyGain · dirSun · dirMoon · ambient · hemi · warmth · fill · mist
 · halo · stars · milkyWay · constellations · exposure · clouds · horizon`. Łódź even carries LS's
 *authored* `skyGain` curve (0.65/0.9/1.0/1.0) where `bake-scene.js:110` says unauthored Looks emit flat
@@ -146,7 +146,7 @@ reading/load-in' the intake↔Stage separation exists to prevent."*
 `lat/lon/tz` + SunCalc. ⚠️ **But it is not a constant swap:** `ANCHOR_CARDS` is a static module export
 consumed by pure functions (`buildMosaicForDate`, `resolveSkyAtMinute`, `flankingAnchors`) across 5
 files. Per-Look means deciding **where the cards live and how the render reaches them** (most likely
-baked into `scene.json` + rewired consumers) — a render-path change, **eye-gated across all 7 TOD
+written into `scene.json` by the Foundry + rewired consumers) — a render-path change, **eye-gated across all 7 TOD
 slots**. Scoped, not started, 2026-07-20.
 
 **Bleed #3 (latent, hemisphere):** `useCalendar.js:20` correctly swaps seasons for `lat < 0`, but
@@ -187,7 +187,7 @@ grid's first filled from station observations (no cloud cover or condition there
 **everything**: Condition selection, Degrees response, sky darkening, rain/snow/wetness/lightning, cloud advection,
 **tree sway**. *(Open-Meteo until 2026-10-20: its free API is non-commercial only.)*
 
-- **The pour is clean** — no bake step touches it. **The player is not.**
+- **The Foundry is clean** — no Foundry step touches it. **The player is not.**
 - ⛔ **US only.** A town outside NWS coverage is refused by name and gets no live weather — the open row for town #2 abroad.
 - `public/clouds/fixtures/` is specified in `ARCHITECTURE.md`, marked ⛔ not populated in `STATUS.md`, and **does not exist on disk.** There is no offline weather path at all.
 - ⭐ **Closable:** ERA5 reanalysis (1940–present, gap-free, global) — **one fetch per town** yields a local year of hourly weather → the player runs offline by loop or date-match, and it is the cloud-regime input too. ⚠️ Via Copernicus CDS directly: Open-Meteo's archive *data* is CC BY 4.0, but its free *API* is non-commercial.
@@ -230,12 +230,12 @@ i18n service reads it**) · `profile{}` (population/founded/landmark/tagline/abo
 ⚠️ **A4 is a live duplication defect:** `content/profile.json` is **never read by the reader** (grep: comments only); `bake-content.js:790` declines to regenerate it. Layer 0 exists twice and drifts — Łódź's `profile.json` carries `cityState`/`established` the instance file doesn't. (`feedback_dual_hydration_paths_drift`)
 
 ### 3.2 Layer 1 — roster (JOINED)
-`content/roster.json` — one record per slab building; machine-joined by `bake-content.js`.
+`content/roster.json` — one record per Slab building; machine-joined by `bake-content.js`.
 - **Assessor parcels** (the town's declared wells, `data/<scene>/sources.json` → `raw/<declared file>`) — ⭐ **the single richest content well**: address (the join spine for NR + the bare-listing gate), zoning (drives **both** neon colour and search category), sqft/units/value/year_built/vacant/historic. **US: reliably exists** — every county has an assessor, most publish ArcGIS FeatureServer or Socrata. ⚠️ **Outside the US this well often does not exist in this shape** — EU **INSPIRE Cadastral Parcels** gives geometry + parcel id but typically **not** valuation/zoning/year-built. **No Polish equivalent verified**; Łódź has 0 parcel matches.
   > ⭐ **CORRECTION (2026-07-20, later the same session).** The line above was read as "no assessor ⇒ no addresses," and that is **wrong**. Addresses do not require a parcel authority — outside the US they live in **OSM `addr:*`**. Measured in Łódź's own already-fetched `raw/osm.json`: **3,982 `addr:street`** + 3,973 `addr:housenumber` + 1,905 `addr:postcode` across 10,602 buildings. Address is the join spine for the bare-building atlas and the NR match, so this is load-bearing: **the well exists globally, it is just sourced differently.** What an assessor uniquely provides outside the US is *valuation · zoning · year_built · units* — not address. Split the row accordingly.
 - **Land-use code table** (declared as `landUseCodes` in the town's `sources.json`) — decodes assessor codes. ⛔ **The filename used to be `county-land-use-codes.csv`, hardcoded, so every non-St-Louis town printed "missing" forever**; and the numeric-range heuristic behind it is **St. Louis city/county ranges** applied to whatever digits any town's code contained. ⭐ **That is not a missing feature, it is a confidently wrong one:** Ohio's statewide `500: Res-Vacant Land` strips to `500`, lands in `400 ≤ n < 700 ⇒ commercial, confidence HIGH`, and reports a residential vacant lot as a commercial building. A town now declares `land_use_code_format` — `stl-assessor-numeric` (ranges + the CSV) or `self-describing` (the code carries its meaning, no table to acquire) — and **an undeclared format yields `unknown`, never a guess.**
 - **National Register inventory** (`content/nr-inventory.json`; LS's source is the OCR'd nomination in `inventory/`, 7 files) — style/contributing/architect/period/`nps_ref`. **Tier ③, US-only**: NPS **National Register** nomination PDFs are free at NPGallery, but the per-building "Exhibit 5" table must be **OCR'd and parsed**. State SHPO surveys are the wider net. ⚠️ *"does not exist for a normal town"* (`NEIGHBORHOOD-INPUTS §4.1`). **Non-US analogues differ in kind:** Poland **NID rejestr zabytków**, UK **Historic England Listed Buildings** (open, per-building, well-structured), France **Mérimée** **[unverified]**.
-- **Render fields** (`wall_material`, `roof_material`, `stories`, `zoning`) — ✅ read back **out of the baked slab**; derived, never hand-collected. Correct architecture.
+- **Render fields** (`wall_material`, `roof_material`, `stories`, `zoning`) — ✅ read back **out of the Slab**; derived, never hand-collected. Correct architecture.
 - **Overrides** — `content/roster.overrides.json`, AUTHORED.
 
 > ### ⭐⭐ WHAT THE ROSTER MUST CARRY TO REACH THE SOCIETY PAGES — two fields, and they are the acceptance test for this layer *(2026-09-21)*
@@ -259,7 +259,7 @@ i18n service reads it**) · `profile{}` (population/founded/landmark/tagline/abo
 
 ### 3.2b ⭐ WHAT PLACE-CARD RESEARCH ACTUALLY TURNS UP — the input kinds, from the first live pass *(2026-09-22)*
 
-Three research agents worked 24 of huron's 285 listings (civic · dining · waterfront). ⛔ These are **input KINDS**, catalogued because the next town will have the same ones — ▶ the evidence is in `scratch/huron-research/`, and the per-fact provenance (`_source`, `_fetched`, `_confidence`) lives in each town's `listings.overrides.json`, stripped before the slab by `bake-content.js#stripMeta`.
+Three research agents worked 24 of huron's 285 listings (civic · dining · waterfront). ⛔ These are **input KINDS**, catalogued because the next town will have the same ones — ▶ the evidence is in `scratch/huron-research/`, and the per-fact provenance (`_source`, `_fetched`, `_confidence`) lives in each town's `listings.overrides.json`, stripped before the Slab by `bake-content.js#stripMeta`.
 
 **⭐ A PLACE HAS SEVERAL SCHEDULES AT ONCE — and this is an EXTENSION OF `menu.schedule`, not a new model.** *(Jacob, 2026-09-22: "we already show 'active menus' so this is just an extension of that.")* `PLACE-CARDS §3` already carries `menu.schedule = { <menuType>: { <day>: { start, end } } }` — per-menu-type availability — so Berardi's breakfast 07:00–11:00 inside opening 07:00–20:00 is **already expressible**, and so is kitchen-closes-before-the-bar. ⛔ **THE GAP IS A PLACE WITH NO MENU TO HANG IT ON:** Huron High publishes office 06:30–15:30 *and* school day 07:30–14:50; Huron Sports Academy publishes building, classes and breakfast. Both are true at once and neither is a menu. ⇒ the same per-type shape wants to exist on the LISTING, not only inside `menu`. ⭐ Two agents on unrelated beats reached this independently, which is why it leads. It generalises far past schools: a pool inside a rec centre, a clerk's window inside a courthouse, a café inside a museum.
 
@@ -323,9 +323,9 @@ Guardian claims · residents/residence claims · check-ins/townie ladder · bull
 ⭐ **The manifest must show these as "opens empty, fills over time" — never as a gap.** The app *is* the acquisition tool.
 
 ### 3.5 ⭐ The join-key invariant — HOLDS, and is well-defended
-Verified: Łódź's slab carries `osm-39524935`-style ids; its 84 listings key on `building_id:"osm-147534720"`. Content loads *alongside* the slab, never consumed by the bake. Two load-bearing defences worth naming in the manifest:
+Verified: Łódź's Slab carries `osm-39524935`-style ids; its 84 listings key on `building_id:"osm-147534720"`. Content loads *alongside* the Slab, never consumed by the Foundry. Two load-bearing defences worth naming in the manifest:
 1. **The external-base guard** (`bake-content.js`, the `externalBase` block) — declared in *data* (`meta.baseSource`), not by scene name. **This is what saved Łódź's 84 listings**; without it the 2026-07-20 re-fetch took them to 5. Correctly generalized. ⛔ **This citation read `:730-747` until 2026-09-20 and had drifted by 30 lines** — cite the SYMBOL, not the line (`MEMORY §C`). ⭐ **The guard's REMEDY was unbuilt until 2026-09-20** and the code said so in its own comment: a protected town had nowhere to go. It now has one — `fetch-overture-places.js` acquires the base and `bake-content.js` folds it in as a first-class producer.
-2. **Anchor re-resolution** (`applyListingOverrides`) — hand-added listings re-resolve `building_id` from a stored anchor on *every* run, dropped with a warning if it falls outside the baked set. This is what lets a re-poured skeleton keep its content.
+2. **Anchor re-resolution** (`applyListingOverrides`) — hand-added listings re-resolve `building_id` from a stored anchor on *every* run, dropped with a warning if it falls outside the Slab's set. This is what lets content survive running every step again.
 
 **Threats:** T1 roster/listings incoherence (from the now-fixed join) · T2 the two Layer-0 homes (§3.1) · **T3 — LS is the one installation with NO `content/` dir at all**: render and content still fused in one 1.26 MB `src/data/buildings.json`, and `bake-content.js:693` refuses it without `--force`. **LS therefore cannot demonstrate the invariant it defines**; schema changes must be hand-migrated into it · **T4 — asset-root discipline is convention, not enforcement.** `NEIGHBORHOOD-INPUTS §5.1.2`'s litmus ("if removing every other installation would break this one, the boundary is violated") is prose only; **breached once already (2026-07-05, HPDM images into LS's `public/photos/`).**
 
@@ -366,7 +366,7 @@ tags the pipeline currently throws away.
 > ```
 > ⚠️ **Read it against that town's fetch vintage**: a `raw/osm.json` from before the node-tag intake
 > (2026-09-20) has no `pois` array, so every node-mapped business is missing from the count. The
-> prominence census in `bake-content.js` says which towns those are, per pour.
+> prominence census in `bake-content.js` says which towns those are, per Foundry run.
 
 | Signal | Use |
 |---|---|
@@ -442,7 +442,7 @@ stops wherever they choose.
 > and they move.
 >
 > ⭐ **The dial exists and it reads: "evidence runs out at rank K."** Huron: **153 of 3,678** buildings
-> are noticed by any source; the rest are ordered by footprint area alone. A demo pour takes the top
+> are noticed by any source; the rest are ordered by footprint area alone. A demo Foundry run takes the top
 > 20, a real install works down until it stops paying — and now it can see where paying stops.
 >
 > ⏳ **STILL UNBUILT, and it is a decision, not rot: the panel's progress semantic.** Not *"3% of
@@ -478,7 +478,7 @@ from bare building to landmark, and in what order.** Do not introduce "importanc
 > node-tag intake landed (2026-09-20) has **no `pois` array at all**, so every business mapped as an
 > OSM *node* is invisible to the score — and LS is one of them. ⛔ **So a "buildings noticed" count is
 > not comparable across towns of different fetch vintage**, which is the two-numbers-different-
-> predicates trap operating at the scale of whole towns. ⭐ **Don't carry that fact in prose — the bake
+> predicates trap operating at the scale of whole towns. ⭐ **Don't carry that fact in prose — the Foundry
 > prints it, per town, beside the number it qualifies** (`bake-content.js`, the prominence census).
 > ⛔ How much a re-fetch would recover is **not established**; nobody has re-fetched and re-scored.
 ## 4b. WATER — the tide's clock (tidal towns only)
@@ -493,7 +493,7 @@ from bare building to landmark, and in what order.** Do not introduce "importanc
 ## 4c. JURISDICTION — which country a town is in (decides which sources are its own)
 | Input | Path | Source |
 |---|---|---|
-| **Country + first-level subdivision** (ISO 3166-1 / 3166-2, e.g. `US` / `MO`) | `data/<town>/jurisdiction.json` — ⛔ not `geography.json`, a bake input | **OSM Nominatim reverse** of the town centre, one request, ODbL (recorded in `source`) — `node cartograph/fetch-jurisdiction.mjs --town=<id>` |
+| **Country + first-level subdivision** (ISO 3166-1 / 3166-2, e.g. `US` / `MO`) | `data/<town>/jurisdiction.json` — ⛔ not `geography.json`, a Foundry input | **OSM Nominatim reverse** of the town centre, one request, ODbL (recorded in `source`) — `node cartograph/fetch-jurisdiction.mjs --town=<id>` |
 
 Every Sources row names the source that covers **this** country (each source declares `covers`, `src/cartograph/sourcesCatalogue.js`),
 then the global ones; another country's is listed after, marked as theirs. Each source carries its own action (`act`/`where`), so the row's action is the shown source's. No country on disk → the row says **country unknown**, never
@@ -525,7 +525,7 @@ which is correct in St. Louis and would be **actively worse** in Łódź if MSBF
 
 ⭐ **Manifest consequence: the footprint row has NO single best source.** It is a **regional choice**,
 and the current preference order encodes a US assumption. The row must expose the choice per town —
-`buildingSource` already exists in the pour as a concept; make it an intake decision with the
+`buildingSource` already exists in the Foundry as a concept; make it an intake decision with the
 provenance to justify it, not a silent coverage fallback.
 
 *(This also corrects `BRIEF-intake-manifest.md §5.2`, which listed MSBF as the upgrade and OSM as the
@@ -565,12 +565,12 @@ scene, emitted `{id, footprint, size}` and dropped `tags` on the floor. Two furt
 it — the height guard tested `typeof tags.height === 'number'`, which can never be true of an OSM
 string value (40 surveyed heights discarded in ksi, **351 in centrum**), and `bake-content.js:637`
 back-solved roster storeys from `(centroidY − baseY)/3.5`, an inverted subtraction of two unrelated
-quantities that pinned every poured building to 1.
+quantities that pinned every building the Foundry made to 1.
 
 ⛔ **AND THE VISIBLE RESULT IS STILL NEARLY NIL, for a reason this section did not anticipate.** Of the
 tagged roofs, most are literally `flat` (76 of 130 in ksi, 99 of 190 in centrum) — already the default,
 so no change — and **`gabled`, the commonest pitched form in European housing (20 + 41), is not in the
-renderer's vocabulary at all.** It falls through to a heuristic that returns flat, because poured
+renderer's vocabulary at all.** It falls through to a heuristic that returns flat, because those
 scenes have no `year_built` (no assessor outside the US). **Net visible change: 2 buildings in Księży
 Młyn, 7 in centrum.** Teaching `buildingGeometry` a gable is the actual unlock — `HANDOFF-gabled-roofs.md`.
 ⚠️ `roof:shape` values are an open OSM vocabulary (`gabled`, `hipped`, `flat`, `mansard`, `gambrel`,

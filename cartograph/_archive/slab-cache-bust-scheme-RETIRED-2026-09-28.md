@@ -172,7 +172,7 @@ lengthen this TTL until those carry a token** (`plans/r2-asset-offload.md §3.5`
 
 Consumer-side: this is the canonical `?t=<bakedAt>` cache-bust seed for production fetches of slab artifacts, decoupling production from the in-memory `useCartographStore.bakeLastMs`. Authoring contexts may continue to use the store's value; both should agree by construction (store seeds itself from `Date.now()` on bake completion; the bake writes the same epoch into `scene.json`). Per couplers plan CC.7.
 
-### cartograph/OPERATIONS.md § Bake (the upload bullet — its 'live EVERYWHERE, one bucket, same URLs' clause was already false since 2026-09-03's env prefixes)
+### cartograph/OPERATIONS.md §Foundry (the upload bullet — its 'live EVERYWHERE, one bucket, same URLs' clause was already false since 2026-09-03's env prefixes)
 
 - ⛔⛔ **THE POUR'S LAST STEP IS AN UPLOAD, AND IT CAN FAIL THE BAKE (2026-09-01).** `public/baked/` is
   gitignored and served from R2, so **the upload — not a commit — is what carries a pour to a visitor.**
