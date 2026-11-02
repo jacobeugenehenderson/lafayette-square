@@ -32,7 +32,7 @@
  * feedback-no-hardcoded-ramps-use-knobs · project_slab_is_the_instance_identity.
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useFrame } from '@react-three/fiber'
+import { useTownFrame } from '../lib/useTownFrame.js'
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import useSkyState from '../hooks/useSkyState'
@@ -237,7 +237,7 @@ export default function MountainBackdrop({ lookId, bakeLastMs, landscapeOverride
   // at dusk) — the backdrop's atmospheric perspective breathes with the sky
   // without a bespoke TOD ramp.
   const _knobHaze = useMemo(() => new THREE.Color(), [])
-  useFrame(() => {
+  useTownFrame(() => {
     const s = shaderRef.current
     if (!s) return
     _knobHaze.set(channel.hazeColor ?? LANDSCAPE_FLAT_DEFAULTS.hazeColor)

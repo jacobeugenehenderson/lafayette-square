@@ -21,7 +21,8 @@
  * biggest cost but it's likely 50% or more of use cases"). Phones run shadows:false, so there it lights and casts nothing.
  */
 import { useEffect, useMemo, useRef } from 'react'
-import { useFrame, useThree } from '@react-three/fiber'
+import { useThree } from '@react-three/fiber'
+import { useTownFrame } from '../lib/useTownFrame.js'
 import * as THREE from 'three'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import { useSceneJson } from '../lib/useSceneJson.js'
@@ -67,7 +68,7 @@ export default function TowerLight({ on, lookId, onState }) {
     return () => { gone = true; scene.remove(spot); scene.remove(spot.target); spot.shadow.map?.dispose(); spot.dispose?.() }
   }, [spot, scene, gl, camera])
 
-  useFrame(() => {
+  useTownFrame(() => {
     if (!ready.current) return
     const want = !!on
     if (spot.visible !== want) { spot.visible = want; onState?.(want ? 'on' : 'off'); if (want) spot.shadow.needsUpdate = true }

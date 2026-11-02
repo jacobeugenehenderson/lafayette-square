@@ -24,7 +24,8 @@
  *      channel's kelvin and glow through engine.js#glowColour, whose shimmer is centred on 1 (its time-average is the
  *      channel's level) with the old relative swing; no gain constant left in LightShow.jsx. <Displays> passes each
  *      display its channel from scene.json#displays, and refuses by name a scene that carries none, and a scene that
- *      could not be read (useSceneJson.js#sceneReadFailure: a 404 or bad JSON a Refusal, a 5xx or no answer a Transient).
+ *      could not be read (useSceneJson.js#fetchSceneOnce fails with a 404 or bad JSON as a Refusal, a 5xx or no answer as a Transient; useSceneRead
+ *      hands that failure to its reader).
  *   8. THE SCHEDULE is the channel's (engine.js#showtimesOn, #liveState, #refuseCrowdedShows):
  *      · under the default, the showtimes are the old schedule's (the pinned engine.js#showtimes over the old night) on
  *        every day of 2026 at 25°, 35°, 42° and 48.5° (just under the first slot the sun can miss, Night's −18°);
@@ -146,21 +147,19 @@ async function verdict({ chan, param, view, bake, eng, mount, pin, hook, manifes
   F(/<P\.Renderer display=\{d\} channel=\{lit\[d\.id\]\}/.test(dj) && /: !lit\?\.\[d\.id\] \? `\$\{where\}: the Look's scene\.json carries no channel for it/.test(dj), '<Displays> does not pass each display its channel, or does not refuse a scene with none')
   F(/if \(live\) \{ try \{ lit = displayChannelsFor\(Object\.fromEntries\(\(town\.displays \|\| \[\]\)\.map\(d => \[d\.id, d\]\)\), live, /.test(dj) && /else lit = scene\?\.displays \?\? null/.test(dj) && /: liveErr \? liveErr\n/.test(dj), "<Displays> does not light from Stage's live channels through displayChannelsFor (the default for the rest, a refusal named), or the baked scene elsewhere")
   F(/if \(!list\.length \|\| \(!live && !scene && !failed\)\) return null/.test(dj) && /: failed \? failed\n/.test(dj), '<Displays> goes silent on a scene.json that could not be read (it must refuse it by name)')
-  const H = await importSource('src/lib/useSceneJson.js', { span: { functions: ['fetchSceneOnce', 'sceneReadFailure'] },
-    prefix: "import { Refusal, Transient, httpFailure } from './refusal.js'\nconst _cache = new Map(), _failed = new Map(), _fetchOpts = undefined\nlet slabFetch = null\nexport const setFetch = (f) => { slabFetch = f }\nexport { Refusal, Transient }\n",
-    suffix: '\nexport { fetchSceneOnce, sceneReadFailure }', ...(hook ? { transform: hook } : {}) })
+  const H = await importSource('src/lib/useSceneJson.js', { span: { functions: ['fetchSceneOnce'] },
+    prefix: "import { Refusal, Transient, httpFailure } from './refusal.js'\nconst _cache = new Map(), _fetchOpts = undefined\nlet slabFetch = null\nexport const setFetch = (f) => { slabFetch = f }\nexport { Refusal, Transient }\n",
+    suffix: '\nexport { fetchSceneOnce }', ...(hook ? { transform: hook } : {}) })
   const realWarn = console.warn; console.warn = () => {}
   const reads = [['a 404', { ok: false, status: 404 }, 'Refusal'], ['a 503', { ok: false, status: 503 }, 'Transient'],
     ['bad JSON', { ok: true, status: 200, json: async () => { throw new SyntaxError('Unexpected token') } }, 'Refusal'], ['no answer', null, 'Transient']]
   for (const [what, res, kind] of reads) {
     H.setFetch(async () => { if (!res) throw new TypeError('Failed to fetch'); return res })
-    await H.fetchSceneOnce(`l-${what}`, 0)
-    const e = H.sceneReadFailure(`l-${what}`, 0)
-    F(e instanceof H[kind] && !(kind === 'Refusal' && e instanceof H.Transient), `a scene.json read that ends in ${what} is not recorded as a ${kind} (${e?.constructor?.name ?? 'nothing'})`)
+    const e = await H.fetchSceneOnce(`l-${what}`, 0).then(() => null, (x) => x)
+    F(e instanceof H[kind] && !(kind === 'Refusal' && e instanceof H.Transient), `a scene.json read that ends in ${what} does not fail as a ${kind} (${e?.constructor?.name ?? 'nothing'})`)
   }
   H.setFetch(async () => ({ ok: true, status: 200, json: async () => ({ displays: {} }) }))
-  await H.fetchSceneOnce('l-ok', 0)
-  F(H.sceneReadFailure('l-ok', 0) === null, 'a scene.json that was read is recorded as failed')
+  F(await H.fetchSceneOnce('l-ok', 0).then(() => true, () => false), 'a scene.json that was read fails')
   console.warn = realWarn
   // 8. the schedule
   for (const lat of [25, 35, 42.05, 48.5]) {
@@ -191,7 +190,7 @@ async function verdict({ chan, param, view, bake, eng, mount, pin, hook, manifes
   F(refuses(() => E.refuseCrowdedShows([['day', (m) => S.displayAt(crowd, m, SMc)]], 40 * 60, 'check'), /on day the shows at 01:00 and 01:30 are 30 minutes apart, and a show runs 40\.0/), 'a step in showEvery that crowds the show is not refused by name')
   F(!refuses(() => E.refuseCrowdedShows([['day', atOf(d)]], 300, 'check'), /./), 'the default schedule is refused as crowded')
   const bm = manifest ? manifest(sourceOf('cartograph/bake-manifest.mjs')) : sourceOf('cartograph/bake-manifest.mjs')
-  F(/refuseCrowdedShows\(days, secs, `\$\{where\}, the year \$\{days\[0\]\[0\]\} … \$\{days\.at\(-1\)\[0\]\}`\)/.test(bm) && /const days = yearOfDays\(channel, place\)/.test(bm), 'bake-manifest does not refuse a crowded schedule over a year at the town\'s position, naming the window')
+  F(/refuseCrowdedShows\(year\.map\(r => \[r\.date, \(m\) => displayAt\(channel, m, r\.minutes\)\]\), secs, `\$\{where\}, \$\{span\}`\)/.test(bm) && /const year = yearAhead\(place\), span = `the year \$\{year\[0\]\.date\} … \$\{year\.at\(-1\)\.date\}`/.test(bm) && /const yearAhead = \(place\) => todSlotDays\(place, new Date\(\), 366\)/.test(bm), 'bake-manifest does not refuse a crowded schedule over a year at the town\'s position, naming the window')
   // live
   const { townClockOf } = await importSource('src/lib/townClock.js')
   const DISP = { season: 'lights' }, CAL = [{ id: 'lights', start_date: '2026-10-31', end_date: '2027-01-01' }], C = { segs: [], seconds: 300 - 2 * 3.8 }
@@ -291,12 +290,12 @@ if (process.argv.includes('--mutants')) {
     ['the shimmer not centred on 1', { eng: (s) => s.replace('w = level * (1 + GLOW_SHIMMER * Math.sin(', 'w = level * (0.8 + 0.2 * Math.sin(') }],
     ['the shimmer swing changed', { eng: (s) => s.replace('export const GLOW_SHIMMER = 0.25', 'export const GLOW_SHIMMER = 0.2') }],
     ['<Displays> passing no channel', { mount: (s) => s.replace(' channel={lit[d.id]}', '') }],
-    ['a run clipped (the whole-run test dropped)', { eng: (s) => s.replace('for (let k = 1; k < len && whole; k++) if (!(at((m + k) % DAY_MIN).show > 0)) whole = false\n    if (whole && !(at((m + len - 1e-6) % DAY_MIN).show > 0)) whole = false\n', '') }],
-    ['a run allowed to end where show is 0', { eng: (s) => s.replace('if (whole && !(at((m + len - 1e-6) % DAY_MIN).show > 0)) whole = false', 'if (whole && !(at((m + len) % DAY_MIN).show > 0)) whole = false') }],
-    ['showtimes on a fixed hour, not the channel\'s step', { eng: (s) => s.replace('if (m % showEvery || !(show > 0)) continue', 'if (m % 60 || !(show > 0)) continue') }],
-    ['shows where show is 0', { eng: (s) => s.replace('if (m % showEvery || !(show > 0)) continue', 'if (m % showEvery) continue') }],
+    ['a run clipped (the whole-run test dropped)', { eng: (s) => s.replace('for (let k = 1; k < len && whole; k++) if (!plays((m + k) % DAY_MIN)) whole = false\n    if (whole && !plays((m + len - 1e-6) % DAY_MIN)) whole = false\n', '') }],
+    ['a run allowed to end where show is 0', { eng: (s) => s.replace('if (whole && !plays((m + len - 1e-6) % DAY_MIN)) whole = false', 'if (whole && !plays((m + len) % DAY_MIN)) whole = false') }],
+    ['showtimes on a fixed hour, not the channel\'s step', { eng: (s) => s.replace('if (m % at(m).showEvery || !plays(m)) continue', 'if (m % 60 || !plays(m)) continue') }],
+    ['shows where show is 0', { eng: (s) => s.replace('const plays = (m) => { const a = at(m); return a.show > 0 && a.open }', 'const plays = (m) => { const a = at(m); return a.open }') }],
     ['a crowded schedule accepted', { eng: (s) => s.replace('if (t.length > 1 && next - t[i] < len) throw', 'if (false) throw') }],
-    ['bake-manifest not refusing a crowded year', { manifest: (s) => s.replace('refuseCrowdedShows(days, secs,', 'void (days, secs,') }],
+    ['bake-manifest not refusing a crowded year', { manifest: (s) => s.replace('refuseCrowdedShows(year.map(', 'void (year.map(') }],
     ['live never showing', { eng: (s) => s.replace("if (since < seconds) return { mode: 'show', t: since, up }", '') }],
     ['live glowing regardless of the channel', { eng: (s) => s.replace("return at(minute).glow > 0 ? { mode: 'glow', t: 0, up } : { mode: 'off', t: 0, up }", "return { mode: 'glow', t: 0, up }") }],
     ['the live path on the sun\'s altitude', { view: (s) => s.replace('day.current.at, day.current.times, where)', 'day.current.at, useTimeOfDay.getState().getLightingPhase().sunAltitude < 0 ? day.current.times : [], where)') }],
@@ -310,7 +309,7 @@ if (process.argv.includes('--mutants')) {
     ['Stage not carrying displays to <Town>', { wire: (rel, s) => rel.endsWith('CartographApp.jsx') ? s.replace("'labels', 'displays',\n]", "'labels',\n]") : s }],
     ['<SetPiece> not handing Stage\'s channels on', { wire: (rel, s) => rel.endsWith('SetPiece.jsx') ? s.replace(' channels={displaysOverride}', '') : s }],
     ['<Displays> silent on a failed read', { mount: (s) => s.replace('if (!list.length || (!live && !scene && !failed)) return null', 'if (!list.length || (!live && !scene)) return null') }],
-    ['a failed read not recorded', { hook: (s) => s.replace('_failed.set(key,', 'void (key,') }],
+    ['a failed read untyped', { hook: (s) => s.replace('throw e instanceof Refusal || e instanceof Transient ? e : ', 'throw ') }],
     ['a 404 taken for the network', { hook: (s) => s.replace("if (!r.ok) throw httpFailure(r,", "if (!r.ok) throw new Transient(") }],
     ['<Displays> not refusing a scene with none', { mount: (s) => s.replace(": !lit?.[d.id] ? `${where}: the Look's scene.json carries no channel for it", ": false ? `${where}: the Look's scene.json carries no channel for it") }],
   ]

@@ -28,7 +28,7 @@
  * pointer move (BRIEF-the-balsa-model-LANDED-2026-10-28 §4.2).
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useFrame } from '@react-three/fiber'
+import { useTownFrame } from '../lib/useTownFrame.js'
 import * as THREE from 'three'
 import { MeshBVH, acceleratedRaycast } from 'three-mesh-bvh'
 import { terrainExag, terrainFloorRaw } from '../utils/terrainShader'
@@ -383,7 +383,7 @@ export default function SlabBuildings({ lookId, interactive = true, materialPhys
   const townSel = useRef(givenSel)
   townSel.current = givenSel
 
-  useFrame((state) => {
+  useTownFrame((state) => {
     if (shadersRef.current.length === 0) return
     const { sunAltitude } = getLightingPhase()
     const darkFactor = Math.min(1, Math.max(0, (0.2 - sunAltitude) / 0.35))
@@ -471,7 +471,7 @@ function SlabSelectionRing({ entry }) {
     blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false,
   }), [])
 
-  useFrame((_, delta) => {
+  useTownFrame((_, delta) => {
     if (!ringRef.current) return
     const mat = ringRef.current.material
     const phase = phaseRef.current

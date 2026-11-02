@@ -16,7 +16,8 @@
 import { WindSwitch } from '../components/WindSheetCard.jsx'
 import { useRef, useEffect, useMemo, useState, useCallback } from 'react'
 import { createPortal } from 'react-dom'
-import { useThree, useFrame } from '@react-three/fiber'
+import { useThree } from '@react-three/fiber'
+import { useTownFrame } from '../lib/useTownFrame.js'
 import * as THREE from 'three'
 
 import GatewayArch from '../components/GatewayArch'
@@ -57,11 +58,11 @@ import SliderRow from '../cartograph/SliderRow.jsx'
 function TimeTicker() {
   const tick = useTimeOfDay((s) => s.tick)
   const last = useRef(Date.now())
-  useFrame(() => { const n = Date.now(); tick(n - last.current); last.current = n })
+  useTownFrame(() => { const n = Date.now(); tick(n - last.current); last.current = n })
   return null
 }
 function SkyStateTicker() {
-  useFrame((_, d) => useSkyState.getState().tick(Math.min(d, 0.1)))
+  useTownFrame((_, d) => useSkyState.getState().tick(Math.min(d, 0.1)))
   return null
 }
 function FrameLimiter() {
@@ -88,7 +89,7 @@ function FrameLimiter() {
 function SceneDiag() {
   const { scene } = useThree()
   const count = useRef(0)
-  useFrame(() => {
+  useTownFrame(() => {
     if (++count.current % 300 !== 0) return  // every 5 sec at 60fps
     scene.traverse(o => {
       if (o.isLight && o.isDirectionalLight && o.castShadow) {
@@ -1158,7 +1159,7 @@ export function HeroPreview({ keyframes, motion }) {
     pushCamera({ position: p, target: q, fov })
   }, [n, motion.length, keyframes, played])
 
-  useFrame(() => {
+  useTownFrame(() => {
     // 0) Keep liveCamera fresh (Key here reads this synchronously)
     liveCamera.camera = camera
     liveCamera.controls = controls
@@ -1240,6 +1241,18 @@ function Collapsible({ label, costMs, defaultOpen = false, children }) {
 }
 
 // ── Stage Panel ─────────────────────────────────────────────────────────────
+
+/** Stage with no town open: why (the address's refusal, from authoringAddress.js#resolveTown), in place of the panel. */
+export function StageNoTown() {
+  const refused = useCartographStore(s => s.lookRefused), hydrated = useCartographStore(s => s._looksHydrated)
+  if (!refused && !hydrated) return null
+  return (
+    <div className="absolute top-4 right-4 w-[400px] z-10 glass-panel rounded-xl p-3" role="alert" style={ALERT_STYLE}>
+      <div className="section-heading mb-1">No town is open</div>
+      <div className="text-body">{refused ?? 'Pick a Look to open its town.'}</div>
+    </div>
+  )
+}
 
 export function StagePanel({ shot, setShot, keyframes, setKeyframes, heroMotion, setHeroMotion, surfacesSlot, skyLightSlot, postSlot, lookForkSlot, shareSlot }) {
   const cam = useCameraState()

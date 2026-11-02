@@ -8,7 +8,8 @@
  * latitudes 0, ±48.6, ±60, ±62, ±66.5, ±70, ±80 on every day of 2026:
  *   1. every slot has a finite minute (never null), and the slots keep the day's own order from the nadir round
  *      (dawn ≤ sunrise ≤ noon ≤ golden ≤ sunset ≤ dusk ≤ night, a setting slot met at the nadir being the day's end);
- *   2. a slot moves smoothly with the date: no day-to-day jump beyond MAX_JUMP minutes (the worst is printed);
+ *   2. a slot moves smoothly with the date: no day-to-day jump beyond todSlots.js#SLOT_DAY_MOVE_MAX_MIN (its one home; a
+ *      show window's judgement rests on it, showChannel.js#refuseWindowSense), the worst printed;
  *   3. a slot the sun does not reach sits at its closest approach: on a polar night (80°N, Dec 21) Dusk and Dawn at
  *      noon; on a white night (80°N, Jun 21) at the nadir; at 62°N, Jun 21 Sunset is real while Dusk and Dawn are
  *      at the nadir;
@@ -26,7 +27,6 @@ import { importSource, sourceOf } from './_importSource.mjs'
 const IDS = ['dawn', 'sunrise', 'noon', 'golden', 'sunset', 'dusk', 'night', 'deep']
 const SETTING = new Set(['golden', 'sunset', 'dusk', 'night'])
 const LATS = [0, 48.6, -48.6, 60, -60, 62, -62, 66.5, -66.5, 70, -70, 80, -80]
-const MAX_JUMP = 90                                         // minutes a slot may move in a day (the worst is printed)
 const at = (lat, lon = 0, tz = 'UTC') => ({ lat, lon, tz })
 const day = (iso) => new Date(`${iso}T12:00:00Z`)
 
@@ -53,7 +53,7 @@ async function verdict({ slots, param, share, capture } = {}) {
     }
   }
   F(!bad, bad)
-  F(worst.j <= MAX_JUMP, `a slot jumps ${worst.j.toFixed(1)} minutes in a day (${worst.where}), more than ${MAX_JUMP}`)
+  F(worst.j <= T.SLOT_DAY_MOVE_MAX_MIN, `a slot jumps ${worst.j.toFixed(1)} minutes in a day (${worst.where}), more than todSlots.js#SLOT_DAY_MOVE_MAX_MIN (${T.SLOT_DAY_MOVE_MAX_MIN}), which a show window's judgement rests on`)
   if (!slots && !param && !share) console.log(`   the largest day-to-day move of any slot: ${worst.j.toFixed(1)} min (${worst.where})`)
   // 3. the closest approach
   const polar = T.todSlotMinutesAt(day('2026-12-21'), at(80)), white = T.todSlotMinutesAt(day('2026-06-21'), at(80)), part = T.todSlotMinutesAt(day('2026-06-21'), at(62))

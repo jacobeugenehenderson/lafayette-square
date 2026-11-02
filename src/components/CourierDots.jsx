@@ -23,7 +23,7 @@
  * protection is read as a protection.
  */
 import { useRef, useMemo, useState, useEffect } from 'react'
-import { useFrame } from '@react-three/fiber'
+import { useTownFrame } from '../lib/useTownFrame.js'
 import * as THREE from 'three'
 import { supabase } from '../lib/supabase'
 import useCamera from '../hooks/useCamera'
@@ -60,7 +60,7 @@ function CourierDot({ x, z, active }) {
     depthWrite: false,
   }), [ringColor])
 
-  useFrame(({ clock }) => {
+  useTownFrame(({ clock }) => {
     if (!ringRef.current) return
     const t = (Math.sin(clock.elapsedTime * Math.PI * 0.8) + 1) / 2
     const s = 1 + t * 0.5

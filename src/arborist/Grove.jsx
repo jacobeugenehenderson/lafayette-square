@@ -22,7 +22,8 @@
  */
 import { Component, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { resolveGrove } from '../../arborist/grove-eligibility.mjs'
-import { Canvas, useThree, useFrame } from '@react-three/fiber'
+import { Canvas, useThree } from '@react-three/fiber'
+import { useTownFrame } from '../lib/useTownFrame.js'
 import { useGLTF } from '@react-three/drei'
 import RegimeControls from '../components/RegimeControls.jsx'
 import * as THREE from 'three'
@@ -1038,7 +1039,7 @@ function ViewCamera({ view, count, radius, transitioning }) {
 function TransitionDriver({ tween, poseRef, controlsRef }) {
   const { camera } = useThree()
   const wasActive = useRef(false)
-  useFrame(() => {
+  useTownFrame(() => {
     if (tween.isActive()) {
       tween.tick(performance.now())
       const p = poseRef.current

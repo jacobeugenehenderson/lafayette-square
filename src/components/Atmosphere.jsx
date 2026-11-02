@@ -31,7 +31,7 @@
 import { useRef, useMemo } from 'react'
 import { townClockOf } from '../lib/townClock.js'
 import * as THREE from 'three'
-import { useFrame } from '@react-three/fiber'
+import { useTownFrame } from '../lib/useTownFrame.js'
 import SunCalc from 'suncalc'
 import { createAtmosphereMaterial, SLAB_BASE_ALT, SLAB_THICKNESS, SLAB_HALF_XZ } from './atmosphere-materials.js'
 import useMeteorologistStore from '../meteorologist/stores/useMeteorologistStore.js'
@@ -135,7 +135,7 @@ export default function Atmosphere({ lookId, displayBaseAlt } = {}) {
   const meshRef = useRef()
   const scene = useSceneJson(lookOf(lookId, 'Atmosphere'))
 
-  useFrame(({ clock, camera }) => {
+  useTownFrame(({ clock, camera }) => {
     material.uniforms.uTime.value = clock.elapsedTime
     material.uniforms.uCameraPos.value.copy(camera.position)
 

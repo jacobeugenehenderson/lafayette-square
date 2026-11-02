@@ -27,7 +27,7 @@
  */
 import { useMemo, useRef } from 'react'
 import { townMinuteOf } from '../lib/townClock.js'
-import { useFrame } from '@react-three/fiber'
+import { useTownFrame } from '../lib/useTownFrame.js'
 import * as THREE from 'three'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSkyState from '../hooks/useSkyState'
@@ -306,7 +306,7 @@ export default function GatewayArch({
     return mat
   }, [])
 
-  useFrame(({ camera }) => {
+  useTownFrame(({ camera }) => {
     if (!meshRef.current) return
     const { sunAltitude } = useTimeOfDay.getState().getLightingPhase()
     const { currentTime } = useTimeOfDay.getState()

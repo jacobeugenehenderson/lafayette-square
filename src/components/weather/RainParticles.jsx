@@ -16,7 +16,8 @@
  * hail uses the wet integrator like rain.
  */
 import { useMemo, useRef, useEffect } from 'react'
-import { useFrame, useThree } from '@react-three/fiber'
+import { useThree } from '@react-three/fiber'
+import { useTownFrame } from '../../lib/useTownFrame.js'
 import * as THREE from 'three'
 import useAtmosphere from '../../hooks/useAtmosphere.js'
 
@@ -168,7 +169,7 @@ export default function RainParticles({ intensity = 0.5, kind = 'rain' }) {
 
   useEffect(() => () => geometry.dispose(), [geometry])
 
-  useFrame(({ clock }) => {
+  useTownFrame(({ clock }) => {
     const dir = useAtmosphere.getState().tweenedDirective
     const u = material.uniforms
     u.uTime.value = clock.elapsedTime

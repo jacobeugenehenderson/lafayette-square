@@ -10,7 +10,8 @@
  * Δ-event log: when frame time, draws, or tris jump significantly,
  * capture the most-recent cause label (set externally via `noteEvent`).
  */
-import { useFrame, useThree } from '@react-three/fiber'
+import { useThree } from '@react-three/fiber'
+import { useTownFrame } from '../lib/useTownFrame.js'
 import { useEffect, useRef, useState } from 'react'
 import { pushFrame as phoneBusPushFrame, markFrameEvent } from './phoneBus'
 import { ACTIVE_PROFILE, DEVICE_PROFILES, getActiveProfile, getActiveProfileId, subscribeActiveProfile } from './deviceProfiles'
@@ -129,7 +130,7 @@ export function GpuMonitorTicker() {
     return () => { off(); delete window.__previewFrame; delete window.__previewGl; delete window.__previewScene; delete window.__previewCamera }
   }, [gl, scene, camera])
 
-  useFrame(() => {
+  useTownFrame(() => {
     const now = performance.now()
     const lastT = times.current.length ? times.current[times.current.length - 1] : now
     const frameMs = now - lastT

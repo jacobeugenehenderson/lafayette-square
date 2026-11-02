@@ -28,7 +28,8 @@
  */
 
 import { useRef, useEffect, useState, useMemo } from 'react'
-import { useThree, useFrame } from '@react-three/fiber'
+import { useThree } from '@react-three/fiber'
+import { useTownFrame } from '../lib/useTownFrame.js'
 import { setPcss, clearPcss } from './pcssShadows.js'
 import { onSceneStencil, getSceneStencil } from './sceneStencilState'
 import { penumbraBudgetTexels, penumbraMetresPerTexel } from '../lib/townRange.js'
@@ -91,7 +92,7 @@ export function ExposureTicker({ lookId, bakeLastMs, exposureOverride, revealOve
   const scene = useSceneJson(lookOf(lookId, 'PostProcessing'), bakeLastMs)
   const channel = exposureOverride ?? scene?.exposure ?? EXPOSURE_DEFAULT_CHANNEL
   const reveal = revealOverride ?? scene?.reveal ?? null
-  useFrame(() => {
+  useTownFrame(() => {
     const tod = useTimeOfDay.getState()
     const v = townExposure(channel, reveal, tod.getMinuteOfDay(), getTodSlotMinutes(tod.currentTime))
     gl.toneMappingExposure = v
@@ -277,7 +278,7 @@ export function StageFog({ lookId, bakeLastMs, mistOverride, enabled = true }) {
     if (!st && missing && !_mistWarned) { _mistWarned = true; console.error(`[StageFog] the scene has no disc (${missing}) — Mist cannot be sized to the town, so fog is OFF`) }
   }), [])
 
-  useFrame(() => {
+  useTownFrame(() => {
     if (!fogRef.current) return
     if (!enabled) { fogRef.current.density = 0; return }
     const tod = useTimeOfDay.getState()
@@ -314,7 +315,7 @@ export function driveEdgeRuffle(channel) {
 export function EdgeRuffleDriver({ lookId, bakeLastMs, ruffleOverride }) {
   const sceneJson = useSceneJson(lookOf(lookId, 'EdgeRuffleDriver'), bakeLastMs)
   const channel = ruffleOverride ?? sceneJson?.edgeRuffle ?? null
-  useFrame(() => driveEdgeRuffle(channel))
+  useTownFrame(() => driveEdgeRuffle(channel))
   return null
 }
 
@@ -332,7 +333,7 @@ const LAMPGLOW_DEFAULT_CHANNEL = Object.freeze(kitDayChannel('lampGlow'))
 export function LampGlowDriver({ lookId, bakeLastMs, lampGlowOverride }) {
   const sceneJson = useSceneJson(lookOf(lookId, 'PostProcessing'), bakeLastMs)
   const channel = lampGlowOverride ?? sceneJson?.lampGlow ?? LAMPGLOW_DEFAULT_CHANNEL
-  useFrame(() => {
+  useTownFrame(() => {
     const tod = useTimeOfDay.getState()
     const minute = tod.getMinuteOfDay()
     const slotMinutes = channel.animated ? getTodSlotMinutes(tod.currentTime) : null

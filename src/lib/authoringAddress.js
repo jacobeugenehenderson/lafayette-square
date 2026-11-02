@@ -51,7 +51,8 @@ export function addressUrl(href, looks, { scene, lookId, shot, stage }) {
   return url
 }
 
-/** The address as written: the URL's three and the remembered three. Nothing is resolved here. */
+/** The address as written: the URL's three (and `stage`: the path is a /stage/<town> address) and the remembered three.
+ *  Nothing is resolved here. */
 export function readAddress() {
   const url = { scene: null, look: null, shot: null }
   const stored = { scene: null, look: null, shot: null }
@@ -63,7 +64,7 @@ export function readAddress() {
     const p = parseStagePath(window.location.pathname)
     if (p) {
       for (const k of ['scene', 'shot']) if (url[k] && url[k] !== p[k]) console.error(`[address] ⛔ ?${k}=${url[k]} disagrees with the path's "${p[k]}" — the path wins`)
-      url.scene = p.scene; url.shot = p.shot
+      url.scene = p.scene; url.shot = p.shot; url.stage = true
     }
   } catch { /* no window: a node importer */ }
   try {
@@ -81,7 +82,8 @@ export function lookForScene(looks, scene, lookId) {
 /**
  * Which town and Look the address names, against the Looks index.
  * → { scene, lookId, refused, missing, dropped }
- *   refused — a `?look=` that names no Look, or whose town disagrees with `?scene=`: NO town, and this says why.
+ *   refused — a `?look=` that names no Look, or whose town disagrees with `?scene=`, or a `/stage/<town>` address whose town
+ *             no Look belongs to: NO town, and this says why, naming what exists.
  *   missing — the scene no Look belongs to (its Designer edits have nowhere to save).
  *   dropped — a remembered Look the index no longer has (it resolves nothing).
  * ⛔ Never a default town: nothing named and nothing remembered resolves to no town.
@@ -94,6 +96,14 @@ export function resolveTown(looks, { url, stored }) {
       : null
     if (refused) return { scene: null, lookId: null, refused, missing: url.scene || url.look, dropped: null }
     return { scene: entry.scene || null, lookId: url.look, refused: null, missing: null, dropped: null }
+  }
+  // ⛔ A /stage/<town> ADDRESS NAMES ITS TOWN (2026-11-01): a town no Look belongs to (a typo: /stage/lafayette-square,
+  // whose Look is lafayettesquare) resolved no Look and no refusal, and Stage mounted its panel on no town: a blank page.
+  // Refused here, naming the towns that have one. ⭐ Only on /stage: on /cartograph a Look-less scene is the Designer's
+  // own `missing` state (a poured town with no Look yet), below, untouched.
+  if (url.stage && (!isValidMapId(url.scene) || !lookForScene(looks, url.scene, null))) {
+    const have = [...new Set(looks.filter(l => l.scene).map(l => l.scene))].join(', ')
+    return { scene: null, lookId: null, refused: `/stage/${url.scene} names no town with a Look (towns with one: ${have})`, missing: null, dropped: null }
   }
   const dropped = stored.look && !looks.some(l => l.id === stored.look) ? stored.look : null
   const storedLook = dropped ? null : stored.look

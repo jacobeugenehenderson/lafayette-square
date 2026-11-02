@@ -42,7 +42,7 @@ const { parse } = require('@babel/parser'), traverse = require('@babel/traverse'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const DIRS = ['src/components', 'src/lib', 'src/utils', 'src/preview'].map(d => join(ROOT, d))
-const HOOKS = new Set(['useFrame', 'useMemo', 'useEffect', 'useLayoutEffect'])
+const HOOKS = new Set(['useTownFrame', 'useMemo', 'useEffect', 'useLayoutEffect'])
 const ATTR_SETTERS = new Set(['setX', 'setY', 'setZ', 'setXY', 'setXYZ', 'setXYZW'])
 const REVETMENT = join(ROOT, 'src/components/SlabRevetment.jsx')
 const VERBOSE = process.argv.includes('-v')
@@ -264,7 +264,7 @@ const say = (ok, what) => { console.log(`  ${ok ? '✅' : '⛔'} ${what}`); if (
 const files = repoFiles()
 console.log(`── no geometry is generated from the ground in a hook without a camera (samplers: ${[...SAMPLERS].join(', ')})`)
 const R = analyse(files, SAMPLERS)
-const near = R.hooks.find(h => h.file.endsWith('SlabRevetment.jsx') && h.hook === 'useFrame')
+const near = R.hooks.find(h => h.file.endsWith('SlabRevetment.jsx') && h.hook === 'useTownFrame')
 say(!!near && near.camera, `the near layer's useFrame generates and reads the camera (the control)${near ? ` — ${near.file}:${near.line}` : ' — NOT FOUND: the rule cannot see the near build'}`)
 // ⚠️ KNOWN OPEN (Boz ruled, 2026-10-29): hits this rule sees and the kit has not closed, each with WHY and WHAT CLOSES IT. One
 // entry absorbs ONE hit of its hook kind in its file: a further hit there, or anywhere else, is RED; an entry nothing hits
@@ -297,7 +297,7 @@ if (process.argv.includes('--mutants')) {
   console.log('── mutants (each must turn it RED; the near useFrame stays GREEN)')
   const src = readFileSync(REVETMENT, 'utf8'), anchor = '  // ── THE NEAR LAYER — the detailed drape and the stones, by the camera ────────'
   if (!src.includes(anchor)) throw new Error('⛔ mutant anchor gone from SlabRevetment.jsx')
-  const FAR = `  useFrame(() => {\n    for (const f of faces) { const [G] = drapeLattices({ poly: f.poly, crestAt: f.crestAt, crestBreaks: f.crestBreaks, octaves: [1] })\n      groundRelative(revetmentDrape({ poly: f.poly, crestAt: f.crestAt, toeAt: f.toeAt, berm: f.berm, groundAt: f.groundAt, waterY: f.waterY, globals: G })) }\n  })\n`
+  const FAR = `  useTownFrame(() => {\n    for (const f of faces) { const [G] = drapeLattices({ poly: f.poly, crestAt: f.crestAt, crestBreaks: f.crestBreaks, octaves: [1] })\n      groundRelative(revetmentDrape({ poly: f.poly, crestAt: f.crestAt, toeAt: f.toeAt, berm: f.berm, groundAt: f.groundAt, waterY: f.waterY, globals: G })) }\n  })\n`
   const TIMER = `  useEffect(() => { const id = setTimeout(() => { for (const f of faces) groundRelative(revetmentDrape({ poly: f.poly, crestAt: f.crestAt, groundAt: f.groundAt, octaves: 1 })) }, 1000); return () => clearTimeout(id) }, [faces])\n`
   const swap = (s2) => files.map(f => f.file === REVETMENT ? { ...f, src: s2 } : f)
   let alive = 0
@@ -308,7 +308,7 @@ if (process.argv.includes('--mutants')) {
   const INTO = nearAnchor + `    for (const f of faces) groundRelative(revetmentDrape({ poly: f.poly, crestAt: f.crestAt, toeAt: f.toeAt, berm: f.berm, groundAt: f.groundAt, waterY: f.waterY, globals: f.G1 }))\n`
   for (const [name, s2] of [['the far useFrame restored', src.replace(anchor, FAR + anchor)], ['the far build gated by a timer', src.replace(anchor, TIMER + anchor)],
     ['the far build moved into the near useFrame', src.replace(nearAnchor, INTO)]]) {
-    const r = analyse(swap(s2), SAMPLERS), n = r.hooks.find(h => h.file.endsWith('SlabRevetment.jsx') && h.hook === 'useFrame' && h.camera)
+    const r = analyse(swap(s2), SAMPLERS), n = r.hooks.find(h => h.file.endsWith('SlabRevetment.jsx') && h.hook === 'useTownFrame' && h.camera)
     const into = name.includes('into the near'), caught = red(r).length > allReds.length
     console.log(`  mutant: ${name} → ${caught ? 'RED ✓' : 'GREEN ✗'}${n || into ? '' : ' (and the near control vanished)'}`); if (!caught || (!n && !into)) alive++ }
   { const a = 'nearKeys.add(`${f.key}#${k}`)'; if (!src.includes(a)) throw new Error('⛔ hide mutant target gone')

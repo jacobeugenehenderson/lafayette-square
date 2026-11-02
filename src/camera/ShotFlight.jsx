@@ -36,7 +36,8 @@
  * rotates (the SC.5 lookAt flip). On landing they take the camera back, enabled unless the shot is playback.
  */
 import { useEffect, useLayoutEffect, useRef } from 'react'
-import { useFrame, useThree } from '@react-three/fiber'
+import { useThree } from '@react-three/fiber'
+import { useTownFrame } from '../lib/useTownFrame.js'
 import * as THREE from 'three'
 import { createCameraTween } from './cameraTween.js'
 import { transitionMs } from './transitions.js'
@@ -352,7 +353,7 @@ export default function ShotFlight({ shot, flight = true, streetAt, viewInset, f
     return () => { el.removeEventListener('pointerdown', stop, { capture: true }); el.removeEventListener('wheel', stop, { capture: true }) }
   }, [gl])
 
-  useFrame(() => {
+  useTownFrame(() => {
     if (unheld.current && controls() && !flying.current) { const { s, d } = unheld.current; unheld.current = null; land(s, d) }
     if (pending.current && !flying.current) cut(pending.current.shot, pending.current.landed)
     // a frameKey that arrived before the plan was live flies now, once (the frameKey effect above)

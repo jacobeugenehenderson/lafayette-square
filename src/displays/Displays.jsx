@@ -13,7 +13,7 @@
 import { lazy, Suspense } from 'react'
 import DisplayBoundary from './DisplayBoundary.js'
 import { Refusal, Transient } from '../lib/refusal.js'
-import { useSceneJson, sceneReadFailure } from '../lib/useSceneJson.js'
+import { useSceneRead } from '../lib/useSceneJson.js'
 import { displayChannelsFor } from './showChannel.js'
 
 export const PLUGINS = {
@@ -27,11 +27,11 @@ export const PLUGINS = {
  * name, inside the display's boundary, so a display that could never go live cannot ship silently.
  * Each display is lit by its Look's own channel (./showChannel.js). In Stage, `channels` is the live store's (the Look's
  * authored channels; the rest get the default, through displayChannelsFor, as the bake does), so an edit shows without a
- * bake. Elsewhere it is what the scene bake carried (scene.json#displays): nothing mounts until the scene is read; a scene that could not be read (useSceneJson.js#sceneReadFailure) is refused by
+ * bake. Elsewhere it is what the scene bake carried (scene.json#displays): nothing mounts until the scene is read; a scene that could not be read (useSceneJson.js#useSceneRead's failure, this mount's own read) is refused by
  * name, keeping its kind (a Transient for the network), and so is a scene that carries no channel for a display (re-bake).
  */
 export default function Displays({ town, lookId, attach, extent, dim, calendar, drawerSource, channels: live }) {
-  const scene = useSceneJson(lookId), failed = live || scene ? null : sceneReadFailure(lookId)
+  const { scene, failure } = useSceneRead(lookId), failed = live || scene ? null : failure
   const list = (town?.displays || []).filter(d => d.attach === attach)
   if (!list.length || (!live && !scene && !failed)) return null
   let lit = null, liveErr = null

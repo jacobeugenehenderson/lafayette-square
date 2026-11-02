@@ -10,7 +10,7 @@
  * Centre and radius are the baked ground's stencil. ⛔ No stencil ⇒ no disc, said once — never an invented size.
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useFrame } from '@react-three/fiber'
+import { useTownFrame } from '../lib/useTownFrame.js'
 import * as THREE from 'three'
 import useSkyState from '../hooks/useSkyState'
 import { lookOf } from '../lib/lookOf.js'
@@ -162,7 +162,7 @@ export default function HorizonDisc({ lookId, bakeLastMs }) {
   }, [])
   useEffect(() => () => material.dispose(), [material])
 
-  useFrame(() => {
+  useTownFrame(() => {
     if (!h) return
     const hc = useSkyState.getState().horizonColor
     const u = matRef.current.userData.u

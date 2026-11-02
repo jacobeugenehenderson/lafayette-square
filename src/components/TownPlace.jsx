@@ -9,7 +9,7 @@
  * stores — is gone: the leaves read townContext.js. BRIEF-renderer-leaves-take-props.)
  * ▶ node checks/claims-the-town-reads-no-player-store.mjs
  */
-import { useLayoutEffect, useSyncExternalStore } from 'react'
+import { useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import { setTownPlace, placedLook, onPlaceMoved } from '../lib/townPlace.js'
 import { reloadTerrain, terrainLook, onTerrainReload } from '../utils/terrainShader'
@@ -34,12 +34,25 @@ export function placeTown(town, lookId) {
 /**
  * Places `town`, loads its terrain, and — when `time` is given — writes the town's clock: a Date is the town's
  * instant (setTime keeps the calendar in step); null returns it to live once; undefined leaves the clock to the
- * app. Mounted by <Town>, and by Stage where it draws no <Town> (Designer, its hand-assembly).
+ * app. Mounted by <Town>, inside its `terrain` boundary.
+ * ⭐ THE ONE OWNER OF A DRAWN TOWN'S TERRAIN READ (2026-11-01). `rebake` (the app's bakeLastMs: Stage's last bake in this
+ * session) re-reads it when it changes, so a Look's first bake, which fills in a terrain that was missing, takes effect.
+ * ⛔ A FAILED READ IS THROWN HERE, at render, to <Town>'s terrain boundary. It floated (an unhandled rejection): <Town>
+ * held its splash forever (it draws nothing until terrainLook() is its Look) and nothing said why. Now a Refusal reaches
+ * the one sink, named; a Transient is retried by remount, which reads again.
  */
-export function TownPlace({ town, lookId, time }) {
+export function TownPlace({ town, lookId, time, rebake }) {
   requireTown(town, lookId)
   useLayoutEffect(() => { placeTown(town, lookId) }, [town, lookId])
-  useLayoutEffect(() => { reloadTerrain(lookId) }, [lookId])
+  const [failed, setFailed] = useState(null), lastRebake = useRef(rebake)
+  useLayoutEffect(() => {
+    const force = lastRebake.current !== rebake
+    lastRebake.current = rebake
+    let live = true
+    reloadTerrain(lookId, { force }).catch((error) => { if (live) setFailed({ lookId, error }) })
+    return () => { live = false }
+  }, [lookId, rebake])
+  if (failed && failed.lookId === lookId) throw failed.error
   const instant = time instanceof Date ? time.getTime() : time
   useLayoutEffect(() => {
     if (instant === undefined) return

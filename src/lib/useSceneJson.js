@@ -21,8 +21,7 @@ import { Refusal, Transient, httpFailure } from './refusal.js'
  * The URL is the resolver's (`src/lib/slabUrl.js`) — no version token.
  */
 
-const _cache = new Map() // `${lookId}@${reread}` → Promise<scene>
-const _failed = new Map() // `${lookId}@${reread}` → the Refusal | Transient a failed read ended in
+const _cache = new Map() // `${lookId}@${reread}` → Promise<scene>, a read in flight or done. ⛔ Never a failed one.
 
 // In dev a re-bake rewrites scene.json under the same URL; the browser's memory
 // cache could serve the old one ("edited the slab but the app shows the old
@@ -30,6 +29,13 @@ const _failed = new Map() // `${lookId}@${reread}` → the Refusal | Transient a
 // its content, so production caches it forever and correctly.
 const _fetchOpts = import.meta.env.DEV ? { cache: 'no-store' } : undefined
 
+/**
+ * The read, shared by every reader of (lookId, reread) while it is in flight and once it has succeeded. ⛔ A FAILED
+ * READ IS NOT REMEMBERED (Zob, 2026-11-01): it rejects with its Refusal or Transient and leaves the cache, so the next
+ * reader (a remount, a town switch back) reads the file again. The failure belongs to the attempt, held by the hook
+ * that made it, never to the module: a module record of it was read at a remount's first render, before the new
+ * attempt, and refused a scene that then read.
+ */
 function fetchSceneOnce(lookId, reread) {
   const key = `${lookId}@${reread}`
   if (_cache.has(key)) return _cache.get(key)
@@ -39,29 +45,24 @@ function fetchSceneOnce(lookId, reread) {
       try { return await r.json() } catch (e) { throw new Refusal(`${lookId}'s scene.json is not JSON: ${e.message}`) }
     })
     .catch(e => {
-      _failed.set(key, e instanceof Refusal || e instanceof Transient ? e : new Transient(`${lookId}'s scene.json could not be read: ${e.message}`))
+      _cache.delete(key)
       console.warn(`[useSceneJson] load failed for ${lookId}:`, e)
-      return null
+      throw e instanceof Refusal || e instanceof Transient ? e : new Transient(`${lookId}'s scene.json could not be read: ${e.message}`)
     })
   _cache.set(key, p)
   return p
 }
 
 /**
- * Why this Look's scene.json read FAILED (a Refusal, or a Transient for the network / a 5xx), or null: not read yet, or
- * read. useSceneJson returns null for both "not yet" and "failed"; a reader that must not go silent on a failure (a
- * display: <Displays>) asks here, and refuses by name.
- */
-export function sceneReadFailure(lookId, reread) { return _failed.get(`${lookId}@${reread ?? 0}`) || null }
-
-/**
  * @param {string} lookId — which slab to read: the Look the caller is drawing (never a default town's).
- * @param {string|number} [reread] — change it to read the file again
- *   (Stage passes its last bake time).
- * @returns {object|null} the parsed scene.json OF THIS LOOK, or null until it is read (and on fetch failure) — never
- *   another Look's while this one loads. A re-read of the SAME Look (`reread`) keeps its previous scene meanwhile.
+ * @param {string|number} [reread] — change it to read the file again (Stage passes its last bake time).
+ * @returns {{ scene: object|null, failure: Refusal|Transient|null }} — `scene`: the parsed scene.json OF THIS LOOK, or
+ *   null until it is read and on failure, never another Look's while this one loads (a re-read of the SAME Look keeps
+ *   its previous scene meanwhile). `failure`: why THIS reader's read of THIS Look failed (a Refusal, or a Transient for
+ *   the network / a 5xx), else null; a fresh mount starts at "not yet", never at an earlier mount's failure. A reader
+ *   that must not go silent on a failure (a display: <Displays>) reads it here, and refuses by name.
  */
-export function useSceneJson(lookId, reread) {
+export function useSceneRead(lookId, reread) {
   const bust = reread ?? 0
   // ⛔ The state names the Look it holds, and the hook returns it ONLY for that Look (sceneFor). It held a bare scene,
   // so on a Look switch it returned the PREVIOUS Look's scene until the new read resolved: Stage drew Provincetown's
@@ -69,20 +70,21 @@ export function useSceneJson(lookId, reread) {
   const [held, setHeld] = useState(null)
   useEffect(() => {
     let cancelled = false
-    fetchSceneOnce(lookId, bust).then(s => {
-      if (!cancelled) setHeld({ lookId, scene: s })
-    })
+    fetchSceneOnce(lookId, bust).then(
+      (s) => { if (!cancelled) setHeld({ lookId, scene: s, failure: null }) },
+      (e) => { if (!cancelled) setHeld({ lookId, scene: null, failure: e }) })
     return () => { cancelled = true }
   }, [lookId, bust])
-  const scene = sceneFor(held, lookId)
+  const scene = sceneFor(held, lookId), failure = held?.lookId === lookId ? held.failure : null
   // Channel-variant cascade (HANDOFF-channel-variant-cascade.md): resolve the
   // per-shot whole-look fork ONCE, here, off the shot the town is drawn in (<Town shot>, from Town's
   // context — the same in every app; outside a <Town>, the base look). resolveShotScene
   // returns the SAME object identity when the shot has no fork, so an unforked Look (no
   // scene.shotLooks) adds no render churn.
   const viewMode = useTownShot()
-  return useMemo(
-    () => resolveShotScene(scene, shotKeyForViewMode(viewMode)),
-    [scene, viewMode]
-  )
+  const resolved = useMemo(() => resolveShotScene(scene, shotKeyForViewMode(viewMode)), [scene, viewMode])
+  return useMemo(() => ({ scene: resolved, failure }), [resolved, failure])
 }
+
+/** The scene alone (useSceneRead's): null until read and on failure. */
+export function useSceneJson(lookId, reread) { return useSceneRead(lookId, reread).scene }

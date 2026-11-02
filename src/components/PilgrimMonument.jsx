@@ -15,7 +15,7 @@
  * never exaggerated. Re-seated when the terrain or the drawn ground is re-pointed (a look switch, the ground loading).
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useFrame } from '@react-three/fiber'
+import { useTownFrame } from '../lib/useTownFrame.js'
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import SceneLabel from './SceneLabel.jsx'
@@ -159,7 +159,7 @@ export default function PilgrimMonument({ town, lookId, footprint, graniteOverri
   }, [site, sp, labelStyle, terrainGen])
 
   const ref = useRef(), labelRef = useRef()
-  useFrame(() => {
+  useTownFrame(() => {
     const e = terrainExag.value
     if (!seat) return
     const y0 = seat.yAt(e)

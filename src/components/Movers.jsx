@@ -13,7 +13,7 @@
  * Nothing is drawn in the movie, nor outside the town's disc (the app hears which via <Town onMovers>).
  */
 import { useEffect, useMemo, useRef } from 'react'
-import { useFrame } from '@react-three/fiber'
+import { useTownFrame } from '../lib/useTownFrame.js'
 import * as THREE from 'three'
 import { placeMovers } from '../lib/movers.js'
 import { townPlace } from '../lib/townPlace.js'
@@ -49,7 +49,7 @@ function Mover({ m }) {
   }), [color, look])
   useEffect(() => () => ringMat.dispose(), [ringMat])
   const order = (k) => (look.onTop ? ON_TOP : AFTER_GROUND) + k
-  useFrame(({ clock }) => {
+  useTownFrame(({ clock }) => {
     if (group.current) group.current.position.y = drawnGroundY(m.x, m.z, terrainExag.value) + CLEARANCE
     if (!ring.current) return
     const t = (Math.sin(clock.elapsedTime * Math.PI * 2 * look.hz) + 1) / 2

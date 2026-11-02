@@ -11,7 +11,19 @@
  *   2. httpFailure, driven: no answer, 5xx, 408 and 429 → Transient; any other status (404) → Refusal.
  *   3. R3FErrorBoundary, driven: a Refusal is reported to the one sink at once, keyed to the town in TownContext, with no
  *      retry scheduled, and the layer renders nothing; a clean remount clears the entry; an untyped crash is retried on every delay and, when the last one
- *      fails, reported as given up with its reason.
+ *      fails, reported as given up with its reason. A retry that commits clean and stays up for the longest delay starts
+ *      the table over; a town switch resets a refused boundary (it draws on the new town, and a refusal there is that
+ *      town's); the first clean commit on a new town clears the layer's own entry there.
+ *   7. A FAILED SCENE READ IS NOT REMEMBERED, AND ITS FAILURE IS THE ATTEMPT'S: <Displays> rendered through useSceneRead
+ *      under a hook runner: a 503 refuses; a REMOUNT reads the file again and no render of it refuses; on a Look switch
+ *      the next Look's first render shows nothing yet, never the last Look's failure.
+ *   8. A TOWN'S TERRAIN READ THAT FAILS IS NAMED: TownPlace, run, throws the refused read at render (to <Town>'s terrain
+ *      boundary); a re-bake forces one re-read; <Town> wraps it (both branches); the Designer's read stands down in a shot.
+ *   9. A FRAME CALLBACK'S THROW IS NAMED: src/lib/useTownFrame.js, run: inside a boundary it is stopped and rethrown at
+ *      render as thrown; outside one it is reported to the sink under its town, keyed to its subscriber (its label), and
+ *      cleared when that unmounts; it is never called again. Read: both boundaries provide FrameBoundary; <Town> resets it
+ *      at its roots and no boundary encloses a <Canvas> (Canvas forwards contexts in); LightShow's own copy is retired; and
+ *      no file in src but useTownFrame.js imports R3F's useFrame (the ban).
  *   6. THE REVEAL HEARS IT: a boundary around a layer the reveal waits on (Town.jsx's PHYSICAL, read from source) marks
  *      that class failed on a Refusal and on giving up, so the gate says why the town is held; a clean remount clears
  *      a failure it wrote (never another producer's) with a mark of its own (the gate hears only new marks); every class has exactly one such boundary. Stage's
@@ -26,6 +38,13 @@
  *   `⛔` throw returns · a ⛔ message held in a const returns untyped · httpFailure calls a 503 a Refusal · a second sink
  *   returns · a URL flag returns · Stage drops the banner · a reveal refusal or give-up
  *   unmarked · a clear the gate never hears · a clean remount clears a foreign failure · a reveal class with no boundary · the banner back under the splash
+ *   · retryCount never resets · a town switch keeps the boundary down · a healthy switch owes no clear · a failed scene
+ *   read stays cached · a Look switch shows the last Look's failure · a display refuses on a module record of the failure
+ *   · a terrain read that fails floats · a re-bake does not force the terrain · TownPlace outside the terrain boundary
+ *   · a second terrain reader in a shot · a frame throw goes unstopped · a frame throw in a boundary is not rethrown
+ *   · a frame throw outside a boundary is not reported · a boundary that does not provide FrameBoundary · LightShow
+ *   back on a bare useFrame · a frame failure never cleared · a frame failure keyed to its reason · Town does not
+ *   reset FrameBoundary · a boundary around a Canvas · a direct useFrame import
  *   → each must go red.
  */
 import { readFileSync } from 'node:fs'
@@ -110,8 +129,9 @@ async function boundary(transform, marksT) {
     ...(marksT ? { redirect: { 'src/lib/startupMarks.js': { transform: marksT } } } : {}) })).default
   const M = marksT ? await importSource('src/lib/startupMarks.js', { transform: marksT }) : await import(pathToFileURL(join(ROOT, 'src/lib/startupMarks.js')))
   const { Refusal } = await import(pathToFileURL(join(ROOT, 'src/lib/refusal.js')))
-  const timers = [], was = { st: globalThis.setTimeout, err: console.error }
-  globalThis.setTimeout = (fn, ms) => { timers.push(ms); return 0 }
+  const timers = [], due = [], was = { st: globalThis.setTimeout, ct: globalThis.clearTimeout, err: console.error }
+  globalThis.setTimeout = (fn, ms) => { timers.push(ms); due.push([fn, ms]); return due.length }
+  globalThis.clearTimeout = (id) => { if (due[id - 1]) due[id - 1][0] = null }
   console.error = () => {}
   const drive = (err, retryCount, reveal) => {
     const b = new B({ name: 'Trees', reveal, children: 'CHILD' }); b.context = { lookId: 'a-town' }
@@ -160,7 +180,42 @@ async function boundary(transform, marksT) {
     M.markFailed(cls4, 'a hero card page did not arrive')
     const other = new B({ name: 'InstancedTrees', reveal: cls4, children: 'CHILD' }); other.context = { lookId: 'a-town' }; other.componentDidMount()
     if (M.failureOf(cls4) !== 'a hero card page did not arrive') fails.push("a clean remount clears a reveal failure another producer wrote: the town would reveal with the hole the gate exists to prevent")
-  } finally { globalThis.setTimeout = was.st; console.error = was.err }
+    // 2 · RECOVERY (2026-11-01). A retry that commits clean and stays up for the longest delay starts the table over.
+    failures.setState({ failed: {} }); timers.length = 0; due.length = 0
+    const r = new B({ name: 'Trees', children: 'CHILD' }); r.context = { lookId: 'a-town' }
+    r.setState = (u) => { r.state = { ...r.state, ...(typeof u === 'function' ? u(r.state) : u) } }
+    r.componentDidMount()
+    const crash = (err) => { const prev = { ...r.state }; r.state = { ...r.state, ...B.getDerivedStateFromError(err) }; r.componentDidCatch(err, {}); r.componentDidUpdate({}, prev) }
+    const commit = (u) => { const prev = { ...r.state }; r.setState(u); r.componentDidUpdate({}, prev) }
+    crash(new Error('lost context')); const firstDelay = timers.at(-1)
+    commit({ hasError: false, retryCount: 1 })                                   // the retry draws
+    const stable = due.filter(([fn, ms]) => fn && ms > firstDelay).at(-1)
+    if (!stable) fails.push('a retry that draws again schedules no recovery: retryCount only grows, and crashes spread over a session use up the table')
+    else { stable[0](); stable[0] = null }
+    crash(new Error('lost context again'))
+    if (timers.at(-1) !== firstDelay) fails.push(`after a layer recovered, its next crash is retried at ${timers.at(-1)} ms, not the table's first ${firstDelay} ms: retryCount never resets`)
+    // 2 · A TOWN SWITCH. Refused on A; the switch to B draws it again; B's own refusal is B's.
+    failures.setState({ failed: {} })
+    const t = new B({ name: 'Trees', children: 'CHILD' }); t.context = { lookId: 'a-town' }
+    t.setState = (u) => { t.state = { ...t.state, ...(typeof u === 'function' ? u(t.state) : u) } }
+    t.componentDidMount()
+    { const prev = { ...t.state }; const err = new Refusal('[Trees] ⛔ refused on A'); t.state = { ...t.state, ...B.getDerivedStateFromError(err) }; t.componentDidCatch(err, {}); t.componentDidUpdate({}, prev) }
+    failures.getState().report({ lookId: 'b-town', layer: 'Trees', kind: 'refusal', reason: 'an earlier refusal on B' })
+    t.context = { lookId: 'b-town' }
+    { const prev = { ...t.state }; t.componentDidUpdate({}, prev) }                 // the switch's update: it resets
+    { const prev = { ...t.state, hasError: true }; t.componentDidUpdate({}, prev) }  // and the reset commits clean
+    if (t.render() === null) fails.push('a layer refused on town A stays out on town B: a town switch does not reset the boundary, and B shows no entry for it (a silent absence)')
+    if (failures.getState().failed['b-town/Trees']) fails.push("a town switch that resets the layer leaves its stale entry for the new town: the banner outlives its cause")
+    { const prev = { ...t.state }; const err = new Refusal('[Trees] ⛔ refused on B'); t.state = { ...t.state, ...B.getDerivedStateFromError(err) }; t.componentDidCatch(err, {}); t.componentDidUpdate({}, prev) }
+    if (failures.getState().failed['b-town/Trees']?.reason !== '[Trees] ⛔ refused on B') fails.push("a layer refused on town B after a switch is not reported under B")
+    // …and back again, HEALTHY: refused on B → A (draws) → B (draws now): B's old entry goes (Zob, 2026-11-01)
+    t.context = { lookId: 'a-town' }
+    { const prev = { ...t.state }; t.componentDidUpdate({}, prev) }
+    { const prev = { ...t.state, hasError: true }; t.componentDidUpdate({}, prev) }
+    t.context = { lookId: 'b-town' }
+    { const prev = { ...t.state }; t.componentDidUpdate({}, prev) }                 // healthy: no reset, one commit
+    if (failures.getState().failed['b-town/Trees']) fails.push("a layer that refused on B, drew on A, and draws on B again leaves B's old entry: the banner stands while the layer draws")
+  } finally { globalThis.setTimeout = was.st; globalThis.clearTimeout = was.ct; console.error = was.err }
   return fails
 }
 
@@ -197,11 +252,187 @@ function oneSink(files) {
   return fails
 }
 
-async function verdict({ files: mutate, boundary: bt, http: ht, marks: mt } = {}) {
+// ── 7. a failed scene read is not remembered, and its failure belongs to the attempt ─────────────────────────────────────
+// useSceneJson.js#fetchSceneOnce kept a failed read's promise (resolved to null) in its cache, and production passes no
+// reread: a 503 at boot was "no scene" for the session (Zob's note, b6ef3b47). And a failure kept by the MODULE was read at
+// a remount's first render, before the new attempt, so a display refused a scene that then read (Zob, 2026-11-01).
+// RUN, not read: <Displays> (src/displays/Displays.jsx, its JSX compiled here) is rendered through useSceneRead under a
+// minimal hook runner (state, memo, effects after render, a re-render on a state change, cleanup on unmount). What it
+// renders is read: a <Refuse> child (the refusal DisplayBoundary would report) or the plugin's <Suspense>.
+function hookRunner() {
+  let cur = null
+  const same = (a, b) => !!a && !!b && a.length === b.length && a.every((x, i) => Object.is(x, b[i]))
+  globalThis.__hooks = {
+    useState(init) { const i = cur, k = i.k++; if (!(k in i.s)) i.s[k] = init; return [i.s[k], (v) => { i.s[k] = v; i.dirty = true }] },
+    useMemo(f, deps) { const i = cur, k = i.k++, m = i.m[k]; if (m && same(m.deps, deps)) return m.v; const v = f(); i.m[k] = { deps, v }; return v },
+    useEffect(f, deps) { const i = cur, k = i.k++, e = i.e[k]; if (e && same(e.deps, deps)) return; i.after.push(() => { e?.cleanup?.(); i.e[k] = { deps, cleanup: f() } }) },
+    useRef(init) { const i = cur, k = i.k++; if (!(k in i.s)) i.s[k] = { current: init }; return i.s[k] },
+  }
+  globalThis.__hooks.useLayoutEffect = globalThis.__hooks.useEffect
+  return (render) => {
+    const i = { s: {}, m: {}, e: {}, k: 0, after: [], dirty: false, outs: [] }
+    const go = (props) => { cur = i; i.k = 0; i.dirty = false; let out
+      try { out = render(props) } catch (e) { cur = null; i.thrown = e; i.after.length = 0; return undefined }
+      cur = null; i.outs.push(out); for (const f of i.after.splice(0)) f(); return out }
+    return { outs: i.outs, render: go, thrown: () => i.thrown,
+      async settle(props) { for (let n = 0; n < 20; n++) { await new Promise((r) => setTimeout(r, 0)); if (i.dirty) go(props) } },
+      unmount() { for (const e of Object.values(i.e)) e.cleanup?.() } }
+  }
+}
+// useSceneJson.js from its cache down, its imports supplied: the hooks, slabFetch and the town's shot are the runner's.
+const HOOK_PREFIX = ['useEffect', 'useMemo', 'useState'].map(h => `const ${h} = (...a) => globalThis.__hooks.${h}(...a)`).join('\n') +
+  "\nconst slabFetch = (...a) => globalThis.__slabFetch(...a)\nconst useTownShot = () => null\nimport { shotKeyForViewMode, resolveShotScene } from './shotScene.js'\nimport { sceneFor } from './sceneFor.js'\nimport { Refusal, Transient, httpFailure } from './refusal.js'"
+const HOOK_DEV = (t) => t.replace(/import\.meta\.env\.DEV/g, 'false')
+async function sceneRead(transform, displaysT) {
+  const fails = []
+  const { transformSync } = require('esbuild')
+  const jsx = (t) => transformSync(displaysT ? displaysT(t) : t, { loader: 'jsx', jsx: 'transform', jsxFactory: '__h', jsxFragment: '__F' }).code
+  // The hook, from its cache down, its imports supplied (the hooks, slabFetch and the town's shot are the runner's)…
+  const H = await importSource('src/lib/useSceneJson.js', { span: { from: 'const _cache = new Map()' }, prefix: HOOK_PREFIX,
+    transform: (t) => HOOK_DEV(transform ? transform(t) : t) })
+  globalThis.__useSceneRead = H.useSceneRead
+  // …and Displays and Refuse (Displays to the file's end) reading it, with a planted plugin (a Renderer that draws
+  // nothing): the check judges refusal against display, never the plugin, so the real one (a lazy LightShow) is not imported.
+  const D = await importSource('src/displays/Displays.jsx', { span: { from: 'export default function Displays(' },
+    prefix: "import { createElement as __h, Fragment as __F, Suspense } from 'react'\nimport DisplayBoundary from './DisplayBoundary.js'\nimport { Refusal, Transient } from '../lib/refusal.js'\nimport { displayChannelsFor } from './showChannel.js'\nconst useSceneRead = (...a) => globalThis.__useSceneRead(...a)\nconst PLUGINS = { 'light-show': { label: 'Light Show', attaches: ['setPiece'], Renderer: () => null } }",
+    transform: jsx })
+  const mount = hookRunner(), was = console.warn
+  const town = { displays: [{ id: 'd1', kind: 'light-show', attach: 'setPiece' }], contentRoot: '' }
+  const props = (lookId) => ({ town, lookId, attach: 'setPiece', calendar: [], drawerSource: 'published' })
+  // Fresh Look ids per run: the same module text is the same module instance (its cache outlives one verdict).
+  const tag = Math.random().toString(36).slice(2), A = `a-${tag}`, X = `x-${tag}`, Y = `y-${tag}`
+  const shown = (out) => !out ? 'nothing (not yet)' : out[0]?.props?.children?.type?.name === 'Refuse' ? 'a refusal' : 'the display'
+  let calls = 0
+  console.warn = () => {}
+  try {
+    // a 503: the display refuses, by name
+    globalThis.__slabFetch = async () => { calls++; return { ok: false, status: 503 } }
+    const a = mount(D.default); a.render(props(A)); await a.settle(props(A)); a.unmount()
+    if (shown(a.outs.at(-1)) !== 'a refusal') fails.push(`a scene read that answered 503 renders ${shown(a.outs.at(-1))}, not a refusal (the check cannot reach what follows)`)
+    // the same Look REMOUNTED, the file now reads: read again, and no render of the new mount refuses
+    globalThis.__slabFetch = async () => { calls++; return { ok: true, status: 200, json: async () => ({ displays: { d1: { animated: 'tod', values: {} } } }) } }
+    const b = mount(D.default); b.render(props(A)); await b.settle(props(A)); b.unmount()
+    if (calls !== 2) fails.push(`a remount after a failed scene read made ${calls - 1} read(s), not 1: the failure is remembered (useSceneJson.js#fetchSceneOnce)`)
+    const seen = b.outs.map(shown)
+    if (seen.includes('a refusal')) fails.push(`a remount after a failed scene read renders a refusal (${seen.join(' → ')}): a failure from an earlier attempt refuses a scene that reads`)
+    if (seen.at(-1) !== 'the display') fails.push(`a remount whose scene reads ends at ${seen.at(-1)}, not the display`)
+    // a Look switch in one mount: the last Look's failure is never this Look's
+    globalThis.__slabFetch = async () => ({ ok: false, status: 503 })
+    const c = mount(D.default); c.render(props(X)); await c.settle(props(X))
+    globalThis.__slabFetch = () => new Promise(() => {})
+    const first = shown(c.render(props(Y))); c.unmount()
+    if (first !== 'nothing (not yet)') fails.push(`on a switch from a Look whose read failed, the next Look's first render shows ${first}: another Look's failure`)
+  } finally { console.warn = was; delete globalThis.__slabFetch }
+  return fails
+}
+
+// ── 8. a town's terrain read that fails is named (2026-11-01) ─────────────────────────────────────────────────────────
+// TownPlace's reloadTerrain was floated: a rejection was an unhandled promise, <Town> held its splash (it draws nothing
+// until terrainLook() is its Look) and nothing said why. RUN: TownPlace under the hook runner, its terrain read rejected,
+// must THROW that refusal at render (to <Town>'s terrain boundary, which reports it, §3); a changed `rebake` forces a re-read.
+// READ: <Town> wraps TownPlace in <R3FErrorBoundary name="terrain"> (one element, both branches), and the only other
+// reader is the Designer's, which stands down in a shot: one reader at a time.
+async function terrainRead(transform) {
+  const fails = []
+  const T = await importSource('src/components/TownPlace.jsx', { span: { from: 'function requireTown(' }, transform,
+    prefix: ['useLayoutEffect', 'useRef', 'useState', 'useSyncExternalStore'].map(h => `const ${h} = (...a) => globalThis.__hooks.${h}(...a)`).join('\n') +
+      "\nconst reloadTerrain = (...a) => globalThis.__reloadTerrain(...a)\nconst setTownPlace = () => {}, placedLook = () => null, onPlaceMoved = () => () => {}, terrainLook = () => null, onTerrainReload = () => () => {}\nconst useTimeOfDay = { getState: () => ({}) }\nimport { Refusal } from '../lib/refusal.js'" })
+  const mount = hookRunner(), calls = []
+  const town = { geography: { lat: 0, lon: 0 } }
+  try {
+    const refused = new Refusal('[terrain] ⛔ look "a-town": terrain.json 404, and its ground was baked ON a terrain')
+    globalThis.__reloadTerrain = (lookId, o) => { calls.push([lookId, !!o?.force]); return Promise.reject(refused) }
+    const a = mount(T.TownPlace); a.render({ town, lookId: 'a-town', rebake: null }); await a.settle({ town, lookId: 'a-town', rebake: null }); a.unmount()
+    if (a.thrown() !== refused) fails.push(`a town whose terrain read is refused renders on (${a.thrown() ? `threw ${a.thrown().message}` : 'nothing thrown'}): the rejection floats, the town holds its splash, and nothing says why (TownPlace.jsx)`)
+    calls.length = 0
+    globalThis.__reloadTerrain = (lookId, o) => { calls.push([lookId, !!o?.force]); return Promise.resolve() }
+    const b = mount(T.TownPlace); b.render({ town, lookId: 'a-town', rebake: null }); await b.settle({ town, lookId: 'a-town', rebake: null })
+    b.render({ town, lookId: 'a-town', rebake: 1234 }); await b.settle({ town, lookId: 'a-town', rebake: 1234 }); b.unmount()
+    if (JSON.stringify(calls) !== JSON.stringify([['a-town', false], ['a-town', true]])) fails.push(`a re-bake does not force the terrain to be read again, once (reads: ${JSON.stringify(calls)}): a Look's first bake would not fill in its missing terrain`)
+  } finally { delete globalThis.__reloadTerrain }
+  return fails
+}
+function terrainOwner(files) {
+  const fails = [], get = (f) => files.find(([g]) => g === f)?.[1] || ''
+  const town = get('src/components/Town.jsx')
+  if (!/const terrainPlace = <R3FErrorBoundary name="terrain"><TownPlace\b[^>]*\brebake=\{bakeLastMs\}[^>]*\/><\/R3FErrorBoundary>/.test(town)) fails.push('<Town> does not wrap TownPlace in <R3FErrorBoundary name="terrain"> (with rebake): a terrain read that fails is not reported')
+  if ((town.match(/\{terrainPlace\}/g) || []).length !== 2 || /<TownPlace\b/.test(town.replace(/const terrainPlace = [^\n]*/, ''))) fails.push('<Town> mounts TownPlace outside its terrain boundary in a branch')
+  const readers = files.filter(([f, t]) => /^src\//.test(f) && !/^src\/harness\//.test(f) && f !== 'src/utils/terrainShader.js' && /\breloadTerrain\(\s*\w/.test(t.replace(/\/\/.*$/gm, ''))).map(([f]) => f).sort()
+  if (JSON.stringify(readers) !== JSON.stringify(['src/cartograph/CartographApp.jsx', 'src/components/TownPlace.jsx'])) fails.push(`the terrain is read by ${readers.join(', ')}: one reader per drawn town (TownPlace), and the Designer's`)
+  if (!/if \(!activeLookId \|\| !inDesigner\) return\n[\s\S]{0,40}reloadTerrain\(activeLookId/.test(get('src/cartograph/CartographApp.jsx'))) fails.push("CartographApp's terrain read does not stand down in a shot: two readers race for one town's terrain, and the boundary's clean mount clears the other's report")
+  return fails
+}
+
+// ── 9. a frame callback's throw is named, never a frozen canvas (2026-11-01) ──────────────────────────────────────────
+// R3F 8 calls useFrame subscribers in a bare loop (render$1, no try): one throw skipped every later subscriber and
+// gl.render, every frame, and only the console said so. src/lib/useTownFrame.js, RUN under the hook runner with
+// useFrame captured: inside a boundary (FrameBoundary) the throw is stopped and rethrown at render, as thrown; outside
+// one it is reported to the sink under the town and nothing is rethrown; either way the callback is never called again.
+// READ: both boundaries provide FrameBoundary; LightShow's own catch-and-rethrow is retired for the wrapper.
+async function frameThrow(transform) {
+  const fails = []
+  const W = await importSource('src/lib/useTownFrame.js', { span: { from: 'export function useTownFrame(' }, transform,
+    prefix: "const useRef = (...a) => globalThis.__hooks.useRef(...a), useState = (...a) => globalThis.__hooks.useState(...a), useEffect = (...a) => globalThis.__hooks.useEffect(...a)\nlet _seq = 0\nconst FrameBoundary = 'frame-boundary', TownContext = 'town'\nconst useContext = (c) => globalThis.__ctx[c]\nconst useFrame = (fn) => { globalThis.__frame = fn }\nimport useFailures, { reasonOf } from '../lib/failures.js'\nimport { Refusal, Transient } from '../lib/refusal.js'" })
+  const { Transient } = await import(pathToFileURL(join(ROOT, 'src/lib/refusal.js')))
+  const mount = hookRunner(), was = console.error
+  console.error = () => {}
+  try {
+    // inside a boundary: stopped, rethrown at render as thrown (a Transient stays one: the boundary retries it)
+    let calls = 0
+    const lost = new Transient('[x] the context was lost')
+    globalThis.__ctx = { 'frame-boundary': true, town: { lookId: 'a-town' } }
+    const a = mount(() => W.useTownFrame(() => { calls++; throw lost }))
+    a.render(); globalThis.__frame({}, 0.016); await a.settle(); globalThis.__frame({}, 0.016)
+    if (a.thrown() !== lost) fails.push(`a frame callback's throw inside a boundary is not rethrown at render, as thrown (${a.thrown() ? a.thrown().message : 'nothing thrown'}): the canvas freezes and no boundary names it (src/lib/useTownFrame.js)`)
+    if (calls !== 1) fails.push(`a frame callback that threw is called again (${calls} calls): it throws every frame`)
+    // outside any boundary: reported to the sink under the town, nothing rethrown, never called again
+    failures.setState({ failed: {} }); calls = 0
+    globalThis.__ctx = { 'frame-boundary': false, town: { lookId: 'a-town' } }
+    const b = mount(() => W.useTownFrame(() => { calls++; throw new Refusal('[x] ⛔ a frame refused') }))
+    b.render(); globalThis.__frame({}, 0.016); await b.settle(); globalThis.__frame({}, 0.016)
+    const got = Object.values(failures.getState().failed).find((f) => f.lookId === 'a-town' && /^frame/.test(f.layer))
+    if (got?.kind !== 'refusal' || !got.reason.includes('a frame refused')) fails.push(`a frame callback's throw outside any boundary is not reported to the one sink under its town (got ${JSON.stringify(got)})`)
+    if (b.thrown()) fails.push('a frame callback\'s throw outside any boundary is rethrown at render: it would take the whole canvas down')
+    if (calls !== 1) fails.push(`a frame callback that threw outside a boundary is called again (${calls} calls)`)
+    // …keyed to THIS subscriber (its label), and gone when it unmounts: a banner never outlives the subscriber
+    b.unmount()
+    if (Object.values(failures.getState().failed).some((f) => f.lookId === 'a-town' && /^frame/.test(f.layer))) fails.push('a frame failure reported outside a boundary outlives its subscriber (it never clears on unmount): the banner outlives its cause')
+    failures.setState({ failed: {} })
+    const c = mount(() => W.useTownFrame(() => { throw new Refusal('[x] ⛔ labelled') }, 0, 'the arch light'))
+    c.render(); globalThis.__frame({}, 0.016); await c.settle()
+    if (!failures.getState().failed['a-town/frame: the arch light']) fails.push(`a frame failure outside a boundary is not keyed to its subscriber's label (keys: ${Object.keys(failures.getState().failed).join(', ')})`)
+    c.unmount()
+  } finally { console.error = was; delete globalThis.__ctx; delete globalThis.__frame }
+  return fails
+}
+function frameProviders(files) {
+  const fails = [], get = (f) => files.find(([g]) => g === f)?.[1] || ''
+  for (const f of ['src/components/R3FErrorBoundary.jsx', 'src/displays/DisplayBoundary.js'])
+    if (!/createElement\(FrameBoundary\.Provider, \{ value: true \}, this\.props\.children\)/.test(get(f))) fails.push(`${f} does not provide FrameBoundary: a frame throw in its subtree goes to the sink, not to the boundary that would refuse or retry it`)
+  // "Inside" is inside THIS R3F tree: <Canvas> forwards outside contexts and rethrows into the DOM tree, so <Town> resets
+  // FrameBoundary at both of its roots, and no boundary that provides it encloses a <Canvas> (Zob, 2026-11-01).
+  const town = get('src/components/Town.jsx')
+  if (!/if \(!loaded\) return <FrameBoundary\.Provider value=\{false\}>/.test(town) || !/return \([\s\S]{0,400}<FrameBoundary\.Provider value=\{false\}>\s*<QualityProvider/.test(town))
+    fails.push('<Town> does not reset FrameBoundary at its roots: a boundary above the Canvas (its context forwarded in) would claim the town\'s frame throws, and its rethrow takes the whole canvas down')
+  for (const [f, t] of files) {
+    if (!/<Canvas\b/.test(t)) continue
+    for (const m of t.matchAll(/<(R3FErrorBoundary|DisplayBoundary|FrameBoundary\.Provider value=\{true\})\b[\s\S]*?<\/(R3FErrorBoundary|DisplayBoundary|FrameBoundary\.Provider)>/g))
+      if (/<Canvas\b/.test(m[0])) fails.push(`${f}: a ${m[1].split(' ')[0]} encloses a <Canvas>: its frame-throw context reaches into the R3F tree, where a rethrow takes the whole canvas down`)
+  }
+  // THE BAN: the one import of R3F's useFrame in src is useTownFrame's own. A direct one is a frame callback whose throw
+  // freezes the canvas again.
+  const direct = files.filter(([f, t]) => f !== 'src/lib/useTownFrame.js' && /^import\s*\{[^}]*\buseFrame\b[^}]*\}\s*from\s*'@react-three\/fiber'/m.test(t)).map(([f]) => f)
+  if (direct.length) fails.push(`${direct.length} file(s) import R3F's useFrame directly, not through src/lib/useTownFrame.js: ${direct.slice(0, 6).join(', ')}`)
+  const ls = get('src/displays/lightShow/LightShow.jsx')
+  if (!/\buseTownFrame\(/.test(ls) || /\bframeErr\b|\bframeDead\b/.test(ls)) fails.push('LightShow keeps its own frame catch-and-rethrow beside useTownFrame (two copies of one rule)')
+  return fails
+}
+
+async function verdict({ files: mutate, boundary: bt, http: ht, marks: mt, scene: st, displays: dt, terrain: tt, frame: ft } = {}) {
   let files = SRC.map(f => [f, readFileSync(join(ROOT, f), 'utf8')])
   if (mutate) files = mutate(files)
   const c = contract(files)
-  const fails = [...c.fails, ...await http(ht), ...await boundary(bt, mt), ...noUrlFlag(files), ...oneSink(files)]
+  const fails = [...c.fails, ...await http(ht), ...await boundary(bt, mt), ...await sceneRead(st, dt), ...await terrainRead(tt), ...terrainOwner(files), ...await frameThrow(ft), ...frameProviders(files), ...noUrlFlag(files), ...oneSink(files)]
   return { fails, c }
 }
 
@@ -219,7 +450,10 @@ if (process.argv.includes('--mutants')) {
   const mutants = [
     ['the boundary retries a Refusal', { boundary: must('if (error instanceof Refusal) {', 'if (false) {') }],
     ['the boundary drops the report', { boundary: must("useFailures.getState().report({ lookId, layer, kind: 'refusal', reason: reasonOf(error) })", '') }],
-    ['a clean remount leaves the stale entry', { boundary: must("      useFailures.getState().clear(this.context?.lookId ?? null, this.props.name || 'component')\n", '') }],
+    ['retryCount never resets', { boundary: must('this.setState({ retryCount: 0 }) }, RETRY_DELAYS_MS.at(-1))', 'void 0 }, RETRY_DELAYS_MS.at(-1))') }],
+    ['a town switch keeps the boundary down', { boundary: must('if (this.state.hasError || this.state.retryCount) { this.setState({ hasError: false, retryCount: 0 }); return }', '') }],
+    ['a healthy switch owes no clear', { boundary: must('    if (this._owesClear && !this.state.hasError) { this._owesClear = false; this._clearOwn() }\n', '') }],
+    ['a clean remount leaves the stale entry', { boundary: must("    useFailures.getState().clear(lookId, layer)\n", '') }],
     ['the boundary never reports giving up', { boundary: must("useFailures.getState().report({ lookId, layer, kind: 'gave-up', reason })", '') }],
     ['an untyped ⛔ throw returns', { files: swap('src/lib/failures.js', 'throw new Refusal(`[failures] ⛔', 'throw new Error(`[failures] ⛔') }],
     ['a ⛔ message held in a const returns untyped', { files: (fs) => [...fs, ['src/__mutant.js', "const msg = `[x] ⛔ held first`\nexport const f = () => { const e = new Error(msg); throw e }\n"]] }],
@@ -234,9 +468,29 @@ if (process.argv.includes('--mutants')) {
     ['a reveal class with no boundary', { files: swap('src/components/Town.jsx', '<R3FErrorBoundary name="InstancedTrees" reveal="trees">', '<R3FErrorBoundary name="InstancedTrees">') }],
     ['the banner back under the splash', { files: swap('src/stage/StageApp.jsx', 'const FAILURES_Z = 400', 'const FAILURES_Z = 10') }],
     ['the banner back in the panel', { files: swap('src/stage/StageApp.jsx', 'return createPortal(', 'return ((el) => el)(') }],
+    ['a failed scene read stays cached', { scene: must('      _cache.delete(key)\n', '') }],
+    ['a Look switch shows the last Look\'s failure', { scene: must('failure = held?.lookId === lookId ? held.failure : null', 'failure = held?.failure ?? null') }],
+    ['a display refuses on a module record of the failure', { scene: (t) => must('const p = slabFetch(', 'const p = slabFetch(')(t).replace(/\.catch\(e => \{\n/, '.catch(e => { globalThis.__lastFail = e\n') + '\nexport const lastFail = () => globalThis.__lastFail',
+      displays: must('const { scene, failure } = useSceneRead(lookId), failed', "const { scene } = useSceneRead(lookId), failure = globalThis.__lastFail, failed") }],
+    ['a terrain read that fails floats', { terrain: must('.catch((error) => { if (live) setFailed({ lookId, error }) })', '.catch(() => {})') }],
+    ['a re-bake does not force the terrain', { terrain: must('const force = lastRebake.current !== rebake', 'const force = false') }],
+    ['TownPlace outside the terrain boundary', { files: swap('src/components/Town.jsx', '<R3FErrorBoundary name="terrain"><TownPlace town={town} lookId={lookId} time={time} rebake={bakeLastMs} /></R3FErrorBoundary>', '<TownPlace town={town} lookId={lookId} time={time} rebake={bakeLastMs} />') }],
+    ['a second terrain reader in a shot', { files: swap('src/cartograph/CartographApp.jsx', 'if (!activeLookId || !inDesigner) return', 'if (!activeLookId) return') }],
+    ['a frame throw goes unstopped', { frame: must('if (dead.current) return', '') }],
+    ['a frame throw in a boundary is not rethrown', { frame: must('if (inBoundary) { setFailed({ error }); return }', 'if (inBoundary) return') }],
+    ['a frame throw outside a boundary is not reported', { frame: must('      useFailures.getState().report(', '      void (') }],
+    ['a boundary that does not provide FrameBoundary', { files: swap('src/components/R3FErrorBoundary.jsx', 'return createElement(FrameBoundary.Provider, { value: true }, this.props.children)', 'return this.props.children') }],
+    ['a frame failure never cleared', { frame: must('  useEffect(() => () => { if (reported.current) useFailures.getState().clear(reported.current, key.current) }, [])\n', '') }],
+    ['a frame failure keyed to its reason', { frame: must('layer: key.current,', 'layer: `frame: ${reason.slice(0, 60)}`,') }],
+    ['Town does not reset FrameBoundary', { files: swap('src/components/Town.jsx', 'if (!loaded) return <FrameBoundary.Provider value={false}>', 'if (!loaded) return <FrameBoundary.Provider value={true}>') }],
+    ['a boundary around a Canvas', { files: (fs) => [...fs, ['src/__mutant.jsx', "export const App = () => <R3FErrorBoundary name=\"all\"><Canvas><Town /></Canvas></R3FErrorBoundary>\n"]] }],
+    ['a direct useFrame import', { files: (fs) => [...fs, ['src/__mutant.jsx', "import { useFrame, useThree } from '@react-three/fiber'\nexport const Spin = () => { useFrame(() => {}); return null }\n"]] }],
+    ['LightShow back on a bare useFrame', { files: swap('src/displays/lightShow/LightShow.jsx', 'useTownFrame((_, delta) => {', 'useFrame((_, delta) => {') }],
     ['Stage drops the banner', { files: swap('src/stage/StageApp.jsx', '<FailuresBanner />', '') }],
   ]
   let bad = 0
-  for (const [name, m] of mutants) { const { fails: f } = await verdict(m); console.log(`${f.length ? '🔴' : '⚪ SURVIVED'} mutant: ${name}${VERBOSE && f.length ? ` (${f[0]})` : ''}`); if (!f.length) bad++ }
+  // A mutant is red only on a failure the baseline does not already have: a red baseline must not paint every mutant red.
+  const had = new Set(fails)
+  for (const [name, m] of mutants) { const f = (await verdict(m)).fails.filter(x => !had.has(x)); console.log(`${f.length ? '🔴' : '⚪ SURVIVED'} mutant: ${name}${VERBOSE && f.length ? ` (${f[0]})` : ''}`); if (!f.length) bad++ }
   if (bad) process.exitCode = 1
 }

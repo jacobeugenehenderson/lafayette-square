@@ -17,7 +17,8 @@
  * `window.__residency()` returns the same report as data.
  */
 import { useEffect, useRef, useState } from 'react'
-import { useFrame, useThree } from '@react-three/fiber'
+import { useThree } from '@react-three/fiber'
+import { useTownFrame } from '../lib/useTownFrame.js'
 import { Frustum, Matrix4 } from 'three'
 import { slabManifest } from '../lib/slabUrl.js'
 import { slabClass } from './artifactClass.js'
@@ -107,7 +108,7 @@ export function ResidencyProbe({ lookId }) {
     return () => { live = false }
   }, [lookId])
   const last = useRef(0)
-  useFrame(() => {
+  useTownFrame(() => {
     const t = performance.now()
     if (t - last.current < 1000) return
     last.current = t

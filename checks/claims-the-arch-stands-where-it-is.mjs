@@ -50,7 +50,7 @@ row(dC < 16.5, `(1) LS: within the cited relation's centre by ${dC.toFixed(1)} m
 const SRC = { arch: read('src/components/GatewayArch.jsx'), designer: read('src/cartograph/DesignerArch.jsx'), card: read('src/stage/StageApp.jsx'), defaults: read('src/cartograph/skyLightChannels.js'), module: read('src/setpieces/gatewayArch.js') }
 const judgePlace = (o = {}) => {
   const { arch, designer, card, defaults, module } = { ...SRC, ...o }
-  const a = arch.indexOf('useFrame(('), f = arch.slice(a, arch.indexOf('if (shaderRef.current)', a))
+  const a = arch.indexOf('useTownFrame(('), f = arch.slice(a, arch.indexOf('if (shaderRef.current)', a))
   const placement = f.slice(f.indexOf('archPose('), f.indexOf('scale.setScalar') + 40)
   const pose = fnBody(module, 'export function archPose'), why = []
   if (!/archPose\(archSite\(townPlace\(\)\), arch\)/.test(f) || !/position\.set\(pose\.x, pose\.y, pose\.z\)/.test(f) || !/scale\.setScalar\(pose\.scale\)/.test(f)) why.push('GatewayArch: not drawn at archPose(archSite(townPlace()))')

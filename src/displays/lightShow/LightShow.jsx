@@ -22,18 +22,18 @@
  * (./preview.js) plays the glow or the show from the moment it is pressed, on the page's own time, Stage only.
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useFrame } from '@react-three/fiber'
+import { useTownFrame } from '../../lib/useTownFrame.js'
 import * as THREE from 'three'
 import useTimeOfDay from '../../hooks/useTimeOfDay'
 import { townClockOf } from '../../lib/townClock.js'
 import { validateDrawer, compileRun, showAt, showSeconds, glowColour, liveState, showtimesOn, refuseCrowdedShows, uplightTarget } from './engine.js'
-import { displayAt, kelvinToRgb, validateDisplayChannel } from '../showChannel.js'
-import { getTodSlotMinutes } from '../../cartograph/animatedParam.js'
+import { displayAt, kelvinToRgb, validateDisplayChannel, refuseWindowSense } from '../showChannel.js'
+import { getTodSlotMinutes, getTodSlotYear } from '../../cartograph/animatedParam.js'
 import { checkFaces, strandEnds, pinnacleFace, pinnacleWash, bulbRadius, cordRadius, SOCKET_OF_BULB, avgGlow } from './geometry.js'
 import useDisplayPreview from '../preview.js'
 import { drawerUrls } from '../drawerUrl.js'
-import { rasterFrame } from './rasterFrame.js'
-import { Refusal, Transient, httpFailure } from '../../lib/refusal.js'
+import { readDrawerJson, rasterFrame } from './drawerRead.js'
+import { Refusal, Transient } from '../../lib/refusal.js'
 
 const CORD = '#3a3a3c'                                          // the cords: dark gray (Jacob, 2026-10-31)
 const CORE_OF_BULB = 0.7                                        // the light inside each clear glass bulb, as a fraction of it
@@ -50,21 +50,20 @@ function useDrawer(on, source, { lookId, display, contentRoot, where }) {
     let dead = false
     ;(async () => {
       const { drawer: url, frame } = await drawerUrls(source, { lookId, display, contentRoot, where })
-      const res = await fetch(url)
-      if (!res.ok) throw httpFailure(res, `the drawer ${url} answered ${res.status}`)
-      const d = await res.json()
+      const env = { get: (u) => fetch(u), Image, URL }
+      const d = await readDrawerJson(url, env)
       validateDrawer(d, where)
       const { w, h } = d.frame
       const canvas = document.createElement('canvas'); canvas.width = w; canvas.height = h
       const ctx = canvas.getContext('2d', { willReadFrequently: true })
-      const raster = (rel) => rasterFrame(frame(rel), w, h, ctx)
+      const raster = (rel) => rasterFrame(frame(rel), w, h, ctx, env)
       for (const L of d.looks) for (const layer of L.layers) layer.px = await Promise.all(layer.frames.map(raster))
       if (!dead) setDrawer({ ...d, byId: Object.fromEntries(d.looks.map(L => [L.id, L])) })
     })().catch(e => { if (!dead) setErr(e) })
     return () => { dead = true }
   }, [on, source, lookId, display.id, display.drawer, contentRoot, where])
-  // The cause keeps its class (src/lib/refusal.js): a Refusal stays one; anything else (no answer, a 5xx, a frame that
-  // did not load) may load on a second ask, so it is a Transient. A display is never retried either way; Stage names it.
+  // The cause keeps its class: ./drawerRead.js builds each read's failure as the kind it is, and an untyped throw is a
+  // Transient (src/lib/refusal.js). A display is never retried either way; Stage names it.
   if (err instanceof Refusal) throw new Refusal(`[LightShow] ⛔ ${where}: ${err.message}`)
   if (err) throw new Transient(`[LightShow] ⛔ ${where}: ${err.message}`)
   return drawer
@@ -122,19 +121,18 @@ export default function LightShow({ display, channel, extent, calendar, contentR
   // While lit, the set-piece's uplights ease down to dimUplights; off, back to as authored. Gone when this unmounts.
   useEffect(() => () => { if (dim) delete dim.byDisplay[display.id] }, [dim, display.id])
 
-  // ⭐ A throw in the frame loop never reaches React (R3F calls useFrame in a bare loop), so it would freeze the whole
-  // town's canvas every frame (Zob, 2026-10-31). Catch it, stop the frame work, and rethrow it at render: the display's
-  // own DisplayBoundary then names and contains it.
-  const [frameErr, setFrameErr] = useState(null), frameDead = useRef(false)
-  useFrame((_, delta) => {
-    if (frameDead.current) return
-    try {
+  // A throw here is stopped and rethrown at render by useTownFrame (src/lib/useTownFrame.js): the display's own
+  // DisplayBoundary names and contains it.
+  useTownFrame((_, delta) => {
     if (!F || !compiled || !root.current || !glassRef.current || !coreRef.current || !socketRef.current || !cordRef.current) return
     // ── when: live by the town's clock and schedule, or Stage's preview from the moment it was pressed ───────────────
     const instant = useTimeOfDay.getState().currentTime, clock = townClockOf(instant)
     if (day.current?.date !== clock.date || day.current.channel !== channel || day.current.compiled !== compiled) {
       const sm = getTodSlotMinutes(instant), at = (m) => displayAt(channel, m, sm), secs = showSeconds(compiled)
       refuseCrowdedShows([[clock.date, at]], secs, where)
+      // The windows over the town's year: the last line, for a slab baked under an older rule (the store and the bake
+      // refuse first). Only a channel with windows reads the year (cached: once per town and year).
+      if (channel.showWindows) refuseWindowSense(channel.showWindows, getTodSlotYear(clock.year), where)
       day.current = { date: clock.date, channel, compiled, at, times: showtimesOn(at, secs) }
     }
     let mode, t, now, up = true                                                         // Stage's preview hangs them
@@ -208,10 +206,8 @@ export default function LightShow({ display, channel, extent, calendar, contentR
       lightRef.current.color.setRGB(lum ? mr / lum : 0, lum ? mg / lum : 0, lum ? mb / lum : 0)
       lightRef.current.intensity = avgGlow(extent, lum).intensity
     }
-    } catch (e) { frameDead.current = true; setFrameErr(e) }
   })
 
-  if (frameErr) throw new Refusal(`[LightShow] ⛔ ${where}: ${frameErr.message}`)
   if (!F) return null
   // ⭐ Its reach, for depth of field (r-the-focus-object-is-everything-hung-on-it): the strands hang out to the ring, well
   // past the set-piece's own extent, so the focus box must grow to them (focusObject.js#focusBox reads this).

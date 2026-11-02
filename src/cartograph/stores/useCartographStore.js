@@ -1833,9 +1833,10 @@ const useCartographStore = create((set, get) => ({
   activeLookId: BOOT_TOWN.lookId,
   // The served 0-state Look id (index.json `default`). null until _loadLooks.
   defaultLookId: null,
-  // Set when a ?look= link was refused (it names no Look, or disagrees with ?scene=): no town is resolved, and
-  // nothing may quietly resolve one (Toolbar's self-correction stands down) until the operator picks a Look.
-  lookRefused: null,
+  // Set when the address was refused (a ?look= naming no Look or disagreeing with ?scene=, or a /stage/<town> no Look
+  // belongs to): no town is resolved, and nothing may quietly resolve one (Toolbar's self-correction stands down) until
+  // the operator picks a Look. From the page's first render (BOOT_TOWN), so Stage says why before the Looks load.
+  lookRefused: BOOT_TOWN.refused,
   _looksHydrated: false,
 
   _loadLooks: async () => {
@@ -1867,7 +1868,9 @@ const useCartographStore = create((set, get) => ({
       // already on another town switches through setScene, the one path that drops the old town.
       const sceneUpdate = town.scene && !isValidMapId(cur) ? { scene: town.scene } : {}
       if (sceneUpdate.scene) { try { localStorage.setItem(ADDRESS_STORAGE.scene, sceneUpdate.scene) } catch { /* ignore */ } }
-      set({ looks, defaultLookId, activeLookId: town.lookId, lookMissingForScene: town.missing, _looksHydrated: true, ...sceneUpdate })
+      // lookRefused: null — the fetched index resolved a town. BOOT_TOWN resolves over the BUNDLED index, so a Look made after
+      // the bundle booted refused (/stage/<its town>) and resolves here; a stale refusal would hold Toolbar's self-correction.
+      set({ looks, defaultLookId, activeLookId: town.lookId, lookRefused: null, lookMissingForScene: town.missing, _looksHydrated: true, ...sceneUpdate })
       get()._measureSlabAge()
       // Not awaited: this may run inside another scene's load, which sees the scene move and stands down.
       if (town.scene && isValidMapId(cur) && town.scene !== cur) get().setScene(town.scene)
