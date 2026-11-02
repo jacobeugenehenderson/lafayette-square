@@ -105,7 +105,13 @@
  *   time             the town's clock, when the APP owns it (The Ward's scrubbed time): a Date draws the town at
  *                    that instant (sky, sun, light, neon's opening hours) and nothing ticks it; null is live (the
  *                    renderer's own clock). Absent (undefined), the app drives the clock store itself (the kit's
- *                    apps). ⛔ Never with holdScrubbedTime: one writer of the town's clock.
+ *                    apps). ⛔ Never with holdScrubbedTime: one writer of the town's clock. ⛔ Nothing ticks a Date: an
+ *                    app whose visitor scrubs and expects the town to go on (a Light Show) passes timeOffsetMs instead.
+ *   timeOffsetMs     the town's clock as an OFFSET FROM NOW (ms; 0 = live), when the APP owns it (the Ward's time bar,
+ *                    2026-11-01: "we never really leave now's time we just scrub along its index"). The town shows
+ *                    now + offset and keeps TICKING from there (TimeTicker, per frame), so a scrubbed show plays at frame
+ *                    rate. Re-anchored to now + offset on every mount. ⚠️ Assumes the clock store's timeSpeed is 1 and it is
+ *                    not paused (no app that passes an offset writes either). ⛔ Never with `time` or holdScrubbedTime.
  *   movie            optional — the app's hooks into the town's movie (MovieCamera, mounted here, once): { start
  *                    ('random' | () => seconds — Stage's playhead), onTime (Stage's scrub readout), playing (Stage's
  *                    Play; default true), hold (() => true while the app's own camera code owns it — Stage), handle
@@ -637,11 +643,16 @@ function TownOptics({ quality, shot, movieActive }) {
 export default function Town({
   town, lookId, quality, shot, paused = false, idle = false, selectedId = null, onSelectBuilding, litIds, liveIds, listings,
   interactive = true, bakeLastMs, layers, postFx, overrides = {}, weatherMode = 'live',
-  holdScrubbedTime = false, time, movie, flight = true, streetAt, viewInset, flightRef, onFlightEnd, frameKey, frameIds, frameMode = 'densest', frameMover = null, framePoints = null, onFramed, planHeading = 'town', bearingRef,
+  holdScrubbedTime = false, time, timeOffsetMs, movie, flight = true, streetAt, viewInset, flightRef, onFlightEnd, frameKey, frameIds, frameMode = 'densest', frameMover = null, framePoints = null, onFramed, planHeading = 'town', bearingRef,
   controls = false, movers, onMovers, children, towerLight = false, onTowerLight, calendar, displaySource,
 }) {
   if (time !== undefined && holdScrubbedTime) throw new Refusal('[Town] ⛔ `time` and `holdScrubbedTime` both drive the clock — pass one (the app owns its time, or Stage holds a scrub)')
   if (time != null && !(time instanceof Date && Number.isFinite(time.getTime()))) throw new Refusal(`[Town] ⛔ \`time\` is a Date or null (live); got ${time}`)
+  if (timeOffsetMs !== undefined) {
+    if (time !== undefined) throw new Refusal('[Town] ⛔ `time` and `timeOffsetMs` both drive the clock — pass one (an instant that holds, or an offset from now that ticks)')
+    if (holdScrubbedTime) throw new Refusal('[Town] ⛔ `holdScrubbedTime` with `timeOffsetMs`: the hold stops the clock off live, so the offset would freeze — pass one')
+    if (!Number.isFinite(timeOffsetMs)) throw new Refusal(`[Town] ⛔ \`timeOffsetMs\` is a finite number of ms from now (0 = live); got ${timeOffsetMs}`)
+  }
   if (!lookId) throw new Refusal('[Town] ⛔ needs lookId — the Look to draw')
   if (!quality?.id) throw new Refusal('[Town] ⛔ needs quality — a profile from src/lib/qualityProfile.js')
   if (!SHOT_KEY[shot]) throw new Refusal(`[Town] ⛔ shot "${shot}" is not one of ${Object.keys(SHOT_KEY).join(' · ')}`)
@@ -711,7 +722,7 @@ export default function Town({
   // boundary under the town's lookId. The same boundary NAME (so the same `<lookId>/terrain` key) in both branches below;
   // they sit at different tree positions, so the town loading REMOUNTS it, and that clean mount clears the entry (the
   // read landed). The remount re-runs TownPlace: placeTown and an unforced reloadTerrain are no-ops, and `time` is applied again.
-  const terrainPlace = <R3FErrorBoundary name="terrain"><TownPlace town={town} lookId={lookId} time={time} rebake={bakeLastMs} /></R3FErrorBoundary>
+  const terrainPlace = <R3FErrorBoundary name="terrain"><TownPlace town={town} lookId={lookId} time={time} timeOffsetMs={timeOffsetMs} rebake={bakeLastMs} /></R3FErrorBoundary>
   if (!loaded) return <FrameBoundary.Provider value={false}><TownOptics quality={quality} shot={shot} movieActive={false} />{terrainPlace}{splash}</FrameBoundary.Provider>
   const shotExag = shot === 'plan' ? 0 : shot === 'street' ? 1 : sceneExag()
   // ⭐ THE SWELL (Jacob, 2026-10-06): the town is prepared FLAT and the terrain swells to the shot's height as the

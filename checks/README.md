@@ -210,7 +210,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-deadend-look.mjs` | RENDER THE NINE. Read-only. |
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 
-## safe — 383. This is `npm test`.
+## safe — 384. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -273,6 +273,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-a-roundabout-is-one-ring.mjs` | CLAIM — EVERY ROUNDABOUT OSM DECLARES ARRIVES AS ONE CLOSED CHAIN (cartograph/_archive/BRIEF-roundabout-is-one-ring-DELIVERED-2026-10-03.md). |
 | `checks/claims-a-scene-is-its-own-looks.mjs` | DOES THE SCENE HOOK HAND OUT ONLY THE ASKED LOOK'S SCENE, NEVER THE PREVIOUS ONE'S? |
 | `checks/claims-a-scene-switch-drops-the-old-town.mjs` | CLAIM — A SCENE SWITCH DROPS THE OLD TOWN, AND ITS DESIGN SAVES TO THE NEW TOWN'S OWN LOOK. |
+| `checks/claims-a-scrubbed-town-keeps-ticking.mjs` | "DOES A TOWN SCRUBBED TO ANOTHER TIME KEEP TICKING FROM THERE?" (Jacob, 2026-11-01: "we never really leave now's time |
 | `checks/claims-a-shore-is-not-traced-twice.mjs` | ⭐⭐ TWO INVARIANTS, one cure and one guard: |
 | `checks/claims-a-show-plays-only-inside-its-windows.mjs` | "DOES A SHOW PLAY ONLY INSIDE ITS WINDOWS, AND IS A WINDOW WHOSE ENDS PASS EACH OTHER REFUSED?" (Jacob, 2026-11-01: |
 | `checks/claims-a-slab-ships-under-content-names.mjs` | every slab upload names its files by their content, and every read of what an |

@@ -54,6 +54,7 @@ import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { ROOT } from './_scenes.mjs'
 import { importSource, sourceOf } from './_importSource.mjs'
+import { hookRunner } from './_hookRunner.mjs'
 
 const require = createRequire(import.meta.url)
 const { parse } = require('@babel/parser'), traverse = require('@babel/traverse').default
@@ -259,26 +260,6 @@ function oneSink(files) {
 // RUN, not read: <Displays> (src/displays/Displays.jsx, its JSX compiled here) is rendered through useSceneRead under a
 // minimal hook runner (state, memo, effects after render, a re-render on a state change, cleanup on unmount). What it
 // renders is read: a <Refuse> child (the refusal DisplayBoundary would report) or the plugin's <Suspense>.
-function hookRunner() {
-  let cur = null
-  const same = (a, b) => !!a && !!b && a.length === b.length && a.every((x, i) => Object.is(x, b[i]))
-  globalThis.__hooks = {
-    useState(init) { const i = cur, k = i.k++; if (!(k in i.s)) i.s[k] = init; return [i.s[k], (v) => { i.s[k] = v; i.dirty = true }] },
-    useMemo(f, deps) { const i = cur, k = i.k++, m = i.m[k]; if (m && same(m.deps, deps)) return m.v; const v = f(); i.m[k] = { deps, v }; return v },
-    useEffect(f, deps) { const i = cur, k = i.k++, e = i.e[k]; if (e && same(e.deps, deps)) return; i.after.push(() => { e?.cleanup?.(); i.e[k] = { deps, cleanup: f() } }) },
-    useRef(init) { const i = cur, k = i.k++; if (!(k in i.s)) i.s[k] = { current: init }; return i.s[k] },
-  }
-  globalThis.__hooks.useLayoutEffect = globalThis.__hooks.useEffect
-  return (render) => {
-    const i = { s: {}, m: {}, e: {}, k: 0, after: [], dirty: false, outs: [] }
-    const go = (props) => { cur = i; i.k = 0; i.dirty = false; let out
-      try { out = render(props) } catch (e) { cur = null; i.thrown = e; i.after.length = 0; return undefined }
-      cur = null; i.outs.push(out); for (const f of i.after.splice(0)) f(); return out }
-    return { outs: i.outs, render: go, thrown: () => i.thrown,
-      async settle(props) { for (let n = 0; n < 20; n++) { await new Promise((r) => setTimeout(r, 0)); if (i.dirty) go(props) } },
-      unmount() { for (const e of Object.values(i.e)) e.cleanup?.() } }
-  }
-}
 // useSceneJson.js from its cache down, its imports supplied: the hooks, slabFetch and the town's shot are the runner's.
 const HOOK_PREFIX = ['useEffect', 'useMemo', 'useState'].map(h => `const ${h} = (...a) => globalThis.__hooks.${h}(...a)`).join('\n') +
   "\nconst slabFetch = (...a) => globalThis.__slabFetch(...a)\nconst useTownShot = () => null\nimport { shotKeyForViewMode, resolveShotScene } from './shotScene.js'\nimport { sceneFor } from './sceneFor.js'\nimport { Refusal, Transient, httpFailure } from './refusal.js'"
@@ -474,7 +455,7 @@ if (process.argv.includes('--mutants')) {
       displays: must('const { scene, failure } = useSceneRead(lookId), failed', "const { scene } = useSceneRead(lookId), failure = globalThis.__lastFail, failed") }],
     ['a terrain read that fails floats', { terrain: must('.catch((error) => { if (live) setFailed({ lookId, error }) })', '.catch(() => {})') }],
     ['a re-bake does not force the terrain', { terrain: must('const force = lastRebake.current !== rebake', 'const force = false') }],
-    ['TownPlace outside the terrain boundary', { files: swap('src/components/Town.jsx', '<R3FErrorBoundary name="terrain"><TownPlace town={town} lookId={lookId} time={time} rebake={bakeLastMs} /></R3FErrorBoundary>', '<TownPlace town={town} lookId={lookId} time={time} rebake={bakeLastMs} />') }],
+    ['TownPlace outside the terrain boundary', { files: swap('src/components/Town.jsx', '<R3FErrorBoundary name="terrain"><TownPlace town={town} lookId={lookId} time={time} timeOffsetMs={timeOffsetMs} rebake={bakeLastMs} /></R3FErrorBoundary>', '<TownPlace town={town} lookId={lookId} time={time} timeOffsetMs={timeOffsetMs} rebake={bakeLastMs} />') }],
     ['a second terrain reader in a shot', { files: swap('src/cartograph/CartographApp.jsx', 'if (!activeLookId || !inDesigner) return', 'if (!activeLookId) return') }],
     ['a frame throw goes unstopped', { frame: must('if (dead.current) return', '') }],
     ['a frame throw in a boundary is not rethrown', { frame: must('if (inBoundary) { setFailed({ error }); return }', 'if (inBoundary) return') }],
