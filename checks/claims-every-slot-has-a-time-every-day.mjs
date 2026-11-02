@@ -65,7 +65,9 @@ async function verdict({ slots, param, share, capture } = {}) {
   // 4. the lights through the real resolvers
   const lamp = K.kitDayChannel('lantern'), disp = S.defaultDisplayChannel()
   const lampAt = (m, sm) => A.resolveGroupAtMinute(lamp, m, sm, K.LANTERN_FIELD_KEYS, K.LANTERN_FLAT_DEFAULTS).intensity
-  const dispAt = (m, sm) => S.displayAt(disp, m, sm).glow
+  // the display's light through its schedule (showSchedule.js), on the day's row (the same row both nights: the test day's)
+  const Hs = await importSource('src/displays/showSchedule.js', param ? { redirect: { 'src/cartograph/animatedParam.js': { transform: param } } } : {})
+  const dispAt = (m, sm) => { const rowOf = () => sm, d = '2026-06-21', nb = Hs.nightsOn(disp, Hs.prevDate(d), rowOf, 300), nt = Hs.nightsOn(disp, d, rowOf, 300); return Hs.displayStateAt(disp, nb, nt, d, m, rowOf).glow }
   const all = (sm, f) => { for (let m = 0; m < 1440; m += 5) if (!f(m, sm)) return m; return null }
   const lw = all(white, (m, sm) => lampAt(m, sm) === 0), dw = all(white, (m, sm) => dispAt(m, sm) === 0)
   const lp = all(polar, (m, sm) => lampAt(m, sm) > 0), dp = all(polar, (m, sm) => dispAt(m, sm) > 0)

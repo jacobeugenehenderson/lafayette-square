@@ -1,47 +1,42 @@
 /**
  * A DISPLAY IS AUTHORED ON ITS OWN LOOK CHANNEL (Jacob, 2026-11-01: "the show to get its own in-look scheduler with the
- * same kind of faders"; "we need to be able to set the fade up/down timer to 0 for a 'switch off'";
- * r-a-display-is-authored-on-its-own-look-channel). A Look's design.json carries `displays: { <displayId>: <channel> }`,
- * one tod channel per display of the town, keyed on the eight sun slots with the lamps' ▲/▼ fade marks:
- *   · glow       the strands' warm glow between shows (an HDR level; tweened, faded)
- *   · show       the show's level (an HDR level; tweened, faded; 0 = no show)
- *   · kelvin     the glow's colour temperature (tweened, never faded: a colour has no "off")
- *   · showEvery  minutes between showtimes from the town's midnight, STEP-HELD (animatedParam.js#keyedStepAt): a count
- *                is never tweened. Divides the 1440-minute day, so the gap across midnight is the same as any other.
- * Every key carries all four: a key with a field missing has nothing honest to fall back to, so it is refused.
- *
+ * same kind of faders"; r-a-display-is-authored-on-its-own-look-channel). A Look's design.json carries
+ * `displays: { <displayId>: <channel> }`, one per display of the town:
+ *   · LEVELS, keyed on the eight time slots (the sun decides only each slot's clock time):
+ *       glow    the Ambient light between shows (an HDR level; the Lit card calls it Ambient; the field keeps its name,
+ *               so no published shape churns)
+ *       show    the show's level (an HDR level; 0 = no show)
+ *       kelvin  Ambient's colour temperature (never faded: a colour has no "off")
+ *     Every key carries all three; a key with one missing has nothing honest to fall back to, so it is refused.
+ *   · WHEN, its `schedule` (./showSchedule.js): entries like calendar invites, Ambient on/off with its fades, and the
+ *     shows from a first start to a last start every N minutes. A display's keys carry no ▲/▼ marks: Ambient's fades
+ *     are its on and off (ruling (c), 2026-11-01).
  * ⭐ THE NEUTRAL DEFAULT is what the Light Show did before it had a channel (glow 1.36 = 1.7 × the shimmer's mean 0.8;
- * show 2.4; up at Dusk, down at Dawn, both hard; a show every 60 minutes). kelvin is the temperature whose
- * kelvinToRgb is nearest the old fixed glow [255, 214, 150] (3810 K, residual 14.8 of 255: the old colour is not on the
- * blackbody curve). ▶ node checks/claims-a-display-is-authored-on-its-own-channel.mjs --kelvin prints both.
- * ⭐ SHOW WINDOWS (Jacob, 2026-11-01: "Displays: Clock time windows: Yes"; Boz's and Zob's rulings on the plan):
- * `showWindows: [{ from, to }]`, each end a slot word or a time on the town's clock ("HH:MM", 24 h). Absent, a show
- * plays wherever Show is above 0. A showtime's whole run must lie inside one window; a window may cross midnight. ONE
- * modular rule (Zob): a minute m is inside iff (m − from) mod 1440 < L, L = (to − from) mod 1440, so a run ending AT `to`
- * is inside and one starting at `to` is not, and nothing special-cases midnight. The light's LEVELS still follow the
- * keys; a window gates only the showtimes. ⛔ refuseWindowSense: a window whose two ends pass each other on some day of
- * the year at the town (19:00 → Dusk where Dusk comes before 19:00 in winter) is refused, naming the days.
+ * show 2.4; Ambient on at Dusk and off at Dawn, both hard; a show every hour on the hour). kelvin is the temperature whose
+ * kelvinToRgb is nearest the old fixed glow [255, 214, 150] (3810 K, residual 14.8 of 255). ▶ node
+ * checks/claims-a-display-is-authored-on-its-own-channel.mjs --kelvin prints both.
+ * ⭐ A PLAYER UPDATE NEVER BREAKS A PUBLISHED SLAB (Jacob, 2026-11-01). Two published shapes are read, each by ONE named
+ * function, the only code that sees it: readShowScheduleV1 (the per-key cadence every display slab carried before the
+ * schedule) and readPreDisplaySlab (a scene.json from before displays had a channel). Anything else is refused by name.
  * Who carries the records: the town's identity (identity.displays) says which displays exist; a Look's channel says how
  * each is lit. A channel for a display the identity lacks is refused by name; a display with no channel gets the default.
  */
-import { resolveGroupAtMinute, keyedStepAt } from '../cartograph/animatedParam.js'
-import { TOD_SLOT_IDS, SLOT_DAY_MOVE_MAX_MIN } from '../lib/todSlots.js'
+import { TOD_SLOT_IDS } from '../lib/todSlots.js'
 import { Refusal } from '../lib/refusal.js'
+import { validateSchedule } from './showSchedule.js'
 
-export const DISPLAY_CHANNEL_FIELDS = ['glow', 'show', 'kelvin', 'showEvery']
-/** The editor's faders (Stage › Displays, cartograph/TodChannel.jsx). showEvery steps in whole hours, every one a
- *  divisor of the day; a Look may author any divisor (validateDisplayChannel). */
+export const DISPLAY_CHANNEL_FIELDS = ['glow', 'show', 'kelvin']
+/** The editor's faders (Stage › Displays, cartograph/TodChannel.jsx). WHEN is the Schedule block's, not a fader's. */
 export const DISPLAY_FIELDS = [
-  { key: 'glow',      label: 'Glow',        min: 0,    max: 4,    step: 0.02, title: 'The warm glow between shows' },
-  { key: 'show',      label: 'Show',        min: 0,    max: 4,    step: 0.02, title: 'The show\'s brightness; 0 is no show' },
-  { key: 'kelvin',    label: 'Glow colour', min: 1800, max: 6500, step: 50,   unit: ' K', title: 'The glow\'s colour temperature' },
-  { key: 'showEvery', label: 'Show every',  min: 60,   max: 240,  step: 60,   unit: ' min', title: 'Minutes between shows, from the town\'s midnight' },
+  { key: 'glow',   label: 'Ambient',        min: 0,    max: 4,    step: 0.02, title: 'The Ambient light between shows' },
+  { key: 'show',   label: 'Show',           min: 0,    max: 4,    step: 0.02, title: 'The show\'s brightness; 0 is no show' },
+  { key: 'kelvin', label: 'Ambient colour', min: 1800, max: 6500, step: 50,   unit: ' K', title: 'Ambient\'s colour temperature' },
 ]
-const DAY_MIN = 1440
+const DAY = 1440
 export const DEFAULT_KELVIN = 3810
-const KEY = Object.freeze({ glow: 1.36, show: 2.4, kelvin: DEFAULT_KELVIN, showEvery: 60 })
+const KEY = Object.freeze({ glow: 1.36, show: 2.4, kelvin: DEFAULT_KELVIN })
 const DEFAULT = { animated: 'tod', values: { dusk: { ...KEY }, dawn: { ...KEY } },
-  edges: { dusk: { fade: 'up', minutes: 0 }, dawn: { fade: 'down', minutes: 0 } } }
+  schedule: [{ days: 'daily', ambient: { on: 'dusk', fadeIn: 0, off: 'dawn', fadeOut: 0 }, shows: { first: '00:00', last: '23:00', every: 60 } }] }
 
 /** The neutral default, a fresh deep copy each call (the store mutates what it hydrates). */
 export function defaultDisplayChannel() { return JSON.parse(JSON.stringify(DEFAULT)) }
@@ -60,105 +55,66 @@ export function kelvinToRgb(K) {
   return [cl(r), cl(g), cl(b)]
 }
 
-const HHMM = /^([01]\d|2[0-3]):([0-5]\d)$/
-const isEnd = (e) => TOD_SLOT_IDS.includes(e) || HHMM.test(e)
-const endName = (e) => (HHMM.test(e) ? e : e[0].toUpperCase() + e.slice(1))
-/** A window's end as a minute of the town's day: a clock time, or the slot's minute that day. */
-export function windowEndMinute(end, slotMinutes) { const c = HHMM.exec(end); return c ? Number(c[1]) * 60 + Number(c[2]) : slotMinutes[end] }
-const span = (w, sm) => ((windowEndMinute(w.to, sm) - windowEndMinute(w.from, sm)) % DAY_MIN + DAY_MIN) % DAY_MIN
-const into = (w, minute, sm) => ((minute - windowEndMinute(w.from, sm)) % DAY_MIN + DAY_MIN) % DAY_MIN
-/** Is `minute` inside one of the channel's windows on that day (always, with none)? The one modular rule. */
-export function inWindows(windows, minute, slotMinutes) {
-  if (windows == null) return true
-  return windows.some(w => into(w, minute, slotMinutes) < span(w, slotMinutes))
-}
-
-function validateWindows(ws, where) {
-  if (!Array.isArray(ws) || !ws.length) throw new Refusal(`[showChannel] ⛔ ${where}: showWindows is a list of { from, to }; with no windows, leave it out (a show then plays wherever Show is above 0)`)
-  ws.forEach((w, i) => {
-    const at = `${where}, window ${i + 1}`
-    for (const k of Object.keys(w || {})) if (k !== 'from' && k !== 'to') throw new Refusal(`[showChannel] ⛔ ${at}: "${k}" is not part of a window (from, to)`)
-    for (const k of ['from', 'to']) if (!isEnd(w?.[k])) throw new Refusal(`[showChannel] ⛔ ${at}: its ${k} (${JSON.stringify(w?.[k])}) is neither a time-of-day slot (${TOD_SLOT_IDS.join(', ')}) nor a time on the town's clock (HH:MM, 24 h)`)
-    if (w.from === w.to) throw new Refusal(`[showChannel] ⛔ ${at}: it starts and ends at ${endName(w.from)}, so it holds no time`)
-  })
-}
-
-/** Runs of consecutive dates, as "Mon D – Mon D" (or one date). */
-function dateRuns(dates) {
-  const fmt = (d) => new Date(`${d}T12:00:00Z`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' })
-  const next = (d) => new Date(Date.parse(`${d}T12:00:00Z`) + 86400000).toISOString().slice(0, 10)
-  const runs = []
-  for (const d of dates) { const r = runs.at(-1); if (r && next(r[1]) === d) r[1] = d; else runs.push([d, d]) }
-  return runs.map(([a, b]) => (a === b ? fmt(a) : `${fmt(a)} – ${fmt(b)}`)).join(', ')
+const hhmm = (m) => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`
+/**
+ * ⭐ THE PUBLISHED PER-KEY CADENCE, READ (Jacob: "A player update never breaks a published slab"; Zob: one reader, one
+ * place, exact). Before the schedule, a display channel carried `showEvery` on EVERY key, all equal (shows every N from
+ * the town's midnight wherever Show was above 0), and exactly one ▲ and one ▼ fade mark on its keys. Every published
+ * display slab carries that shape (measured 2026-11-01: PTown staging and production, sunset ▲15, dawn ▼15, 60; the old
+ * default, Dusk ▲0, Dawn ▼0, 60). This is the ONLY code that sees a key's showEvery or a display key's mark. It reads the
+ * pure old shape as one daily entry, the identical light: Ambient on at the ▲ key's slot over its minutes and off at the
+ * ▼ key's over its minutes; shows from 00:00 to the last whole N before midnight, every N. Anything else of that kind
+ * (keys differing, some without, more or fewer marks, or a `schedule` alongside) is refused by name, never guessed. A
+ * channel with no key showEvery and no marks passes through untouched.
+ * ▶ node checks/claims-a-display-is-authored-on-its-own-channel.mjs (exact against the old engine, every minute of 2026)
+ */
+export function readShowScheduleV1(ch, where) {
+  const keys = Object.entries(ch?.values || {}), keyed = keys.filter(([, k]) => k && typeof k === 'object' && 'showEvery' in k)
+  const marks = Object.entries(ch?.edges || {})
+  if (!keyed.length && !marks.length) return ch
+  const at = `[showChannel] ⛔ ${where}`
+  if ('schedule' in ch) throw new Refusal(`${at}: it carries the published per-key cadence or fade marks AND a schedule; one channel has one schedule`)
+  if (keyed.length !== keys.length) throw new Refusal(`${at}: only some of its keys carry a cadence (${keys.map(([s, k]) => `${s}=${k?.showEvery ?? 'none'}`).join(', ')}), a shape never published`)
+  const n = [...new Set(keyed.map(([, k]) => k.showEvery))]
+  if (n.length !== 1) throw new Refusal(`${at}: its keys carry different cadences (${keyed.map(([s, k]) => `${s}=${k.showEvery}`).join(', ')}), a shape never published`)
+  const every = n[0]
+  if (!Number.isInteger(every) || every < 1 || DAY % every) throw new Refusal(`${at}: its keys' cadence (${JSON.stringify(every)}) is not a whole number of minutes dividing the day, a shape never published`)
+  const up = marks.filter(([, e]) => e?.fade === 'up'), down = marks.filter(([, e]) => e?.fade === 'down')
+  if (up.length !== 1 || down.length !== 1 || marks.length !== 2) throw new Refusal(`${at}: its keys carry ${marks.map(([s, e]) => `${e?.fade} at ${s}`).join(', ') || 'no fade marks'}; the published shape has exactly one up and one down`)
+  for (const [s, e] of marks) if (!(s in ch.values) || !(e.minutes >= 0)) throw new Refusal(`${at}: the mark at ${s} has no key or no fade length`)
+  const { edges, ...rest } = ch; void edges
+  return { ...rest,
+    values: Object.fromEntries(keys.map(([s, k]) => { const { showEvery, ...lv } = k; void showEvery; return [s, lv] })),
+    schedule: [{ days: 'daily', ambient: { on: up[0][0], fadeIn: up[0][1].minutes, off: down[0][0], fadeOut: down[0][1].minutes }, shows: { first: '00:00', last: hhmm(DAY - every), every } }] }
 }
 
 /**
- * ⛔ THE WINDOWS OVER A YEAR AT THE TOWN (Boz's ruling, 2026-11-01, as worded): "a window's two ends never pass each other
- * on any day of the year at the town; if they do, it is refused, naming the days they are the other way round". `days`
- * is the cached year (todSlots.js#todSlotYear / #todSlotDays: [{ date, minutes }], in date order).
- *   · PASS, on daily samples (Zob): the window's length L(d) is 0 on a day (the ends meet), or changes by more than half
- *     the day from one day to the next (the ends crossed: L wrapped through 0). The clock change moves every slot 60
- *     minutes at once, so a clock end within the hour of a slot end can pass in one step; this catches it;
- *   · it rests on no slot moving more than SLOT_DAY_MOVE_MAX_MIN in a day. Where one does (a slot snapping between noon
- *     and the nadir, far north), the test cannot tell a crossing from a jump, so the window is refused by name there;
- *   · two windows that overlap on any day (a minute inside both, the same modular rule) are refused.
- * The "other way round" days are the side of the crossings with fewer days.
+ * One channel, refused by name: keyed on the day, known slots, every level on every key and each in range, no fade
+ * marks, and a valid schedule. A published per-key cadence is read first (readShowScheduleV1). Returns the channel to
+ * use (the same object, or the published one read into the schedule's shape): a caller must use what it returns.
  */
-export function refuseWindowSense(windows, days, where) {
-  if (windows == null) return
-  validateWindows(windows, where)
-  windows.forEach((w, i) => {
-    const at = `${where}, window ${i + 1} (${endName(w.from)} → ${endName(w.to)})`
-    for (const end of [w.from, w.to]) if (!HHMM.test(end)) for (let k = 1; k < days.length; k++) {
-      const x = Math.abs(days[k].minutes[end] - days[k - 1].minutes[end]) % DAY_MIN, move = Math.min(x, DAY_MIN - x)
-      if (move > SLOT_DAY_MOVE_MAX_MIN) throw new Refusal(`[showChannel] ⛔ ${at}: ${endName(end)} moves ${move.toFixed(0)} minutes from ${days[k - 1].date} to ${days[k].date} here, so whether this window's ends pass each other cannot be judged; end it on another moment or a clock time`)
-    }
-    const sides = [[], []]; let side = 0, prev = null
-    for (const d of days) {
-      const L = span(w, d.minutes)
-      if (L === 0) throw new Refusal(`[showChannel] ⛔ ${at}: on ${dateRuns([d.date])} its two ends fall on the same minute, so it holds no time that day`)
-      if (prev != null && Math.abs(L - prev) > DAY_MIN / 2) side ^= 1
-      sides[side].push(d.date); prev = L
-    }
-    if (sides[1].length) {
-      const other = sides[0].length < sides[1].length ? sides[0] : sides[1]
-      throw new Refusal(`[showChannel] ⛔ ${at}: its two ends pass each other here, so on ${other.length} days (${dateRuns(other)}) it runs the other way round; end it on moments that keep their order all year, or a clock time clear of the sun's`)
-    }
-  })
-  for (let i = 0; i < windows.length; i++) for (let j = i + 1; j < windows.length; j++) {
-    const a = windows[i], b = windows[j]
-    const d = days.find(r => into(a, windowEndMinute(b.from, r.minutes), r.minutes) < span(a, r.minutes) || into(b, windowEndMinute(a.from, r.minutes), r.minutes) < span(b, r.minutes))
-    if (d) throw new Refusal(`[showChannel] ⛔ ${where}: windows ${i + 1} (${endName(a.from)} → ${endName(a.to)}) and ${j + 1} (${endName(b.from)} → ${endName(b.to)}) overlap on ${dateRuns([d.date])}; a show belongs to one window`)
-  }
-}
-
-/** One channel, refused by name: keyed on the day, known slots, every field on every key, and each in range. */
-export function validateDisplayChannel(ch, where) {
-  if (ch?.animated !== 'tod' || !ch.values || typeof ch.values !== 'object') throw new Refusal(`[showChannel] ⛔ ${where}: a display channel is keyed on the day ({ animated: 'tod', values })`)
+export function validateDisplayChannel(input, where) {
+  const ch = readShowScheduleV1(input, where)
+  if (ch?.animated !== 'tod' || !ch.values || typeof ch.values !== 'object') throw new Refusal(`[showChannel] ⛔ ${where}: a display channel is keyed on the day ({ animated: 'tod', values, schedule })`)
+  for (const k of Object.keys(ch)) if (!['animated', 'values', 'schedule'].includes(k)) throw new Refusal(`[showChannel] ⛔ ${where}: "${k}" is not part of a display channel (animated, values, schedule)`)
   const keys = Object.entries(ch.values)
   if (!keys.length) throw new Refusal(`[showChannel] ⛔ ${where}: the channel has no keys`)
   for (const [slot, k] of keys) {
     const at = `${where}, the key at ${slot}`
     if (!TOD_SLOT_IDS.includes(slot)) throw new Refusal(`[showChannel] ⛔ ${at}: "${slot}" is not a time-of-day slot (${TOD_SLOT_IDS.join(', ')})`)
-    for (const f of Object.keys(k || {})) if (!DISPLAY_CHANNEL_FIELDS.includes(f)) throw new Refusal(`[showChannel] ⛔ ${at}: "${f}" is not a display field (${DISPLAY_CHANNEL_FIELDS.join(', ')})`)
+    for (const f of Object.keys(k || {})) if (!DISPLAY_CHANNEL_FIELDS.includes(f)) throw new Refusal(`[showChannel] ⛔ ${at}: "${f}" is not a display level (${DISPLAY_CHANNEL_FIELDS.join(', ')})`)
     for (const f of DISPLAY_CHANNEL_FIELDS) if (typeof k?.[f] !== 'number' || !Number.isFinite(k[f])) throw new Refusal(`[showChannel] ⛔ ${at}: ${f} is not authored`)
-    if (k.glow < 0 || k.show < 0) throw new Refusal(`[showChannel] ⛔ ${at}: glow and show are levels, never below 0`)
+    if (k.glow < 0 || k.show < 0) throw new Refusal(`[showChannel] ⛔ ${at}: Ambient and show are levels, never below 0`)
     kelvinToRgb(k.kelvin)
-    if (!Number.isInteger(k.showEvery) || k.showEvery <= 0 || DAY_MIN % k.showEvery) throw new Refusal(`[showChannel] ⛔ ${at}: showEvery (${k.showEvery}) must be a whole number of minutes that divides the day (1440), so the gap across midnight is the same as every other`)
   }
-  if ('showWindows' in ch) validateWindows(ch.showWindows, where)
-  for (const [slot, e] of Object.entries(ch.edges || {})) {
-    if (!(slot in ch.values)) throw new Refusal(`[showChannel] ⛔ ${where}: a fade mark at ${slot}, which has no key`)
-    if (e?.fade !== 'up' && e?.fade !== 'down') throw new Refusal(`[showChannel] ⛔ ${where}: the mark at ${slot} fades neither up nor down`)
-    if (!(e.minutes >= 0)) throw new Refusal(`[showChannel] ⛔ ${where}: the mark at ${slot} has no fade length (0 is a hard switch)`)
-  }
+  validateSchedule(ch.schedule, where)
   return ch
 }
 
 /**
  * The town's display channels for one Look: `identityDisplays` the town's records ({ <id>: record }), `lookDisplays`
- * the Look's design.json `displays` (or undefined). Every identity display gets the Look's channel or the default;
- * a channel naming a display the town lacks is refused by name.
+ * the Look's design.json `displays` (or undefined). Every identity display gets the Look's channel (read and validated)
+ * or the default; a channel naming a display the town lacks is refused by name.
  */
 export function displayChannelsFor(identityDisplays, lookDisplays, where) {
   const ids = Object.keys(identityDisplays || {})
@@ -166,11 +122,18 @@ export function displayChannelsFor(identityDisplays, lookDisplays, where) {
   return Object.fromEntries(ids.map((id) => [id, lookDisplays?.[id] ? validateDisplayChannel(lookDisplays[id], `${where}, display "${id}"`) : defaultDisplayChannel()]))
 }
 
-/** The channel at a minute of the town's day, on that day's slot minutes: { glow, show, kelvin, showEvery, open }, `open`
- *  whether the minute is inside one of its show windows (always, with none). */
-export function displayAt(ch, minute, slotMinutes) {
-  const { glow, show } = resolveGroupAtMinute(ch, minute, slotMinutes, ['glow', 'show'])
-  const { edges, ...unfaded } = ch   // eslint-disable-line no-unused-vars -- a colour has no "off"
-  const { kelvin } = resolveGroupAtMinute(unfaded, minute, slotMinutes, ['kelvin'])
-  return { glow, show, kelvin, showEvery: keyedStepAt(ch, 'showEvery', minute, slotMinutes), open: inWindows(ch.showWindows, minute, slotMinutes) }
+/**
+ * ⭐ A SCENE FROM BEFORE DISPLAYS HAD A CHANNEL, READ (Boz's ruling, 2026-11-02, with Zob's version gate; BRIEF-ward-a-player-
+ * update-never-breaks-a-published-slab). The player's one reader of a slab's `displays`:
+ *   · NO `displays` key (a slab baked before the channel, e.g. PTown's 2026-10-29 publishes, Huron's staging): each display
+ *     the identity declares gets what the bake gives a Look with no channel for it (displayChannelsFor, the same
+ *     function: the neutral default, the light of its day); none declared, nothing;
+ *   · a `displays` block: each declared display MUST have its channel (a block missing one is an inconsistent slab,
+ *     refused by name), each read and validated as the bake does.
+ */
+export function readPreDisplaySlab(scene, identityDisplays, where) {
+  if (!scene || !('displays' in scene)) return displayChannelsFor(identityDisplays, undefined, `${where} (a slab from before displays had a channel)`)
+  const missing = Object.keys(identityDisplays || {}).filter(id => !(id in (scene.displays || {})))
+  if (missing.length) throw new Refusal(`[showChannel] ⛔ ${where}: the slab's displays block has no channel for ${missing.map(i => `"${i}"`).join(', ')}, which the town declares: an inconsistent slab (re-bake the Look's scene)`)
+  return displayChannelsFor(identityDisplays, scene.displays, where)
 }

@@ -77,6 +77,16 @@ export function todSlotDays(place, from, n) {
   for (let year = c.year; out.length < n; year++) for (const r of todSlotYear(place, year)) if (r.date >= c.date && out.length < n) out.push(r)
   return out
 }
+/** One town date's slot minutes, out of the cached year (a Map per place and year, so a frame never searches 365 rows). */
+const ROWS = new Map()
+export function todSlotRowOf(place, date) {
+  const year = Number(String(date).slice(0, 4)), key = `${place?.lat},${place?.lon},${place?.tz},${year}`
+  let m = ROWS.get(key)
+  if (!m) ROWS.set(key, m = new Map(todSlotYear(place, year).map(r => [r.date, r.minutes])))
+  const row = m.get(date)
+  if (!row) throw new Refusal(`[todSlots] ⛔ "${date}" is not a town date of ${year} at ${key}`)
+  return row
+}
 /** The most a slot moves from one day to the next, in minutes (the clock change moves every slot 60 at once).
  *  claims-every-slot-has-a-time-every-day asserts it at every latitude; refuseWindowSense rests on it. */
 export const SLOT_DAY_MOVE_MAX_MIN = 90

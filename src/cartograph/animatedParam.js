@@ -34,7 +34,7 @@
 // The TOD slots — eight sun moments, their order and their minutes — are src/lib/todSlots.js's (one home, shared
 // with the site Workers' share card). Per-Look serialization stores slot ids; minutes are computed live each frame
 // so the envelope shifts seasonally with the real sun.
-import { TOD_SLOT_IDS, todSlotMinutesAt, todSlotYear, todSlotReachedAt, todSlotNearest } from '../lib/todSlots.js'
+import { TOD_SLOT_IDS, todSlotMinutesAt, todSlotYear, todSlotDays, todSlotRowOf, todSlotReachedAt, todSlotNearest } from '../lib/todSlots.js'
 import { townPlace } from '../lib/townPlace.js'
 import { Refusal } from '../lib/refusal.js'
 import { LAMPGLOW_FLAT_DEFAULTS, LAMPGLOW_RADIUS_V } from './skyLightChannels.js'
@@ -56,6 +56,16 @@ export function getTodSlotColor(id) { return NAMED_TOD_SLOTS_BY_ID[id]?.color }
 export function getTodSlotYear(year) {
   const { lat, lon, timezone } = townPlace()
   return todSlotYear({ lat, lon, tz: timezone }, year)
+}
+/** `n` town days from `from` on, at the same place (todSlots.js#todSlotDays): the year ahead a schedule is judged over. */
+export function getTodSlotDaysAhead(from, n) {
+  const { lat, lon, timezone } = townPlace()
+  return todSlotDays({ lat, lon, tz: timezone }, from, n)
+}
+/** One town date's slot row ('YYYY-MM-DD'), from the cache, at the same place: what a schedule reads per date. */
+export function getTodSlotRow(date) {
+  const { lat, lon, timezone } = townPlace()
+  return todSlotRowOf({ lat, lon, tz: timezone }, date)
 }
 export function getTodSlotMinutes(date) {
   const { lat, lon, timezone } = townPlace()
@@ -86,6 +96,9 @@ function byDay(mins) {
     return order.indexOf(a.id) - order.indexOf(b.id)
   }
 }
+/** Do two slots that fall on ONE minute come in the order a → b about it (the same tie-break as byDay: the day's own
+ *  sequence about the nadir or noon)? What a display's schedule reads when its on and off ends meet (showSchedule.js). */
+export function slotsInDayOrder(a, b, minute, mins) { return byDay(mins)({ id: a, minute }, { id: b, minute }) < 0 }
 const minsOfList = (todSlots) => Object.fromEntries((todSlots || []).map(s => [s.id, s.minute]))
 
 // "Playhead in slot" tolerance — minutes either side of a slot's
@@ -468,27 +481,6 @@ export function resolveGroupAtMinute(channel, minute, slotMinutes, fieldKeys, de
     out[k] = env.key ? env.key[k] * env.scale : base[k] * env.tween
   }
   return out
-}
-
-/**
- * A STEP-HELD field of a tod channel: the value of the last key at or before `minute`, held until the next, never
- * tweened (a count, e.g. a display's minutes between shows: a tweened 45 between keys of 30 and 60 is a value nobody
- * keyed). Before the day's first key, the day's last key holds across midnight. Fades do not touch it. Keys on one
- * minute keep the day's sequence about it (byDay). Every slot has a minute every day (src/lib/todSlots.js), so every key
- * occurs. ⛔ A channel not keyed on the day, a key without the field, or one on no slot throws by name.
- * ▶ node checks/claims-a-display-is-authored-on-its-own-channel.mjs
- */
-export function keyedStepAt(channel, field, minute, slotMinutes) {
-  if (channel?.animated !== 'tod') throw new Refusal(`[keyedStepAt] ⛔ a step is read off a channel keyed on the day`)
-  const pts = Object.entries(channel.values || {}).map(([id, tuple]) => {
-    if (!Number.isFinite(slotMinutes[id])) throw new Refusal(`[keyedStepAt] ⛔ the key at "${id}" is on no slot with a minute`)
-    if (tuple?.[field] == null) throw new Refusal(`[keyedStepAt] ⛔ the key at "${id}" has no "${field}"`)
-    return { id, minute: slotMinutes[id], v: tuple[field] }
-  }).sort(byDay(slotMinutes))
-  if (!pts.length) throw new Refusal(`[keyedStepAt] ⛔ the channel has no keys`)
-  let held = pts[pts.length - 1]
-  for (const p of pts) if (p.minute <= minute) held = p
-  return held.v
 }
 
 // Generic group-channel migrate. Used by new channels (Bloom, Sky, etc.)

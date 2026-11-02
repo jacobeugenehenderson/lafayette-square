@@ -58,8 +58,9 @@ import { createHash } from 'node:crypto'
 import { resolve, relative, dirname } from 'node:path'
 import { drawerDir, frameRel } from '../src/displays/drawerPath.js'
 import { indexListingAssets } from './listing-assets.mjs'
-import { compileRun, showSeconds, refuseCrowdedShows } from '../src/displays/lightShow/engine.js'
-import { displayAt, defaultDisplayChannel, refuseWindowSense } from '../src/displays/showChannel.js'
+import { compileRun, showSeconds } from '../src/displays/lightShow/engine.js'
+import { defaultDisplayChannel, validateDisplayChannel } from '../src/displays/showChannel.js'
+import { refuseScheduleSense, refuseShortCadence } from '../src/displays/showSchedule.js'
 import { todSlotDays } from '../src/lib/todSlots.js'
 const bakedScene = { displays: { show: defaultDisplayChannel() } }
 `
