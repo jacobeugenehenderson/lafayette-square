@@ -13,7 +13,7 @@
  *      retry scheduled, and the layer renders nothing; a clean remount clears the entry; an untyped crash is retried on every delay and, when the last one
  *      fails, reported as given up with its reason. A retry that commits clean and stays up for the longest delay starts
  *      the table over; a town switch resets a refused boundary (it draws on the new town, and a refusal there is that
- *      town's); a clean commit after a reset clears the layer's own entry.
+ *      town's); the first clean commit on a new town clears the layer's own entry there.
  *   7. A FAILED SCENE READ IS NOT REMEMBERED, AND ITS FAILURE IS THE ATTEMPT'S: <Displays> rendered through useSceneRead
  *      under a hook runner: a 503 refuses; a REMOUNT reads the file again and no render of it refuses; on a Look switch
  *      the next Look's first render shows nothing yet, never the last Look's failure.
@@ -191,9 +191,16 @@ async function boundary(transform, marksT) {
     { const prev = { ...t.state }; t.componentDidUpdate({}, prev) }                 // the switch's update: it resets
     { const prev = { ...t.state, hasError: true }; t.componentDidUpdate({}, prev) }  // and the reset commits clean
     if (t.render() === null) fails.push('a layer refused on town A stays out on town B: a town switch does not reset the boundary, and B shows no entry for it (a silent absence)')
-    if (failures.getState().failed['b-town/Trees']) fails.push("a clean commit after a reset leaves the layer's stale entry for this town: the banner outlives its cause")
+    if (failures.getState().failed['b-town/Trees']) fails.push("a town switch that resets the layer leaves its stale entry for the new town: the banner outlives its cause")
     { const prev = { ...t.state }; const err = new Refusal('[Trees] ⛔ refused on B'); t.state = { ...t.state, ...B.getDerivedStateFromError(err) }; t.componentDidCatch(err, {}); t.componentDidUpdate({}, prev) }
     if (failures.getState().failed['b-town/Trees']?.reason !== '[Trees] ⛔ refused on B') fails.push("a layer refused on town B after a switch is not reported under B")
+    // …and back again, HEALTHY: refused on B → A (draws) → B (draws now): B's old entry goes (Zob, 2026-11-01)
+    t.context = { lookId: 'a-town' }
+    { const prev = { ...t.state }; t.componentDidUpdate({}, prev) }
+    { const prev = { ...t.state, hasError: true }; t.componentDidUpdate({}, prev) }
+    t.context = { lookId: 'b-town' }
+    { const prev = { ...t.state }; t.componentDidUpdate({}, prev) }                 // healthy: no reset, one commit
+    if (failures.getState().failed['b-town/Trees']) fails.push("a layer that refused on B, drew on A, and draws on B again leaves B's old entry: the banner stands while the layer draws")
   } finally { globalThis.setTimeout = was.st; globalThis.clearTimeout = was.ct; console.error = was.err }
   return fails
 }
@@ -325,7 +332,7 @@ if (process.argv.includes('--mutants')) {
     ['the boundary drops the report', { boundary: must("useFailures.getState().report({ lookId, layer, kind: 'refusal', reason: reasonOf(error) })", '') }],
     ['retryCount never resets', { boundary: must('this.setState({ retryCount: 0 }) }, RETRY_DELAYS_MS.at(-1))', 'void 0 }, RETRY_DELAYS_MS.at(-1))') }],
     ['a town switch keeps the boundary down', { boundary: must('if (this.state.hasError || this.state.retryCount) { this.setState({ hasError: false, retryCount: 0 }); return }', '') }],
-    ['a clean commit after a reset leaves the entry', { boundary: must('    if (prev.hasError && !this.state.hasError) {\n      this._clearOwn()\n', '    if (prev.hasError && !this.state.hasError) {\n') }],
+    ['a healthy switch owes no clear', { boundary: must('    if (this._owesClear && !this.state.hasError) { this._owesClear = false; this._clearOwn() }\n', '') }],
     ['a clean remount leaves the stale entry', { boundary: must("    useFailures.getState().clear(lookId, layer)\n", '') }],
     ['the boundary never reports giving up', { boundary: must("useFailures.getState().report({ lookId, layer, kind: 'gave-up', reason })", '') }],
     ['an untyped ⛔ throw returns', { files: swap('src/lib/failures.js', 'throw new Refusal(`[failures] ⛔', 'throw new Error(`[failures] ⛔') }],

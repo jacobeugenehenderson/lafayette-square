@@ -28,6 +28,7 @@ export default class R3FErrorBoundary extends Component {
   _resetTimer = null
   _stableTimer = null
   _lookId = null
+  _owesClear = false
 
   static getDerivedStateFromError() {
     return { hasError: true }
@@ -73,11 +74,15 @@ export default class R3FErrorBoundary extends Component {
     if (lookId !== this._lookId) {
       this._lookId = lookId
       this._cancelTimers()
+      // The new town's entry is owed a clear on the first clean commit: a layer that refused on B, drew on A and draws on
+      // B again must not leave B's old banner standing while it draws (Zob, 2026-11-01).
+      this._owesClear = true
       if (this.state.hasError || this.state.retryCount) { this.setState({ hasError: false, retryCount: 0 }); return }
     }
-    // A clean commit after a reset (a retry, or the switch above) clears the layer's own entry, as a clean mount does.
+    if (this._owesClear && !this.state.hasError) { this._owesClear = false; this._clearOwn() }
+    // (A retry writes no entry: only a refusal or a give-up does, and neither is retried. So the one clear a reset owes is
+    // the new town's, above; a remount clears on mount.)
     if (prev.hasError && !this.state.hasError) {
-      this._clearOwn()
       // ⛔ retryCount used to only grow: crashes spread over a session used up the table, and the next one gave up with
       // no retry at all. A layer that stays up for the table's longest delay has recovered: the next crash starts over.
       if (this.state.retryCount) {
