@@ -15,7 +15,7 @@ gated without anyone remembering to gate it, which is what makes this work on to
 
 A non-zero exit is a **finding for the board**, not a runner fault. The suite reports; it does not fix.
 
-## ⛔ live — 143. Never in a default run.
+## ⛔ live — 144. Never in a default run.
 
 Two reason classes, and they are not the same thing. **outbound** — a demonstrated call out.
 **unreadable** — runs code the parser cannot read, so it *may* contact nothing but cannot be shown
@@ -43,6 +43,7 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `checks/claims-a-dike-is-one-line-with-the-coast.mjs` | unreadable | writeFileSync · computed import() with no readable target — runs arbitrary modules |
 | `checks/claims-a-display-is-authored-on-its-own-channel.mjs` | unreadable | importSource of src/displays/showChannel.js — read, safe · importSource of src/displays/lightShow/engine.js — read, safe · importSource of src/lib/todSlots.js — read, safe · importSource of src/lib/useSceneJson.js (its span: fetchSceneOnce, sceneReadFailure) — read, safe · importSource of src/lib/townClock.js — read, safe · importSource of src/cartograph/stores/useCartographStore.js (its span: displayChannelActions) — read, safe · importSource of cartograph/bake-scene.js (its span: displayRecordsOf) — read, safe · importSource of src/instances/registry.js — read, safe · import of a data: module built at run time — its body cannot be read (use checks/_importSource.mjs) · runs `git show 1b833418b98ce845c53ec22f0618d17` — a pinned blob, read-only |
 | `checks/claims-a-failed-read-names-its-cause.mjs` | outbound | imports a network module · importSource of cartograph/elevationSources.mjs, which can: calls fetch() · imports package(s) geotiff — not read from source |
+| `checks/claims-a-failing-display-is-named-and-contained.mjs` | outbound | importSource of src/displays/DisplayBoundary.js — read, safe · importSource of src/displays/lightShow/rasterFrame.js, which can: calls fetch() · importSource of src/lib/refusal.js — read, safe · importSource of src/lib/refusal.js — read, safe · importSource of src/lib/refusal.js — read, safe · computed import of src/lib/failures.js — read, safe |
 | `checks/claims-a-hashed-town-loads-end-to-end.mjs` | outbound | calls fetch() · opens a WebSocket · writeFileSync · deletes files · runs `npx` — reaches out · runs `/Applications/Google Chrome.app/Contents` — not a known-local command |
 | `checks/claims-a-label-change-ends-no-leg.mjs` | unreadable | writeFileSync · computed import() with no readable target — runs arbitrary modules |
 | `checks/claims-a-lake-level-converts-at-its-own-height.mjs` | outbound | writeFileSync — only under its own temp dir · mkdirSync — only under its own temp dir · deletes files — only under its own temp dir · imports cartograph/fetch-water-datums.mjs, which can: calls fetch(), mkdirSync, imports cartograph/io.js, which can: writeFileSync |
@@ -210,7 +211,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-deadend-look.mjs` | RENDER THE NINE. Read-only. |
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 
-## safe — 382. This is `npm test`.
+## safe — 381. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -240,7 +241,6 @@ Writes into the repo or a scratch dir.
 | `checks/claims-a-dock-rides-only-its-own-structure.mjs` | CLAIM — A DOCK RIDES ONLY ITS OWN STRUCTURE (Boz's rulings (A) and (A1), 2026-10-30; Jacob: "markings on the sandbed are grass"). |
 | `checks/claims-a-face-takes-the-land-use-that-covers-it.mjs` | ⭐⭐ THREE INVARIANTS — ① and ② ruled by Jacob 2026-09-25, ③ 2026-10-04: |
 | `checks/claims-a-failed-tree-load-names-itself.mjs` | WHEN THE GROVE'S ATLAS (OR THE TREE MATERIALS) FAIL TO LOAD, DOES THE REVEAL SAY SO? |
-| `checks/claims-a-failing-display-is-named-and-contained.mjs` | "WHEN A DISPLAY FAILS AT RUNTIME, IS IT CONTAINED AND NAMED?" (Boz's ruling, 2026-10-31.) |
 | `checks/claims-a-fitted-loop-stays-on-its-road.mjs` | DOES EVERY CLOSED-LOOP STREET CHAIN'S LINE STAY ON ITS ROAD? |
 | `checks/claims-a-flat-town-is-not-refined.mjs` | CLAIM — A TOWN WITH NO TERRAIN SHIPS ITS GROUND UNREFINED (F3, Jacob 2026-09-24). |
 | `checks/claims-a-focus-object-resolves-in-its-own-slab.mjs` | "CAN THE OPERATOR PICK A FOCUS OBJECT THAT ISN'T THERE?" — A11/A00, the authoring-UI surface. |

@@ -32,6 +32,7 @@ import { getTodSlotMinutes } from '../../cartograph/animatedParam.js'
 import { checkFaces, strandEnds, pinnacleFace, pinnacleWash, bulbRadius, cordRadius, SOCKET_OF_BULB, avgGlow } from './geometry.js'
 import useDisplayPreview from '../preview.js'
 import { drawerUrls } from '../drawerUrl.js'
+import { rasterFrame } from './rasterFrame.js'
 import { Refusal, Transient, httpFailure } from '../../lib/refusal.js'
 
 const CORD = '#3a3a3c'                                          // the cords: dark gray (Jacob, 2026-10-31)
@@ -56,10 +57,7 @@ function useDrawer(on, source, { lookId, display, contentRoot, where }) {
       const { w, h } = d.frame
       const canvas = document.createElement('canvas'); canvas.width = w; canvas.height = h
       const ctx = canvas.getContext('2d', { willReadFrequently: true })
-      const raster = (src) => new Promise((ok, no) => {
-        const im = new Image(); im.onload = () => { ctx.clearRect(0, 0, w, h); ctx.drawImage(im, 0, 0, w, h); ok(ctx.getImageData(0, 0, w, h).data) }
-        im.onerror = () => no(new Error(`the look frame ${src} did not load`)); im.src = frame(src)
-      })
+      const raster = (rel) => rasterFrame(frame(rel), w, h, ctx)
       for (const L of d.looks) for (const layer of L.layers) layer.px = await Promise.all(layer.frames.map(raster))
       if (!dead) setDrawer({ ...d, byId: Object.fromEntries(d.looks.map(L => [L.id, L])) })
     })().catch(e => { if (!dead) setErr(e) })
