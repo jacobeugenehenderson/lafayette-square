@@ -42,9 +42,9 @@ import useDisplayPreview from '../displays/preview.js'
 import useFailures, { failuresFor } from '../lib/failures.js'
 import { runSeconds, hhmm, mmss } from '../displays/lightShow/engine.js'
 import { defaultDisplayChannel, DISPLAY_FIELDS, validateDisplayChannel } from '../displays/showChannel.js'
-import { nightsOn, displayStateAt, prevDate, nextDate } from '../displays/showSchedule.js'
+import { nightsOn, displayStateAt, prevDate, nextDate, refuseShortCadence } from '../displays/showSchedule.js'
 import { townClockOf } from '../lib/townClock.js'
-import { getTodSlotRow } from '../cartograph/animatedParam.js'
+import { getTodSlotRow, NAMED_TOD_SLOTS } from '../cartograph/animatedParam.js'
 import { PLUGINS as DISPLAY_PLUGINS } from '../displays/Displays.jsx'
 import { keyframeFocusIds } from '../lib/focusObject.js'
 import useListings from '../hooks/useListings'
@@ -195,7 +195,7 @@ function DisplaysSection() {
               ))}
             </div>
           </div>
-          {d.kind === 'light-show' && <DisplayChannel id={d.id} />}
+          {d.kind === 'light-show' && <DisplayChannel display={d} />}
           {d.kind === 'light-show' && <TonightStrip display={d} />}
         </div>)
       })}
@@ -256,7 +256,8 @@ function readChannel(authored, id) {
  * The first edit gives this Look its own copy of the default; ↺ drops it, back to the default. Lights the display live
  * (<Town overrides.displays>), and the bake carries it (scene.json#displays).
  */
-function DisplayChannel({ id }) {
+function DisplayChannel({ display }) {
+  const id = display.id
   const authored = useCartographStore(s => s.displays?.[id])
   const read = useMemo(() => readChannel(authored, id), [authored, id])
   const setValue = useCartographStore(s => s.setDisplayValue), addSlot = useCartographStore(s => s.addDisplaySlot)
@@ -278,7 +279,95 @@ function DisplayChannel({ id }) {
       onRevert={() => revert(id)}
     >
       {published && <div className="text-caption" style={{ color: 'var(--on-surface-variant)' }}>This Look keeps its schedule in the form from before the Schedule block; it is shown as read, and saved in the new form on your next edit.</div>}
+      <ScheduleBlock display={display} channel={read.channel} />
     </TodChannel>
+  )
+}
+
+const FIELD = { background: 'var(--surface-container-highest)', color: 'var(--on-surface)', border: '1px solid var(--outline-variant)', borderRadius: 4, fontSize: 'var(--type-caption)', padding: '1px 4px' }
+const plainReason = (e) => String(e?.message || e).replace(/^\[[^\]]*\] ⛔ [^:]*: /, '')
+/** One END of a time: a sun moment, or a time on the town's clock (showSchedule.js#windowEndMinute reads both). `extra`
+ *  adds choices beyond the two (Ambient's end: "after the last show"). */
+function EndPicker({ value, onChange, title, extra = [] }) {
+  const clock = /^\d\d:\d\d$/.test(value)
+  return (<>
+    <select value={clock ? 'clock' : value} style={FIELD} title={`${title}: a sun moment, or a time on the town's clock`}
+      onChange={(e) => onChange(e.target.value === 'clock' ? '20:00' : e.target.value)}>
+      {NAMED_TOD_SLOTS.map(sl => <option key={sl.id} value={sl.id}>{sl.label}</option>)}
+      <option value="clock">a clock time</option>
+      {extra.map(([v, label]) => <option key={v} value={v}>{label}</option>)}
+    </select>
+    {clock && <input type="time" value={value} style={FIELD} title="On the town's clock" onChange={(e) => e.target.value && onChange(e.target.value)} />}
+  </>)
+}
+/** A whole number of minutes, committed on blur or Enter, so typing passes through no refused values. */
+function Minutes({ value, onCommit, title, min = 0 }) {
+  const [draft, setDraft] = useState(String(value))
+  useEffect(() => { setDraft(String(value)) }, [value])
+  const commit = () => onCommit(Number(draft))
+  return <input type="number" min={min} step={1} value={draft} style={{ ...FIELD, width: 52 }} title={title} onChange={(e) => setDraft(e.target.value)} onBlur={commit} onKeyDown={(e) => { if (e.key === 'Enter') commit() }} />
+}
+
+/**
+ * THE SCHEDULE, the display's WHEN (Jacob, 2026-11-01: "a very logical setup of 'start/end, recurring'"): entries like
+ * calendar invites (src/displays/showSchedule.js). Each: its days (every day, weekdays, or dates; dated entries replace
+ * the others on their dates); AMBIENT (the lit-but-not-performing light: on, with its fade; off at a moment, a time, or
+ * after the last show, which closes that show to dark; or none, for fireworks); and the SHOWS (from a first start to a
+ * last start, every N minutes; or none). The levels stay on the faders above, keyed on the time slots. A change the store
+ * refuses (an interval shorter than the show, ends that pass each other on some day of the year, nights that overlap) is
+ * shown here by name and leaves the channel as it was.
+ */
+function ScheduleBlock({ display, channel }) {
+  const setSchedule = useCartographStore(s => s.setDisplaySchedule)
+  const secs = runSeconds(display.run), [refused, setRefused] = useState(null)
+  const list = channel.schedule
+  const put = (next) => { try { setSchedule(display.id, next, secs); setRefused(null) } catch (e) { setRefused(plainReason(e)) } }
+  const edit = (i, patch) => put(list.map((e, j) => (j === i ? { ...e, ...patch } : e)))
+  let standing = null
+  try { refuseShortCadence(channel, secs, display.id) } catch (e) { standing = plainReason(e) }
+  const today = townClockOf(useTimeOfDay.getState().currentTime).date
+  const row = { color: 'var(--on-surface-variant)' }
+  return (
+    <div className="py-1" aria-label="The display's schedule">
+      <div className="text-caption" style={row}>Schedule</div>
+      {list.map((e, i) => {
+        const daysKind = e.days === 'daily' || e.days === 'weekdays' ? e.days : 'dates'
+        const a = e.ambient, sh = e.shows
+        return (
+          <div key={i} className="text-caption py-1" style={{ ...row, borderTop: i ? '1px solid var(--outline-variant)' : 'none' }}>
+            <div className="flex items-center gap-2">
+              <select value={daysKind} style={FIELD} title="Which days" onChange={(ev) => edit(i, { days: ev.target.value === 'dates' ? { dates: [today] } : ev.target.value })}>
+                <option value="daily">Every day</option><option value="weekdays">Weekdays</option><option value="dates">On dates</option>
+              </select>
+              {daysKind === 'dates' && <input type="text" defaultValue={e.days.dates.join(', ')} style={{ ...FIELD, width: 180 }} title="YYYY-MM-DD, comma-separated: on these dates this replaces the daily schedule"
+                onBlur={(ev) => edit(i, { days: { dates: ev.target.value.split(',').map(x => x.trim()).filter(Boolean) } })} />}
+              {list.length > 1 && <button className="cursor-pointer" style={FIELD} title="Remove this entry" onClick={() => put(list.filter((_, j) => j !== i))}>×</button>}
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span>Ambient</span>
+              {a ? (<>
+                <span>on</span><EndPicker value={a.on} title="Ambient comes on" onChange={(v) => edit(i, { ambient: { ...a, on: v } })} />
+                <span>fade</span><Minutes value={a.fadeIn} title="Minutes Ambient fades in (0 is a switch)" onCommit={(v) => edit(i, { ambient: { ...a, fadeIn: v } })} />
+                <span>ends</span><EndPicker value={a.off} title="Ambient ends" extra={sh ? [['after-last-show', 'after the last show']] : []} onChange={(v) => edit(i, { ambient: { ...a, off: v } })} />
+                {a.off !== 'after-last-show' && (<><span>fade</span><Minutes value={a.fadeOut} title="Minutes Ambient fades out (0 is a switch)" onCommit={(v) => edit(i, { ambient: { ...a, fadeOut: v } })} /></>)}
+                {sh && <button className="cursor-pointer" style={FIELD} title="No Ambient (fireworks)" onClick={() => edit(i, { ambient: null })}>none</button>}
+              </>) : <button className="cursor-pointer" style={FIELD} title="Add Ambient" onClick={() => edit(i, { ambient: { on: 'dusk', fadeIn: 0, off: 'dawn', fadeOut: 0 } })}>none · add</button>}
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span>Shows</span>
+              {sh ? (<>
+                <span>from</span><EndPicker value={sh.first} title="The first show starts" onChange={(v) => edit(i, { shows: { ...sh, first: v } })} />
+                <span>last starts</span><EndPicker value={sh.last} title="The last show starts (it plays, never clipped)" onChange={(v) => edit(i, { shows: { ...sh, last: v } })} />
+                <span>every</span><Minutes value={sh.every} min={1} title="Minutes between shows" onCommit={(v) => edit(i, { shows: { ...sh, every: v } })} /><span>min</span>
+                {a && a.off !== 'after-last-show' && <button className="cursor-pointer" style={FIELD} title="No shows" onClick={() => edit(i, { shows: null })}>none</button>}
+              </>) : <button className="cursor-pointer" style={FIELD} title="Add shows" onClick={() => edit(i, { shows: { first: '20:00', last: '23:00', every: 60 } })}>none · add</button>}
+            </div>
+          </div>
+        )
+      })}
+      <button className="cursor-pointer text-caption" style={FIELD} title="A dated event (it replaces the daily schedule on its dates)" onClick={() => put([...list, { days: { dates: [today] }, ambient: null, shows: { first: '21:00', last: '21:00', every: 60 } }])}>+ event</button>
+      {(refused || standing) && <div role="alert" className="text-caption" style={{ color: 'var(--error)' }}>{refused || standing}</div>}
+    </div>
   )
 }
 

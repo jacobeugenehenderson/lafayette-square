@@ -158,7 +158,8 @@ async function verdict({ chan, param, view, bake, eng, mount, pin, hook, manifes
   const tw = w('src/components/Town.jsx')
   F(/'setPieceLight', 'displays',/.test(tw) && /displaysOverride=\{o\.displays\}/.test(tw), '<Town> does not take overrides.displays to <SetPiece>')
   F(/channels=\{displaysOverride\}/.test(w('src/components/SetPiece.jsx')), '<SetPiece> does not hand Stage\'s channels to <Displays>')
-  F(/<DisplayChannel id=\{d\.id\} \/>/.test(sa) && /onSetValue=\{\(key, value, slotId\) => setValue\(id, key, value, slotId\)\}/.test(sa) && /fields=\{DISPLAY_FIELDS\}/.test(sa) && /channel=\{read\.channel\}\s*noEdges/.test(sa), "Stage's Displays section has no channel card per display (its keys without ▲/▼), or it is not wired to the store")
+  F(/<ScheduleBlock display=\{display\} channel=\{read\.channel\} \/>/.test(sa) && /const put = \(next\) => \{ try \{ setSchedule\(display\.id, next, secs\); setRefused\(null\) \} catch \(e\) \{ setRefused\(plainReason\(e\)\) \} \}/.test(sa) && /secs = runSeconds\(display\.run\)/.test(sa) && /try \{ refuseShortCadence\(channel, secs, display\.id\) \} catch \(e\) \{ standing = plainReason\(e\) \}/.test(sa) && /\{\(refused \|\| standing\) && <div role="alert"/.test(sa), "the Lit card's Schedule block is not wired to the store with the show's own length, or does not show a refusal (at the gesture and at load)")
+  F(/<DisplayChannel display=\{d\} \/>/.test(sa) && /onSetValue=\{\(key, value, slotId\) => setValue\(id, key, value, slotId\)\}/.test(sa) && /fields=\{DISPLAY_FIELDS\}/.test(sa) && /channel=\{read\.channel\}\s*noEdges/.test(sa), "Stage's Displays section has no channel card per display (its keys without ▲/▼), or it is not wired to the store")
   // 10. HH:MM
   let badClock = null
   for (let t = -1; t <= 1441 && !badClock; t += 0.1) {
@@ -212,6 +213,8 @@ if (process.argv.includes('--mutants')) {
     ['a level below 0 accepted', { chan: (s) => s.replace('if (k.glow < 0 || k.show < 0) throw', 'if (false) throw') }],
     ['a new key seeded with nothing', { store: (s) => s.replace('[slotId]: levelsAt(ch, sm[slotId], sm) }', '[slotId]: { glow: 0, show: 0, kelvin: 3000 } }') }],
     ['the gesture not judging the schedule', { store: (s) => s.replace('      refuseScheduleSense(next, getTodSlotDaysAhead(useTimeOfDay.getState().currentTime, 366), runSeconds, where)\n', '') }],
+    ['the Schedule block not on the card', { stage: (s) => s.replace('      <ScheduleBlock display={display} channel={read.channel} />\n', '') }],
+    ['the Schedule block silent on a refusal', { stage: (s) => s.replace('{(refused || standing) && <div role="alert"', '{false && <div role="alert"') }],
     ['the Lit card offering ▲/▼ on a display', { stage: (s) => s.replace('channel={read.channel}\n      noEdges', 'channel={read.channel}') }],
     ['HH:MM split before rounding (19:60)', { eng: (s) => s.replace("export const hhmm = (minute) => { const m = (Math.round(minute) % DAY_MIN + DAY_MIN) % DAY_MIN; return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}` }", "export const hhmm = (m) => `${String(Math.floor(m / 60) % 24).padStart(2, '0')}:${String(Math.round(m % 60)).padStart(2, '0')}`") }],
     ['an edit written without validation', { store: (s) => s.replace('[id]: validateDisplayChannel(next, where) }', '[id]: next }') }],
