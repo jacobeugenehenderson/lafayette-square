@@ -1274,6 +1274,7 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
       const absorbIn = { inkRings: R.rings, inkLabels: R.labels, frame: rect, frameOwner: bIdx, waterRings: Array.isArray(coast) ? coast : [], waterOwner: wIdx,
         centrelines, spokes, outlineRefused, faces: blocks.map((_, k) => ({ ring: blocks[k], labels: blockLabels[k], holes: blockHoles[k], holeLabels: blockHoleLabels[k] })), owners }
       // a refusal hands its inputs (and the faces' rings) to the caller's diagnostic, when it asked for one, then stands
+      // message-flow(d8508812): the absorb refusal into the flag-gated debug dump (pipeline.js absorbDump), then rethrown
       try { absorbed = absorbInk(absorbIn) } catch (e) { if (onAbsorbRefusal) onAbsorbRefusal({ ...absorbIn, blocks, blockHoles, error: e.message }); throw e }
     } else if (D.refused) {
       console.warn(`    ⛔ [①] BLOCK SUBTRACTION REFUSED (${D.refused}) — falling back to ①'s HOLES, which LOSE every block the circle cuts. Rim geometry from this pour is NOT trustworthy.`)

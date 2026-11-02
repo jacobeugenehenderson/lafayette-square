@@ -108,6 +108,7 @@ export function arrange(sets, keep, who, allTags = false, prefer = null, withTag
   const input = rings.map((r, ri) => ({ p: r.map(q => [q.X / SCALE, q.Y / SCALE]), tag: `${who}#${ri}` }))
   let R
   try { R = nodeCrossings(input, { pairs: () => true, self: true, who }) }
+  // message-flow(dd7a8199): nodeCrossings' refusal, matched only to append the ring to the same message, then rethrown
   catch (e) { const m = /#(\d+) at \(.*collapsed/.exec(String(e.message)); if (m) { const r = rings[+m[1]]; e.message += ` [the ring as given: ${r.length} points ${JSON.stringify(r.map(q => [q.X, q.Y, q.tag ? `${q.tag.ring}:${q.tag.i}` : null]))}]` }
     throw e }
   const edges = [], here = new Map()

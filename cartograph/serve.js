@@ -69,7 +69,7 @@ function runShell(cmd, opts = {}) {
     })
     opts.onChild?.(child)
     if (piped) {
-      const line = (l) => { if (l.includes('⛔')) refusal = l.replace(/\x1b\[[0-9;]*m/g, '').trim(); opts.onLine?.(l) }
+      const line = (l) => { /* message-flow(54527ccf): a step's ⛔ line, relayed into the thrown step failure, message to message */ if (l.includes('⛔')) refusal = l.replace(/\x1b\[[0-9;]*m/g, '').trim(); opts.onLine?.(l) }
       for (const [src, sink] of [[child.stdout, process.stdout], [child.stderr, process.stderr]]) {
         let buf = ''
         src.on('data', (d) => { sink.write(d); buf += d; const parts = buf.split('\n'); buf = parts.pop(); for (const l of parts) if (l.trim()) line(l) })
