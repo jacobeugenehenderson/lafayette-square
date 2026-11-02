@@ -51,13 +51,10 @@ against the old slab before the press.
     version, and each declared display gets what the bake gives a Look with no channel for it
     (`showChannel.js#displayChannelsFor`, the same function). A `displays` key that lacks a declared display's id is
     an inconsistent slab and stays a refusal by name. The reader is one named function, and the check plants both.
-- **⛔ OWED before dispatch (Boz, or Jacob): a slab that predates the DRAWER** (PTown's shape tonight, a manifest with
-  no drawer index) can't draw the show at all; today its display refuses into the sink by name while the town plays.
-  Ward recommends (i): "never breaks" means the town loads and anything the slab can't carry is NAMED to the visitor
-  (the notice already does that). The check is RED on a sink entry for something the slab DOES carry. Which is which
-  is the kit's own version verdict, from the same function the reader uses, ⛔ never matched from the reason's text
-  (that's a skip list). Reading (ii), where any sink entry is breakage and only a republish fixes it, keeps the RED
-  rule as written.
+- **Any sink entry on a live slab is RED (Boz, 2026-11-02, reading (ii)):** under Jacob's rule, a town showing "this
+  isn't drawn" counts as broken, however honest the notice. The fix is that town's republish before the player release
+  goes out; Boz sequences it. No drawer-version verdict is needed: the check covers only what is published now. (PTown's
+  pre-drawer slab isn't live: both of its manifests carry `displays.<id>.drawer`, measured by Ward 2026-11-02.)
 
 ## The work
 
