@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 563,
+  "total": 564,
   "counts": {
-    "safe": 391,
+    "safe": 392,
     "local-effect": 32,
     "live": 140
   },
@@ -104,6 +104,13 @@
         "imports vite — its server resolves localhost over DNS (caught by the no-network guard)",
         "importSource of vite.config.js, which can: imports vite — its server resolves localhost over DNS (caught by the no-network guard), mkdirSync, copies/renames files",
         "imports checks/_sourceFile.mjs, which can: writeFileSync, deletes files"
+      ]
+    },
+    {
+      "file": "checks/claims-a-bulb-is-drawn-to-its-size.mjs",
+      "tier": "safe",
+      "why": [
+        "importSource of src/displays/lightShow/geometry.js — read, safe"
       ]
     },
     {

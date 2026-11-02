@@ -30,11 +30,11 @@ async function verdict({ geo, view } = {}) {
   }
   const ls = code(view ? view(sourceOf('src/displays/lightShow/LightShow.jsx')) : sourceOf('src/displays/lightShow/LightShow.jsx'))
   F(/const order = useMemo\(\(\) => strandOrder\(ends\.length, isGlow\)/.test(ls), 'LightShow does not order its instances through strandOrder')
-  F(/const hangs = hang === 'all' \? order\.all\.length : hang === 'glow' \? order\.glow\.length : 0\s*for \(const m of \[glassRef, coreRef, socketRef\]\) m\.current\.count = hangs \* rows[^\n]*\n\s*cordRef\.current\.count = hangs/.test(ls), 'LightShow does not stop each mesh\'s draw count at what hangs')
+  F(/const hangs = hang === 'all' \? order\.all\.length : hang === 'glow' \? order\.glow\.length : 0\s*for \(const m of \[glassRef, coreRef, socketRef, cardRef\]\) if \(m\.current\) m\.current\.count = hangs \* rows[^\n]*\n\s*cordRef\.current\.count = hangs/.test(ls), 'LightShow does not stop each mesh\'s draw count at what hangs')
   F(/put\(cordRef\.current, order\.pos\[s\],/.test(ls) && /const i = order\.pos\[s\] \* rows \+ j/.test(ls) && /coreRef\.current\.setColorAt\(order\.pos\[s\] \* rows \+ j, tmp\.c\)/.test(ls) && !/s \* rows \+ j/.test(ls), 'LightShow places or colours an instance at its unordered index')
   F(/for \(const s of hang === 'all' \? order\.all : order\.glow\) \{/.test(ls), 'LightShow colours strands that do not hang')
   F(/root\.current\.visible = hang !== 'none'/.test(ls), 'out of season the display is still submitted')
-  F(/if \(!show && \(mode === 'off' \|\| hang === 'none'\)\) \{\s*if \(!unlit\.current\) \{ coreRef\.current\.visible = false;[^}]*\}\s*return\s*\}/.test(ls) && /if \(unlit\.current\) \{ coreRef\.current\.visible = true; unlit\.current = false \}/.test(ls), 'while off the light cores are still drawn and coloured, or never come back when lit')
+  F(/if \(!show && \(mode === 'off' \|\| hang === 'none'\)\) \{\s*if \(!unlit\.current\) \{ unlit\.current = true; showLight\(\);[^}]*\}\s*return\s*\}/.test(ls) && /if \(unlit\.current\) \{ unlit\.current = false; showLight\(\) \}/.test(ls) && /const lit = !unlit\.current, cards = asCards\.current\s*coreRef\.current\.visible = lit && !cards;/.test(ls), 'while off the light cores are still drawn and coloured, or never come back when lit')
   F(/if \(show && pinRef\.current && pinFaces\) pinFaces\.forEach/.test(ls), 'the pinnacle is washed outside a show')
   return fails
 }
@@ -47,7 +47,7 @@ else console.log('✅ the display draws only what hangs: its instances ordered g
 if (process.argv.includes('--mutants')) {
   const mutants = [
     ['the rest ordered first', { geo: (s) => s.replace('const all = [...glow, ...rest], pos = new Array(n)', 'const all = [...rest, ...glow], pos = new Array(n)') }],
-    ['every strand drawn (no count)', { view: (s) => s.replace('for (const m of [glassRef, coreRef, socketRef]) m.current.count = hangs * rows', 'void hangs') }],
+    ['every strand drawn (no count)', { view: (s) => s.replace('for (const m of [glassRef, coreRef, socketRef, cardRef]) if (m.current) m.current.count = hangs * rows', 'void hangs') }],
     ['an instance at its unordered index', { view: (s) => s.replace('const i = order.pos[s] * rows + j', 'const i = s * rows + j') }],
     ['colouring every strand at glow', { view: (s) => s.replace("for (const s of hang === 'all' ? order.all : order.glow) {", 'for (const s of order.all) {') }],
     ['submitted out of season', { view: (s) => s.replace("root.current.visible = hang !== 'none'", 'root.current.visible = true') }],

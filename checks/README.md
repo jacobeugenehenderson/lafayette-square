@@ -207,7 +207,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-deadend-look.mjs` | RENDER THE NINE. Read-only. |
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 
-## safe — 391. This is `npm test`.
+## safe — 392. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -215,6 +215,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-a-bare-edge-paints-no-curb-sliver.mjs` | CLAIM — A BARE EDGE PAINTS NO CURB. An edge whose curb depth is 0 (a highway's, a shore's, a verge's) contributes no curb |
 | `checks/claims-a-brief-declares-how-it-dies.mjs` | EVERY BRIEF ON THE ROSTER SAYS WHEN IT LEAVES IT. |
 | `checks/claims-a-building-carries-its-register-records.mjs` | DOES EVERY REGISTER FACT ON A TOWN'S CARDS COME FROM A WELL THE |
+| `checks/claims-a-bulb-is-drawn-to-its-size.mjs` | "IS A BULB DRAWN TO ITS SIZE: IN FULL ABOVE A PIXEL, AS ITS LIGHT ALONE BELOW ONE, READING THE SAME?" (Boz's (2), |
 | `checks/claims-a-cap-carries-one-section.mjs` | DOES A DEAD-END CAP CARRY ITS OWNER'S WALK ALL THE WAY ROUND? |
 | `checks/claims-a-capture-run-finishes-what-it-started.mjs` | CAN A GROVE CAPTURE RUN BE RESTARTED MID-LIST, OR UPLOAD AFTER IT WAS TORN DOWN? |
 | `checks/claims-a-chain-cut-keeps-its-owner-change.mjs` | CLAIM — WHERE A STREET IS CUT INTO TWO CHAINS, ① KEEPS THE OWNER CHANGE. A chain cut (a skeleton node of degree 2, where |

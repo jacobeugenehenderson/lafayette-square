@@ -31,7 +31,7 @@ import { validateDrawer, compileRun, showAt, showSeconds, glowColour, inSeason, 
 import { kelvinToRgb, validateDisplayChannel } from '../showChannel.js'
 import { nightsOn, displayStateAt, refuseScheduleSense, prevDate } from '../showSchedule.js'
 import { getTodSlotRow, getTodSlotDaysAhead } from '../../cartograph/animatedParam.js'
-import { checkFaces, strandEnds, pinnacleFace, pinnacleWash, bulbRadius, cordRadius, SOCKET_OF_BULB, avgGlow, strandOrder } from './geometry.js'
+import { checkFaces, strandEnds, pinnacleFace, pinnacleWash, bulbRadius, cordRadius, SOCKET_OF_BULB, avgGlow, strandOrder, CARD_SIDE, bulbAsCard } from './geometry.js'
 import useDisplayPreview from '../preview.js'
 import { drawerUrls } from '../drawerUrl.js'
 import { readDrawerJson, rasterFrame } from './drawerRead.js'
@@ -72,13 +72,28 @@ function useDrawer(on, source, { lookId, display, contentRoot, where }) {
 }
 
 /** The strands: the bulbs' clear glass, the light inside each, its socket, and the cords. Instanced; sizes come in the matrices. */
-function Strands({ count, strands, glassRef, coreRef, socketRef, cordRef }) {
+function Strands({ count, strands, glassRef, coreRef, socketRef, cordRef, cardRef }) {
   const bulb = useMemo(() => new THREE.SphereGeometry(1, 8, 6), [])                  // unit: scaled to the strand's spacing
   const tube = useMemo(() => new THREE.CylinderGeometry(1, 1, 1, 6, 1), [])           // unit: socket and cord alike
   const glass = useMemo(() => new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.05, metalness: 0, transparent: true, opacity: 0.22, depthWrite: false }), [])
   const core = useMemo(() => new THREE.MeshBasicMaterial({ toneMapped: false, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }), [])
   const dark = useMemo(() => new THREE.MeshStandardMaterial({ color: CORD, roughness: 0.8, metalness: 0 }), [])
-  useEffect(() => () => { bulb.dispose(); tube.dispose(); glass.dispose(); core.dispose(); dark.dispose() }, [bulb, tube, glass, core, dark])
+  // The light as a CARD, when a bulb is under a pixel (geometry.js#bulbAsCard): a camera-facing square at the core's
+  // place, of side core radius × CARD_SIDE (the disc's area), on the cores' OWN matrices and colours (shared buffers, so
+  // nothing is copied per frame and it reads the same).
+  const plane = useMemo(() => new THREE.PlaneGeometry(1, 1), [])
+  const card = useMemo(() => {
+    const m = new THREE.MeshBasicMaterial({ toneMapped: false, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false })
+    m.onBeforeCompile = (sh) => {
+      sh.vertexShader = sh.vertexShader.replace('#include <project_vertex>', `
+        vec4 cardAt = modelViewMatrix * (instanceMatrix * vec4(0.0, 0.0, 0.0, 1.0));
+        cardAt.xy += position.xy * length(instanceMatrix[0].xyz) * ${CARD_SIDE.toFixed(6)};
+        vec4 mvPosition = cardAt;
+        gl_Position = projectionMatrix * mvPosition;`)
+    }
+    return m
+  }, [])
+  useEffect(() => () => { bulb.dispose(); tube.dispose(); glass.dispose(); core.dispose(); dark.dispose(); plane.dispose(); card.dispose() }, [bulb, tube, glass, core, dark, plane, card])
   return (<>
     {/* Glass, sockets and cords add next to nothing to the image (clear glass at 0.22; small, dark): the hero's coverage
         mask leaves them out, and draws the light cores (focusObject.js#focusMeshes). */}
@@ -86,6 +101,7 @@ function Strands({ count, strands, glassRef, coreRef, socketRef, cordRef }) {
     <instancedMesh name="light-show:light" ref={coreRef} args={[bulb, core, count]} frustumCulled={false} />
     <instancedMesh name="light-show:sockets" ref={socketRef} args={[tube, dark, count]} frustumCulled={false} userData={{ coverage: false }} />
     <instancedMesh name="light-show:cords" ref={cordRef} args={[tube, dark, strands]} frustumCulled={false} userData={{ coverage: false }} />
+    <instancedMesh name="light-show:light-cards" ref={cardRef} args={[plane, card, count]} frustumCulled={false} visible={false} />
   </>)
 }
 
@@ -120,6 +136,15 @@ export default function LightShow({ display, channel: given, extent, calendar, c
   const root = useRef(), glassRef = useRef(), coreRef = useRef(), socketRef = useRef(), cordRef = useRef(), pinRef = useRef(), lightRef = useRef()
   const hung = useRef(null)                                     // which strands hang now: 'none' | 'glow' | 'all'
   const unlit = useRef(false)                                   // the light cores cleared and hidden (off: nothing to colour)
+  const asCards = useRef(false), cardRef = useRef()            // the bulbs under a pixel: their light drawn as cards
+  const reach = useMemo(() => {                                // the bulbs' box (the set-piece's frame) and the largest bulb
+    const box = new THREE.Box3(), footY = st.footHeightM; let r = 0
+    for (const e of ends) {
+      box.expandByPoint(new THREE.Vector3(e.tx, extent.ridge.yM, e.tz)); box.expandByPoint(new THREE.Vector3(e.bx, footY, e.bz))
+      r = Math.max(r, bulbRadius(Math.hypot(e.bx - e.tx, footY - extent.ridge.yM, e.bz - e.tz), rows))
+    }
+    return { box, r, world: new THREE.Box3(), fb: new THREE.Vector2() }
+  }, [ends, st, extent, rows])
   const day = useRef(null)                                      // the nights of the day before and of today, once a day
 
   const pinFaces = useMemo(() => {
@@ -138,7 +163,13 @@ export default function LightShow({ display, channel: given, extent, calendar, c
 
   // A throw here is stopped and rethrown at render by useTownFrame (src/lib/useTownFrame.js): the display's own
   // DisplayBoundary names and contains it.
-  useTownFrame((_, delta) => {
+  // What draws the light: the full bulbs, or (under a pixel) the cards; and none while unlit. One place sets it.
+  const showLight = () => {
+    const lit = !unlit.current, cards = asCards.current
+    coreRef.current.visible = lit && !cards; glassRef.current.visible = !cards; socketRef.current.visible = !cards
+    if (cardRef.current) { cardRef.current.visible = lit && cards; cardRef.current.count = coreRef.current.count }
+  }
+  useTownFrame((three, delta) => {
     if (!F || !compiled || !root.current || !glassRef.current || !coreRef.current || !socketRef.current || !cordRef.current) return
     // ── when: live by the town's clock and schedule, or Stage's preview from the moment it was pressed ───────────────
     const instant = useTimeOfDay.getState().currentTime, clock = townClockOf(instant)
@@ -165,11 +196,18 @@ export default function LightShow({ display, channel: given, extent, calendar, c
     const show = mode === 'show' ? showAt(F, compiled, drawer.byId, t, now) : null
     if (pinRef.current) pinRef.current.visible = !!show
     // ── where: hang the strands (ridge to foot ring): none out of season, the glow's by day and at glow, all in a show ─
+    // ── how big: a bulb under a pixel draws its light as a card (geometry.js#bulbAsCard), from the camera this frame ────
+    reach.world.copy(reach.box).applyMatrix4(root.current.matrixWorld)
+    const cam = three.camera, focalPx = three.gl.getDrawingBufferSize(reach.fb).y / (2 * Math.tan(THREE.MathUtils.degToRad(cam.fov) / 2))
+    const cards = bulbAsCard(reach.r, reach.world.distanceToPoint(cam.position), focalPx)
+    if (cards !== asCards.current) { asCards.current = cards; showLight() }
+    if (cardRef.current && cardRef.current.instanceMatrix !== coreRef.current.instanceMatrix) cardRef.current.instanceMatrix = coreRef.current.instanceMatrix
+    if (cardRef.current && coreRef.current.instanceColor && cardRef.current.instanceColor !== coreRef.current.instanceColor) cardRef.current.instanceColor = coreRef.current.instanceColor
     const hang = !up ? 'none' : show ? 'all' : 'glow'
     root.current.visible = hang !== 'none'                                              // out of season: nothing submitted
     if (hung.current !== hang) {
       const hangs = hang === 'all' ? order.all.length : hang === 'glow' ? order.glow.length : 0
-      for (const m of [glassRef, coreRef, socketRef]) m.current.count = hangs * rows     // draw only what hangs
+      for (const m of [glassRef, coreRef, socketRef, cardRef]) if (m.current) m.current.count = hangs * rows     // draw only what hangs
       cordRef.current.count = hangs
       const footY = st.footHeightM, put = (mesh, i, x, y, z, sx, sy) => mesh.setMatrixAt(i, tmp.m.compose(tmp.p.set(x, y, z), tmp.q, tmp.s.set(sx, sy, sx)))
       ends.forEach((e, s) => {
@@ -194,10 +232,10 @@ export default function LightShow({ display, channel: given, extent, calendar, c
     // ── what: colour every bulb that hangs ─────────────────────────────────────────────────────────────────────────────
     // OFF (hung by day, or Stage's Off): the light cores add nothing, so they are hidden and not coloured, once, until lit.
     if (!show && (mode === 'off' || hang === 'none')) {
-      if (!unlit.current) { coreRef.current.visible = false; if (lightRef.current) lightRef.current.intensity = 0; unlit.current = true }
+      if (!unlit.current) { unlit.current = true; showLight(); if (lightRef.current) lightRef.current.intensity = 0 }
       return
     }
-    if (unlit.current) { coreRef.current.visible = true; unlit.current = false }
+    if (unlit.current) { unlit.current = false; showLight() }
     const avg = [0, 0, 0]; let n = 0
     // The show OVERTAKES the glow (Jacob, 2026-10-31): a glow strand's bulb stays lit white until the show's front reaches
     // it, then it takes the show's colour; at the close the white takes the strands back the same way. Never a fade-out.
@@ -242,7 +280,7 @@ export default function LightShow({ display, channel: given, extent, calendar, c
   const bulbR = bulbRadius(Math.hypot(st.ringRadiusM, extent.ridge.yM - st.footHeightM), rows)
   return (
     <group ref={root} name="display:light-show" userData={{ focusReach: { radiusM: st.ringRadiusM + bulbR, fromM: Math.max(0, st.footHeightM - bulbR), toM: extent.pinnacle.toM } }}>
-      <Strands count={ends.length * rows} strands={ends.length} glassRef={glassRef} coreRef={coreRef} socketRef={socketRef} cordRef={cordRef} />
+      <Strands count={ends.length * rows} strands={ends.length} glassRef={glassRef} coreRef={coreRef} socketRef={socketRef} cordRef={cordRef} cardRef={cardRef} />
       <group visible={!NO_WASH}>
         <group ref={pinRef} name="light-show:pinnacle">
           {pinFaces.map((f, k) => <mesh key={k} geometry={f.g} material={pinMat} position={f.position} rotation={f.rotation} />)}
