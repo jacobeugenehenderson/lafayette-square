@@ -1,6 +1,6 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 573,
+  "total": 574,
   "counts": {
     "safe": 399,
     "local-effect": 32,
