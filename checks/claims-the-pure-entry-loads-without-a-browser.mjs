@@ -69,7 +69,8 @@ async function loadOnce(env, plant = {}) {
  * A read is seen in every form (Fuse, 2026-11-02): `import.meta.env.X` · `import.meta.env['X']` · `const { X, Y: y } =
  * import.meta.env` · an alias of the object (`const env = import.meta.env`, then `env.X`, `env['X']`, or destructured from it)
  * · an alias of a value (`const b = import.meta.env.X`, then `b === '…'`). Values are the literals compared with `===`/`!==`
- * (either side) and the `case` literals of a `switch` on the read. ⛔ A read through anything else (a computed key, the object
+ * (either side) and the `case` literals of a `switch` on the read (its body walked to its closing brace, braces in strings, templates and
+ * comments not counted; a template's `${ }` is skipped whole, so a backtick nested inside one would end it early). ⛔ A read through anything else (a computed key, the object
  * passed to a function) and a value reached any other way (an `includes`, a lookup table) are not seen: said as the limit, here. */
 export function modesOf(texts) {
   const modes = new Map()
@@ -97,7 +98,14 @@ export function modesOf(texts) {
       for (const m of t.matchAll(new RegExp(`\\bswitch\\s*\\(\\s*${re}\\s*\\)\\s*\\{`, 'g'))) {
         let depth = 1, j = m.index + m[0].length
         const start = j
-        for (; j < t.length && depth; j++) { if (t[j] === '{') depth++; else if (t[j] === '}') depth--; }
+        // braces inside a string, a template or a comment do not count (Fuse, 2026-11-02: a '}' in a string ended the switch early)
+        for (; j < t.length && depth; j++) {
+          const c = t[j]
+          if (c === "'" || c === '"' || c === '`') { for (j++; j < t.length && t[j] !== c; j++) if (t[j] === '\\') j++; continue }
+          if (c === '/' && t[j + 1] === '/') { j = t.indexOf('\n', j); if (j < 0) j = t.length; continue }
+          if (c === '/' && t[j + 1] === '*') { j = t.indexOf('*/', j + 2); j = j < 0 ? t.length : j + 1; continue }
+          if (c === '{') depth++; else if (c === '}') depth--
+        }
         for (const c of t.slice(start, j).matchAll(/\bcase\s*(['"`])([^'"`]*)\1\s*:/g)) add(k, c[2])
       }
     }
@@ -136,12 +144,12 @@ if (!existsSync(resolve(ROOT, ENTRY_REL))) { console.log(`⛔ no ${ENTRY_REL}: t
     "const env = import.meta.env\nif (env.VITE_OA === 'oa') d()\nif (env['VITE_OB'] === 'ob') e()\nconst { VITE_OC } = env\nif (VITE_OC === 'oc') f()",
     "if (import.meta.env.PROD) g()",
     "const { DEV } = import.meta.env\nif (import.meta.env.MODE === 'staging') h()",
-    "switch (import.meta.env.VITE_SW) { case 'one': i(); break\n case \"two\": { j() } }\nconst q = { case: 1 }",
+    "switch (import.meta.env.VITE_SW) { case 'one': i('}'); break\n // a } in a comment\n case \"two\": { j(`}`) } /* } */ case 'three': k() }\nconst q = { case: 1 }\nswitch (other) { case 'not-a-mode': 1 }",
   ]
   const m = modesOf(T)
   const got = JSON.stringify([...m].map(([k, v]) => [k, [...v].sort()]).sort())
   const want = JSON.stringify([['MODE', ['staging']], ['NODE_ENV', ['production']], ['VITE_A', ['runtime']], ['VITE_AA', ['no']], ['VITE_BR', ['br']],
-    ['VITE_C', ['edge']], ['VITE_D', []], ['VITE_DS', ['ds']], ['VITE_OA', ['oa']], ['VITE_OB', ['ob']], ['VITE_OC', ['oc']], ['VITE_RN', ['rn']], ['VITE_SW', ['one', 'two']]].sort())
+    ['VITE_C', ['edge']], ['VITE_D', []], ['VITE_DS', ['ds']], ['VITE_OA', ['oa']], ['VITE_OB', ['ob']], ['VITE_OC', ['oc']], ['VITE_RN', ['rn']], ['VITE_SW', ['one', 'three', 'two']]].sort())
   if (got !== want) { console.log(`⛔ [self-test] the mode reader reads\n  ${got}\nnot\n  ${want}`); process.exit(1) }
 }
 
