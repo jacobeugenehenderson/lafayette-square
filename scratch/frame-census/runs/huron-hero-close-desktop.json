@@ -1,0 +1,408 @@
+{
+ "town": "huron",
+ "shot": "hero",
+ "close": true,
+ "mode": "desktop",
+ "tier": {
+  "stored": "desktop",
+  "target": "desktop",
+  "dpr": 1,
+  "buf": "1600x865",
+  "logDepth": true
+ },
+ "cam": {
+  "pos": [
+   -73,
+   85,
+   -272
+  ],
+  "near": 1,
+  "far": 60500.00000000001,
+  "fov": 25.37188338821638
+ },
+ "frame0": {
+  "target": "desktop",
+  "wallMs": 107.8,
+  "calls": 873,
+  "tris": 4895819,
+  "gpuSupported": true,
+  "gpuMs": 186.96448013333332,
+  "mainMs": 10.736666663487751,
+  "lastMainMs": 5.5,
+  "loaf": {
+   "n": 1157,
+   "worstMs": 457,
+   "scriptMs": 17059.899998784065,
+   "last": [
+    {
+     "at": 122460.20000004768,
+     "ms": 115.5,
+     "scriptMs": 10.800000071525574,
+     "blockingMs": 0
+    },
+    {
+     "at": 122575.70000004768,
+     "ms": 135.60000002384186,
+     "scriptMs": 8.199999928474426,
+     "blockingMs": 0
+    },
+    {
+     "at": 122711.30000007153,
+     "ms": 142.60000002384186,
+     "scriptMs": 17.600000023841858,
+     "blockingMs": 0
+    },
+    {
+     "at": 122854.20000004768,
+     "ms": 85.39999997615814,
+     "scriptMs": 11.099999904632568,
+     "blockingMs": 0
+    },
+    {
+     "at": 122940,
+     "ms": 94.40000009536743,
+     "scriptMs": 10.899999976158142,
+     "blockingMs": 0
+    },
+    {
+     "at": 123034.5,
+     "ms": 103.60000002384186,
+     "scriptMs": 11.200000047683716,
+     "blockingMs": 0
+    },
+    {
+     "at": 123138.30000007153,
+     "ms": 122.5,
+     "scriptMs": 23.199999928474426,
+     "blockingMs": 0
+    },
+    {
+     "at": 123261,
+     "ms": 126.10000002384186,
+     "scriptMs": 9.200000047683716,
+     "blockingMs": 0
+    },
+    {
+     "at": 123387.30000007153,
+     "ms": 77,
+     "scriptMs": 9,
+     "blockingMs": 0
+    },
+    {
+     "at": 123464.30000007153,
+     "ms": 120.29999995231628,
+     "scriptMs": 12.399999976158142,
+     "blockingMs": 0
+    },
+    {
+     "at": 123584.70000004768,
+     "ms": 131.20000004768372,
+     "scriptMs": 14.299999952316284,
+     "blockingMs": 0
+    },
+    {
+     "at": 123716,
+     "ms": 127.10000002384186,
+     "scriptMs": 14.700000047683716,
+     "blockingMs": 0
+    },
+    {
+     "at": 123843.30000007153,
+     "ms": 131.39999997615814,
+     "scriptMs": 16.09999990463257,
+     "blockingMs": 0
+    },
+    {
+     "at": 123974.90000009537,
+     "ms": 78.5,
+     "scriptMs": 10.699999928474426,
+     "blockingMs": 0
+    },
+    {
+     "at": 124053.60000002384,
+     "ms": 91.20000004768372,
+     "scriptMs": 13,
+     "blockingMs": 0
+    },
+    {
+     "at": 124145,
+     "ms": 133.20000004768372,
+     "scriptMs": 11.700000047683716,
+     "blockingMs": 0
+    },
+    {
+     "at": 124278.30000007153,
+     "ms": 128.19999992847443,
+     "scriptMs": 13.899999976158142,
+     "blockingMs": 0
+    },
+    {
+     "at": 124406.70000004768,
+     "ms": 128.60000002384186,
+     "scriptMs": 12.299999952316284,
+     "blockingMs": 0
+    },
+    {
+     "at": 124535.5,
+     "ms": 127.40000009536743,
+     "scriptMs": 18,
+     "blockingMs": 0
+    },
+    {
+     "at": 124663,
+     "ms": 85,
+     "scriptMs": 27.40000009536743,
+     "blockingMs": 0
+    }
+   ]
+  }
+ },
+ "rows": [
+  {
+   "cls": "trees",
+   "meshes": 144,
+   "instances": 55104,
+   "tris": 2644992,
+   "inFrustumShare": 0.246,
+   "sampled": 400,
+   "unoccludedShare": 0.995,
+   "subPixel": 0,
+   "visibleEst": 0.245,
+   "dGpuMs": 38.4,
+   "noise": 3.13,
+   "restMs": 179.37
+  },
+  {
+   "cls": "ground",
+   "meshes": 2754,
+   "instances": 2754,
+   "tris": 1315077,
+   "inFrustumShare": 0.211,
+   "sampled": 400,
+   "unoccludedShare": 0.625,
+   "subPixel": 0,
+   "visibleEst": 0.132,
+   "dGpuMs": 56,
+   "noise": 11.84,
+   "restMs": 170.66
+  },
+  {
+   "cls": "lamps",
+   "meshes": 1,
+   "instances": 3208,
+   "tris": 513280,
+   "inFrustumShare": 0.253,
+   "sampled": 400,
+   "unoccludedShare": 0.675,
+   "subPixel": 0,
+   "visibleEst": 0.171,
+   "dGpuMs": -6.91,
+   "noise": 5.09,
+   "restMs": 161.22
+  },
+  {
+   "cls": "buildings",
+   "meshes": 4,
+   "instances": 4,
+   "tris": 103630,
+   "inFrustumShare": 0.281,
+   "sampled": 259,
+   "unoccludedShare": 0.564,
+   "subPixel": 0,
+   "visibleEst": 0.158,
+   "dGpuMs": 13.56,
+   "noise": 3.88,
+   "restMs": 159.17
+  },
+  {
+   "cls": "water",
+   "meshes": 2,
+   "instances": 2,
+   "tris": 17692,
+   "inFrustumShare": 0.141,
+   "sampled": 78,
+   "unoccludedShare": 0.731,
+   "subPixel": 0,
+   "visibleEst": 0.103,
+   "dGpuMs": 7.17,
+   "noise": 2.57,
+   "restMs": 148.63
+  },
+  {
+   "cls": "sky",
+   "meshes": 6,
+   "instances": 6,
+   "tris": 14210.333333333334,
+   "inFrustumShare": 0.02,
+   "sampled": 18,
+   "unoccludedShare": 0.611,
+   "subPixel": 0,
+   "visibleEst": 0.012,
+   "dGpuMs": 0.24,
+   "noise": 4.85,
+   "restMs": 143.01
+  },
+  {
+   "cls": "displays",
+   "meshes": 2,
+   "instances": 2,
+   "tris": 13374,
+   "inFrustumShare": 0.274,
+   "sampled": 149,
+   "unoccludedShare": 0.933,
+   "subPixel": 0,
+   "visibleEst": 0.255,
+   "dGpuMs": 3.04,
+   "noise": 2.89,
+   "restMs": 142.21
+  }
+ ],
+ "px": [
+  {
+   "k": 1,
+   "buf": "1600x952",
+   "ms": 151.4140053928571
+  },
+  {
+   "k": 0.5,
+   "buf": "800x452",
+   "ms": 61.94796775999999
+  }
+ ],
+ "targets": {
+  "atRatio": 1,
+  "full": {
+   "canvas": "1600x865",
+   "targets": [
+    [
+     "4096x4096",
+     2
+    ],
+    [
+     "1600x865",
+     26
+    ],
+    [
+     "852x852",
+     2
+    ],
+    [
+     "800x432.5",
+     8
+    ],
+    [
+     "800x432",
+     2
+    ],
+    [
+     "400x216",
+     2
+    ],
+    [
+     "200x108",
+     2
+    ],
+    [
+     "100x54",
+     2
+    ],
+    [
+     "50x27",
+     2
+    ],
+    [
+     "25x13",
+     2
+    ],
+    [
+     "12x6",
+     2
+    ],
+    [
+     "6x3",
+     2
+    ]
+   ]
+  },
+  "half": {
+   "canvas": "800x432",
+   "targets": [
+    [
+     "4096x4096",
+     1
+    ],
+    [
+     "1600x865",
+     26
+    ],
+    [
+     "852x852",
+     2
+    ],
+    [
+     "800x432.5",
+     8
+    ],
+    [
+     "800x432",
+     2
+    ],
+    [
+     "400x216",
+     2
+    ],
+    [
+     "200x108",
+     2
+    ],
+    [
+     "100x54",
+     2
+    ],
+    [
+     "50x27",
+     2
+    ],
+    [
+     "25x13",
+     2
+    ],
+    [
+     "12x6",
+     2
+    ],
+    [
+     "6x3",
+     2
+    ]
+   ]
+  }
+ },
+ "load": [
+  2.951171875,
+  3.38720703125,
+  3.11181640625
+ ],
+ "log": [
+  "== huron · hero (close) · desktop · headless Chrome, this desktop's GPU · load 2.65 2.91 2.86 ==",
+  "  ⛔ never settled within 120 s; numbers below are NOT steady state",
+  "  close camera: no focus object",
+  "  tier: {\"stored\":\"desktop\",\"target\":\"desktop\",\"dpr\":1,\"buf\":\"1600x865\",\"logDepth\":true}",
+  "  camera {\"pos\":[-73,85,-272],\"near\":1,\"far\":60500.00000000001,\"fov\":25.37188338821638} · buffer 1600x865 · occluder meshes 2709",
+  "  frame (all passes): 873 draws · 4.90M tris · gpu 187.0 ms",
+  "  trees          144m   55104 inst   2.64M tris · in frustum 25% · unoccluded 100% of 400 (sub-px 0) · visible≈25% · Δgpu 38.4 ms ±3.1 of 179.37",
+  "  ground        2754m    2754 inst   1.32M tris · in frustum 21% · unoccluded 63% of 400 (sub-px 0) · visible≈13% · Δgpu 56.0 ms ±11.8 of 170.66",
+  "  lamps            1m    3208 inst   0.51M tris · in frustum 25% · unoccluded 68% of 400 (sub-px 0) · visible≈17% · Δgpu -6.9 ms ±5.1 of 161.22",
+  "  buildings        4m       4 inst   0.10M tris · in frustum 28% · unoccluded 56% of 259 (sub-px 0) · visible≈16% · Δgpu 13.6 ms ±3.9 of 159.17",
+  "  water            2m       2 inst   0.02M tris · in frustum 14% · unoccluded 73% of 78 (sub-px 0) · visible≈10% · Δgpu 7.2 ms ±2.6 of 148.63",
+  "  sky              6m       6 inst   0.01M tris · in frustum 2% · unoccluded 61% of 18 (sub-px 0) · visible≈1% · Δgpu 0.2 ms ±4.9 of 143.01",
+  "  displays         2m       2 inst   0.01M tris · in frustum 27% · unoccluded 93% of 149 (sub-px 0) · visible≈26% · Δgpu 3.0 ms ±2.9 of 142.21",
+  "  window ×1 (canvas 1600x952): gpu 151.4 ms",
+  "  window ×0.5 (canvas 800x452): gpu 61.9 ms",
+  "  targets @ ratio 1: canvas 1600x865 · 4096x4096×2 1600x865×26 852x852×2 800x432.5×8 800x432×2 400x216×2 200x108×2 100x54×2 50x27×2 25x13×2 12x6×2 6x3×2",
+  "  targets @ ratio 0.5: canvas 800x432 · 4096x4096×1 1600x865×26 852x852×2 800x432.5×8 800x432×2 400x216×2 200x108×2 100x54×2 50x27×2 25x13×2 12x6×2 6x3×2",
+  "  page ERR [instance] \"huron\" has no contact.email, cary.email, cary.smsNumber. These are PUBLIC — they render on the legal page, which every installation shows and which no module flag gates. Unset, the page shows a labelled gap instead of a contact; before this check it rendered a dead \"mailto:null\" link wit",
+  "  page ERR Warning: Cannot update a component (`%s`) while rendering a different component (`%s`). To locate the bad setState() call inside `%s`, follow the stack trace as described in https://reactjs.org/link/setstate-in-render%s SlabRevetment GroundMeshes GroundMeshes \n    at GroundMeshes (http://localhost:5",
+  "  page ERR [BakedGround] ⛔ \"huron\": surface \"sand\" is drawn WITHOUT rippleSpacingM (m, physics — no source); rippleHeightM (m, physics — no source). Those features are ABSENT, not defaulted — ▶ cartograph/surfaces.mjs"
+ ]
+}

@@ -1,0 +1,345 @@
+{
+ "town": "lafayettesquare",
+ "shot": "hero",
+ "close": false,
+ "mode": "phone-hi",
+ "tier": {
+  "stored": "phone-hi",
+  "target": "phone-hi",
+  "dpr": 1,
+  "buf": "242x525",
+  "logDepth": false
+ },
+ "cam": {
+  "pos": [
+   -1151,
+   130,
+   155
+  ],
+  "near": 10,
+  "far": 60500.00000000001,
+  "fov": 12.757850721319844
+ },
+ "frame0": {
+  "target": "phone-hi",
+  "wallMs": 28.5,
+  "calls": 284,
+  "tris": 6189043,
+  "gpuSupported": true,
+  "gpuMs": 23.57510083333334,
+  "mainMs": 4.1533333420753475,
+  "lastMainMs": 4.100000023841858,
+  "loaf": {
+   "n": 326,
+   "worstMs": 215.10000002384186,
+   "scriptMs": 2132.699999809265,
+   "last": [
+    {
+     "at": 107174.40000009537,
+     "ms": 56.5,
+     "scriptMs": 6.299999952316284,
+     "blockingMs": 0
+    },
+    {
+     "at": 107278.70000004768,
+     "ms": 60.39999997615814,
+     "scriptMs": 6.600000023841858,
+     "blockingMs": 0
+    },
+    {
+     "at": 107518.30000007153,
+     "ms": 50.699999928474426,
+     "scriptMs": 6.300000071525574,
+     "blockingMs": 0
+    },
+    {
+     "at": 108554.80000007153,
+     "ms": 50,
+     "scriptMs": 6.600000023841858,
+     "blockingMs": 0
+    },
+    {
+     "at": 109204.40000009537,
+     "ms": 75.09999990463257,
+     "scriptMs": 6.899999976158142,
+     "blockingMs": 0
+    },
+    {
+     "at": 111742.80000007153,
+     "ms": 58.39999997615814,
+     "scriptMs": 6.100000023841858,
+     "blockingMs": 0
+    },
+    {
+     "at": 112546.80000007153,
+     "ms": 67.79999995231628,
+     "scriptMs": 6.600000023841858,
+     "blockingMs": 0
+    },
+    {
+     "at": 112656.70000004768,
+     "ms": 56.5,
+     "scriptMs": 6.699999928474426,
+     "blockingMs": 0
+    },
+    {
+     "at": 112994.80000007153,
+     "ms": 66.39999997615814,
+     "scriptMs": 6.300000071525574,
+     "blockingMs": 0
+    },
+    {
+     "at": 113107.30000007153,
+     "ms": 57.60000002384186,
+     "scriptMs": 6.299999952316284,
+     "blockingMs": 0
+    },
+    {
+     "at": 113558.20000004768,
+     "ms": 57.10000002384186,
+     "scriptMs": 5.199999928474426,
+     "blockingMs": 0
+    },
+    {
+     "at": 113789.70000004768,
+     "ms": 56.799999952316284,
+     "scriptMs": 5.899999976158142,
+     "blockingMs": 0
+    },
+    {
+     "at": 114705.90000009537,
+     "ms": 57.09999990463257,
+     "scriptMs": 5.899999976158142,
+     "blockingMs": 0
+    },
+    {
+     "at": 115171.5,
+     "ms": 57.10000002384186,
+     "scriptMs": 6.200000047683716,
+     "blockingMs": 0
+    },
+    {
+     "at": 115287.20000004768,
+     "ms": 53.299999952316284,
+     "scriptMs": 6,
+     "blockingMs": 0
+    },
+    {
+     "at": 115731.30000007153,
+     "ms": 61.39999997615814,
+     "scriptMs": 6,
+     "blockingMs": 0
+    },
+    {
+     "at": 116540.5,
+     "ms": 57.200000047683716,
+     "scriptMs": 6,
+     "blockingMs": 0
+    },
+    {
+     "at": 119311.10000002384,
+     "ms": 60.300000071525574,
+     "scriptMs": 5.799999952316284,
+     "blockingMs": 0
+    },
+    {
+     "at": 119771.90000009537,
+     "ms": 54.89999997615814,
+     "scriptMs": 0,
+     "blockingMs": 0
+    },
+    {
+     "at": 120003.90000009537,
+     "ms": 57.09999990463257,
+     "scriptMs": 5.299999952316284,
+     "blockingMs": 0
+    }
+   ]
+  }
+ },
+ "rows": [
+  {
+   "cls": "lamps",
+   "meshes": 1,
+   "instances": 585,
+   "tris": 2517840,
+   "inFrustumShare": 0.079,
+   "sampled": 46,
+   "unoccludedShare": 0,
+   "subPixel": 0,
+   "visibleEst": 0,
+   "dGpuMs": 4.58,
+   "noise": 0.28,
+   "restMs": 24.46
+  },
+  {
+   "cls": "trees",
+   "meshes": 162,
+   "instances": 17652,
+   "tris": 847296,
+   "inFrustumShare": 0.167,
+   "sampled": 400,
+   "unoccludedShare": 0.212,
+   "subPixel": 0,
+   "visibleEst": 0.036,
+   "dGpuMs": 2.88,
+   "noise": 0.24,
+   "restMs": 23.56
+  },
+  {
+   "cls": "ground",
+   "meshes": 43,
+   "instances": 43,
+   "tris": 256074,
+   "inFrustumShare": 0.072,
+   "sampled": 294,
+   "unoccludedShare": 0.024,
+   "subPixel": 0,
+   "visibleEst": 0.002,
+   "dGpuMs": 0.14,
+   "noise": 0.56,
+   "restMs": 23.73
+  },
+  {
+   "cls": "buildings",
+   "meshes": 9,
+   "instances": 9,
+   "tris": 33696,
+   "inFrustumShare": 0.199,
+   "sampled": 280,
+   "unoccludedShare": 0.071,
+   "subPixel": 0,
+   "visibleEst": 0.014,
+   "dGpuMs": -0.1,
+   "noise": 0.52,
+   "restMs": 24.29
+  },
+  {
+   "cls": "sky",
+   "meshes": 6,
+   "instances": 6,
+   "tris": 14210.333333333334,
+   "inFrustumShare": 0.001,
+   "sampled": 0,
+   "unoccludedShare": null,
+   "subPixel": 0,
+   "visibleEst": null,
+   "dGpuMs": -0.65,
+   "noise": 0.38,
+   "restMs": 25.05
+  },
+  {
+   "cls": "displays",
+   "meshes": 2,
+   "instances": 2,
+   "tris": 6696,
+   "inFrustumShare": 0.1,
+   "sampled": 28,
+   "unoccludedShare": 1,
+   "subPixel": 0,
+   "visibleEst": 0.1,
+   "dGpuMs": 1.16,
+   "noise": 0.78,
+   "restMs": 25.37
+  },
+  {
+   "cls": "other:town:park",
+   "meshes": 187,
+   "instances": 187,
+   "tris": 2337,
+   "inFrustumShare": 0.282,
+   "sampled": 69,
+   "unoccludedShare": 0,
+   "subPixel": 0,
+   "visibleEst": 0,
+   "dGpuMs": 0.21,
+   "noise": 0.06,
+   "restMs": 24.82
+  },
+  {
+   "cls": "water",
+   "meshes": 3,
+   "instances": 3,
+   "tris": 853,
+   "inFrustumShare": 0.705,
+   "sampled": 96,
+   "unoccludedShare": 0.969,
+   "subPixel": 0,
+   "visibleEst": 0.683,
+   "dGpuMs": 1.15,
+   "noise": 0.07,
+   "restMs": 25.17
+  }
+ ],
+ "px": [
+  {
+   "k": 1,
+   "buf": "281x611",
+   "ms": 26.823905812499994
+  },
+  {
+   "k": 0.5,
+   "buf": "132x286",
+   "ms": 21.808003499999998
+  }
+ ],
+ "targets": {
+  "atRatio": 1,
+  "full": {
+   "canvas": "242x525",
+   "targets": [
+    [
+     "242x525",
+     14
+    ],
+    [
+     "110x110",
+     2
+    ]
+   ]
+  },
+  "half": {
+   "canvas": "121x262",
+   "targets": [
+    [
+     "242x525",
+     14
+    ],
+    [
+     "110x110",
+     2
+    ]
+   ]
+  }
+ },
+ "load": [
+  2.44287109375,
+  2.3564453125,
+  2.771484375
+ ],
+ "log": [
+  "== lafayettesquare · hero · phone-hi · headless Chrome, this desktop's GPU · load 2.13 2.53 2.96 ==",
+  "  ⛔ never settled within 120 s; numbers below are NOT steady state",
+  "  tier: {\"stored\":\"phone-hi\",\"target\":\"phone-hi\",\"dpr\":1,\"buf\":\"242x525\",\"logDepth\":false}",
+  "  camera {\"pos\":[-1151,130,155],\"near\":10,\"far\":60500.00000000001,\"fov\":12.757850721319844} · buffer 242x525 · occluder meshes 9",
+  "  frame (all passes): 284 draws · 6.19M tris · gpu 23.6 ms",
+  "  lamps            1m     585 inst   2.52M tris · in frustum 8% · unoccluded 0% of 46 (sub-px 0) · visible≈0% · Δgpu 4.6 ms ±0.3 of 24.46",
+  "  trees          162m   17652 inst   0.85M tris · in frustum 17% · unoccluded 21% of 400 (sub-px 0) · visible≈4% · Δgpu 2.9 ms ±0.2 of 23.56",
+  "  ground          43m      43 inst   0.26M tris · in frustum 7% · unoccluded 2% of 294 (sub-px 0) · visible≈0% · Δgpu 0.1 ms ±0.6 of 23.73",
+  "  buildings        9m       9 inst   0.03M tris · in frustum 20% · unoccluded 7% of 280 (sub-px 0) · visible≈1% · Δgpu -0.1 ms ±0.5 of 24.29",
+  "  sky              6m       6 inst   0.01M tris · in frustum 0% · unoccluded — of 0 (sub-px 0) · visible≈— · Δgpu -0.6 ms ±0.4 of 25.05",
+  "  displays         2m       2 inst   0.01M tris · in frustum 10% · unoccluded 100% of 28 (sub-px 0) · visible≈10% · Δgpu 1.2 ms ±0.8 of 25.37",
+  "  other:town:park   187m     187 inst   0.00M tris · in frustum 28% · unoccluded 0% of 69 (sub-px 0) · visible≈0% · Δgpu 0.2 ms ±0.1 of 24.82",
+  "  water            3m       3 inst   0.00M tris · in frustum 70% · unoccluded 97% of 96 (sub-px 0) · visible≈68% · Δgpu 1.1 ms ±0.1 of 25.17",
+  "  window ×1 (canvas 281x611): gpu 26.8 ms",
+  "  window ×0.5 (canvas 132x286): gpu 21.8 ms",
+  "  targets @ ratio 1: canvas 242x525 · 242x525×14 110x110×2",
+  "  targets @ ratio 0.5: canvas 121x262 · 242x525×14 110x110×2",
+  "  page ERR [atmosphere] ⛔ the sky holds its last state — [sky] 2026-11-01T16:30:00.666Z's reading lacks cloudCover, weatherCode",
+  "  page ERR [WindSheet] ⛔ holding the last wind: [wind] 2026-11-01T16:30:00.682Z's reading lacks weatherCode",
+  "  page ERR [WindSheet] ⛔ holding the last wind: [wind] 2026-11-01T16:30:00.699Z's reading lacks weatherCode",
+  "  page ERR [WindSheet] ⛔ holding the last wind: [wind] 2026-11-01T16:30:00.715Z's reading lacks weatherCode",
+  "  page ERR [WindSheet] ⛔ holding the last wind: [wind] 2026-11-01T16:30:00.732Z's reading lacks weatherCode",
+  "  page ERR [WindSheet] ⛔ holding the last wind: [wind] 2026-11-01T16:30:00.748Z's reading lacks weatherCode"
+ ]
+}
