@@ -777,9 +777,11 @@
         "importSource of src/lib/useSceneJson.js (its span: const _cache = new Map() → end) — read, safe",
         "importSource of src/displays/Displays.jsx (its span: export default function Displays( → end) — read, safe",
         "importSource of src/components/TownPlace.jsx (its span: function requireTown( → end) — read, safe",
+        "importSource of src/lib/useTownFrame.js (its span: export function useTownFrame( → end) — read, safe",
         "computed import of src/lib/failures.js — read, safe",
         "computed import of src/lib/refusal.js — read, safe",
         "computed import of src/lib/startupMarks.js — read, safe",
+        "computed import of src/lib/refusal.js — read, safe",
         "computed import of src/lib/refusal.js — read, safe",
         "runs `git ls-files --cached --others` — local, read-only"
       ]

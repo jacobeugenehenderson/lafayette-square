@@ -1,7 +1,8 @@
-import { Component } from 'react'
+import { Component, createElement } from 'react'
 import { Refusal } from '../lib/refusal.js'
 import useFailures, { reasonOf } from '../lib/failures.js'
 import { TownContext } from './townContext.js'
+import { FrameBoundary } from '../lib/frameBoundary.js'
 import { markFailed, clearFailed, failureOf } from '../lib/startupMarks.js'
 
 /**
@@ -112,6 +113,7 @@ export default class R3FErrorBoundary extends Component {
 
   render() {
     if (this.state.hasError) return null
-    return this.props.children
+    // A frame callback's throw inside this layer comes back here, rethrown at render (src/lib/useTownFrame.js).
+    return createElement(FrameBoundary.Provider, { value: true }, this.props.children)
   }
 }

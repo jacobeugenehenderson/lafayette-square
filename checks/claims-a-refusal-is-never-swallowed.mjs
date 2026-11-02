@@ -19,6 +19,9 @@
  *      the next Look's first render shows nothing yet, never the last Look's failure.
  *   8. A TOWN'S TERRAIN READ THAT FAILS IS NAMED: TownPlace, run, throws the refused read at render (to <Town>'s terrain
  *      boundary); a re-bake forces one re-read; <Town> wraps it (both branches); the Designer's read stands down in a shot.
+ *   9. A FRAME CALLBACK'S THROW IS NAMED: src/lib/useTownFrame.js, run: inside a boundary it is stopped and rethrown at
+ *      render as thrown; outside one it is reported to the sink under its town and never rethrown; it is never called
+ *      again. Both boundaries provide FrameBoundary; LightShow's own copy is retired.
  *   6. THE REVEAL HEARS IT: a boundary around a layer the reveal waits on (Town.jsx's PHYSICAL, read from source) marks
  *      that class failed on a Refusal and on giving up, so the gate says why the town is held; a clean remount clears
  *      a failure it wrote (never another producer's) with a mark of its own (the gate hears only new marks); every class has exactly one such boundary. Stage's
@@ -33,6 +36,12 @@
  *   `⛔` throw returns · a ⛔ message held in a const returns untyped · httpFailure calls a 503 a Refusal · a second sink
  *   returns · a URL flag returns · Stage drops the banner · a reveal refusal or give-up
  *   unmarked · a clear the gate never hears · a clean remount clears a foreign failure · a reveal class with no boundary · the banner back under the splash
+ *   · retryCount never resets · a town switch keeps the boundary down · a healthy switch owes no clear · a failed scene
+ *   read stays cached · a Look switch shows the last Look's failure · a display refuses on a module record of the failure
+ *   · a terrain read that fails floats · a re-bake does not force the terrain · TownPlace outside the terrain boundary
+ *   · a second terrain reader in a shot · a frame throw goes unstopped · a frame throw in a boundary is not rethrown
+ *   · a frame throw outside a boundary is not reported · a boundary that does not provide FrameBoundary · LightShow
+ *   back on a bare useFrame
  *   → each must go red.
  */
 import { readFileSync } from 'node:fs'
@@ -351,11 +360,54 @@ function terrainOwner(files) {
   return fails
 }
 
-async function verdict({ files: mutate, boundary: bt, http: ht, marks: mt, scene: st, displays: dt, terrain: tt } = {}) {
+// ── 9. a frame callback's throw is named, never a frozen canvas (2026-11-01) ──────────────────────────────────────────
+// R3F 8 calls useFrame subscribers in a bare loop (render$1, no try): one throw skipped every later subscriber and
+// gl.render, every frame, and only the console said so. src/lib/useTownFrame.js, RUN under the hook runner with
+// useFrame captured: inside a boundary (FrameBoundary) the throw is stopped and rethrown at render, as thrown; outside
+// one it is reported to the sink under the town and nothing is rethrown; either way the callback is never called again.
+// READ: both boundaries provide FrameBoundary; LightShow's own catch-and-rethrow is retired for the wrapper.
+async function frameThrow(transform) {
+  const fails = []
+  const W = await importSource('src/lib/useTownFrame.js', { span: { from: 'export function useTownFrame(' }, transform,
+    prefix: "const useRef = (...a) => globalThis.__hooks.useRef(...a), useState = (...a) => globalThis.__hooks.useState(...a)\nconst FrameBoundary = 'frame-boundary', TownContext = 'town'\nconst useContext = (c) => globalThis.__ctx[c]\nconst useFrame = (fn) => { globalThis.__frame = fn }\nimport useFailures, { reasonOf } from '../lib/failures.js'\nimport { Refusal, Transient } from '../lib/refusal.js'" })
+  const { Transient } = await import(pathToFileURL(join(ROOT, 'src/lib/refusal.js')))
+  const mount = hookRunner(), was = console.error
+  console.error = () => {}
+  try {
+    // inside a boundary: stopped, rethrown at render as thrown (a Transient stays one: the boundary retries it)
+    let calls = 0
+    const lost = new Transient('[x] the context was lost')
+    globalThis.__ctx = { 'frame-boundary': true, town: { lookId: 'a-town' } }
+    const a = mount(() => W.useTownFrame(() => { calls++; throw lost }))
+    a.render(); globalThis.__frame({}, 0.016); await a.settle(); globalThis.__frame({}, 0.016)
+    if (a.thrown() !== lost) fails.push(`a frame callback's throw inside a boundary is not rethrown at render, as thrown (${a.thrown() ? a.thrown().message : 'nothing thrown'}): the canvas freezes and no boundary names it (src/lib/useTownFrame.js)`)
+    if (calls !== 1) fails.push(`a frame callback that threw is called again (${calls} calls): it throws every frame`)
+    // outside any boundary: reported to the sink under the town, nothing rethrown, never called again
+    failures.setState({ failed: {} }); calls = 0
+    globalThis.__ctx = { 'frame-boundary': false, town: { lookId: 'a-town' } }
+    const b = mount(() => W.useTownFrame(() => { calls++; throw new Refusal('[x] ⛔ a frame refused') }))
+    b.render(); globalThis.__frame({}, 0.016); await b.settle(); globalThis.__frame({}, 0.016)
+    const got = Object.values(failures.getState().failed).find((f) => f.lookId === 'a-town' && /^frame/.test(f.layer))
+    if (got?.kind !== 'refusal' || !got.reason.includes('a frame refused')) fails.push(`a frame callback's throw outside any boundary is not reported to the one sink under its town (got ${JSON.stringify(got)})`)
+    if (b.thrown()) fails.push('a frame callback\'s throw outside any boundary is rethrown at render: it would take the whole canvas down')
+    if (calls !== 1) fails.push(`a frame callback that threw outside a boundary is called again (${calls} calls)`)
+  } finally { console.error = was; delete globalThis.__ctx; delete globalThis.__frame }
+  return fails
+}
+function frameProviders(files) {
+  const fails = [], get = (f) => files.find(([g]) => g === f)?.[1] || ''
+  for (const f of ['src/components/R3FErrorBoundary.jsx', 'src/displays/DisplayBoundary.js'])
+    if (!/createElement\(FrameBoundary\.Provider, \{ value: true \}, this\.props\.children\)/.test(get(f))) fails.push(`${f} does not provide FrameBoundary: a frame throw in its subtree goes to the sink, not to the boundary that would refuse or retry it`)
+  const ls = get('src/displays/lightShow/LightShow.jsx')
+  if (!/\buseTownFrame\(/.test(ls) || /\bframeErr\b|\bframeDead\b/.test(ls)) fails.push('LightShow keeps its own frame catch-and-rethrow beside useTownFrame (two copies of one rule)')
+  return fails
+}
+
+async function verdict({ files: mutate, boundary: bt, http: ht, marks: mt, scene: st, displays: dt, terrain: tt, frame: ft } = {}) {
   let files = SRC.map(f => [f, readFileSync(join(ROOT, f), 'utf8')])
   if (mutate) files = mutate(files)
   const c = contract(files)
-  const fails = [...c.fails, ...await http(ht), ...await boundary(bt, mt), ...await sceneRead(st, dt), ...await terrainRead(tt), ...terrainOwner(files), ...noUrlFlag(files), ...oneSink(files)]
+  const fails = [...c.fails, ...await http(ht), ...await boundary(bt, mt), ...await sceneRead(st, dt), ...await terrainRead(tt), ...terrainOwner(files), ...await frameThrow(ft), ...frameProviders(files), ...noUrlFlag(files), ...oneSink(files)]
   return { fails, c }
 }
 
@@ -399,6 +451,11 @@ if (process.argv.includes('--mutants')) {
     ['a re-bake does not force the terrain', { terrain: must('const force = lastRebake.current !== rebake', 'const force = false') }],
     ['TownPlace outside the terrain boundary', { files: swap('src/components/Town.jsx', '<R3FErrorBoundary name="terrain"><TownPlace town={town} lookId={lookId} time={time} rebake={bakeLastMs} /></R3FErrorBoundary>', '<TownPlace town={town} lookId={lookId} time={time} rebake={bakeLastMs} />') }],
     ['a second terrain reader in a shot', { files: swap('src/cartograph/CartographApp.jsx', 'if (!activeLookId || !inDesigner) return', 'if (!activeLookId) return') }],
+    ['a frame throw goes unstopped', { frame: must('if (dead.current) return', '') }],
+    ['a frame throw in a boundary is not rethrown', { frame: must('if (inBoundary) { setFailed({ error }); return }', 'if (inBoundary) return') }],
+    ['a frame throw outside a boundary is not reported', { frame: must('      useFailures.getState().report(', '      void (') }],
+    ['a boundary that does not provide FrameBoundary', { files: swap('src/components/R3FErrorBoundary.jsx', 'return createElement(FrameBoundary.Provider, { value: true }, this.props.children)', 'return this.props.children') }],
+    ['LightShow back on a bare useFrame', { files: swap('src/displays/lightShow/LightShow.jsx', 'useTownFrame((_, delta) => {', 'useFrame((_, delta) => {') }],
     ['Stage drops the banner', { files: swap('src/stage/StageApp.jsx', '<FailuresBanner />', '') }],
   ]
   let bad = 0

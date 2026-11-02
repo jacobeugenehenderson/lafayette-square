@@ -22,7 +22,7 @@
  * (./preview.js) plays the glow or the show from the moment it is pressed, on the page's own time, Stage only.
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useFrame } from '@react-three/fiber'
+import { useTownFrame } from '../../lib/useTownFrame.js'
 import * as THREE from 'three'
 import useTimeOfDay from '../../hooks/useTimeOfDay'
 import { townClockOf } from '../../lib/townClock.js'
@@ -124,13 +124,9 @@ export default function LightShow({ display, channel, extent, calendar, contentR
   // While lit, the set-piece's uplights ease down to dimUplights; off, back to as authored. Gone when this unmounts.
   useEffect(() => () => { if (dim) delete dim.byDisplay[display.id] }, [dim, display.id])
 
-  // ⭐ A throw in the frame loop never reaches React (R3F calls useFrame in a bare loop), so it would freeze the whole
-  // town's canvas every frame (Zob, 2026-10-31). Catch it, stop the frame work, and rethrow it at render: the display's
-  // own DisplayBoundary then names and contains it.
-  const [frameErr, setFrameErr] = useState(null), frameDead = useRef(false)
-  useFrame((_, delta) => {
-    if (frameDead.current) return
-    try {
+  // A throw here is stopped and rethrown at render by useTownFrame (src/lib/useTownFrame.js): the display's own
+  // DisplayBoundary names and contains it.
+  useTownFrame((_, delta) => {
     if (!F || !compiled || !root.current || !glassRef.current || !coreRef.current || !socketRef.current || !cordRef.current) return
     // ── when: live by the town's clock and schedule, or Stage's preview from the moment it was pressed ───────────────
     const instant = useTimeOfDay.getState().currentTime, clock = townClockOf(instant)
@@ -210,10 +206,8 @@ export default function LightShow({ display, channel, extent, calendar, contentR
       lightRef.current.color.setRGB(lum ? mr / lum : 0, lum ? mg / lum : 0, lum ? mb / lum : 0)
       lightRef.current.intensity = avgGlow(extent, lum).intensity
     }
-    } catch (e) { frameDead.current = true; setFrameErr(e) }
   })
 
-  if (frameErr) throw new Refusal(`[LightShow] ⛔ ${where}: ${frameErr.message}`)
   if (!F) return null
   // ⭐ Its reach, for depth of field (r-the-focus-object-is-everything-hung-on-it): the strands hang out to the ring, well
   // past the set-piece's own extent, so the focus box must grow to them (focusObject.js#focusBox reads this).
