@@ -17,6 +17,10 @@
  *   5. WIRED (StageApp.jsx, read): every change goes through a scheduleCard gesture and the store; no native select or
  *      time input; "clock" writes nothing; removing is an action worded as a verb, never "none"; a refusal leaves the
  *      attempt on the card, NOT SAVED; Tonight is on the Lit card, drawn from tonightOf, and says tonight's clock change.
+ *   6. THE KEYS: in the day's order, the rest offered; one key's edit leaves every other level, key and the schedule;
+ *   7. TIMES AS PEOPLE TYPE AND READ THEM (Jacob, 2026-11-02: "24" refused, a saved 12:00 glowing until noon): typed 24-hour,
+ *      12-hour, "midnight", "noon"; shown as the panel shows times, midnight and noon in words; an Ambient that goes off after
+ *      noon tomorrow is STATED before the save (never refused) and under the row after.
  * Usage: node checks/claims-the-schedule-card-changes-only-what-it-touches.mjs [--mutants]
  */
 import { importSource, sourceOf } from './_importSource.mjs'
@@ -85,7 +89,7 @@ async function verdict({ card, sched, view, store } = {}) {
   const ch = state.displays.m, rowOf = (d) => T.todSlotRowOf(PT, d)
   const tn = K.tonightOf(ch, today, SECS, rowOf), hm = (h) => h * 60
   F(same(tn.times, [18, 19, 20, 21, 22, 23, 24].map(hm)) && tn.dark === hm(24), `Tonight on ${today} is not 7 shows 18:00…00:00, dark after 00:00 (${tn.times}; dark ${tn.dark})`)
-  F(/Tonight: Ambient \d\d:\d\d–00:\d\d · 7 shows \(18:00…00:00\), 5:02 each · dark after the 00:00 show/.test(tn.line), `Tonight's line does not say it (${tn.line})`)
+  F(/Tonight: Ambient \d{1,2}:\d\dpm–\S+ · 7 shows \(6:00pm…midnight\), 5:02 each · dark after the midnight show/.test(tn.line), `Tonight's line does not say it (${tn.line})`)
   for (let d = '2026-12-01'; d <= '2026-12-07'; d = H.nextDate(d)) {
     const starts = H.nightsOn(ch, d, rowOf, SECS).flatMap(n => n.starts)
     F(same(starts, [18, 19, 20, 21, 22, 23, 24].map(hm)), `the engine's shows on the night of ${d} are not 18:00…00:00 (${starts})`)
@@ -100,7 +104,17 @@ async function verdict({ card, sched, view, store } = {}) {
   F(!stored && /Ambient's 'comes on' and 'goes off' are both 20:00, so it would never be lit: choose a different time for it to go off/.test(msg) && JSON.stringify(state) === before, `on = off is not refused in the card's words, or it changed the store (${msg.slice(0, 160)})`)
   fresh(published)
   try { A.setDisplaySchedule('m', K.addEvent(cardList(), today), SECS); F(saved().length === 2 && same(saved()[1].shows, { first: '21:00', last: '21:00', every: 60 }), 'the dated event is not saved') } catch (e) { F(false, `a dated event of one show (first = last) is refused (${String(e.message).slice(0, 160)})`) }
-  F(K.clockTyped('0:00') === '00:00' && K.clockTyped('23:59') === '23:59' && K.clockTyped('24:00') === null && K.clockTyped('8pm') === null, 'a typed time is not read as HH:MM (or a bad one accepted)')
+  // 7. TIMES AS PEOPLE TYPE AND READ THEM (Jacob, 2026-11-02: "24" refused; a saved 12:00 read as midnight, glowed till noon)
+  const typed = { '0': '00:00', '00': '00:00', '24': '00:00', '24:00': '00:00', '12am': '00:00', '12 am': '00:00', 'midnight': '00:00', 'Midnight': '00:00', 'noon': '12:00', '12pm': '12:00', '12': '12:00', '9pm': '21:00', '9:30 pm': '21:30', '21': '21:00', '2130': '21:30', '21.30': '21:30', '21:30': '21:30', '930': '09:30', '7:05am': '07:05' }
+  const misread = Object.entries(typed).filter(([t, want]) => K.clockTyped(t) !== want).map(([t]) => `${t} → ${K.clockTyped(t)}`)
+  F(!misread.length, `a time is not read as people type it (${misread.join('; ')})`)
+  const wrong = ['25', '24:30', '13pm', '0am', '8:75', 'soon', ''].filter(t => K.clockTyped(t) !== null)
+  F(!wrong.length, `a time that is not one is accepted (${wrong.join(', ')})`)
+  const words = [[0, 'midnight'], [720, 'noon'], ['00:00', 'midnight'], ['12:00', 'noon'], ['21:30', '9:30pm'], ['00:30', '12:30am'], ['12:05', '12:05pm'], [1440, 'midnight']].filter(([x, w]) => K.clockWords(x) !== w)
+  F(!words.length, `a time is not shown as the panel shows it, midnight and noon in words (${words.map(([x]) => `${x} → ${K.clockWords(x)}`).join('; ')})`)
+  const rowD = rowOf(today), span = (on, off) => K.ambientSpanWords({ ambient: { on, fadeIn: 0, off, fadeOut: 0 } }, rowD)
+  F(span('16:00', '12:00') === 'Ambient glows 20 h, until noon tomorrow.' && span('20:00', '13:30') === 'Ambient glows 17.5 h, until 1:30pm tomorrow.', `Ambient glowing until after noon tomorrow is not stated (${span('16:00', '12:00')})`)
+  F(span('16:00', '00:00') === null && span('golden', 'dawn') === null && span('20:00', '11:59') === null && K.ambientSpanWords({ ambient: { on: 'golden', fadeIn: 0, off: 'after-last-show', fadeOut: 0 } }, rowD) === null, 'an Ambient that goes off before noon tomorrow is stated as if it did not')
   // 6. THE KEYS (Jacob, 2026-11-02: one home, the levels on the keys he made): keyed in the day's order, "+ key at" the rest;
   // adding a key seeds it with the levels there, and editing one key leaves every other key as it was
   F(same(K.keyedSlots({ sunset: 1, dawn: 1, golden: 1 }), ['dawn', 'golden', 'sunset']) && same(K.unkeyedSlots({ dawn: 1, golden: 1, sunset: 1 }), ['sunrise', 'noon', 'dusk', 'night', 'deep']), `the keys are not the keyed slots in the day's order, with the rest offered (${K.keyedSlots({ dawn: 1, golden: 1, sunset: 1 })}; ${K.unkeyedSlots({ dawn: 1, golden: 1, sunset: 1 })})`)
@@ -113,7 +127,11 @@ async function verdict({ card, sched, view, store } = {}) {
   const sa = code(view ? view(sourceOf('src/stage/StageApp.jsx')) : sourceOf('src/stage/StageApp.jsx'))
   const block = sa.slice(sa.indexOf('const CAPTION = '), sa.indexOf('function LanternChannel'))
   F(block.length > 1000 && /const put = \(next\) => \{ try \{ setSchedule\(display\.id, next, secs\); setTried\(null\) \} catch \(e\) \{ setTried\(\{ list: next, reason: plainReason\(e\) \}\) \} \}/.test(block) && /const list = tried\?\.list \?\? channel\.schedule/.test(block) && /Not saved: \{tried\.reason\}/.test(block), 'a refusal does not leave the attempt on the card, NOT SAVED, with its reason')
-  F(!/j === i|\{ \.\.\.e,|\{ \.\.\.a,|\{ \.\.\.sh,|\.\.\.x\./.test(block) && (block.match(/put\((setAmbient|setShows|addAmbient|addShows|removeAmbient|removeShows|setDays|addEvent|removeEntry)\(/g) || []).length >= 14, 'the card changes the schedule other than through scheduleCard.js\'s gestures')
+  const puts = block.match(/\bput\(/g) || [], gestured = block.match(/\bput\((setAmbient|setShows|addAmbient|addShows|removeAmbient|removeShows|setDays|addEvent|removeEntry)\(/g) || []
+  F(gestured.length >= 14 && puts.length === gestured.length, `the card changes the schedule other than through scheduleCard.js's gestures (${puts.length} writes, ${gestured.length} through a gesture)`)
+  F(/<EndRow label="Comes on" value=\{a\.on\} say=\{\(v\) => ambientSpanWords\(\{ ambient: \{ \.\.\.a, on: v \} \}, row\)\}/.test(block) && /<EndRow label="Goes off" value=\{a\.off\} say=\{\(v\) => ambientSpanWords\(\{ ambient: \{ \.\.\.a, off: v \} \}, row\)\}/.test(block), "Ambient's ends do not state a glow until after noon tomorrow")
+  F(/const choose = \(v\) => \{ if \(v === value\) return; const st = say\?\.\(v\); if \(st\) setPending\(\{ v, st \}\); else onChange\(v\) \}/.test(block) && /setBad\(null\); setDraft\(null\); choose\(c\)/.test(block) && /onScrub=\{\(\) => choose\(slot\.id\)\}/.test(block) && />Save it<\/Action>/.test(block) && /\{standing && <div style=\{CAPTION\}>\{standing\}<\/div>\}/.test(block), 'the statement is not made BEFORE the save (typed or chosen), or not kept under the row after')
+  F(/const endLabel = \(v\) => [^\n]*HHMM_RE\.test\(v\) \? clockWords\(v\)/.test(block) && /const text = draft \?\? \(isClock \? clockWords\(value\) : seeded\(\)\)/.test(block), 'a clock end is not shown in words (midnight, noon, 9:30pm) on the card')
   F(!/<select|type="time"|type="number"/.test(block), 'the card uses a native select, time or number input (not the panel\'s controls)')
   F(/<Pill on=\{showClock\} title=\{`\$\{label\}: a time on the town's clock`\} onClick=\{\(\) => setClockOpen\(true\)\}>clock<\/Pill>/.test(block), '"clock" writes something (it must only open the time)')
   F(/>Remove Ambient<\/Action>/.test(block) && />Remove shows<\/Action>/.test(block) && />\+ Add shows<\/Action>/.test(block) && !/>\s*none[^<]*</.test(block), 'removing is not an action worded as a verb, or "none" is shown')
@@ -148,6 +166,12 @@ if (process.argv.includes('--mutants')) {
     ['"+ key at" not picking the new key', { view: (s) => s.replace('onClick={() => put(() => { addSlot(id, s); setPicked(s) })}', 'onClick={() => put(() => { addSlot(id, s) })}') }],
     ['the last key removable', { view: (s) => s.replace('{keys.length > 1 && <Action danger', '{<Action danger') }],
     ['a marker not picking its key', { view: (s) => s.replace('onClick={() => onSelect?.(s)}', 'onClick={() => {}}') }],
+    ['"24" refused again', { card: (s) => s.replace("  else if (h === 24 && min === 0) h = 0\n", '') }],
+    ['a bare 12 read as midnight', { card: (s) => s.replace("if (half) { if (h < 1 || h > 12) return null; h = (h % 12) + (half === 'p' ? 12 : 0) }", "if (half) { if (h < 1 || h > 12) return null; h = (h % 12) + (half === 'p' ? 12 : 0) } else if (h === 12) h = 0") }],
+    ['noon shown as 12:00pm', { card: (s) => s.replace("  if (t === 720) return 'noon'\n", '') }],
+    ['a glow until noon tomorrow not stated', { card: (s) => s.replace('if (on + len < 1440 + 720) return null', 'return null') }],
+    ['saved before it is stated', { view: (s) => s.replace('if (st) setPending({ v, st }); else onChange(v)', 'onChange(v)') }],
+    ['a clock end shown as HH:MM', { view: (s) => s.replace("HHMM_RE.test(v) ? clockWords(v) :", 'HHMM_RE.test(v) ? v :') }],
     ['a native select', { view: (s) => s.replace('<span style={SUBHEAD}>Schedule</span>', '<span style={SUBHEAD}>Schedule</span><select />') }],
   ]
   let bad = 0

@@ -40,10 +40,10 @@ import { StoreChannel } from '../cartograph/CartographSkyLight.jsx'
 import { setPieceOf, townForLook } from '../instance.js'
 import useDisplayPreview from '../displays/preview.js'
 import useFailures, { failuresFor } from '../lib/failures.js'
-import { runSeconds, hhmm } from '../displays/lightShow/engine.js'
+import { runSeconds } from '../displays/lightShow/engine.js'
 import { defaultDisplayChannel, DISPLAY_FIELDS, validateDisplayChannel } from '../displays/showChannel.js'
 import { nextDate, refuseShortCadence } from '../displays/showSchedule.js'
-import { setAmbient, setShows, addAmbient, addShows, removeAmbient, removeShows, setDays, addEvent, removeEntry, clockTyped, tonightOf, keyedSlots, unkeyedSlots } from './scheduleCard.js'
+import { setAmbient, setShows, addAmbient, addShows, removeAmbient, removeShows, setDays, addEvent, removeEntry, clockTyped, clockWords, ambientSpanWords, tonightOf, keyedSlots, unkeyedSlots } from './scheduleCard.js'
 import { townClockOf, townDateAt, townClockChange } from '../lib/townClock.js'
 import { getTodSlotRow, getTodSlotMinutes, getTodSlotLabel, NAMED_TOD_SLOTS } from '../cartograph/animatedParam.js'
 import { PLUGINS as DISPLAY_PLUGINS } from '../displays/Displays.jsx'
@@ -227,12 +227,12 @@ function Tonight({ display, channel, keys = [], selected, onSelect }) {
         <svg viewBox="0 0 100 100" preserveAspectRatio="none" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}>
           <polygon points={`0,100 ${pts} 100,100`} fill="var(--tod-dusk)" fillOpacity={0.55} />
         </svg>
-        {t.times.map(x => <div key={x} title={`A show at ${hhmm(x % 1440)}`} className="absolute" style={{ left: `${((x - 720) / 1440) * 100}%`, top: 0, bottom: 0, width: 2, background: 'var(--on-surface)' }} />)}
+        {t.times.map(x => <div key={x} title={`A show at ${clockWords(x)}`} className="absolute" style={{ left: `${((x - 720) / 1440) * 100}%`, top: 0, bottom: 0, width: 2, background: 'var(--on-surface)' }} />)}
       </div>
       <div className="relative" style={{ height: 12 }} aria-label="The keys, tonight">
         {keys.map(s => {
           const m = getTodSlotRow(D)[s], on = s === selected
-          return <button key={s} title={`The key at ${getTodSlotLabel(s)} (${hhmm(Math.round(m) % 1440)})`} onClick={() => onSelect?.(s)} className="absolute cursor-pointer"
+          return <button key={s} title={`The key at ${getTodSlotLabel(s)} (${clockWords(m)})`} onClick={() => onSelect?.(s)} className="absolute cursor-pointer"
             style={{ left: `calc(${(((m - 720) % 1440 + 1440) % 1440) / 1440 * 100}% - 5px)`, top: 0, width: 10, height: 10, transform: 'rotate(45deg)', padding: 0,
               background: on ? 'var(--vic-gold)' : 'transparent', border: `1px solid ${on ? 'var(--vic-gold)' : 'var(--on-surface-variant)'}` }} />
         })}
@@ -307,7 +307,7 @@ const VALUE = { color: 'var(--on-surface-medium)', fontSize: 'var(--type-caption
 const SUBHEAD = { color: 'var(--on-surface)', fontSize: 'var(--type-caption)', fontWeight: 500 }
 const plainReason = (e) => String(e?.message || e).replace(/^\[[^\]]*\] ⛔ [^:]*: /, '')
 const HHMM_RE = /^\d\d:\d\d$/
-const endLabel = (v) => v === 'after-last-show' ? 'after the last show' : HHMM_RE.test(v) ? v : (NAMED_TOD_SLOTS.find(s => s.id === v)?.label ?? v)
+const endLabel = (v) => v === 'after-last-show' ? 'after the last show' : HHMM_RE.test(v) ? clockWords(v) : (NAMED_TOD_SLOTS.find(s => s.id === v)?.label ?? v)
 /** A choice in the panel's toggle style (TodChannel#ChannelToggle): gold when chosen, dashed when not. */
 function Pill({ on, onClick, title, children }) {
   return (
@@ -334,19 +334,23 @@ function Action({ onClick, title, children, danger }) {
 /**
  * One END: the eight slot chips (the Lit card's own), a clock time, and any extra choice (Ambient's "after the last show").
  * Choosing "clock" WRITES NOTHING: it opens the time, seeded with the chosen slot's time today, and a time typed (Enter, or
- * leaving the field after typing) is the write.
+ * leaving the field after typing) is the write. Times are typed as people type them and shown as the panel shows them
+ * (scheduleCard.js#clockTyped, #clockWords: "midnight", "noon", "9:30pm"). `say(v)` → a sentence to state BEFORE saving v
+ * (Ambient glowing until after noon tomorrow), and under the row after: stated, never refused.
  */
-function EndRow({ label, value, onChange, extra = [], title }) {
-  const [clockOpen, setClockOpen] = useState(false), [draft, setDraft] = useState(null), [bad, setBad] = useState(null)
-  useEffect(() => { setClockOpen(false); setDraft(null); setBad(null) }, [value])
+function EndRow({ label, value, onChange, extra = [], title, say }) {
+  const [clockOpen, setClockOpen] = useState(false), [draft, setDraft] = useState(null), [bad, setBad] = useState(null), [pending, setPending] = useState(null)
+  useEffect(() => { setClockOpen(false); setDraft(null); setBad(null); setPending(null) }, [value])
   const isClock = HHMM_RE.test(value), showClock = isClock || clockOpen
-  const seeded = () => { const m = getTodSlotMinutes(useTimeOfDay.getState().currentTime)[value]; return Number.isFinite(m) ? hhmm(Math.round(m) % 1440) : '' }
-  const text = draft ?? (isClock ? value : seeded())
+  const seeded = () => { const m = getTodSlotMinutes(useTimeOfDay.getState().currentTime)[value]; return Number.isFinite(m) ? clockWords(m) : '' }
+  const text = draft ?? (isClock ? clockWords(value) : seeded())
+  const choose = (v) => { if (v === value) return; const st = say?.(v); if (st) setPending({ v, st }); else onChange(v) }
   const commit = (typed) => {
     const c = clockTyped(typed)
-    if (!c) { setBad(`Type ${label.toLowerCase()} as a time, HH:MM (e.g. 20:00)`); return }
-    setBad(null); setDraft(null); if (c !== value) onChange(c)
+    if (!c) { setBad(`Type ${label.toLowerCase()} as a time: 9pm, 21:30, midnight or noon`); return }
+    setBad(null); setDraft(null); choose(c)
   }
+  const standing = !pending && say ? say(value) : null
   return (
     <div className="space-y-0.5" title={title}>
       <div className="flex items-center justify-between"><span style={CAPTION}>{label}</span><span className="font-mono" style={VALUE}>{clockOpen && !isClock ? 'a clock time' : endLabel(value)}</span></div>
@@ -354,22 +358,30 @@ function EndRow({ label, value, onChange, extra = [], title }) {
         {NAMED_TOD_SLOTS.map(slot => (
           <div key={slot.id} style={{ flex: '1 1 0', minWidth: 0 }}>
             <SlotChip slot={slot} attached={value === slot.id} parked={value === slot.id && !clockOpen} fade={null}
-              onScrub={() => onChange(slot.id)} onFill={() => onChange(slot.id)} onRemove={() => {}} title={`${label}: ${slot.label}`} />
+              onScrub={() => choose(slot.id)} onFill={() => choose(slot.id)} onRemove={() => {}} title={`${label}: ${slot.label}`} />
           </div>
         ))}
         <Pill on={showClock} title={`${label}: a time on the town's clock`} onClick={() => setClockOpen(true)}>clock</Pill>
-        {extra.map(([v, l]) => <Pill key={v} on={value === v} title={`${label}: ${l}`} onClick={() => onChange(v)}>{l}</Pill>)}
+        {extra.map(([v, l]) => <Pill key={v} on={value === v} title={`${label}: ${l}`} onClick={() => choose(v)}>{l}</Pill>)}
       </div>
       {showClock && (
         <div className="flex items-center justify-end" style={{ gap: 4 }}>
           <span style={CAPTION}>at</span>
-          <input type="text" inputMode="numeric" aria-label={`${label}, a clock time`} value={text} placeholder="HH:MM" autoFocus={clockOpen && !isClock}
+          <input type="text" aria-label={`${label}, a clock time`} value={text} placeholder="9:30pm" autoFocus={clockOpen && !isClock}
             onChange={(e) => setDraft(e.target.value)} onBlur={(e) => { if (draft != null) commit(e.target.value) }}
             onKeyDown={(e) => { if (e.key === 'Enter') commit(e.currentTarget.value); if (e.key === 'Escape') { setDraft(null); setClockOpen(false) } }}
-            className="font-mono" style={{ width: '6ch', textAlign: 'right', padding: '0 3px', ...VALUE, background: 'transparent', border: '1px solid var(--outline-variant)', borderRadius: 3 }} />
+            className="font-mono" style={{ width: '9ch', textAlign: 'right', padding: '0 3px', ...VALUE, background: 'transparent', border: '1px solid var(--outline-variant)', borderRadius: 3 }} />
         </div>
       )}
       {bad && <div role="alert" style={{ ...CAPTION, color: 'var(--error)' }}>{bad}</div>}
+      {pending && (
+        <div role="status" className="flex items-center flex-wrap" style={{ ...CAPTION, gap: 4, color: 'var(--on-surface)' }}>
+          <span>{pending.st}</span>
+          <Action title="Save it as it is" onClick={() => { const v = pending.v; setPending(null); onChange(v) }}>Save it</Action>
+          <Action title="Leave it as it was" onClick={() => setPending(null)}>Change it</Action>
+        </div>
+      )}
+      {standing && <div style={CAPTION}>{standing}</div>}
     </div>
   )
 }
@@ -405,7 +417,7 @@ function ScheduleBlock({ display, channel }) {
   const put = (next) => { try { setSchedule(display.id, next, secs); setTried(null) } catch (e) { setTried({ list: next, reason: plainReason(e) }) } }
   let standing = null
   try { refuseShortCadence(channel, secs, display.id) } catch (e) { standing = plainReason(e) }
-  const today = townClockOf(useTimeOfDay.getState().currentTime).date
+  const today = townClockOf(useTimeOfDay.getState().currentTime).date, row = getTodSlotRow(today)
   return (
     <div className="pt-2 space-y-2" aria-label="The display's schedule">
       <div className="flex items-center justify-between">
@@ -435,9 +447,9 @@ function ScheduleBlock({ display, channel }) {
             {daysKind === 'dates' && <DatesField dates={e.days.dates} onCommit={(dates) => put(setDays(list, i, { dates }, today))} />}
             <div style={SUBHEAD}>Ambient</div>
             {a ? (<>
-              <EndRow label="Comes on" value={a.on} onChange={(v) => put(setAmbient(list, i, 'on', v))} />
+              <EndRow label="Comes on" value={a.on} say={(v) => ambientSpanWords({ ambient: { ...a, on: v } }, row)} onChange={(v) => put(setAmbient(list, i, 'on', v))} />
               <SliderRow label="Fades in" value={a.fadeIn} min={0} max={240} step={1} suffix=" min" title="Minutes Ambient fades in (0 is a switch)" onChange={(v) => put(setAmbient(list, i, 'fadeIn', v))} />
-              <EndRow label="Goes off" value={a.off} extra={sh ? [['after-last-show', 'after the last show']] : []} onChange={(v) => put(setAmbient(list, i, 'off', v))} />
+              <EndRow label="Goes off" value={a.off} say={(v) => ambientSpanWords({ ambient: { ...a, off: v } }, row)} extra={sh ? [['after-last-show', 'after the last show']] : []} onChange={(v) => put(setAmbient(list, i, 'off', v))} />
               {a.off !== 'after-last-show' && <SliderRow label="Fades out" value={a.fadeOut} min={0} max={240} step={1} suffix=" min" title="Minutes Ambient fades out (0 is a switch)" onChange={(v) => put(setAmbient(list, i, 'fadeOut', v))} />}
               {sh && <div className="flex justify-end"><Action danger title="No Ambient on this entry: only its shows play (fireworks)" onClick={() => put(removeAmbient(list, i))}>Remove Ambient</Action></div>}
             </>) : (

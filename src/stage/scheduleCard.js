@@ -9,8 +9,8 @@
  * ▶ node checks/claims-the-schedule-card-changes-only-what-it-touches.mjs
  */
 import { defaultDisplayChannel } from '../displays/showChannel.js'
-import { nightsOn, displayStateAt, prevDate, nextDate } from '../displays/showSchedule.js'
-import { hhmm, mmss } from '../displays/lightShow/engine.js'
+import { nightsOn, displayStateAt, prevDate, nextDate, windowEndMinute } from '../displays/showSchedule.js'
+import { mmss } from '../displays/lightShow/engine.js'
 import { TOD_SLOT_IDS } from '../lib/todSlots.js'
 
 const DEFAULT = () => defaultDisplayChannel().schedule[0]
@@ -33,11 +33,49 @@ export const removeEntry = (list, i) => list.filter((_, j) => j !== i)
 export const keyedSlots = (values) => TOD_SLOT_IDS.filter(id => id in values)
 export const unkeyedSlots = (values) => TOD_SLOT_IDS.filter(id => !(id in values))
 
-/** A time typed as H:MM or HH:MM (24 h) → 'HH:MM', or null. */
+/**
+ * A time as people type it → 'HH:MM' (24 h), or null (Jacob, 2026-11-02: he typed "24" for midnight and was refused). 24-hour
+ * ("21", "2130", "21:30", "21.30", "0", "00", "24", "24:00"), 12-hour ("9pm", "9:30 pm", "12am", "12 pm"), and the words
+ * "midnight" and "noon". 24 is midnight; a bare 12 is noon (and is SHOWN as "noon", so it cannot pass for midnight).
+ */
 export function clockTyped(text) {
-  const m = /^\s*(\d{1,2}):(\d{2})\s*$/.exec(String(text))
-  if (!m || +m[1] > 23 || +m[2] > 59) return null
-  return `${m[1].padStart(2, '0')}:${m[2]}`
+  const t = String(text).trim().toLowerCase().replace(/\s+/g, '').replace(/\./g, ':')
+  if (t === 'midnight') return '00:00'
+  if (t === 'noon') return '12:00'
+  const m = /^(\d{1,2})(?::?(\d{2}))?(am|pm|a|p)?$/.exec(t)
+  if (!m) return null
+  let h = +m[1]
+  const min = m[2] == null ? 0 : +m[2], half = m[3]?.[0]
+  if (min > 59) return null
+  if (half) { if (h < 1 || h > 12) return null; h = (h % 12) + (half === 'p' ? 12 : 0) }
+  else if (h === 24 && min === 0) h = 0
+  else if (h > 23) return null
+  return `${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}`
+}
+
+/** A clock time as the panel prints it (SidePanel#formatTimeShort: "9:30pm"), with the two that read either way as words:
+ *  "midnight" and "noon". `x` 'HH:MM' or minutes of the day. */
+export function clockWords(x) {
+  const t = typeof x === 'number' ? ((Math.round(x) % 1440) + 1440) % 1440 : +x.slice(0, 2) * 60 + +x.slice(3, 5)
+  if (t === 0) return 'midnight'
+  if (t === 720) return 'noon'
+  const h = Math.floor(t / 60), mm = String(t % 60).padStart(2, '0')
+  return `${h % 12 || 12}:${mm}${h < 12 ? 'am' : 'pm'}`
+}
+
+/**
+ * Said before a save, and under the row after (Jacob, 2026-11-02: an off of "12:00" glowed from 16:00 until noon): when
+ * Ambient goes off the next day after noon, how long it glows and until when. Not refused (it may be meant), stated. →
+ * a sentence, or null. `row` the slot minutes of today (animatedParam.js#getTodSlotRow).
+ */
+export function ambientSpanWords(entry, row) {
+  const a = entry?.ambient
+  if (!a || a.off === 'after-last-show') return null
+  const on = windowEndMinute(a.on, row), off = windowEndMinute(a.off, row)
+  if (!Number.isFinite(on) || !Number.isFinite(off)) return null
+  const len = (((off - on) % 1440) + 1440) % 1440
+  if (on + len < 1440 + 720) return null
+  return `Ambient glows ${+(len / 60).toFixed(1)} h, until ${clockWords(off)} tomorrow.`
 }
 
 /**
@@ -56,7 +94,7 @@ export function tonightOf(ch, D, secs, rowOf) {
   }
   const times = tonight.flatMap(n => n.starts).filter(t => t >= 720 && t < 2160)
   const dark = tonight.find(n => n.closesDark && n.lastStart != null)
-  const runs = lit.map(([a, b]) => `${hhmm((720 + a) % 1440)}–${hhmm((720 + b) % 1440)}`).join(', ')
-  const line = `Tonight: ${lit.length ? `Ambient ${runs}` : 'no Ambient'} · ${times.length} show${times.length === 1 ? '' : 's'}${times.length ? ` (${hhmm(times[0] % 1440)}${times.length > 1 ? `…${hhmm(times.at(-1) % 1440)}` : ''}), ${mmss(secs)} each` : ''}${dark ? ` · dark after the ${hhmm(dark.lastStart % 1440)} show` : ''}`
+  const runs = lit.map(([a, b]) => `${clockWords(720 + a)}–${clockWords(720 + b)}`).join(', ')
+  const line = `Tonight: ${lit.length ? `Ambient ${runs}` : 'no Ambient'} · ${times.length} show${times.length === 1 ? '' : 's'}${times.length ? ` (${clockWords(times[0] % 1440)}${times.length > 1 ? `…${clockWords(times.at(-1) % 1440)}` : ''}), ${mmss(secs)} each` : ''}${dark ? ` · dark after the ${clockWords(dark.lastStart % 1440)} show` : ''}`
   return { level, lit, times, dark: dark ? dark.lastStart : null, line }
 }
