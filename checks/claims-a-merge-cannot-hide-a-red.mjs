@@ -33,14 +33,18 @@ const CASES = [
   ['a red now green', [row('a', 'red')], [row('a', 'green')], { fixed: ['a'] }, false],
   ['a not-checked still not checked', [row('a', 'notChecked')], [row('a', 'notChecked')], {}, false],
   ['an old red beside a new one', [row('a', 'red'), row('b', 'green')], [row('a', 'red'), row('b', 'red')], { same: ['a'], new: ['b'] }, true],
+  ['a green check deleted', [row('a', 'green')], [], { removed: ['a'] }, true],
+  ['a not-checked check deleted', [row('a', 'notChecked')], [], { removed: ['a'] }, true],
+  ['a rename, accepted by the merger', [row('old', 'green')], [row('new', 'green')], { accepted: ['old'] }, false, ['old']],
+  ['a rename, not accepted', [row('old', 'green')], [row('new', 'green')], { removed: ['old'] }, true],
 ]
-const KINDS = ['new', 'changed', 'unmeasured', 'gone', 'same', 'fixed']
+const KINDS = ['new', 'changed', 'unmeasured', 'gone', 'removed', 'accepted', 'same', 'fixed']
 
 function drive(D) {
   const fails = []
-  for (const [name, base, today, want, blocks] of CASES) {
+  for (const [name, base, today, want, blocks, accepted = []] of CASES) {
     let d
-    try { d = D.redsDelta({ rows: base }, today) } catch (e) { fails.push(`${name}: threw ${e.message}`); continue }
+    try { d = D.redsDelta({ rows: base }, today, accepted) } catch (e) { fails.push(`${name}: threw ${e.message}`); continue }
     for (const k of KINDS) {
       const got = (d[k] || []).map(x => x.label).sort().join(','), exp = (want[k] || []).slice().sort().join(',')
       if (got !== exp) fails.push(`${name}: ${k} is [${got}], not [${exp}]`)
@@ -50,6 +54,9 @@ function drive(D) {
   let threw = false
   try { D.redsDelta({}, []) } catch { threw = true }
   if (!threw) fails.push('a base record with no rows is compared against, not refused')
+  for (const [why, base, today, acc] of [['names no check in the base', [row('a', 'green')], [row('a', 'green')], ['zzz']], ['names a check still run', [row('a', 'green')], [row('a', 'green')], ['a']]]) {
+    let t = false; try { D.redsDelta({ rows: base }, today, acc) } catch { t = true }
+    if (!t) fails.push(`an --accept-removed that ${why} is taken, not refused`) }
   return fails
 }
 
@@ -64,6 +71,7 @@ const WIRING = [
   [/rev-parse', 'HEAD\^\{tree\}'/, 'the record is not keyed by the tree'],
   [/\(green \? \{\} : \{ tail: norm\(r\.stdout\)[^\n]*errTail: norm\(r\.stderr\)/, 'a failing row keeps none of its output, so a CHANGED red cannot be shown'],
   [/for \(const c of d\.changed\)/, '--against flags a CHANGED red without showing what changed'],
+  [/redsDelta\(base, rowsOf\(\), ACCEPTED\)/, '--against does not hand the merger\'s --accept-removed to the delta'],
 ]
 const wiring = (src) => WIRING.filter(([re]) => !re.test(src)).map(([, why]) => why)
 
@@ -82,6 +90,9 @@ if (process.argv.includes('--mutants')) {
     ['a deleted red let through', swap("d.gone.push({ label, was: b.bucket })", '0')],
     ['changed reds not blocking', swap('d.new.length + d.changed.length +', 'd.new.length +')],
     ['blocked and timed-out not failures', swap("new Set(['red', 'blocked', 'timedOut'])", "new Set(['red'])")],
+    ['a deleted green let through', swap("    else d.removed.push({ label, was: b.bucket })", '')],
+    ['removed not blocking', swap(' + d.gone.length + d.removed.length', ' + d.gone.length')],
+    ['an acceptance of nothing taken', swap("  for (const a of accepted) if (!was.has(a) || is.has(a)) throw", "  for (const a of []) if (!was.has(a) || is.has(a)) throw")],
   ]
   const RUNM = [
     ['the dirty refusal removed', swap('if (base.dirty)', 'if (false)')],

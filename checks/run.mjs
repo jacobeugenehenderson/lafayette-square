@@ -61,6 +61,8 @@ const want = argv.includes('--live') ? 'live' : argv.includes('--all') ? 'all' :
 const LIST = argv.includes('--list')
 const RECORD = argv.includes('--record')
 const AGAINST = argv.includes('--against') ? argv[argv.indexOf('--against') + 1] : null
+const ACCEPTED = argv.filter(a => a.startsWith('--accept-removed=')).map(a => a.slice('--accept-removed='.length))
+if (ACCEPTED.length && !argv.includes('--against')) { console.error('⛔ --accept-removed is a merger\'s word on one --against run; it means nothing alone'); process.exit(2) }
 if ((RECORD || argv.includes('--against')) && want !== 'safe') { console.error('⛔ --record and --against are the safe tier\'s: the base is what `npm test` runs'); process.exit(2) }
 if (argv.includes('--against') && (!AGAINST || AGAINST.startsWith('--'))) { console.error('⛔ --against needs the base revision: npm test -- --against <rev>'); process.exit(2) }
 if (RECORD && AGAINST) { console.error('⛔ --record and --against are two runs: record the base on its own tree, then judge a branch against it'); process.exit(2) }
@@ -251,8 +253,8 @@ if (RECORD) {
   console.log(`\n${dirty ? '⚠️ RECORDED ON A DIRTY TREE: --against will refuse it. ' : ''}recorded ${results.length} run(s) as the base for tree ${tree.slice(0, 12)} → ${file}`)
 }
 if (base) {
-  const d = redsDelta(base, rowsOf()), n = blockingCount(d)
-  console.log(`\n${'─'.repeat(72)}\nAGAINST ${AGAINST} (recorded ${base.at} at ${String(base.head).slice(0, 10)}): ${d.new.length} new · ${d.changed.length} changed · ${d.unmeasured.length} unmeasured · ${d.gone.length} gone · ${d.same.length} red before · ${d.fixed.length} fixed`)
+  const d = redsDelta(base, rowsOf(), ACCEPTED), n = blockingCount(d)
+  console.log(`\n${'─'.repeat(72)}\nAGAINST ${AGAINST} (recorded ${base.at} at ${String(base.head).slice(0, 10)}): ${d.new.length} new · ${d.changed.length} changed · ${d.unmeasured.length} unmeasured · ${d.gone.length} gone · ${d.removed.length} removed${d.accepted.length ? ` (+${d.accepted.length} accepted)` : ''} · ${d.same.length} red before · ${d.fixed.length} fixed`)
   for (const l of deltaLines(d)) console.log(`   ${l}`)
   // Each CHANGED red, shown: the lines its base output had that it no longer has (−) and the new ones (+), per stream.
   const now = new Map(rowsOf().map(r => [r.label, r]))
