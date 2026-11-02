@@ -47,6 +47,17 @@ against the old slab before the press.
   with no displays, and plays. What ships at `ea8bd519` refuses it instead (Zob, read in `src/displays/Displays.jsx`:
   a display the identity declares with no channel in `scene.json` refuses "…baked before displays had one: re-bake
   the Look's scene"). That refusal is the violation, and the kit fix is Tinsel's, hence the dispatch gate above.
+  - **Version-gated, never a default (Zob, 2026-11-02):** a `scene.json` with NO `displays` key is the pre-display
+    version, and each declared display gets what the bake gives a Look with no channel for it
+    (`showChannel.js#displayChannelsFor`, the same function). A `displays` key that lacks a declared display's id is
+    an inconsistent slab and stays a refusal by name. The reader is one named function, and the check plants both.
+- **⛔ OWED before dispatch (Boz, or Jacob): a slab that predates the DRAWER** (PTown's shape tonight, a manifest with
+  no drawer index) can't draw the show at all; today its display refuses into the sink by name while the town plays.
+  Ward recommends (i): "never breaks" means the town loads and anything the slab can't carry is NAMED to the visitor
+  (the notice already does that). The check is RED on a sink entry for something the slab DOES carry. Which is which
+  is the kit's own version verdict, from the same function the reader uses, ⛔ never matched from the reason's text
+  (that's a skip list). Reading (ii), where any sink entry is breakage and only a republish fixes it, keeps the RED
+  rule as written.
 
 ## The work
 
