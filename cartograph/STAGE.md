@@ -126,7 +126,7 @@ Where channels persist (verified in `bake-scene.js`):
 
 ## 5.1. The Browse frame — one authority (2026-10-04, Phase 2 B)
 
-**Two things, not one** (Jacob, 2026-10-04). The **frame** is what Browse opens on in playback: Preview, the Ward's plan, the
+**Two things, not one** (Jacob, 2026-10-04). The **frame** is what Browse opens on in playback: Preview, the Ward's Browse, the
 legacy player — `{ center:[x,z], altitude }`, authored only by the Camera card's **Set as Browse frame**, frozen into
 `scene.json#browseFrame`, read as a square on the ground (half-side = altitude · tan(fov/2)) fitted whole into each
 surface's free region. None authored → the town's own disc, said once. The **working view** is where the operator left
