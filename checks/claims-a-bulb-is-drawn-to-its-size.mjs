@@ -10,7 +10,8 @@
  *      cores' OWN instance matrices and colours (shared buffers: the same place, the same colour, nothing copied);
  *   3. WIRED (LightShow.jsx, read): the choice is made each frame from the live camera (the framebuffer's height and the
  *      field of view) and the distance to the bulbs' box, for the LARGEST bulb; one place shows the light: the full cores,
- *      glass and sockets above a pixel, the cards below, and neither while unlit; the cards are drawn only as far as what
+ *      glass and sockets above a pixel, the cards below, and neither while unlit, when the glass and sockets draw at every size
+ *      (geometry.js#bulbParts: a card stands in for the light only; Jacob, 2026-11-02); the cards are drawn only as far as what
  *      hangs; the cards stay in the hero's coverage mask (they are the light).
  * Usage: node checks/claims-a-bulb-is-drawn-to-its-size.mjs [--mutants]
  */
@@ -33,7 +34,10 @@ async function verdict({ geo, view } = {}) {
   // 3. wired
   F(/const cam = three\.camera, focalPx = three\.gl\.getDrawingBufferSize\(reach\.fb\)\.y \/ \(2 \* Math\.tan\(THREE\.MathUtils\.degToRad\(cam\.fov\) \/ 2\)\)/.test(ls), 'the focal length is not the live camera\'s, in framebuffer pixels')
   F(/const cards = bulbAsCard\(reach\.r, reach\.world\.distanceToPoint\(cam\.position\), focalPx\)/.test(ls) && /r = Math\.max\(r, bulbRadius\(/.test(ls), 'the choice is not made for the largest bulb at the nearest point of the bulbs\' box')
-  F(/coreRef\.current\.visible = lit && !cards; glassRef\.current\.visible = !cards; socketRef\.current\.visible = !cards/.test(ls) && /cardRef\.current\.visible = lit && cards;/.test(ls), 'the full bulb and the card are not shown by one rule (full above a pixel, card below, neither unlit)')
+  const P = (lit, cards) => JSON.stringify(G.bulbParts(lit, cards))
+  F(P(true, false) === '{"core":true,"card":false,"glass":true,"socket":true}' && P(true, true) === '{"core":false,"card":true,"glass":false,"socket":false}', `lit, the full bulb above a pixel and its card alone below are not the rule (${P(true, false)}; ${P(true, true)})`)
+  F(P(false, true) === '{"core":false,"card":false,"glass":true,"socket":true}' && P(false, false) === '{"core":false,"card":false,"glass":true,"socket":true}', `unlit, the strand's glass and sockets are not drawn at every size (a card stands in for the LIGHT only) (${P(false, true)})`)
+  F(/const part = bulbParts\(!unlit\.current, asCards\.current\)\s*coreRef\.current\.visible = part\.core; glassRef\.current\.visible = part\.glass; socketRef\.current\.visible = part\.socket/.test(ls) && /cardRef\.current\.visible = part\.card;/.test(ls), 'LightShow does not show its parts by the one rule (geometry.js#bulbParts)')
   F(/for \(const m of \[glassRef, coreRef, socketRef, cardRef\]\) if \(m\.current\) m\.current\.count = hangs \* rows/.test(ls), 'the cards are drawn beyond what hangs')
   F(/<instancedMesh name="light-show:light-cards"(?![^>]*coverage: false)[^>]*\/>/.test(ls), 'the cards are left out of the hero\'s coverage mask (they are the light)')
   return fails
@@ -50,8 +54,10 @@ if (process.argv.includes('--mutants')) {
     ['the card the core\'s radius, not its area', { geo: (s) => s.replace('export const CARD_SIDE = Math.sqrt(Math.PI)', 'export const CARD_SIDE = 2') }],
     ['the card on its own matrices', { view: (s) => s.replace('cardRef.current.instanceMatrix = coreRef.current.instanceMatrix', 'void 0') }],
     ['the choice from the smallest bulb', { view: (s) => s.replace('r = Math.max(r, bulbRadius(', 'r = Math.min(r || Infinity, bulbRadius(') }],
-    ['glass kept with the cards', { view: (s) => s.replace('glassRef.current.visible = !cards;', 'glassRef.current.visible = true;') }],
-    ['cards lit while unlit', { view: (s) => s.replace('cardRef.current.visible = lit && cards;', 'cardRef.current.visible = cards;') }],
+    ['glass kept with the lit cards', { geo: (s) => s.replace('glass: !(lit && cards), socket', 'glass: true, socket') }],
+    ['the strand gone when unlit far off (the regression)', { geo: (s) => s.replace('glass: !(lit && cards), socket: !(lit && cards)', 'glass: !cards, socket: !cards') }],
+    ['the parts not from the rule', { view: (s) => s.replace('glassRef.current.visible = part.glass', 'glassRef.current.visible = !asCards.current') }],
+    ['cards lit while unlit', { geo: (s) => s.replace('card: lit && cards,', 'card: cards,') }],
     ['the cards left out of the mask', { view: (s) => s.replace('<instancedMesh name="light-show:light-cards" ref={cardRef} args={[plane, card, count]} frustumCulled={false} visible={false} />', '<instancedMesh name="light-show:light-cards" ref={cardRef} args={[plane, card, count]} frustumCulled={false} visible={false} userData={{ coverage: false }} />') }],
   ]
   let bad = 0

@@ -105,3 +105,10 @@ export function strandOrder(n, isGlow) {
 export const CARD_SIDE = Math.sqrt(Math.PI)
 export const bulbPx = (radiusM, distanceM, focalPx) => (distanceM > 0 ? (radiusM * focalPx) / distanceM : Infinity)
 export const bulbAsCard = (radiusM, distanceM, focalPx) => bulbPx(radiusM, distanceM, focalPx) < 1
+/**
+ * Which parts of a hung bulb draw: the full bulb (glass, socket, light core) at a pixel or more; under one, the card for its
+ * LIGHT. A card stands in for the light ONLY: unlit, there is no light for it to stand in for, so the strand draws as it is,
+ * its clear glass and dark sockets (Jacob, 2026-11-02, by day in Stage: "the strands aren't even showing when they're
+ * turned off"; measured: cords alone, glass and sockets hidden by the card switch, the cards hidden as unlit).
+ */
+export const bulbParts = (lit, cards) => ({ core: lit && !cards, card: lit && cards, glass: !(lit && cards), socket: !(lit && cards) })

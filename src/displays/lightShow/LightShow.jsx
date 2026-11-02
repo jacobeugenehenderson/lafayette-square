@@ -31,7 +31,7 @@ import { validateDrawer, compileRun, showAt, showSeconds, glowColour, inSeason, 
 import { kelvinToRgb, validateDisplayChannel } from '../showChannel.js'
 import { nightsOn, displayStateAt, refuseScheduleSense, prevDate } from '../showSchedule.js'
 import { getTodSlotRow, getTodSlotDaysAhead } from '../../cartograph/animatedParam.js'
-import { checkFaces, strandEnds, pinnacleFace, pinnacleWash, bulbRadius, cordRadius, SOCKET_OF_BULB, avgGlow, strandOrder, CARD_SIDE, bulbAsCard } from './geometry.js'
+import { checkFaces, strandEnds, pinnacleFace, pinnacleWash, bulbRadius, cordRadius, SOCKET_OF_BULB, avgGlow, strandOrder, CARD_SIDE, bulbAsCard, bulbParts } from './geometry.js'
 import useDisplayPreview from '../preview.js'
 import { drawerUrls } from '../drawerUrl.js'
 import { readDrawerJson, rasterFrame } from './drawerRead.js'
@@ -173,9 +173,9 @@ export default function LightShow({ display, channel: given, extent, calendar, c
   // DisplayBoundary names and contains it.
   // What draws the light: the full bulbs, or (under a pixel) the cards; and none while unlit. One place sets it.
   const showLight = () => {
-    const lit = !unlit.current, cards = asCards.current
-    coreRef.current.visible = lit && !cards; glassRef.current.visible = !cards; socketRef.current.visible = !cards
-    if (cardRef.current) { cardRef.current.visible = lit && cards; cardRef.current.count = coreRef.current.count }
+    const part = bulbParts(!unlit.current, asCards.current)
+    coreRef.current.visible = part.core; glassRef.current.visible = part.glass; socketRef.current.visible = part.socket
+    if (cardRef.current) { cardRef.current.visible = part.card; cardRef.current.count = coreRef.current.count }
   }
   useTownFrame((three, delta) => {
     if (!F || !compiled || !root.current || !glassRef.current || !coreRef.current || !socketRef.current || !cordRef.current) return
