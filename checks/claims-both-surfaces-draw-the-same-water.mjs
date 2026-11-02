@@ -39,7 +39,7 @@ if (!fs.existsSync(SHARED)) {
 } else {
   const shared = strip(SHARED)
   if (!/makeWaterMaterial\(/.test(shared)) fail.push(`⛔ ${SHARED} no longer builds the kit water material.`)
-  if (!/useFrame\(/.test(shared)) {
+  if (!/useTownFrame\(/.test(shared)) {
     fail.push(`⛔ ${SHARED} no longer drives its uniforms per frame. The driving is half the material — a component that ` +
               `does not drive is a material factory with extra steps, and that is the state this check exists to prevent.`)
   }

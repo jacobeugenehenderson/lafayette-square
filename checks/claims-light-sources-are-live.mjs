@@ -67,7 +67,7 @@ console.log('② EACH CONTROL MOVES ITS OWN THING — every field drives ≥1 ta
 // multiplied the pools, so two knobs moved one thing. Parse StreetLights' per-frame writes (following local
 // consts such as `bulb`) and map field → targets.
 const writes = (() => {
-  const frame = lights.slice(lights.indexOf('useFrame('))
+  const frame = lights.slice(lights.indexOf('useTownFrame('))
   const fieldsIn = (expr, vars) => {
     const f = new Set()
     for (const m of expr.matchAll(/lant\.(\w+)|share\.(\w+)/g)) f.add(m[1] ? `lantern.${m[1]}` : `lampGlow.${m[2]}`)
@@ -99,7 +99,7 @@ const writes = (() => {
   // A light's write must be a pure product of its field (and t, clamps) — an additive term survives 0.
   // Radius (a wipe threshold) and Glow size (a size) are not light, so they are exempt.
   const NOT_LIGHT = new Set(['lampGlow.radius', 'lampGlow.centre', 'lampGlow.centreSoft', 'lantern.glowSize'])
-  const frameSrc = lights.slice(lights.indexOf('useFrame('))
+  const frameSrc = lights.slice(lights.indexOf('useTownFrame('))
   for (const m of frameSrc.matchAll(/([\w.?\[\]]+?\.(?:value|opacity|emissiveIntensity))\s*=\s*([^\n]+)/g)) {
     const f = writes.get(m[1].replace(/\?/g, ''))
     if (!f || [...f].every(x => NOT_LIGHT.has(x))) continue

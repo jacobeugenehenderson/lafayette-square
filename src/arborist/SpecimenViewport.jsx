@@ -18,7 +18,8 @@
  *                          applied to the GLB so preview = runtime
  */
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
-import { Canvas, useFrame, useThree, useLoader } from '@react-three/fiber'
+import { Canvas, useThree, useLoader } from '@react-three/fiber'
+import { useTownFrame } from '../lib/useTownFrame.js'
 import { useGLTF } from '@react-three/drei'
 import { PLYLoader } from 'three/examples/jsm/loaders/PLYLoader.js'
 import * as THREE from 'three'
@@ -162,7 +163,7 @@ function DollyCam({ cameraStateRef, dragPanRef, rotationY = 0, rotationOffset, o
   const onRotRef = useRef(onRotationChange)
   useEffect(() => { onRotRef.current = onRotationChange }, [onRotationChange])
 
-  useFrame(() => {
+  useTownFrame(() => {
     const s = stateRef.current
     if (s.topDown) {
       // Overhead — literal top-down plan view. camera.up swaps to
@@ -906,7 +907,7 @@ function Skeleton({
       gradientSlot:    (sp && m.barkGradientByVariant?.[sp]?.[vid]) || null,
     }
   }, [atlas.manifest])
-  useFrame(() => {
+  useTownFrame(() => {
     if (!atlas.treeMaterial || !barkUniformsState) return
     applyBarkUniforms(
       atlas.treeMaterial,
@@ -922,7 +923,7 @@ function Skeleton({
   // as they drag, with no preview-atlas re-bake. deformerSeed perturbs the hash
   // anchor so the single-tree preview can re-roll across the authored spread
   // (multi-instance preview is deferred — see brief surface notes).
-  useFrame(() => {
+  useTownFrame(() => {
     if (!atlas.treeMaterial) return
     applyDeformerUniforms(atlas.treeMaterial, deformerRange, deformerSeed)
     // leaf.face — same live-authored binding as the deformer beside it (uniform-
@@ -1290,7 +1291,7 @@ function Skeleton({
   // Match the canopy tints to the chassis's authored leaf tints. (Motion is the
   // shared wind — the stage's wind sheet (the Wind slider) + the Look's Tree Wind — not per-material
   // dials, so nothing to bind here beyond colour.)
-  useFrame(() => {
+  useTownFrame(() => {
     if (!overheadMode) return
     if (overhead?.tintFront) leafMat.color.set(overhead.tintFront)
   })
@@ -1418,7 +1419,7 @@ function Skeleton({
 function PerfProbe({ onSample }) {
   const { gl, scene } = useThree()
   const lastRef = useRef({ t: 0, tris: -1, leafCards: -1, drawCalls: -1, programs: -1 })
-  useFrame(() => {
+  useTownFrame(() => {
     const now = performance.now()
     if (now - lastRef.current.t < 250) return
     lastRef.current.t = now

@@ -16,7 +16,7 @@
  *
  * Returns null — pure driver, no rendered output.
  */
-import { useFrame } from '@react-three/fiber'
+import { useTownFrame } from '../lib/useTownFrame.js'
 import { useRef } from 'react'
 import useAtmosphere from '../hooks/useAtmosphere.js'
 import useAtmosphereDirective, { getPresetsCache } from '../hooks/useAtmosphereDirective.js'
@@ -44,7 +44,7 @@ export default function AtmosphereDirectiveDriver({ lookId }) {
   const lerpFromDirective = useRef(null)
   const lastRawRef = useRef(null)
 
-  useFrame(({ clock }) => {
+  useTownFrame(({ clock }) => {
     const raw = useAtmosphere.getState().rawDirective
     if (!raw) return
     const tweened = useAtmosphere.getState().tweenedDirective

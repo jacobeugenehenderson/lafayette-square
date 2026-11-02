@@ -31,7 +31,7 @@ const judgeOrder = (s, d) => { const a = s.indexOf('export const POSTFX_PIPELINE
   return { ids, inst, after, ok: last[0] === 'dofDebug' && last[1] === 'DofDebug' && /overlay: true/.test(last[2]) && ids.filter(([, p]) => p === 'DofDebug').length === 1 && inst && after } }
 const judgeLaw = (s, d) => {
   const main = s.slice(s.indexOf('const fragment = '), s.indexOf('// Module-level refs'))
-  const frag = d.slice(d.indexOf('const frag = '), d.indexOf('export function DofDebug')), upd = d.slice(d.indexOf('useFrame(('))
+  const frag = d.slice(d.indexOf('const frag = '), d.indexOf('export function DofDebug')), upd = d.slice(d.indexOf('useTownFrame(('))
   const fed = ['near', 'far', 'focusDist', 'tanHalf', 'upView', 'maxBlur', 'heroBlur', 'zone', 'ramp'].filter(k => !upd.includes(`_dofRefs.${k}.current`))
   return { fed, ok: !/uDebug/.test(main) && /\$\{DOF_BLUR_GLSL\}/.test(frag) && !/float blurAmount\(/.test(frag) && /logarithmicDepthBuffer/.test(upd) && /inputBuffer\?\.depthTexture/.test(upd) && !fed.length } }
 

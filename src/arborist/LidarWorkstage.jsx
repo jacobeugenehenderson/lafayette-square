@@ -17,7 +17,7 @@
  * THREE.Points canopy, per-region bark binding to manifest, bake/publish.
  */
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
-import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber'
+import { Canvas, useLoader, useThree } from '@react-three/fiber'
 import { useGLTF } from '@react-three/drei'
 import RegimeControls from '../components/RegimeControls.jsx'
 import { PLYLoader } from 'three/examples/jsm/loaders/PLYLoader.js'

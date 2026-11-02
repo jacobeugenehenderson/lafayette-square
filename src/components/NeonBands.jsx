@@ -1,5 +1,6 @@
 import { useMemo, useState, useEffect, useRef } from 'react'
-import { useFrame, useThree } from '@react-three/fiber'
+import { useThree } from '@react-three/fiber'
+import { useTownFrame } from '../lib/useTownFrame.js'
 import * as THREE from 'three'
 import { categoryNeon } from '../lib/categoryColor.js'
 import { neon as _neonUniforms } from '../preview/neonState.js'
@@ -416,7 +417,7 @@ export default function NeonBands({ places, forceOn = true, lookId, materialColo
   const [cm, setCm] = useState(() => _neonUniforms.tubeCmUniform.value)
   const r = cm / 100
   const viewport = useRef({ value: new THREE.Vector2(1, 1) }).current
-  useFrame(() => {
+  useTownFrame(() => {
     const q = Math.round(_neonUniforms.tubeCmUniform.value / TUBE_CM_STEP) * TUBE_CM_STEP
     if (Math.abs(q - cm) > 1e-6) setCm(q)
     // The hand-off and the line's width are in device px of the live drawing buffer (DPR-correct).
@@ -618,7 +619,7 @@ const NEON_DEFAULT_CHANNEL = Object.freeze(kitDayChannel('neon'))
 export function NeonDriver({ lookId, bakeLastMs, neonOverride } = {}) {
   const scene = useSceneJson(lookOf(lookId, 'NeonDriver'), bakeLastMs)
   const channel = neonOverride ?? scene?.neon ?? NEON_DEFAULT_CHANNEL
-  useFrame(() => {
+  useTownFrame(() => {
     const tod = useTimeOfDay.getState()
     const v = resolveGroupAtMinute(channel, tod.getMinuteOfDay(),
       channel.animated ? getTodSlotMinutes(tod.currentTime) : null, NEON_FIELD_KEYS, NEON_FLAT_DEFAULTS)

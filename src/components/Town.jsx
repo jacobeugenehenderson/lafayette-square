@@ -114,9 +114,11 @@
  */
 import { Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { TownMoonPainter } from './TownMoon.jsx'
-import { useFrame, useThree } from '@react-three/fiber'
+import { useThree } from '@react-three/fiber'
+import { useTownFrame } from '../lib/useTownFrame.js'
 import * as THREE from 'three'
 import R3FErrorBoundary from './R3FErrorBoundary'
+import { FrameBoundary } from '../lib/frameBoundary.js'
 import { TownPlace, useTownLoaded } from './TownPlace.jsx'
 import TowerLight from './TowerLight.jsx'
 import { TownScope, SHOT_KEY } from './townContext.js'
@@ -280,7 +282,7 @@ function RevealGate({ need, lingerMs, skyAt }) {
   //    town (so no culling skips anything). A draw is the only thing that uploads every geometry and texture and links
   //    every program — measured: compile + initTexture alone left +217 geometries, +161 textures and +21 programs to
   //    the reveal frame (615 ms on huron). Here that cost lands while only the sky shows. 3. Then reveal, on one frame.
-  useFrame(() => {
+  useTownFrame(() => {
     const p = phase.current
     if (p.name !== 'prep') return
     if (p.i >= p.groups.length) { phase.current = { name: 'done' }; markStartup('reveal', { from: skyLevelNow(skyAt) }); return }
@@ -516,7 +518,7 @@ function RoofPoint({ building, lift = 0, onError, children, ...props }) {
     return { x: x / e.footprint.length, z: z / e.footprint.length }
   }, [e])
   const y = () => buildingLiftY(e.roofTopY, e.centroidY, terrainExag.value, 0, false, e.groundY) + lift
-  useFrame(() => { if (ref.current && e) ref.current.position.y = y() })
+  useTownFrame(() => { if (ref.current && e) ref.current.position.y = y() })
   if (!e) return null
   return <group ref={ref} position={[at.x, y(), at.z]} {...props}>{children}</group>
 }
@@ -528,7 +530,7 @@ function GroundPoint({ x, z, lat, lon, lift = 0, children, ...props }) {
   if (!Number.isFinite(px) || !Number.isFinite(pz)) throw new Refusal(`[TownPoint] ⛔ no place: x=${x} z=${z} lat=${lat} lon=${lon}`)
   const ref = useRef()
   const y = () => getElevationRaw(px, pz) * terrainExag.value + lift
-  useFrame(() => { if (ref.current) ref.current.position.y = y() })
+  useTownFrame(() => { if (ref.current) ref.current.position.y = y() })
   return <group ref={ref} position={[px, y(), pz]} {...props}>{children}</group>
 }
 
@@ -623,7 +625,7 @@ function TownOptics({ quality, shot, movieActive }) {
     if (cam.near !== near) { cam.near = near; cam.updateProjectionMatrix() }
   }
   useLayoutEffect(() => { hold(camera) }, [camera])
-  useFrame((st) => hold(st.camera))
+  useTownFrame((st) => hold(st.camera))
   useEffect(() => {
     const logDepth = !!gl.capabilities.logarithmicDepthBuffer
     if (!!quality.logDepth !== logDepth) console.error(`[Town] ⛔ the Canvas was created with ${logDepth ? 'logarithmic' : 'linear'} depth, but the quality profile "${quality.id}" asks for ${quality.logDepth ? 'logarithmic' : 'linear'} — create the Canvas with gl={{ logarithmicDepthBuffer: quality.logDepth }}`)
@@ -705,7 +707,12 @@ export default function Town({
   const revealTiming = resolveGroupAtMinute(scene?.reveal, 0, null, REVEAL_FIELD_KEYS, REVEAL_FLAT_DEFAULTS)
   const splash = <CanvasOverlay><TownSplash title={_titleOf(town)} fadeSeconds={revealTiming.fade} skyAt={skyAt} identity={scene ? (scene.identity ?? null) : undefined} viewInset={viewInset} /></CanvasOverlay>
   const revealed = useSyncExternalStore(subscribeStartup, isRevealed)
-  if (!loaded) return <><TownOptics quality={quality} shot={shot} movieActive={false} /><TownPlace town={town} lookId={lookId} time={time} />{splash}</>
+  // ⛔ The terrain read's failure is the TOWN's (it draws nothing until its terrain is in), named in the one sink by this
+  // boundary under the town's lookId. The same boundary NAME (so the same `<lookId>/terrain` key) in both branches below;
+  // they sit at different tree positions, so the town loading REMOUNTS it, and that clean mount clears the entry (the
+  // read landed). The remount re-runs TownPlace: placeTown and an unforced reloadTerrain are no-ops, and `time` is applied again.
+  const terrainPlace = <R3FErrorBoundary name="terrain"><TownPlace town={town} lookId={lookId} time={time} rebake={bakeLastMs} /></R3FErrorBoundary>
+  if (!loaded) return <FrameBoundary.Provider value={false}><TownOptics quality={quality} shot={shot} movieActive={false} />{terrainPlace}{splash}</FrameBoundary.Provider>
   const shotExag = shot === 'plan' ? 0 : shot === 'street' ? 1 : sceneExag()
   // ⭐ THE SWELL (Jacob, 2026-10-06): the town is prepared FLAT and the terrain swells to the shot's height as the
   // reveal's gesture, through the one terrain driver (BakedGround#TerrainExagDriver). A gesture, not a perf lever.
@@ -714,10 +721,13 @@ export default function Town({
   const heavy = !quality.heroOnlyPieces || shot === 'movie'
 
   return (
+    // ⛔ A frame callback's throw is "inside a boundary" only inside THIS R3F tree: <Canvas> forwards every outside context,
+    // so a FrameBoundary=true above it would claim this town's frame throws (src/lib/useTownFrame.js). Reset here.
+    <FrameBoundary.Provider value={false}>
     <QualityProvider quality={quality}>
     <TownScope value={scope}>
       <TownOptics quality={quality} shot={shot} movieActive={shot === 'movie' && (movie?.playing ?? true)} />
-      <TownPlace town={town} lookId={lookId} time={time} />
+      {terrainPlace}
       {/* ⭐ THE MOVIE IS TOWN'S (Warden, 2026-09-28): the ONE mount of the driver, playing this town's own baked path
           (Stage's live keys arrive as overrides). Mounted in every shot so an app's tween can sample the path before
           it switches; it plays only in the movie shot. ▶ node checks/claims-one-movie-driver.mjs */}
@@ -823,5 +833,6 @@ export default function Town({
       {children}
     </TownScope>
     </QualityProvider>
+    </FrameBoundary.Provider>
   )
 }

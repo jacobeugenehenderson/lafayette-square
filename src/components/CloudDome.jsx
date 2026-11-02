@@ -1,5 +1,5 @@
 import { useRef, useMemo } from 'react'
-import { useFrame } from '@react-three/fiber'
+import { useTownFrame } from '../lib/useTownFrame.js'
 import * as THREE from 'three'
 import { useTownShot } from './townContext.js'
 import useSkyState from '../hooks/useSkyState'
@@ -169,7 +169,7 @@ function CloudDome() {
     depthWrite: false,
   }), [])
 
-  useFrame((_, delta) => {
+  useTownFrame((_, delta) => {
     if (!materialRef.current) return
 
     const sky = useSkyState.getState()

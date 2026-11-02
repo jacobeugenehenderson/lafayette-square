@@ -14,7 +14,7 @@
  * While one of the set-piece's displays is lit, the floods are scaled down by its `dimUplights` (`dim`, from <SetPiece>).
  */
 import { useMemo, useRef } from 'react'
-import { useFrame } from '@react-three/fiber'
+import { useTownFrame } from '../lib/useTownFrame.js'
 import * as THREE from 'three'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import { resolveGroupAtMinute, getTodSlotMinutes } from '../cartograph/animatedParam.js'
@@ -44,7 +44,7 @@ export default function SetPieceUplights({ channel, topM, halfWidthM, dim }) {
     return { L: mk(-1), R: mk(1) }
   }, [topM, halfWidthM])
 
-  useFrame(() => {
+  useTownFrame(() => {
     const k = uplightScale(dim)   // a lit display's dim (src/displays): 1, as authored, whenever none is lit
     const tod = useTimeOfDay.getState()
     const ch = channel ?? DEFAULT_CHANNEL

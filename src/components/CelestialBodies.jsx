@@ -1,5 +1,6 @@
 import { useRef, useMemo, useEffect, useState, Suspense } from 'react'
-import { useFrame, useThree } from '@react-three/fiber'
+import { useThree } from '@react-three/fiber'
+import { useTownFrame } from '../lib/useTownFrame.js'
 import { useTexture } from '@react-three/drei'
 import * as THREE from 'three'
 import { terrainExag } from '../utils/terrainShader'
@@ -373,7 +374,7 @@ function PrimaryOrb({ lightPosition, color, intensity, intensityMulRef }) {
   const fitHalfRef = useRef(null)
   const shotHalfRef = useRef(null)   // the movie's shot size, cached on its keys / motion / town / cap
   const fitLightRef = useRef(null)   // the LAST FITTED light transform, re-asserted per frame
-  useFrame(() => {
+  useTownFrame(() => {
     const light = lightRef.current
     const townHalf = townHalfRef.current
     if (!light || !light.castShadow || townHalf == null) return
@@ -504,7 +505,7 @@ function PrimaryOrb({ lightPosition, color, intensity, intensityMulRef }) {
   const _shadowExagRef = useRef(NaN)   // the terrain exaggeration the shadow map was last drawn at
 
   // Re-render shadow map only when light position shifts enough (~10 m on the ~600 m light radius ≈ 1° of sky; below)
-  useFrame(() => {
+  useTownFrame(() => {
     if (!lightRef.current) return
 
     // TOD-driven sun-light intensity multiplier (Sky&Light · Sun light).
@@ -564,7 +565,7 @@ function PrimaryOrb({ lightPosition, color, intensity, intensityMulRef }) {
 // no shadow map. See the mount site for why it casts nothing and carries no knob.
 function CounterBodyLight({ lightPosition, color, intensity, intensityMulRef }) {
   const ref = useRef()
-  useFrame(() => {
+  useTownFrame(() => {
     if (ref.current) ref.current.intensity = intensity * (intensityMulRef?.current ?? 1)
   })
   return (
@@ -591,7 +592,7 @@ function CounterBodyLight({ lightPosition, color, intensity, intensityMulRef }) 
 // compute it and it still documents the intent; it no longer reaches a light.
 function SecondaryOrb({ color, intensity, intensityMulRef }) {
   const ref = useRef()
-  useFrame(() => {
+  useTownFrame(() => {
     if (ref.current) ref.current.intensity = intensity * HEMI_FOR_DIRECTIONAL * (intensityMulRef?.current ?? 1)
   })
   return (
@@ -747,7 +748,7 @@ function Moon({ position, phase, illumination, sunDirection, dayFactor, visible 
     })
   }, [])
 
-  useFrame(({ camera }) => {
+  useTownFrame(({ camera }) => {
     if (moonRef.current) {
       moonRef.current.quaternion.copy(camera.quaternion)
       moonRef.current.material.uniforms.phase.value = phase
@@ -800,7 +801,7 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, skyChannel, constell
   // Shader-side weather effects (haze, overcast flattening, storm
   // darkening + desat) still apply via the uniforms set below.
 
-  useFrame(() => {
+  useTownFrame(() => {
     if (materialRef.current) {
       const u = materialRef.current.uniforms
       const planetariumActive = shotRef.current === 'street'
@@ -1294,7 +1295,7 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, skyChannel, constell
 
   // Update star positions each frame based on sidereal time (Earth rotation)
   // and fade opacity with sun altitude
-  useFrame((state) => {
+  useTownFrame((state) => {
     if (!starRef.current || !starMat) return
     const planetariumActive = shotRef.current === 'street'
     const { astronomyAlpha } = useSkyState.getState()
@@ -1395,7 +1396,7 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, skyChannel, constell
   // day/night gate of its own (2026-06-17: "all day long"); key it off by day if the Look wants that.
   const [constellationsOn, setConstellationsOn] = useState(false)
   const constellationsOnRef = useRef(false)
-  useFrame(() => {
+  useTownFrame(() => {
     const tod = useTimeOfDay.getState()
     const on = (resolveGroupAtMinute(
       constellationsChannel, tod.getMinuteOfDay(),
@@ -1468,7 +1469,7 @@ function CelestialBodies({
   const dirMoonMulRef = useRef(1)
   const ambientMulRef = useRef(1)
   const hemiMulRef    = useRef(1)
-  useFrame(() => {
+  useTownFrame(() => {
     const tod = useTimeOfDay.getState()
     const minute = tod.getMinuteOfDay()
     const slotMinutes = getTodSlotMinutes(tod.currentTime)
@@ -1656,7 +1657,7 @@ function CelestialBodies({
   // old 0.35 cap (it read as a dead lever) so the per-slot hemi knob can drive a
   // real sky wash. ⚠️ couples to every hemi keyframe — eye-gate dawn/noon/night.
   const hemiBase = (0.55 - lighting.nightFactor * 0.2) * (1 + cc * 0.5)
-  useFrame(() => {
+  useTownFrame(() => {
     if (ambientRef.current) ambientRef.current.intensity = ambientBase * ambientMulRef.current
     if (hemiRef.current) {
       hemiRef.current.intensity = hemiBase * hemiMulRef.current

@@ -18,7 +18,8 @@
  * exactly like the overhead disc — so the hero canopy tracks the weather + wind.
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useThree, useFrame } from '@react-three/fiber'
+import { useThree } from '@react-three/fiber'
+import { useTownFrame } from '../lib/useTownFrame.js'
 import { loadImpostorTexture, pageArrived, pageFailed } from './impostorTexture.js'
 import { markFailed } from '../lib/startupMarks.js'
 import * as THREE from 'three'
@@ -137,7 +138,7 @@ export function useHeroImpostorAssets({ enabled, lookName, heroImpostorBySpecies
   // ⛔ It waited on `texture.onUpdate` — the GPU UPLOAD — which a tree held hidden for the reveal never does.
   const [arrived, setArrived] = useState(false)
   useEffect(() => { setArrived(false) }, [assets])
-  useFrame(() => {
+  useTownFrame(() => {
     if (!assets || arrived) return
     let all = true
     for (const a of assets.values()) for (const s of a.azSets) for (const l of s.layers) for (const t of [l.albedoTex, l.aoTex]) {

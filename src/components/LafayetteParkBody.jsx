@@ -1,5 +1,5 @@
 import { useMemo, useRef, useEffect, useState } from 'react'
-import { useFrame } from '@react-three/fiber'
+import { useTownFrame } from '../lib/useTownFrame.js'
 import { Text } from '@react-three/drei'
 import * as THREE from 'three'
 import useTimeOfDay from '../hooks/useTimeOfDay'
@@ -38,7 +38,7 @@ const meanParts = (pts) => { let raw = 0, y = 0; for (const [x, z] of pts) { con
 // to zero height in flat/top-down camera modes where exag → 0.
 function GroundLift({ parts, children }) {
   const ref = useRef()
-  useFrame(() => { if (ref.current) ref.current.position.y = parts.raw * terrainExag.value + parts.y })
+  useTownFrame(() => { if (ref.current) ref.current.position.y = parts.raw * terrainExag.value + parts.y })
   return <group ref={ref}>{children}</group>
 }
 import { useTownContext } from './townContext.js'
@@ -133,7 +133,7 @@ function ParkBridge({ lookId, bakeLastMs }) {
     return rings.length ? ringsToFlatGeo(rings, 0) : null
   }, [])
 
-  useFrame(() => {
+  useTownFrame(() => {
     if (shaderRef.current) {
       shaderRef.current.uniforms.uSunAltitude.value = useTimeOfDay.getState().getLightingPhase().sunAltitude
     }
@@ -381,7 +381,7 @@ function ParkWater({ lookId, bakeLastMs }) {
     }), [])
 
   // Animate water
-  useFrame((_, delta) => {
+  useTownFrame((_, delta) => {
     waterUniforms.uTime.value += delta
     const { sunAltitude } = useTimeOfDay.getState().getLightingPhase()
     waterUniforms.uSunAltitude.value = sunAltitude

@@ -20,7 +20,8 @@
  * authority check. `__windSheet.spring = false` switches the memory off live (BRIEF step 3's measurement).
  */
 import { useEffect, useMemo, useRef, useSyncExternalStore } from 'react'
-import { useFrame, useThree } from '@react-three/fiber'
+import { useThree } from '@react-three/fiber'
+import { useTownFrame } from '../lib/useTownFrame.js'
 import * as THREE from 'three'
 import { WIND_FIELD, WIND_FIELD_GLSL, windAtAdvect, gustLengths } from '../lib/wind-field.js'
 import { WeatherRangeError, WeatherFieldMissingError } from '../lib/weatherAt.js'
@@ -167,7 +168,7 @@ export default function WindSheet({ extent, wind }) {
 
   const mainMs = useRef(0)
   const publishTick = useRef(0)
-  useFrame(() => {
+  useTownFrame(() => {
     const now = performance.now()
     const dt = lastMs.current ? Math.min(0.1, (now - lastMs.current) / 1000) : 0
     lastMs.current = now
@@ -367,7 +368,7 @@ function WindSheetDebug({ air, layoutRef }) {
       }`,
   }), [])
   useEffect(() => () => material.dispose(), [material])
-  useFrame(() => {
+  useTownFrame(() => {
     const L = layoutRef.current
     const m = meshRef.current
     if (m) {

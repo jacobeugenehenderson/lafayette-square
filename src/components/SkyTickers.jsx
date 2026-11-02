@@ -4,7 +4,7 @@
  * canvas (SkyEmbed, TreeDiorama) imports them from here rather than keeping a fourth.
  */
 import { useRef } from 'react'
-import { useFrame } from '@react-three/fiber'
+import { useTownFrame } from '../lib/useTownFrame.js'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSkyState from '../hooks/useSkyState'
 
@@ -20,7 +20,7 @@ import useSkyState from '../hooks/useSkyState'
 export function TimeTicker({ holdScrubbedTime = false, paused = false } = {}) {
   const tick = useTimeOfDay((state) => state.tick)
   const lastTime = useRef(Date.now())
-  useFrame(() => {
+  useTownFrame(() => {
     if (paused) return
     const now = Date.now()
     const delta = now - lastTime.current
@@ -33,6 +33,6 @@ export function TimeTicker({ holdScrubbedTime = false, paused = false } = {}) {
 
 /** Smooth weather interpolation. */
 export function SkyStateTicker({ paused = false } = {}) {
-  useFrame((_, delta) => { if (!paused) useSkyState.getState().tick(Math.min(delta, 0.1)) })
+  useTownFrame((_, delta) => { if (!paused) useSkyState.getState().tick(Math.min(delta, 0.1)) })
   return null
 }

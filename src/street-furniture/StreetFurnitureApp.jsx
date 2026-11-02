@@ -3,7 +3,8 @@
 // is which lit or sign role. Saves to street-furniture/tags.json through the server on :5555.
 // Readiness is contract.js#assetStatus, the same function the server reports.
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Canvas, useFrame, useLoader } from '@react-three/fiber'
+import { Canvas, useLoader } from '@react-three/fiber'
+import { useTownFrame } from '../lib/useTownFrame.js'
 import { Grid } from '@react-three/drei'
 import RegimeControls from '../components/RegimeControls.jsx'
 import * as THREE from 'three'
@@ -64,7 +65,7 @@ function Model({ asset, lod, draft, selected, onPick, night, playing }) {
   const nameOf = i => asset.pieces[i]?.name
   const mats = useMemo(() => pieces.map(p => new THREE.MeshStandardMaterial({ color: p.base, roughness: 0.7 })), [pieces])
   const t0 = useRef(performance.now())
-  useFrame(() => {
+  useTownFrame(() => {
     const t = playing ? (performance.now() - t0.current) / 1000 : 0
     pieces.forEach((p, j) => {
       const name = nameOf(p.index), role = draft.pieces?.[name], m = mats[j]

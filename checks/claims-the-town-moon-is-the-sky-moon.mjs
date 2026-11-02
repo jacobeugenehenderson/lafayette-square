@@ -50,7 +50,7 @@ if (/ShaderMaterial|SunCalc|getMoonIllumination|fragmentShader/.test(pic)) fails
 if (/WebGLRenderer|<Canvas|getContext\(\s*['"](webgl|webgl2|experimental-webgl)['"]/.test(pic)) fails.push('context: TownMoon.jsx makes a WebGL context of its own')
 if (!/useThree\(\(s\) => s\.gl\)/.test(pic)) fails.push('context: TownMoon.jsx does not draw on the <Town> canvas\'s gl')
 if (!/<TownMoonPainter \/>/.test(town)) fails.push('context: <Town> does not mount TownMoonPainter inside its canvas')
-if (/useFrame\(/.test(pic)) fails.push('context: TownMoon.jsx waits on frames — it must draw while <Town> is paused')
+if (/\buse(?:Town)?Frame\(/.test(pic)) fails.push('context: TownMoon.jsx waits on frames — it must draw while <Town> is paused')
 
 // 4. The placed town, never the boot town.
 if (/instance\.js|INSTANCE\b/.test(pic)) fails.push('place: TownMoon.jsx reads the kit\'s boot town')
