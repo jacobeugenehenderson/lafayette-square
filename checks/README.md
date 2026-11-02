@@ -15,7 +15,7 @@ gated without anyone remembering to gate it, which is what makes this work on to
 
 A non-zero exit is a **finding for the board**, not a runner fault. The suite reports; it does not fix.
 
-## ⛔ live — 141. Never in a default run.
+## ⛔ live — 142. Never in a default run.
 
 Two reason classes, and they are not the same thing. **outbound** — a demonstrated call out.
 **unreadable** — runs code the parser cannot read, so it *may* contact nothing but cannot be shown
@@ -133,6 +133,7 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `checks/claims-the-pour-reads-the-towns-norm.mjs` | unreadable | child_process with a non-literal command — cannot be read |
 | `checks/claims-the-pour-runs-in-one-place.mjs` | unreadable | writeFileSync · mkdirSync · deletes files · imports cartograph/pourSteps.mjs, which can: writeFileSync, imports cartograph/pour-code.mjs, which can: runs `git` — not a known read-only git subcommand |
 | `checks/claims-the-publish-can-stage-what-it-promises.mjs` | unreadable | runs `git` — not a known read-only git subcommand |
+| `checks/claims-the-pure-entry-loads-without-a-browser.mjs` | unreadable | imports vite — its server resolves localhost over DNS (caught by the no-network guard) · imports package(s) vite — not read from source |
 | `checks/claims-the-slab-addresses-files-by-where-it-was-fetched.mjs` | unreadable | imports vite — its server resolves localhost over DNS (caught by the no-network guard) · imports package(s) vite — not read from source |
 | `checks/claims-the-slab-ships-compressed.mjs` | outbound | calls fetch() · imports a network module · writeFileSync · mkdirSync · deletes files · importSource of src/lib/slabWire.js — read, safe · importSource of scripts/slab-wire.mjs, which can: writeFileSync · importSource of scripts/upload-baked-to-r2.mjs, which can: calls fetch(), writeFileSync · importSource of scripts/upload-baked-to-r2.mjs — read, safe · importSource of scripts/upload-baked-to-r2.mjs redirects src/lib/slabWire.js — read, safe · importSource of scripts/upload-baked-to-r2.mjs — read, safe · importSource of scripts/upload-baked-to-r2.mjs redirects scripts/slab-wire.mjs — read, safe · importSource of workers/production-sites/src/index.js, which can: calls fetch() · importSource of workers/production-sites/src/index.js — read, safe · importSource of workers/production-sites/src/index.js redirects src/lib/slabWire.js — read, safe · importSource of workers/staging-sites/src/index.js, which can: calls fetch() · importSource of workers/staging-sites/src/index.js — read, safe · importSource of workers/staging-sites/src/index.js redirects src/lib/slabWire.js — read, safe · computed import() with no readable target — runs arbitrary modules |
 | `checks/claims-the-splash-centres-in-the-free-region.mjs` | unreadable | writeFileSync — only under its own temp dir · deletes files — only under its own temp dir · computed import of a temp-dir module whose source cannot be read |
@@ -208,7 +209,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-deadend-look.mjs` | RENDER THE NINE. Read-only. |
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 
-## safe — 391. This is `npm test`.
+## safe — 392. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -556,6 +557,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-the-publish-button-can-say-it-is-done.mjs` | its condition measures what it ships. |
 | `checks/claims-the-publish-gate-pushes-where-staging-deploys.mjs` | THE PUBLISH GATE MUST PUSH WHERE THE DEPLOY ACTUALLY LISTENS. |
 | `checks/claims-the-publish-panel-reports-the-address-it-shipped.mjs` | no site URL is a module constant. |
+| `checks/claims-the-pure-entry-loads-no-renderer.mjs` | THE KIT'S RENDERER-FREE DOOR LOADS NO RENDERER (Boz's assignment, Zob's ruling, 2026-11-02). |
 | `checks/claims-the-ramp-has-room.mjs` | ⭐⭐⭐ THE RAMP NEEDS SOMEWHERE TO HAPPEN, AND ① HAS NOWHERE TO PUT IT. |
 | `checks/claims-the-revetment-builds-on-the-wet-face.mjs` | DOES THE STONE FACE THE WATER? |
 | `checks/claims-the-revetment-ends-as-a-heap.mjs` | DOES THE STONE STOP IN A CUT? |
