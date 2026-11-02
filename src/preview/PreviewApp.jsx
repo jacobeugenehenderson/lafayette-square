@@ -823,18 +823,16 @@ function PublishPanel({ lookId }) {
   // count never returns to zero — measured 18 the same evening — so the button could NEVER
   // say "Published to Staging", however many times it succeeded. The operator pressed it,
   // it worked, and it told him nothing: "it's hard to tell" (Jacob).
-  // ⭐ The two things staging actually ships are the SLAB and the shared PLAYER, so both
-  // must be current: `slabCurrent` reads the live scene.json's bakedAt, and `status.player`
-  // compares the published build marker against local source. ⛔ An absent marker counts as
-  // STALE — an unstamped player is not a current one.
-  const playerCurrent = status.player ? status.player.stale === false : false
+  // ⭐ PUBLISH SHIPS THE SLAB; the player is the Ward's, which publishes itself. `status.player` is the town's player on
+  // staging (src/lib/stagingPlayer.js: its record, the Ward build, its kit bundle), which Promote pins. ⛔ It used to be the
+  // retired legacy player's build marker, so Promote waited on a rebuild of a player no visitor runs (Boz, 2026-11-01).
+  const playerCurrent = status.player?.current === true
   // ⭐ EACH BUTTON NAMES WHAT IT WILL SHIP (Jacob, 2026-10-04: "make the buttons and the action more truthy"). The slab is
   // stale when a bake is owed, when the site serves an older pour, or when it serves another deployment than the one the
   // panel holds (a toggle edit ships in the manifest, and bakedAt cannot see it). ⛔ Unknown counts as stale.
   const bakeOwed = !!status.unbaked || owed === null || owed.length > 0
   const stagingSlab = !clean || bakeOwed || !slabCurrent('staging') || status.deployment?.shipped !== true
-  const stagingPlayer = !playerCurrent
-  const stagingDone = !stagingSlab && !stagingPlayer
+  const stagingDone = !stagingSlab
   const shipping = (verb, slab, player) => `${verb} ${slab && player ? 'slab + player' : slab ? 'slab' : 'player'}`
   // ⭐ PROD SHIPS THE SAME TWO THINGS NOW (2026-09-26): the slab, and the player this town has
   // PINNED — current when it is the build staging serves. No git: Promote no longer pushes a
@@ -848,6 +846,7 @@ function PublishPanel({ lookId }) {
   // production has been seen.
   const prodWhy = !status.sites?.prod?.url ? `No production address: ${status.sites?.prod?.why || 'this town names none'}.`
     : status.prodPlayer?.blocked ? `${status.prodPlayer.why}.`
+    : !playerCurrent ? `Staging's player is not ready: ${status.player?.why || 'not known'}`
     : !stagingDone ? 'Staging is not current yet — Publish first, check it, then promote.'
     : null
   const prodBlocked = !!prodWhy
@@ -915,7 +914,7 @@ function PublishPanel({ lookId }) {
 
       {targetRow('staging', <button disabled={!!busy || stagingDone || !!repour} onClick={() => publishStaging()}
         style={btn({ background: busy === 'staging' ? 'rgba(96,165,250,0.25)' : 'rgba(96,165,250,0.18)', color: '#bfdbfe', opacity: (busy || stagingDone) ? 0.45 : 1, cursor: stagingDone ? 'default' : 'pointer' })}>
-        {busy === 'staging' ? 'Publishing…' : stagingDone ? 'Published to Staging' : shipping('Publish', stagingSlab, stagingPlayer)}
+        {busy === 'staging' ? 'Publishing…' : stagingDone ? 'Published to Staging' : shipping('Publish', stagingSlab, false)}
       </button>)}
       {targetRow('prod', <button disabled={!!busy || prodDone || prodBlocked} onClick={promoteProd}
         style={btn({ background: 'rgba(74,222,128,0.16)', color: '#bbf7d0', opacity: (busy || prodDone || prodBlocked) ? 0.45 : 1, cursor: (prodDone || prodBlocked) ? 'default' : 'pointer' })}>

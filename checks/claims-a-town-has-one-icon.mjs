@@ -3,15 +3,16 @@
 //
 // ⭐ THE CLAIM (BRIEF-a-town-has-one-icon; Jacob, 2026-10-31: "Get rid of the arch" · "All kit now"). The icon a
 // crawler's share card and a browser tab show is the town's Look `identity.mark`, read from its BAKED manifest when the
-// player is published (scripts/towns-record.mjs → towns.json `icon`), drawn by src/lib/townIdentity.js#townIcon as a
+// town is PUBLISHED (scripts/towns-record.mjs#townRecordOf → its own record's `icon`), drawn by src/lib/townIdentity.js#townIcon as a
 // data: URI, and read by the card from that field ALONE (src/lib/shareCard.js#cardFor). Found 2026-10-31 by Ward: LS
 // and HPDM served `https://lafayette-square.com/favicon.svg` — the instances' old-player branding — which 404s since
 // the .com redirect.
 // Four judges, each reading the source of truth rather than restating it:
-//   1 · THE SOURCE — publish-towns-record writes the record from towns-record.mjs#buildTownsRecord, and neither file reads the
+//   1 · THE SOURCE — publish-towns-record writes ONE town's record from towns-record.mjs#townRecordOf (no loop over every
+//       town), the town's Publish runs it for that town after its slab is proven, and neither file reads the
 //       instances' branding, a faviconUrl/markSvg, or the Look's design.json (authoring); towns-record reads the baked
 //       manifest's `look` and draws with townIcon.
-//   2 · THE RECORD — buildTownsRecord, RUN: every registered town's icon is a data:image/svg+xml URI (never a URL) equal
+//   2 · THE RECORD — townRecordOf for each registered town, RUN: every town's icon is a data:image/svg+xml URI (never a URL) equal
 //       to the icon of ITS OWN baked manifest's look.mark (read here from the manifest), or of its own initial when its
 //       baked Look has none, said in `iconFrom`; a town with NO baked manifest has `icon: null` (never an initial); a
 //       manifest with no `look` block REFUSES (lookFromManifest throws, "re-bake"); no entry carries
@@ -19,32 +20,41 @@
 //   3 · THE CARD — cardFor takes `town.icon` and nothing else: an entry with only the old fields gets no icon, and an
 //       unbaked town's card names why it has none (iconWhy → the ward-share-card header).
 //   4 · NO INSTANCE CARRIES BRANDING FOR AN ICON — no registered instance's branding names faviconUrl, markSvg or mark.
+//   5 · ONE TOWN'S CARD READS ONE TOWN'S BAKE (Boz's ruling C, 2026-11-01), RUN: townRecordOf(A) with town B's manifest
+//       planted STALE (no look block) builds A's card, and reads no other town's manifest. So B's stale bake can never
+//       refuse A's Publish.
 // ⭐ MUTANTS (--mutants), each must go RED: (a) a URL back in one town's icon → 2 · (b) another town's mark in one town's
 // icon → 2 · (c) the instance branding restored as towns.json's source, in publish, instead of or (c2) over the record → 1 · (d) the same, in towns-record →
 // 1 · (e) towns-record reading the Look's design.json instead of the bake → 1 · (f) cardFor falling back to faviconUrl →
 // 3 · (g) a faviconUrl back in an instance's branding → 4 · (h) a stale manifest drawn as unbaked instead of refused → 2
-// · (i) an unbaked town given an icon → 2 (Zob, 2026-10-31: the initial means one thing).
+// · (i) an unbaked town given an icon → 2 (Zob, 2026-10-31: the initial means one thing) · (j) the all-towns build back in
+// publish → 1 · (k) Publish not writing the card after the slab → 1 · (l) townRecordOf reading every town's bake → 5.
 //   node checks/claims-a-town-has-one-icon.mjs [--mutants]
 // Read-only. Exits 1 on any failing judge or any mutant left GREEN.
 import { readFileSync, existsSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { iconFor, initialOf } from '../src/lib/townIdentity.js'
-import { buildTownsRecord, lookFromManifest } from '../scripts/towns-record.mjs'
+import { townRecordOf, lookFromManifest } from '../scripts/towns-record.mjs'
+import { importSource } from './_importSource.mjs'
 import { cardFor } from '../src/lib/shareCard.js'
 import { registeredMaps, instanceForMap } from '../src/instances/registry.js'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
-const PUBLISH = 'scripts/publish-towns-record.mjs', RECORD = 'scripts/towns-record.mjs'
+const PUBLISH = 'scripts/publish-towns-record.mjs', RECORD = 'scripts/towns-record.mjs', SERVE = 'cartograph/serve.js'
 const read = (rel) => readFileSync(join(ROOT, rel), 'utf8')
 const OLD = /\b(faviconUrl|markSvg)\b|\.branding\b|\bbranding\s*[.?]/
 
 // ── 1 · THE SOURCE ───────────────────────────────────────────────────────────
-function judgeSource(publish, record) {
+function judgeSource(publish, record, serve) {
   const why = []
-  if (!/import \{[^}]*\bbuildTownsRecord\b[^}]*\} from '\.\/towns-record\.mjs'/.test(publish)) why.push(`${PUBLISH} does not import buildTownsRecord from ./towns-record.mjs`)
-  if (!/const towns = await buildTownsRecord\(repoRoot\)/.test(publish)) why.push(`${PUBLISH} does not build towns from buildTownsRecord(repoRoot)`)
-  if (!/const buf = Buffer\.from\(JSON\.stringify\(towns\b/.test(publish)) why.push(`${PUBLISH} does not publish that record`)
+  if (!/import \{[^}]*\btownRecordOf\b[^}]*\} from '\.\/towns-record\.mjs'/.test(publish)) why.push(`${PUBLISH} does not import townRecordOf from ./towns-record.mjs`)
+  if (!/const rec = townRecordOf\(repoRoot, map\)/.test(publish)) why.push(`${PUBLISH} does not build ONE town's record with townRecordOf(repoRoot, map)`)
+  if (/\bregisteredMaps\b|\bbuildTownsRecord\b/.test(publish)) why.push(`${PUBLISH} builds every town's record: one town's Publish would read, and refuse on, every other town's bake`)
+  if (!/const buf = Buffer\.from\(JSON\.stringify\(rec\b/.test(publish) || !/await put\(stagingTownsKey\(map\), buf\)/.test(publish)) why.push(`${PUBLISH} does not publish that record at the town's own key`)
+  const pub = serve.slice(serve.indexOf("path.match(/^\\/looks\\/([^/]+)\\/publish$/)"))
+  const landed = pub.indexOf('const landed = await servedPour('), card = pub.indexOf('node scripts/publish-towns-record.mjs --map=${site.mapId}')
+  if (card < 0 || landed < 0 || card < landed) why.push(`${SERVE}'s Publish does not write the town's card AFTER its slab is proven (a card would describe a slab that is not there)`)
   for (const [f, t] of [[PUBLISH, publish], [RECORD, record]]) {
     const hit = t.split('\n').find((l) => !/^\s*(\/\/|\*)/.test(l) && OLD.test(l))
     if (hit) why.push(`${f} reads the instances' old branding: ${hit.trim().slice(0, 120)}`)
@@ -108,13 +118,32 @@ function judgeInstances(instOf) {
   return why
 }
 
-const texts = { publish: read(PUBLISH), record: read(RECORD) }
-const towns = await buildTownsRecord(ROOT)
-const run = (S) => ({ 1: judgeSource(S.publish, S.record), 2: judgeRecord(S.towns, S.bakedMark, S.fromManifest).why, 3: judgeCard(S.card), 4: judgeInstances(S.instOf) })
+// ── 5 · ONE TOWN'S BAKE ─────────────────────────────────────────────────────
+// towns-record.mjs RUN with its file reads planted: town A baked with a mark, town B's manifest STALE (no look block).
+async function judgeOneTown(transform) {
+  const why = [], maps = registeredMaps()
+  if (maps.length < 2) return ['fewer than two registered towns: one town\'s card cannot be shown independent of another\'s']
+  const [A, B] = maps, files = new Map([[`/root/public/baked/${A}/manifest.json`, JSON.stringify({ look: { mark: '🦞' } })], [`/root/public/baked/${B}/manifest.json`, JSON.stringify({ files: {} })]])
+  const reads = []
+  globalThis.__fs = { existsSync: (p) => files.has(p), readFileSync: (p) => { reads.push(p); if (!files.has(p)) throw new Error(`ENOENT ${p}`); return files.get(p) } }
+  try {
+    const R = await importSource('scripts/towns-record.mjs', { transform: (t) => { const u = t.replace("import { existsSync, readFileSync } from 'node:fs'", 'const { existsSync, readFileSync } = globalThis.__fs'); return transform ? transform(u) : u } })
+    let rec
+    try { rec = R.townRecordOf('/root', A) } catch (e) { why.push(`town ${B}'s stale bake refuses town ${A}'s card: ${e.message}`) }
+    if (rec && !rec[A]?.icon) why.push(`town ${A}'s card was not built from its own bake`)
+    const other = reads.filter((p) => !p.includes(`/baked/${A}/`))
+    if (other.length) why.push(`townRecordOf("${A}") read another town's bake: ${other.join(', ')}`)
+  } finally { delete globalThis.__fs }
+  return why
+}
+
+const texts = { publish: read(PUBLISH), record: read(RECORD), serve: read(SERVE) }
+const towns = Object.assign({}, ...registeredMaps().map((m) => townRecordOf(ROOT, m)))
+const run = async (S) => ({ 1: judgeSource(S.publish, S.record, S.serve), 2: judgeRecord(S.towns, S.bakedMark, S.fromManifest).why, 3: judgeCard(S.card), 4: judgeInstances(S.instOf), 5: await judgeOneTown(S.oneTown) })
 const S0 = { ...texts, towns, card: cardFor, instOf: instanceForMap, bakedMark, fromManifest: lookFromManifest }
 
-const res = run(S0)
-const NAMES = { 1: 'the source', 2: 'the record', 3: 'the card', 4: 'no instance branding' }
+const res = await run(S0)
+const NAMES = { 1: 'the source', 2: 'the record', 3: 'the card', 4: 'no instance branding', 5: 'one town reads one bake' }
 let bad = 0
 console.log('\nA town has one icon')
 for (const s of judgeRecord(towns, bakedMark, lookFromManifest).seen) console.log(`   ${s}`)
@@ -131,10 +160,14 @@ if (process.argv.includes('--mutants')) {
   const MUTANTS = [
     ['a · a URL back', 2, { towns: swap(a, 'https://lafayette-square.com/favicon.svg') }],
     ['b · another town\'s mark', 2, { towns: b ? swap(a, towns[b].icon) : null }],
-    ['c · instance branding as the source, in publish', 1, { publish: texts.publish.replace('const towns = await buildTownsRecord(repoRoot)',
-      "const towns = {}\n  for (const m of registeredMaps()) { const b = instanceForMap(m).branding || {}; towns[m] = { faviconUrl: b.faviconUrl || null, mark: b.mark || null } }") }],
-    ['c2 · instance branding laid over the record, in publish', 1, { publish: texts.publish.replace('const towns = await buildTownsRecord(repoRoot)',
-      'const towns = await buildTownsRecord(repoRoot)\n  for (const m in towns) towns[m].faviconUrl = instanceForMap(m).branding.faviconUrl') }],
+    ['c · instance branding as the source, in publish', 1, { publish: texts.publish.replace('const rec = townRecordOf(repoRoot, map)',
+      "const b0 = instanceForMap(map).branding || {}, rec = { [map]: { faviconUrl: b0.faviconUrl || null, mark: b0.mark || null } }") }],
+    ['c2 · instance branding laid over the record, in publish', 1, { publish: texts.publish.replace('const rec = townRecordOf(repoRoot, map)',
+      'const rec = townRecordOf(repoRoot, map)\n  rec[map].faviconUrl = instanceForMap(map).branding.faviconUrl') }],
+    ['j · the all-towns build back in publish', 1, { publish: texts.publish.replace('const rec = townRecordOf(repoRoot, map)',
+      'const rec = Object.assign({}, ...registeredMaps().map((m) => townRecordOf(repoRoot, m)))') }],
+    ['k · Publish not writing the card after the slab', 1, { serve: texts.serve.replace('node scripts/publish-towns-record.mjs --map=${site.mapId}', 'true') }],
+    ['l · townRecordOf reading every town\'s bake', 5, { oneTown: (t) => t.replace('  const b = bakedLookOf(repoRoot, map)', '  for (const o of registeredMaps()) bakedLookOf(repoRoot, o)\n  const b = bakedLookOf(repoRoot, map)') }],
     ['d · instance branding as the source, in towns-record', 1, { record: texts.record.replace('b.baked ? townIcon({ look: b.look, title })',
       'b.baked ? townIcon({ look: { mark: t.branding.mark }, title })') }],
     ['e · the Look\'s design.json instead of the bake', 1, { record: texts.record.replace("join(repoRoot, 'public', 'baked', map, 'manifest.json')",
@@ -146,8 +179,8 @@ if (process.argv.includes('--mutants')) {
   ]
   console.log('\n  mutants:')
   for (const [name, judge, patch] of MUTANTS) {
-    if (Object.values(patch).some((v) => v == null || v === texts.publish || v === texts.record)) { bad++; console.log(`  ⛔ ${name} — could not be planted (fewer than two towns with distinct baked marks, or its anchor text moved)`); continue }
-    const r = run({ ...S0, ...patch })[judge]
+    if (Object.values(patch).some((v) => v == null || v === texts.publish || v === texts.record || v === texts.serve)) { bad++; console.log(`  ⛔ ${name} — could not be planted (fewer than two towns with distinct baked marks, or its anchor text moved)`); continue }
+    const r = (await run({ ...S0, ...patch }))[judge]
     if (r.length) console.log(`  ✅ ${name} → judge ${judge} red: ${r[0].slice(0, 110)}`)
     else { bad++; console.log(`  ⛔ ${name} — planted and judge ${judge} STAYED GREEN`) }
   }

@@ -1,25 +1,25 @@
 #!/usr/bin/env node
 /**
- * publish-towns-record.mjs — put the towns record (every town's share card: title, description, icon) on staging.
+ * publish-towns-record.mjs — put ONE town's share-card record (title, description, icon) on staging.
  *
- *   node scripts/publish-towns-record.mjs [--dry-run]
+ *   node scripts/publish-towns-record.mjs --map=<map> [--dry-run]
  *
- * → R2 `staging/towns.json`, then `staging/towns.list.json` ({ sha256, bytes, builtAt }) LAST, so a list never names a record
- * the bucket does not hold (src/lib/townsRecordKeys.js). The staging Worker reads the record; Promote verifies it against the
- * list and pins a town's copy at `sites/<map>/towns.json`, which the production Worker reads.
- * ⭐ Built by scripts/towns-record.mjs#buildTownsRecord from the instance registry and each town's BAKED Look. ⛔ It holds no
- * list of towns, and a stale bake refuses there, by name.
- * ⭐ Its own publish (Boz, Zob, 2026-11-01): the record was written beside the legacy kit player, which is retired.
+ * → R2 `staging/sites/<map>/towns.json` (src/lib/townsRecordKeys.js#stagingTownsKey): `{ [map]: { … } }`, one entry. The
+ * staging Worker reads it; Promote verifies it carries the town and pins it at `sites/<map>/towns.json` for production.
+ * ⭐ Run by the town's Publish (cartograph/serve.js POST /looks/<id>/publish), AFTER its slab is proven in the bucket, so a
+ * card never describes a slab that is not there (Zob, 2026-11-01). One button: a card change ships with the town's Publish.
+ * ⭐ Built by scripts/towns-record.mjs#townRecordOf from the town's instance and its OWN baked Look: another town's stale
+ * bake never reads into, refuses or rewrites it (Boz's ruling C). A stale bake of THIS town refuses, by name.
  */
 import { spawn } from 'node:child_process'
-import { createHash } from 'node:crypto'
 import { fileURLToPath } from 'node:url'
-import { buildTownsRecord } from './towns-record.mjs'
-import { STAGING_TOWNS, STAGING_TOWNS_LIST } from '../src/lib/townsRecordKeys.js'
+import { townRecordOf } from './towns-record.mjs'
+import { stagingTownsKey } from '../src/lib/townsRecordKeys.js'
 
 const REPO_ROOT = fileURLToPath(new URL('..', import.meta.url))
 const BUCKET = process.env.R2_BUCKET || 'theward-assets'
 const dryRun = process.argv.includes('--dry-run')
+const argMap = (process.argv.find((a) => a.startsWith('--map=')) || '').slice(6) || null
 
 function putOnce(key, buf) {
   return new Promise((resolve, reject) => {
@@ -40,19 +40,18 @@ async function put(key, buf) {
   throw new Error(`put failed after 3 attempts: ${key}\n${last?.message}`)   // ⛔ fatal, by key: the list is never written
 }
 
-/** Build and publish; → { towns, list }. Exported so the player publish runs this same step while it lives. */
-export async function publishTownsRecord({ repoRoot = REPO_ROOT, dry = dryRun, log = console.log } = {}) {
-  const towns = await buildTownsRecord(repoRoot)
-  for (const [m, t] of Object.entries(towns)) log(`icon     ${m.padEnd(18)} ${t.iconFrom}`)
-  const buf = Buffer.from(JSON.stringify(towns, null, 2))
-  const list = { sha256: createHash('sha256').update(buf).digest('hex'), bytes: buf.length, builtAt: new Date().toISOString() }
-  if (dry) { log(`towns    --dry-run: ${STAGING_TOWNS} not written (${Object.keys(towns).length} towns, ${buf.length} bytes)`); return { towns, list } }
-  await put(STAGING_TOWNS, buf)
-  await put(STAGING_TOWNS_LIST, Buffer.from(JSON.stringify(list)))
-  log(`towns    ${STAGING_TOWNS} · ${Object.keys(towns).join(', ')} · sha256 ${list.sha256.slice(0, 12)}`)
-  return { towns, list }
+/** Build and publish one town's record; → the record. */
+export async function publishTownRecord(map, { repoRoot = REPO_ROOT, dry = dryRun, log = console.log } = {}) {
+  if (!/^[a-z0-9][a-z0-9-]*$/.test(map || '')) throw new Error('--map=<map> is required: a town publishes its own card')
+  const rec = townRecordOf(repoRoot, map)
+  log(`icon     ${map.padEnd(18)} ${rec[map].iconFrom}`)
+  const buf = Buffer.from(JSON.stringify(rec, null, 2))
+  if (dry) { log(`towns    --dry-run: ${stagingTownsKey(map)} not written (${buf.length} bytes)`); return rec }
+  await put(stagingTownsKey(map), buf)
+  log(`towns    ${stagingTownsKey(map)}`)
+  return rec
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
-  publishTownsRecord().catch((e) => { console.error(`⛔ publish-towns-record: ${e.message}`); process.exit(1) })
+  publishTownRecord(argMap).catch((e) => { console.error(`⛔ publish-towns-record: ${e.message}`); process.exit(1) })
 }

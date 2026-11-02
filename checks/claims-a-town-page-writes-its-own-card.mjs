@@ -24,7 +24,7 @@ import { workerInMiniflare, mint, hex } from './_miniflare.mjs'
 import { CARD_TAGS, CARD_HEADER, SHARE_IMAGE_RELS, cardFor } from '../src/lib/shareCard.js'
 import { HASHED, contentName } from '../src/lib/slabNames.js'
 import { iconFor } from '../src/lib/townIdentity.js'
-import { STAGING_TOWNS, townsKey } from '../src/lib/townsRecordKeys.js'
+import { stagingTownsKey, townsKey } from '../src/lib/townsRecordKeys.js'
 import { readFileSync } from 'node:fs'
 
 const ROOT = new URL('..', import.meta.url).pathname
@@ -72,7 +72,9 @@ async function run(site, mutate, { noRecord = false } = {}) {
   const { mf, r2, get } = await workerInMiniflare(WORKERS[site], bindings, { mutate })
   const page = {}
   if (site === 'staging') {
-    if (!noRecord) await r2.put(STAGING_TOWNS, JSON.stringify(towns))
+    // each town's own record (its Publish writes it); `norec`'s names another town only, so it is read as "no entry"
+    if (!noRecord) for (const t of Object.keys(towns)) await r2.put(stagingTownsKey(t), JSON.stringify({ [t]: towns[t] }))
+    if (!noRecord) await r2.put(stagingTownsKey(norec), JSON.stringify({ [ward]: towns[ward] }))
     await r2.put('staging/player/index.html', KIT_DOC)
     await r2.put('staging/ward/current.json', JSON.stringify({ sha: W, kit: K }))
     await r2.put(`staging/ward/${W}/index.html`, WARD_DOC(W))
@@ -170,7 +172,7 @@ const ICON = (s) => s.replace(`.on('head > link[rel~="icon"]', drop)`, `.on('lin
 // (d) A town with no record drawn as a neutral card (its id, no picture), the pre-2026-11-01 behaviour.
 const NEUTRAL = (s) => s.replace('if (!town) return { absent: townWhy ||', 'if (!town) town = {}; if (false) return { absent: townWhy ||')
 // (e) A missing record FILE read as an empty table, `{}`, so it is said as "no entry", never as no record.
-const EMPTY = { staging: (s) => s.replace('table: obj ? await obj.json() : null', 'table: obj ? await obj.json() : {}'),
+const EMPTY = { staging: (s) => s.replace('const table = obj ? await obj.json() : null', 'const table = obj ? await obj.json() : {}'),
   production: (s) => s.replace('const towns = tObj ? await tObj.json() : null', 'const towns = tObj ? await tObj.json() : {}') }
 
 let failed = 0

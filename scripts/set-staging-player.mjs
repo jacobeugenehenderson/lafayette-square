@@ -2,7 +2,7 @@
 /**
  * set-staging-player.mjs — say which player a town's staging site serves.
  *
- *   node scripts/set-staging-player.mjs --map=<map> --player=ward|legacy [--dry-run]
+ *   node scripts/set-staging-player.mjs --map=<map> --player=ward [--dry-run]
  *
  * Writes `staging/sites/<map>/player.json` = `{ player, setAt }`, the record the staging Worker
  * (`workers/staging-sites/src/index.js`) reads for every request under `/<map>/`. ⛔ A town with no
@@ -10,7 +10,7 @@
  *
  * It refuses, by name:
  *   · a map with no staging slab (`staging/baked/<map>/manifest.json`) — nothing to serve;
- *   · a player that is not `ward` or `legacy`;
+ *   · a player that is not `ward` (the kit's legacy player was retired 2026-11-01: every town plays the Ward);
  *   · `ward` while the Ward is not servable: no `staging/ward/current.json`, no document for the build
  *     it names, or no kit bundle (`staging/kit/<kit>/manifest.json`) for the kit that build pins.
  *     The Worker refuses those too; refusing here means the switch never points a town at a 404.
@@ -27,7 +27,7 @@ import { freshUrl } from '../src/lib/freshUrl.js'
 
 const BUCKET = process.env.R2_BUCKET || 'theward-assets'
 const PUBLIC_BASE = (process.env.ASSET_BASE || 'https://assets.theward.online/').replace(/\/?$/, '/')
-const PLAYERS = ['ward', 'legacy']
+const PLAYERS = ['ward']
 const arg = (k) => process.argv.find((a) => a.startsWith(`--${k}=`))?.slice(k.length + 3)
 const dryRun = process.argv.includes('--dry-run')
 const fail = (why) => { console.error(`⛔ set-staging-player: ${why}`); process.exit(1) }

@@ -1,8 +1,8 @@
 // towns-record.mjs — what `towns.json` says about each town: its share card's title, description and ICON.
 //
-// ⭐ Written by publish-player-to-staging.mjs beside the player; both site Workers read it for the card
-// (src/lib/shareCard.js#cardFor), production from the copy Promote pins at `player/<map>/towns.json`.
-// ⛔ Generated from the instance REGISTRY, never a list here.
+// ⭐ PER TOWN (Boz's ruling C, 2026-11-01): a town's Publish writes ITS record (scripts/publish-towns-record.mjs --map),
+// read by the staging Worker; Promote pins it at `sites/<map>/towns.json` for production (src/lib/townsRecordKeys.js).
+// ⛔ It reads only that town's instance and baked manifest: another town's stale bake can never refuse this town's card.
 //
 // ⭐⭐ THE ICON IS THE TOWN'S BAKED LOOK (BRIEF-a-town-has-one-icon; Jacob, 2026-10-31: "Get rid of the arch" · "All
 // kit now"). Read from `public/baked/<map>/manifest.json`'s `look` block (the resolved identity the bake published, the
@@ -13,7 +13,7 @@
 // A town with NO baked manifest has no slab to draw, so it has no icon: `icon: null`, `iconFrom` says so, and its card
 // names the missing icon. A manifest that PREDATES the identity block is a stale bake: the publish REFUSES, by name.
 // Never a URL, never another town's mark. ⚠️ A copy taken at publish: a re-bake with a new mark shows on the card after
-// the next player publish (and, in production, the next Promote).
+// the town's next Publish (and, in production, the next Promote).
 //   ▶ node checks/claims-a-town-has-one-icon.mjs --mutants
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
@@ -36,15 +36,12 @@ export function bakedLookOf(repoRoot, map) {
   return lookFromManifest(map, existsSync(at) ? JSON.parse(readFileSync(at, 'utf8')) : null)
 }
 
-/** → { [map]: { title, description, icon, iconFrom } } for every registered town. */
-export function buildTownsRecord(repoRoot) {
-  const towns = {}
-  for (const m of registeredMaps()) {
-    const t = instanceForMap(m), title = titleOf(t)
-    const b = bakedLookOf(repoRoot, m)
-    const { icon, from } = b.baked ? townIcon({ look: b.look, title })
-      : { icon: null, from: `not baked: no public/baked/${m}/manifest.json` }
-    towns[m] = { title, description: t.profile?.tagline || null, icon, iconFrom: from }
-  }
-  return towns
+/** → { [map]: { title, description, icon, iconFrom } }: ONE town's record, from its instance and its own baked manifest. */
+export function townRecordOf(repoRoot, map) {
+  if (!registeredMaps().includes(map)) throw new Error(`towns.json: "${map}" is not a registered town (src/instances/registry.js)`)
+  const t = instanceForMap(map), title = titleOf(t)
+  const b = bakedLookOf(repoRoot, map)
+  const { icon, from } = b.baked ? townIcon({ look: b.look, title })
+    : { icon: null, from: `not baked: no public/baked/${map}/manifest.json` }
+  return { [map]: { title, description: t.profile?.tagline || null, icon, iconFrom: from } }
 }

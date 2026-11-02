@@ -212,14 +212,14 @@ async function wardBuild(env) {
  * so the player's runtime never reaches them and every town's
  * link showed index.html's static Lafayette Square tags. WRITE them here (`shareCard.js#withShareCard`
  * removes any the document carries and appends the whole card, so a Ward document with none gets one), per <map>, from
- * `staging/towns.json` — generated from the instance registry by scripts/publish-towns-record.mjs, so
- * this file still holds no list of towns — and its picture from the town's own slab, for the time
+ * the town's own record (`staging/sites/<map>/towns.json`, written by its Publish through scripts/publish-towns-record.mjs),
+ * so this file still holds no list of towns — and its picture from the town's own slab, for the time
  * of day it is in the town now. The card itself is `src/lib/shareCard.js#cardFor`, shared with production.
  * ⛔ A map with no entry gets NO card tags, and the response says why (`ward-share-card: absent; …`); never another town's.
  */
 import { decideProductionDomain } from '../../../src/lib/productionDomain.js'
 import { cardFor, withShareCard, placeListings } from '../../../src/lib/shareCard.js'
-import { STAGING_TOWNS } from '../../../src/lib/townsRecordKeys.js'
+import { stagingTownsKey } from '../../../src/lib/townsRecordKeys.js'
 import { wireHeaders } from '../../../src/lib/slabWire.js'
 
 /**
@@ -251,15 +251,17 @@ async function townDomain(env, map) {
   return d
 }
 
-// The towns record (scripts/publish-towns-record.mjs). ⛔ A missing file is null and said, never `{}`: an empty table
-// would make every town's card a neutral stand-in with nothing said (Zob, 2026-11-01).
-let _towns = null, _townsAt = 0
-async function townsIndex(env) {
-  if (_towns && Date.now() - _townsAt < 60_000) return _towns.table
-  const obj = await env.ASSETS.get(STAGING_TOWNS)
-  _towns = { table: obj ? await obj.json() : null }
-  _townsAt = Date.now()
-  return _towns.table
+// The town's share-card record (scripts/publish-towns-record.mjs, written by its Publish): `{ [map]: … }` at its own key
+// (src/lib/townsRecordKeys.js#stagingTownsKey), the shape production reads. ⛔ A missing file is null and said, never `{}`:
+// a town with no record gets no card tags and the response says why (shareCard.js#cardFor), never a stand-in.
+const _towns = new Map()
+async function townRecord(env, map) {
+  const hit = _towns.get(map)
+  if (hit && Date.now() - hit.at < 60_000) return hit.table
+  const obj = await env.ASSETS.get(stagingTownsKey(map))
+  const table = obj ? await obj.json() : null
+  _towns.set(map, { table, at: Date.now() })
+  return table
 }
 // Former map names → current ones (`staging/renamed.json`). Read at most once a minute per isolate;
 // ⛔ a record that is not a { string: string } object throws — a broken table is never "no renames".
@@ -279,8 +281,8 @@ async function shareCard(response, map, url, env, kitBase) {
   const manObj = await env.ASSETS.get(`staging/baked/${map}/manifest.json`)
   const manifest = manObj ? await manObj.json() : null
   const path = url.pathname.slice(`/${map}`.length) || '/'   // the path within the town, as production sees it
-  const towns = await townsIndex(env)
-  const card = cardFor({ town: towns?.[map] || null, townWhy: towns ? `${STAGING_TOWNS} has no entry for "${map}"` : `no towns record at ${STAGING_TOWNS}`, map, path,
+  const towns = await townRecord(env, map), tKey = stagingTownsKey(map)
+  const card = cardFor({ town: towns?.[map] || null, townWhy: towns ? `${tKey} has no entry for "${map}"` : `no towns record at ${tKey}`, map, path,
     manifest, slabBase: `${env.SLAB_BASE}baked/${map}/`, pageUrl: `${url.origin}/${map}/`,
     ...await placeListings(env, `staging/baked/${map}/`, manifest, path), when: new Date() })
   const { domain } = await townDomain(env, map)

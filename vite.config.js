@@ -257,8 +257,6 @@ export default defineConfig(({ command }) => ({
   assetsInclude: ['**/*.bin'],
   build: {
     target: 'es2022',
-    // The publish tells the player's files from the operator apps' by this (scripts/player-graph.mjs).
-    manifest: true,
     rollupOptions: {
       input: {
         main: 'index.html',

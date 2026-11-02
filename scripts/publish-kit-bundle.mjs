@@ -20,9 +20,8 @@
  *    written LAST, so a half-upload is never a bundle, and a sha whose manifest already answers is not
  *    re-uploaded.
  *
- * Why its own script, not a mode of `publish-player-to-staging.mjs`: that one ships a Vite BUILD of the
- * kit's player to one mutable prefix and is deleted at cutover; this ships source files at a commit to an
- * immutable per-sha prefix, and is how The Ward gets the renderer's files after cutover too.
+ * It ships source files at a commit to an immutable per-sha prefix: how The Ward gets the renderer's files. (The
+ * kit's own legacy player, a Vite build at one mutable prefix, was retired 2026-11-01.)
  */
 import { execFileSync, execFile } from 'node:child_process'
 import { promisify } from 'node:util'
