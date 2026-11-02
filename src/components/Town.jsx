@@ -706,7 +706,9 @@ export default function Town({
   const splash = <CanvasOverlay><TownSplash title={_titleOf(town)} fadeSeconds={revealTiming.fade} skyAt={skyAt} identity={scene ? (scene.identity ?? null) : undefined} viewInset={viewInset} /></CanvasOverlay>
   const revealed = useSyncExternalStore(subscribeStartup, isRevealed)
   // ⛔ The terrain read's failure is the TOWN's (it draws nothing until its terrain is in), named in the one sink by this
-  // boundary under the town's lookId; one element, so the same boundary holds it before and after the town loads.
+  // boundary under the town's lookId. The same boundary NAME (so the same `<lookId>/terrain` key) in both branches below;
+  // they sit at different tree positions, so the town loading REMOUNTS it, and that clean mount clears the entry (the
+  // read landed). The remount re-runs TownPlace: placeTown and an unforced reloadTerrain are no-ops, and `time` is applied again.
   const terrainPlace = <R3FErrorBoundary name="terrain"><TownPlace town={town} lookId={lookId} time={time} rebake={bakeLastMs} /></R3FErrorBoundary>
   if (!loaded) return <><TownOptics quality={quality} shot={shot} movieActive={false} />{terrainPlace}{splash}</>
   const shotExag = shot === 'plan' ? 0 : shot === 'street' ? 1 : sceneExag()
