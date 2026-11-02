@@ -1165,7 +1165,7 @@
       "file": "checks/claims-a-towns-displays-are-its-own-content.mjs",
       "tier": "safe",
       "why": [
-        "reads repo files only"
+        "runs `git ls-files -z -- public` — local, read-only"
       ]
     },
     {
