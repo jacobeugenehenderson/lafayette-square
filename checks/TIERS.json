@@ -1,10 +1,10 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 564,
+  "total": 566,
   "counts": {
-    "safe": 391,
+    "safe": 392,
     "local-effect": 32,
-    "live": 141
+    "live": 142
   },
   "checks": [
     {
@@ -3840,6 +3840,22 @@
       "tier": "safe",
       "why": [
         "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-the-pure-entry-loads-no-renderer.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-the-pure-entry-loads-without-a-browser.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "imports vite — its server resolves localhost over DNS (caught by the no-network guard)",
+        "imports package(s) vite — not read from source"
       ]
     },
     {

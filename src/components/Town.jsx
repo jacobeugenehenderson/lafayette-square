@@ -195,32 +195,20 @@ markStartup('runtime')
 export { deviceQuality } from '../lib/qualityProfile.js'
 // …and places its town at boot (before any screen mounts), for readers that run without a <Town> (TownPlace.jsx).
 export { placeTown } from './TownPlace.jsx'
-// …and hands over the manifest it already fetched, so the page reads it once (src/lib/slabUrl.js#adoptSlabManifest).
-export { adoptSlabManifest } from '../lib/slabUrl.js'
-// …and reads its town's identity record the kit's way: the backend key and the tab title (src/lib/townRecord.js),
-// one reader for the kit's apps and the Ward.
-export { tenantOf, titleOf } from '../lib/townRecord.js'
-// The weather at an instant is one answer (lib/weatherAt.js); an app catches its out-of-forecast error by this class.
-export { WeatherRangeError } from '../lib/weatherAt.js'
-// The kit's one failure sink (src/lib/failures.js): what a boundary took out of the town, and why. The app decides how
-// its visitor sees it; ⛔ never silent.
-export { default as useFailures, failuresFor } from '../lib/failures.js'
-// The kit's one measure of the frame and its one way to spread work across frames (src/lib/frameSlices.js): the town's own
-// first-use work rides it, and an app imports it from here, never by path, so there is one instance and one rAF sampler.
-export { frameInterval, frameTimeLeft, runSliced, rowsInAFrame } from '../lib/frameSlices.js'
+// ⭐ THE RENDERER-FREE DOOR (TownPure.js, 2026-11-02): everything an app needs that draws no town: the frame's one measure,
+// the failure sink, the glyph method, the weather's error class, the kit's URL, the tide, the slab manifest and town record,
+// a building's address. Re-exported here FROM the entry, never again from the libs behind it, so a name has one door and
+// an app importing either gets the same functions and stores. An app module that draws no town imports TownPure.js, so a
+// place card never pulls the renderer (it did, through PlaceList → Town.jsx).
+export { frameInterval, frameTimeLeft, runSliced, rowsInAFrame, useFailures, failuresFor, glyphInk, EMOJI_FONT, COLOUR_ALPHA,
+  WeatherRangeError, kitUrl, tideAt, tideExtrema, tenantOf, titleOf, adoptSlabManifest, useBuildingAddress } from './TownPure.js'
 // The wind sheet's API — the field every wind consumer reads (lib/windSheet.js; contract ARCHITECTURE §8).
 export { WIND_SHEET_GLSL, bindWindSheet } from '../lib/windSheet.js'
 // The Canvas the town is drawn through, from its quality profile — an app spreads it (the Ward imports only Town).
 export { townCanvasProps } from '../lib/qualityProfile.js'
-// An emoji as this device draws it, and its inked pixels — one home for the method (src/lib/glyphInk.js); the Ward's
-// vignette measurement and glyph fitting read it here.
-export { glyphInk, EMOJI_FONT, COLOUR_ALPHA } from '../lib/glyphInk.js'
 // The player's chrome: its grounds, the colours that carry meaning, the contrast floors (src/tokens/playerChrome.js).
 // The Ward's tokens.css must equal these; its check reads them here.
 export { GROUNDS, MEANING, CONTRAST } from '../tokens/playerChrome.js'
-// Where the renderer's own files live (the page's ward-kit-base; src/lib/kitUrl.js) — the Ward's Almanac reads the
-// weather icons through it, so they have one home: the kit bundle.
-export { kitUrl } from '../lib/kitUrl.js'
 // The town's moon as a picture, drawn on THIS canvas's context (no second one) — src/components/TownMoon.jsx.
 export { useTownMoonImage } from './TownMoon.jsx'
 
@@ -442,8 +430,6 @@ export function useTownSky(lookId) {
   }), [scene, sky])
 }
 
-// The tide, for an Almanac: pure functions over the town's tide constituents (cartograph/tide.mjs), no renderer state.
-export { tideExtrema, tideAt } from '../../cartograph/tide.mjs'
 
 /**
  * Where each of the town's buildings stands, READ-ONLY, for an app's overlays and camera moves (The Ward's
@@ -474,22 +460,6 @@ export function useBuildingPlaces() {
 // bounded by the Extent, with every unplaced or outside id disclosed. Pure; ▶ checks/claims-the-plan-opens-on-its-places.mjs
 export { frameDensest } from '../lib/frameDensest.js'
 
-/**
- * A building's street address, as the town's slab carries it (SLAB-CONTRACT §6.3, cartograph/building-address.mjs):
- *   null                                   the buildings have not loaded yet
- *   { error }                              an id this town does not have, or a slab baked before addresses — say so
- *   { address, source, candidates? }       address null = none known, or ambiguous (then `candidates` lists what the
- *                                          town's inputs disagree on — the Ward shows them or none, never picks one)
- * The words are the source's (whitespace collapsed); formatting for display is the app's.
- */
-export function useBuildingAddress(id) {
-  const index = useSlabBuildingIndex((s) => s.index)
-  if (!index || id == null) return null
-  const e = index.byId.get(id)
-  if (!e) return { error: `this town has no building "${id}"` }
-  if (e.address === undefined) return { error: 'this town\'s slab was baked before addresses — re-bake its buildings' }
-  return { address: e.address, source: e.addressSource, ...(e.addressCandidates && { candidates: e.addressCandidates }) }
-}
 
 /**
  * Puts its children on the drawn ground at a place in the town: local metres `x z`, or `lat lon`
