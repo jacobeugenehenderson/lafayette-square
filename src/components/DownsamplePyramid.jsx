@@ -37,11 +37,6 @@ export const PYRAMID_LEVELS = 8
 // One composer per page (Stage / Preview / production), so a module singleton
 // is safe — same idiom as _dofRefs / _lampGlow. `current` is a STABLE array
 // reference, repopulated each frame, so consumers can read it without nulls.
-/** How far the FIRST level's kernel reaches, in full-resolution pixels: its outer taps sit 2 source texels out
- *  (downsampleFrag's `t * vec2(±2.0, ±2.0)`), and level 0 reads the full-resolution scene. So below rung 1 a blur amount
- *  `amt` reaches about amt × PYRAMID_LEVELS × LEVEL0_REACH_PX pixels (RomanceDoF: lod = amt × PYRAMID_LEVELS). What
- *  HeroLadder reads to tell a blur under one pixel. ▶ node checks/claims-the-hero-mask-is-what-the-hero-adds.mjs */
-export const LEVEL0_REACH_PX = 2
 export const _pyramidRefs = {
   levels: { current: [] },
 }

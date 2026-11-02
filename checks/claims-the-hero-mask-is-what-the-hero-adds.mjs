@@ -7,15 +7,16 @@
  *   1. focusMeshes (src/lib/focusObject.js), driven on a planted focus node: a mesh marked `userData.coverage === false`
  *      is not drawn into the mask; every other mesh under the node is;
  *   2. the Light Show marks its clear glass, sockets and cords so; its light cores (what it adds to the image) are not;
- *   3. HeroLadder draws the mask only when the most blur reaches a pixel: maxBlur × PYRAMID_LEVELS × LEVEL0_REACH_PX ≥ 1;
- *   4. LEVEL0_REACH_PX is the first level's kernel reach, READ from DownsamplePyramid's own shader: its outermost tap.
+ * (A rule to skip the mask when the blur is small was RETRACTED, Zob 2026-11-02: below rung 1 the first level still spreads
+ * light its full reach, scaled in amplitude, so a reach × blend-weight test is unsound. Any skip comes from a measured
+ * pixel diff against the render-twice noise floor.)
  * Usage: node checks/claims-the-hero-mask-is-what-the-hero-adds.mjs [--mutants]
  */
 import { importSource, sourceOf } from './_importSource.mjs'
 
 const code = (t) => t.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
 
-async function verdict({ focus, view, ladder, pyr } = {}) {
+async function verdict({ focus, view } = {}) {
   const fails = [], F = (c, m) => { if (!c) fails.push(m) }
   const THREE = await import('three')
   const FO = await importSource('src/lib/focusObject.js', focus ? { transform: focus } : {})
@@ -33,30 +34,19 @@ async function verdict({ focus, view, ladder, pyr } = {}) {
   const marked = (name) => new RegExp(`<instancedMesh name="light-show:${name}"[^>]*userData=\\{\\{ coverage: false \\}\\}`).test(ls)
   F(marked('glass') && marked('sockets') && marked('cords'), 'the Light Show\'s glass, sockets or cords are drawn into the hero mask')
   F(!marked('light'), 'the Light Show\'s light cores (what it adds to the image) are left out of the hero mask')
-  // 3. the mask only when the blur reaches a pixel
-  const hl = code(ladder ? ladder(sourceOf('src/components/HeroLadder.jsx')) : sourceOf('src/components/HeroLadder.jsx'))
-  F(/const blurPx = _dofRefs\.maxBlur\.current \* PYRAMID_LEVELS \* LEVEL0_REACH_PX/.test(hl) && /want = !!rect && blurPx >= 1/.test(hl), 'HeroLadder draws the mask when no blur reaches a pixel, or judges it by another rule')
-  // 4. the reach, read from the ladder's own shader
-  const ps = pyr ? pyr(sourceOf('src/components/DownsamplePyramid.jsx')) : sourceOf('src/components/DownsamplePyramid.jsx')
-  const at = ps.indexOf('const downsampleFrag'), frag = at < 0 ? '' : ps.slice(at, ps.indexOf('\n`', at))
-  const taps = [...frag.matchAll(/t \* vec2\(\s*(-?[\d.]+),\s*(-?[\d.]+)\)/g)].flatMap(x => [Math.abs(+x[1]), Math.abs(+x[2])])
-  const reach = (ps.match(/export const LEVEL0_REACH_PX = ([\d.]+)/) || [])[1]
-  F(taps.length >= 13 && Number(reach) === Math.max(...taps), `LEVEL0_REACH_PX (${reach}) is not the first level's outermost tap (${taps.length ? Math.max(...taps) : 'none read'})`)
   return fails
 }
 
 const run = async (m) => { try { return await verdict(m) } catch (e) { return [`it threw: ${String(e.message).slice(0, 200)}`] } }
 const fails = await run()
 if (fails.length) { console.log('⛔ the hero mask is not what the hero adds:\n  · ' + fails.join('\n  · ')); process.exitCode = 1 }
-else console.log('✅ the hero mask is what the hero adds: meshes marked as not covering are left out (the Light Show\'s glass, sockets and cords; never its light), and the mask is drawn only when the blur reaches a pixel, by the ladder\'s own reach')
+else console.log('✅ the hero mask is what the hero adds: meshes marked as not covering are left out (the Light Show\'s glass, sockets and cords; never its light), as the mask is drawn')
 
 if (process.argv.includes('--mutants')) {
   const mutants = [
     ['the coverage mark ignored', { focus: (s) => s.replace("if (o.isMesh && o.userData?.coverage !== false) out.push(", 'if (o.isMesh) out.push(') }],
     ['the glass drawn into the mask', { view: (s) => s.replace('<instancedMesh name="light-show:glass" ref={glassRef} args={[bulb, glass, count]} frustumCulled={false} userData={{ coverage: false }} />', '<instancedMesh name="light-show:glass" ref={glassRef} args={[bulb, glass, count]} frustumCulled={false} />') }],
     ['the light cores left out', { view: (s) => s.replace('<instancedMesh name="light-show:light" ref={coreRef} args={[bulb, core, count]} frustumCulled={false} />', '<instancedMesh name="light-show:light" ref={coreRef} args={[bulb, core, count]} frustumCulled={false} userData={{ coverage: false }} />') }],
-    ['the mask drawn at any blur (the old > 0)', { ladder: (s) => s.replace('want = !!rect && blurPx >= 1', 'want = !!rect && _dofRefs.maxBlur.current > 0') }],
-    ['a reach not the kernel\'s', { pyr: (s) => s.replace('export const LEVEL0_REACH_PX = 2', 'export const LEVEL0_REACH_PX = 1') }],
   ]
   let bad = 0
   for (const [name, m] of mutants) { const f = await run(m); console.log(`${f.length ? '🔴' : '⚪ SURVIVED'} mutant: ${name}${f.length ? ` (${f.length})` : ''}`); if (!f.length) bad++ }
