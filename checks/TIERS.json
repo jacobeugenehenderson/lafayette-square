@@ -2,9 +2,9 @@
   "generated_by": "node checks/tier.mjs --json",
   "total": 557,
   "counts": {
-    "safe": 382,
+    "safe": 381,
     "local-effect": 32,
-    "live": 143
+    "live": 144
   },
   "checks": [
     {
@@ -400,9 +400,14 @@
     },
     {
       "file": "checks/claims-a-failing-display-is-named-and-contained.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "outbound",
       "why": [
         "importSource of src/displays/DisplayBoundary.js — read, safe",
+        "importSource of src/displays/lightShow/rasterFrame.js, which can: calls fetch()",
+        "importSource of src/lib/refusal.js — read, safe",
+        "importSource of src/lib/refusal.js — read, safe",
+        "importSource of src/lib/refusal.js — read, safe",
         "computed import of src/lib/failures.js — read, safe"
       ]
     },
