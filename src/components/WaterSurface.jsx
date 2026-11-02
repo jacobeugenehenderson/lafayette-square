@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react'
-import { useFrame } from '@react-three/fiber'
+import { useTownFrame } from '../lib/useTownFrame.js'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSkyState from '../hooks/useSkyState'
 import { makeWaterMaterial, makeWaterAbsorption, WATER_LOOK_DEFAULTS, slopeScaleForWind, maxRoughnessForWind,
@@ -52,7 +52,7 @@ function WaterSurface({ geometry, renderOrder = 0, extentDiag: extentOverride = 
   // The water's colour absorption over the bed (makeWaterAbsorption): the same geometry, drawn just before the sheet.
   const absorption = useMemo(() => makeWaterAbsorption(uniforms, { decl: TERRAIN_DECL, assign: assignTerrainUniforms }), [uniforms])
   useEffect(() => () => { absorption.dispose() }, [absorption])
-  useFrame((_, delta) => {
+  useTownFrame((_, delta) => {
     uniforms.uTime.value += delta
     uniforms.uPhase.value = phaseNow()
     if (horizon) { uniforms.uHorizonC.value.set(horizon.center[0], horizon.center[1]); uniforms.uHorizonIn.value = horizon.inner; uniforms.uHorizonOut.value = horizon.outer; uniforms.uHazeIn.value = horizon.hazeIn ?? 0; uniforms.uHasFeather.value = geometry.attributes.aFeather ? 1 : 0

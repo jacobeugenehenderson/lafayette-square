@@ -24,7 +24,8 @@
  * nothing rendered here — the cloud-shader pulse is the visual.
  */
 import { useRef, useEffect, useMemo, useState } from 'react'
-import { useFrame, useThree } from '@react-three/fiber'
+import { useThree } from '@react-three/fiber'
+import { useTownFrame } from '../../lib/useTownFrame.js'
 import * as THREE from 'three'
 import { WEATHER_UNIFORMS } from '../../lib/weather-uniforms.js'
 import { SLAB_BASE_ALT } from '../atmosphere-materials.js'
@@ -99,7 +100,7 @@ export default function LightningDriver({ rate = 0, kind = 'intracloud' }) {
     }
   }, [scene])
 
-  useFrame(({ clock }, dt) => {
+  useTownFrame(({ clock }, dt) => {
     const nowSec = clock.elapsedTime
     // Maybe start a flash. Stochastic: probability per frame = rate * dt.
     if (flashStartRef.current === null && rate > 0) {

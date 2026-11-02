@@ -1,5 +1,6 @@
 import { useRef, useMemo, useEffect, useState } from 'react'
-import { useFrame, useThree } from '@react-three/fiber'
+import { useThree } from '@react-three/fiber'
+import { useTownFrame } from '../lib/useTownFrame.js'
 import * as THREE from 'three'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import { patchTerrainInstancedBaked, UNIFORMS as TERRAIN_UNIFORMS, TERRAIN_DECL } from '../utils/terrainShader'
@@ -388,7 +389,7 @@ function StreetLights({ lamps: lampsProp, reach, lantern: lanternChannel, model:
   // into the ground FX map now, not a per-lamp disc.)
 
   // ── Per-frame time-of-day animation ─────────────────────────────────────────
-  useFrame(() => {
+  useTownFrame(() => {
     const { sunAltitude } = getLightingPhase()
 
     sunAltUniform.current.value = sunAltitude

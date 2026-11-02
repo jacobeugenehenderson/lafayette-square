@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from 'react'
-import { useFrame } from '@react-three/fiber'
+import { useTownFrame } from '../lib/useTownFrame.js'
 import { driveEdgeRuffle } from '../components/PostProcessing.jsx'
 import * as THREE from 'three'
 import { ParkTitleMesh } from '../components/LafayetteParkBody.jsx'
@@ -500,7 +500,7 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
   // ⭐ In the Designer there is no <Town> to drive the edge's ruffle, so the map layers drive it themselves, off the
   // store's live channel, through the same resolution (PostProcessing.jsx#driveEdgeRuffle). In a shot <Town> does.
   const edgeRuffle = useCartographStore(s => s.edgeRuffle)
-  useFrame(() => { if (!inShot) driveEdgeRuffle(edgeRuffle) })
+  useTownFrame(() => { if (!inShot) driveEdgeRuffle(edgeRuffle) })
 
   // ── Ground plane ────────────────────────────────────────
   // Segmented so the per-vertex terrain displacement (injected via

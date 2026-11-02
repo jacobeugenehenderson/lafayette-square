@@ -1,6 +1,7 @@
 import { placedLook, onPlaceMoved } from '../lib/townPlace.js'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { Canvas, useThree, useFrame } from '@react-three/fiber'
+import { Canvas, useThree } from '@react-three/fiber'
+import { useTownFrame } from '../lib/useTownFrame.js'
 import { installShadowMaskDebug } from '../utils/shadowMaskDebug.js'
 installShadowMaskDebug()  // ?shadowmask=1 — must run before any material compiles
 import { PerspectiveCamera } from '@react-three/drei'
@@ -444,7 +445,7 @@ function CameraRig({ orthoRef, perspRef, controlsRef }) {
   // Drive the in-flight shot tween. Same vernacular as Preview's
   // ShotCamera + production CameraRig — easeInOutCubic position/target/
   // fov interpolation between Hero/Browse/Street perspective shots.
-  useFrame(() => {
+  useTownFrame(() => {
     if (tweenRef.current.isActive()) tweenRef.current.tick(performance.now())
   })
 
@@ -458,7 +459,7 @@ function CameraRig({ orthoRef, perspRef, controlsRef }) {
   // record.
   const bridgeFrames = useRef(0)
   const settle = useRef({ key: null, at: 0 })
-  useFrame(() => {
+  useTownFrame(() => {
     if (shot === 'designer' || shot === 'extent') return
     const cam = perspRef.current
     if (!cam) return
@@ -509,7 +510,7 @@ function CameraRig({ orthoRef, perspRef, controlsRef }) {
   // handled by the cross-camera handoff in the shot-change useEffect above
   // (read ortho/persp directly), not via localStorage — and as of 2026-09-05
   // that handoff runs BOTH WAYS. It had only ever run Browse → Designer.
-  useFrame(() => {
+  useTownFrame(() => {
     if (useCartographStore.getState().shot !== 'designer') return
     if (!camera.isOrthographicCamera) return
     localStorage.setItem(CAM_KEY, JSON.stringify({

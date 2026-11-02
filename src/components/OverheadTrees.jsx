@@ -21,7 +21,8 @@
  * has no entry → Browse falls back to the mesh (graceful, never blank).
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useThree, useFrame } from '@react-three/fiber'
+import { useThree } from '@react-three/fiber'
+import { useTownFrame } from '../lib/useTownFrame.js'
 import { loadImpostorTexture, pageArrived, pageFailed } from './impostorTexture.js'
 import { markFailed } from '../lib/startupMarks.js'
 import * as THREE from 'three'
@@ -80,7 +81,7 @@ export function OverheadLightDriver({ enabled = true, canopyChannel }) {
   const scene = useThree((st) => st.scene)
   const lights = useRef({ list: [], age: Infinity })
 
-  useFrame(() => {
+  useTownFrame(() => {
     if (!enabled) return
 
     // ── BRIGHTNESS — what the scene's own lights deliver ──────────────────────
@@ -157,7 +158,7 @@ const TREE_WIND_UNIFORM_OF = {
 }
 export function TreeWindDriver({ channel }) {
   const resolved = channel ?? TREE_WIND_DEFAULT_CHANNEL
-  useFrame(() => {
+  useTownFrame(() => {
     const tod = useTimeOfDay.getState()
     const slotMinutes = resolved.animated ? getTodSlotMinutes(tod.currentTime) : null
     const c = resolveGroupAtMinute(resolved, tod.getMinuteOfDay(), slotMinutes, TREE_WIND_FIELD_KEYS, TREE_WIND_FLAT_DEFAULTS)
@@ -231,7 +232,7 @@ export function useOverheadAssets({ enabled, lookName, overheadBySpecies, specie
   // nothing new. ⛔ It waited on `texture.onUpdate` — the GPU upload — which a disc held hidden in the hero shot never does.
   const [arrived, setArrived] = useState(false)
   useEffect(() => { setArrived(false) }, [assets])
-  useFrame(() => {
+  useTownFrame(() => {
     if (!assets || arrived) return
     let all = true
     for (const a of assets.values()) for (const b of a.bands) for (const t of [b.albedoTex, b.aoTex]) {

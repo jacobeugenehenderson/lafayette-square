@@ -24,7 +24,8 @@
  *                      (src/lib/focusObject.js#focusChoice: never the aim).
  */
 import { useEffect, useRef } from 'react'
-import { useFrame, useThree, addEffect } from '@react-three/fiber'
+import { useThree, addEffect } from '@react-three/fiber'
+import { useTownFrame } from '../lib/useTownFrame.js'
 import * as THREE from 'three'
 import { heroKeyframeAnim, heroCycleSec, heroClockAt, heroPoseAtTime } from '../preview/heroAnim.js'
 import { movieFocus, keyframeFocusIds } from '../lib/focusObject.js'
@@ -122,7 +123,7 @@ export default function MovieCamera({ keyframes, motion, active, start = 'random
   // Leaving by unmount, or the town out of the movie shot: no movie focus.
   useEffect(() => () => { movieFocus.on = false; movieShot.on = false }, [])
 
-  useFrame(() => {
+  useTownFrame(() => {
     sync()
     movieShot.on = entered.current
     if (entered.current) { movieShot.keyframes = live.current.keyframes; movieShot.motion = live.current.motion }

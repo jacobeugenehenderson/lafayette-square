@@ -15,7 +15,7 @@
  * world becomes wet, accumulation skipped).
  */
 import { useRef } from 'react'
-import { useFrame } from '@react-three/fiber'
+import { useTownFrame } from '../lib/useTownFrame.js'
 import useAtmosphere from '../hooks/useAtmosphere.js'
 import { WEATHER_UNIFORMS } from '../lib/weather-uniforms.js'
 import RainParticles from './weather/RainParticles.jsx'
@@ -59,7 +59,7 @@ function useSnapReset(uniform) {
 
 function WetnessDriver() {
   const resetOnSnap = useSnapReset(WEATHER_UNIFORMS.uWetness)
-  useFrame((_, dt) => {
+  useTownFrame((_, dt) => {
     resetOnSnap()
     const { isRain: active, intensity } = precipNow()
     const cur = WEATHER_UNIFORMS.uWetness.value
@@ -72,7 +72,7 @@ function WetnessDriver() {
 
 function SnowAccumulationDriver() {
   const resetOnSnap = useSnapReset(WEATHER_UNIFORMS.uSnowAccumulation)
-  useFrame((_, dt) => {
+  useTownFrame((_, dt) => {
     resetOnSnap()
     const { isSnow: active, intensity } = precipNow()
     const cur = WEATHER_UNIFORMS.uSnowAccumulation.value

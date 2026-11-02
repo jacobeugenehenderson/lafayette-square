@@ -10,7 +10,7 @@
  * DoF reads. It costs nothing while the flag is off. ▶ node checks/claims-the-debug-paint-is-the-pass-amount.mjs
  */
 import { useMemo } from 'react'
-import { useFrame } from '@react-three/fiber'
+import { useTownFrame } from '../lib/useTownFrame.js'
 import * as THREE from 'three'
 import { _dofRefs, _heroLadderRefs, DOF_BLUR_GLSL, DOF_FOCUS_OBJECT_GLSL } from './RomanceDoF.jsx'
 
@@ -49,7 +49,7 @@ export function DofDebug({ composer, after }) {
     quad.frustumCulled = false; scene.add(quad)
     return { mat, scene, cam: new THREE.Camera() }
   }, [])
-  useFrame(({ gl }) => {
+  useTownFrame(({ gl }) => {
     if (!(typeof window !== 'undefined' && window.__dofDebug)) return
     const depth = composer.current?.inputBuffer?.depthTexture
     if (!depth) { console.error('[dof] ⛔ debug paint: the composer has no depth texture — nothing painted'); return }

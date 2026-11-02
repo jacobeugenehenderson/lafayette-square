@@ -1,5 +1,6 @@
 import { useRef, useEffect, useMemo, useState, useCallback } from 'react'
-import { Canvas, useThree, useFrame } from '@react-three/fiber'
+import { Canvas, useThree } from '@react-three/fiber'
+import { useTownFrame } from '../lib/useTownFrame.js'
 import * as THREE from 'three'
 import { INSTANCE, moduleOn } from '../instance.js'
 import { authoringQuality, townCanvasProps } from '../lib/qualityProfile.js'
@@ -408,7 +409,7 @@ function CameraRig({ movie }) {
     }
   }, [gl, camera])
 
-  useFrame(() => {
+  useTownFrame(() => {
     const ctl = controlsRef.current
     if (!ctl) return
 

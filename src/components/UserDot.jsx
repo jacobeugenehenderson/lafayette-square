@@ -4,7 +4,7 @@
  * ▶ node checks/claims-a-mover-stands-where-it-is.mjs
  */
 import { useRef, useMemo } from 'react'
-import { useFrame } from '@react-three/fiber'
+import { useTownFrame } from '../lib/useTownFrame.js'
 import * as THREE from 'three'
 import useUserLocation from '../hooks/useUserLocation'
 import useCamera from '../hooks/useCamera'
@@ -38,7 +38,7 @@ export default function UserDot() {
     depthTest: false,   // always-on-top locator (see RENDER_ORDER below)
   }), [])
 
-  useFrame(({ clock }) => {
+  useTownFrame(({ clock }) => {
     // Ride the terrain at the user's real (GPS-derived) x/z. Ground height =
     // raw elevation × the runtime exag uniform (matches how the ground mesh,
     // buildings, and park objects displace), so the dot stays on the surface in

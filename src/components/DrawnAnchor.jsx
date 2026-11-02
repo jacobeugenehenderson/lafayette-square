@@ -2,7 +2,7 @@
  * DrawnAnchor — an invisible anchor that marks a startup boundary (src/lib/startupMarks.js) on the first draw of its group.
  */
 import { useEffect, useRef } from 'react'
-import { useFrame } from '@react-three/fiber'
+import { useTownFrame } from '../lib/useTownFrame.js'
 import { hasPerf, isMarked, markStartup } from '../lib/startupMarks.js'
 
 /**
@@ -21,7 +21,7 @@ export default function DrawnAnchor({ id }) {
     hooked.current.clear()
   }
   useEffect(() => release, [])
-  useFrame(() => {
+  useTownFrame(() => {
     if (!hasPerf || isMarked(id)) { if (hooked.current.size) release(); return }
     const root = ref.current?.parent
     if (!root) return

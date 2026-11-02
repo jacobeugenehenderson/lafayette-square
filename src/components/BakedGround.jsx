@@ -18,7 +18,8 @@
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
-import { useFrame, useThree } from '@react-three/fiber'
+import { useThree } from '@react-three/fiber'
+import { useTownFrame } from '../lib/useTownFrame.js'
 import { BAND_TO_LAYER } from '../cartograph/m3Colors'
 import { makeGroundSurfaceMaterial, CROP_UNIFORMS } from './grassMaterial'
 import useCalendar from '../hooks/useCalendar'
@@ -585,7 +586,7 @@ function SurfaceMesh({ surface, params, resolved, look, group, geometry, lightma
     },
     [surface, group.color, group.polygonOffsetUnits, fade?.center?.[0], fade?.center?.[1], fade?.inner, fade?.outer, lightmap, surfaceParams, geometry, coast]
   )
-  useFrame(() => {
+  useTownFrame(() => {
     const s = shaderRef.current
     if (!s) return
     s.uniforms.uSunAltitude.value = useTimeOfDay.getState().getLightingPhase().sunAltitude
@@ -613,7 +614,7 @@ function GravelMesh({ group, geometry, lightmap, tintHex, roughness, scale }) {
     built.material.aoMapIntensity = 1
     return built
   }, [tintHex, roughness, scale, lightmap, geometry])
-  useFrame(() => {
+  useTownFrame(() => {
     if (shaderRef.current) {
       shaderRef.current.uniforms.uSunAltitude.value = useTimeOfDay.getState().getLightingPhase().sunAltitude
     }
@@ -690,7 +691,7 @@ function TerrainExagDriver({ target, swellMs }) {
   // reveal — takes the Look's authored `reveal.swell` (Town.jsx); a view change after it keeps EXAG_EASE_MS.
   const duration = useRef(EXAG_EASE_MS)
   const swelled = useRef(false)
-  useFrame((state, delta) => {
+  useTownFrame((state, delta) => {
     // View change → re-anchor the ease at wherever the value is right now.
     if (target !== lastTarget.current) {
       from.current = terrainExag.value

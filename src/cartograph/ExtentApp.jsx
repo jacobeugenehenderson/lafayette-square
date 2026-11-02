@@ -31,7 +31,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { ZONE_PAD, squareAroundDisc, minimumEnclosingCircle } from '../../cartograph/discSquare.mjs'
 import { deriveFade, edgeBandOf, discOf } from '../../cartograph/boundaryRecords.mjs'
-import { Canvas, useThree, useFrame } from '@react-three/fiber'
+import { Canvas, useThree } from '@react-three/fiber'
+import { useTownFrame } from '../lib/useTownFrame.js'
 import { Text, Line } from '@react-three/drei'
 import RegimeControls from '../components/RegimeControls.jsx'
 import useCartographStore from './stores/useCartographStore.js'
@@ -125,7 +126,7 @@ function viewportTileZ(cosLat, camZoom) {
 function ExtentAerial({ geo }) {
   const { camera } = useThree()
   const [view, setView] = useState(null)   // { rect, z }
-  useFrame(() => {
+  useTownFrame(() => {
     if (!camera.isOrthographicCamera || !geo) return
     const halfW = ((camera.right - camera.left) / (2 * camera.zoom)) * 1.2
     const halfH = ((camera.top - camera.bottom) / (2 * camera.zoom)) * 1.2
@@ -161,7 +162,7 @@ const LABEL_MAX_WORLD = 36        // metres — the zoomed-out cap (fetch-indepe
 function ExtentLabels({ labels, geo }) {
   const { camera } = useThree()
   const [sizeM, setSizeM] = useState(36)
-  useFrame(() => {
+  useTownFrame(() => {
     if (!camera.isOrthographicCamera) return
     const visH = (camera.top - camera.bottom) / (camera.zoom || 1)
     const s = Math.max(Math.min(visH * LABEL_SCREEN_FRAC, LABEL_MAX_WORLD), 3)

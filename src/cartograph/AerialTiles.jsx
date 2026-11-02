@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useThree, useFrame } from '@react-three/fiber'
+import { useThree } from '@react-three/fiber'
+import { useTownFrame } from '../lib/useTownFrame.js'
 import * as THREE from 'three'
 import { lookFade, discOf } from '../../cartograph/boundaryRecords.mjs'
 import { NEIGHBORHOOD_FADE_GLSL, bindNeighborhoodFade } from '../lib/neighborhoodFade.js'
@@ -285,7 +286,7 @@ export function AerialFocus() {
   const [focusZ, setFocusZ] = useState(() => cameraZoomToTileZ(geo, camera.zoom))
   const pending = useRef({ z: focusZ, t: 0 })
 
-  useFrame((_, delta) => {
+  useTownFrame((_, delta) => {
     const target = cameraZoomToTileZ(geo, camera.zoom)
     if (target === focusZ) { pending.current.t = 0; return }
     if (target !== pending.current.z) {

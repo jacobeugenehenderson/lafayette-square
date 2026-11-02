@@ -114,7 +114,8 @@
  */
 import { Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { TownMoonPainter } from './TownMoon.jsx'
-import { useFrame, useThree } from '@react-three/fiber'
+import { useThree } from '@react-three/fiber'
+import { useTownFrame } from '../lib/useTownFrame.js'
 import * as THREE from 'three'
 import R3FErrorBoundary from './R3FErrorBoundary'
 import { FrameBoundary } from '../lib/frameBoundary.js'
@@ -281,7 +282,7 @@ function RevealGate({ need, lingerMs, skyAt }) {
   //    town (so no culling skips anything). A draw is the only thing that uploads every geometry and texture and links
   //    every program — measured: compile + initTexture alone left +217 geometries, +161 textures and +21 programs to
   //    the reveal frame (615 ms on huron). Here that cost lands while only the sky shows. 3. Then reveal, on one frame.
-  useFrame(() => {
+  useTownFrame(() => {
     const p = phase.current
     if (p.name !== 'prep') return
     if (p.i >= p.groups.length) { phase.current = { name: 'done' }; markStartup('reveal', { from: skyLevelNow(skyAt) }); return }
@@ -517,7 +518,7 @@ function RoofPoint({ building, lift = 0, onError, children, ...props }) {
     return { x: x / e.footprint.length, z: z / e.footprint.length }
   }, [e])
   const y = () => buildingLiftY(e.roofTopY, e.centroidY, terrainExag.value, 0, false, e.groundY) + lift
-  useFrame(() => { if (ref.current && e) ref.current.position.y = y() })
+  useTownFrame(() => { if (ref.current && e) ref.current.position.y = y() })
   if (!e) return null
   return <group ref={ref} position={[at.x, y(), at.z]} {...props}>{children}</group>
 }
@@ -529,7 +530,7 @@ function GroundPoint({ x, z, lat, lon, lift = 0, children, ...props }) {
   if (!Number.isFinite(px) || !Number.isFinite(pz)) throw new Refusal(`[TownPoint] ⛔ no place: x=${x} z=${z} lat=${lat} lon=${lon}`)
   const ref = useRef()
   const y = () => getElevationRaw(px, pz) * terrainExag.value + lift
-  useFrame(() => { if (ref.current) ref.current.position.y = y() })
+  useTownFrame(() => { if (ref.current) ref.current.position.y = y() })
   return <group ref={ref} position={[px, y(), pz]} {...props}>{children}</group>
 }
 
@@ -624,7 +625,7 @@ function TownOptics({ quality, shot, movieActive }) {
     if (cam.near !== near) { cam.near = near; cam.updateProjectionMatrix() }
   }
   useLayoutEffect(() => { hold(camera) }, [camera])
-  useFrame((st) => hold(st.camera))
+  useTownFrame((st) => hold(st.camera))
   useEffect(() => {
     const logDepth = !!gl.capabilities.logarithmicDepthBuffer
     if (!!quality.logDepth !== logDepth) console.error(`[Town] ⛔ the Canvas was created with ${logDepth ? 'logarithmic' : 'linear'} depth, but the quality profile "${quality.id}" asks for ${quality.logDepth ? 'logarithmic' : 'linear'} — create the Canvas with gl={{ logarithmicDepthBuffer: quality.logDepth }}`)

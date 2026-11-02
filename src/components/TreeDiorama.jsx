@@ -1,5 +1,6 @@
 import { memo, Suspense, useEffect, useMemo, useRef, useState } from 'react'
-import { Canvas, useFrame, useThree } from '@react-three/fiber'
+import { Canvas, useThree } from '@react-three/fiber'
+import { useTownFrame } from '../lib/useTownFrame.js'
 import { useGLTF } from '@react-three/drei'
 import * as THREE from 'three'
 import { INSTANCE } from '../instance.js'
@@ -494,7 +495,7 @@ function BarkSlots({ atlas, species, variantId }) {
     }
   }, [atlas?.manifest, species, variantId])
 
-  useFrame(() => {
+  useTownFrame(() => {
     if (!atlas?.treeMaterial || !slots) return
     applyBarkUniforms(
       atlas.treeMaterial, slots.barkSettings,
@@ -600,7 +601,7 @@ function DioramaCamera({ height, spread, baseY = 0, topY }) {
   // or a missing specimen, and it is neither. Re-asserting is cheap (a compare
   // and maybe three writes) and makes the pose immune to whoever else touches
   // the camera.
-  useFrame(() => {
+  useTownFrame(() => {
     const p = poseRef.current
     if (!p) return
     if (

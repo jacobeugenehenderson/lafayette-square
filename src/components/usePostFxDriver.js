@@ -15,7 +15,8 @@
  * hook is the SINGLE driver for all three surfaces (production, Stage, Preview) —
  * there is no second copy to hand-sync (PreviewPostFx's forked driver is retired).
  */
-import { useThree, useFrame } from '@react-three/fiber'
+import { useThree } from '@react-three/fiber'
+import { useTownFrame } from '../lib/useTownFrame.js'
 import * as THREE from 'three'
 
 import useTimeOfDay from '../hooks/useTimeOfDay'
@@ -100,7 +101,7 @@ export function usePostFxDriver({
   const { gl, camera, scene } = useThree()
   const controls = useThree((s) => s.controls)
 
-  useFrame(() => {
+  useTownFrame(() => {
     const tod = useTimeOfDay.getState()
     const minute = tod.getMinuteOfDay()
     const slotMins = getTodSlotMinutes(tod.currentTime)

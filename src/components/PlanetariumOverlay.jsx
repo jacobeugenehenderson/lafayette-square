@@ -1,5 +1,5 @@
 import { useRef, useMemo } from 'react'
-import { useFrame } from '@react-three/fiber'
+import { useTownFrame } from '../lib/useTownFrame.js'
 import { Text } from '@react-three/drei'
 import * as THREE from 'three'
 import useTimeOfDay from '../hooks/useTimeOfDay'
@@ -167,7 +167,7 @@ function ConstellationLines() {
 
   const _v = useMemo(() => new THREE.Vector3(), [])
 
-  useFrame(() => {
+  useTownFrame(() => {
     if (!linesRef.current) return
     const { lstRad } = getLST()
     const posAttr = linesRef.current.geometry.getAttribute('position')
@@ -318,7 +318,7 @@ function ConstellationDots() {
 
   const _v = useMemo(() => new THREE.Vector3(), [])
 
-  useFrame(() => {
+  useTownFrame(() => {
     if (!dotsRef.current) return
     const { lstRad } = getLST()
     const posAttr = dotsRef.current.geometry.getAttribute('position')
@@ -341,7 +341,7 @@ function StarLabel({ star }) {
   const ref = useRef()
   const _v = useMemo(() => new THREE.Vector3(), [])
 
-  useFrame(({ camera }) => {
+  useTownFrame(({ camera }) => {
     if (!ref.current) return
     const { lstRad } = getLST()
     const visible = raDecToXYZ(star.ra, star.dec, lstRad, _v)
@@ -373,7 +373,7 @@ function ConstellationLabel({ constellation }) {
   const ref = useRef()
   const _v = useMemo(() => new THREE.Vector3(), [])
 
-  useFrame(({ camera }) => {
+  useTownFrame(({ camera }) => {
     if (!ref.current) return
     const { lstRad } = getLST()
     const visible = raDecToXYZ(constellation.labelRa, constellation.labelDec, lstRad, _v)
@@ -456,7 +456,7 @@ function PlanetMarker({ planet, earth }) {
     blending: THREE.AdditiveBlending,
   }), [planetColor])
 
-  useFrame(({ camera }) => {
+  useTownFrame(({ camera }) => {
     const { lstRad, daysSinceJ2000 } = getLST()
     const T = daysSinceJ2000 / 36525
 

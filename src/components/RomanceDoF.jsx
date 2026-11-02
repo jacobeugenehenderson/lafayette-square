@@ -18,7 +18,7 @@
  */
 
 import { useMemo, forwardRef, useContext } from 'react'
-import { useFrame } from '@react-three/fiber'
+import { useTownFrame } from '../lib/useTownFrame.js'
 import { EffectComposerContext } from '@react-three/postprocessing'
 import { Effect, EffectAttribute } from 'postprocessing'
 import * as THREE from 'three'
@@ -297,7 +297,7 @@ export const RomanceDoF = forwardRef((_, ref) => {
   // blur is 0: the composer skips a disabled pass without swapping buffers — no rebuild, no relink, the same pixels.
   // Runs before the composer's own frame (priority 0 < its render priority), after the driver set this frame's blur.
   const { composer } = useContext(EffectComposerContext)
-  useFrame(() => {
+  useTownFrame(() => {
     const pass = composer?.passes.find((p) => p.effects?.includes(effect))
     if (pass) pass.enabled = _dofRefs.maxBlur.current > 0
     if (pass && typeof window !== 'undefined' && window.__dof) window.__dof.pass = pass   // read-only inspection (dofDriver)

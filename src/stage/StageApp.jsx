@@ -16,7 +16,8 @@
 import { WindSwitch } from '../components/WindSheetCard.jsx'
 import { useRef, useEffect, useMemo, useState, useCallback } from 'react'
 import { createPortal } from 'react-dom'
-import { useThree, useFrame } from '@react-three/fiber'
+import { useThree } from '@react-three/fiber'
+import { useTownFrame } from '../lib/useTownFrame.js'
 import * as THREE from 'three'
 
 import GatewayArch from '../components/GatewayArch'
@@ -57,11 +58,11 @@ import SliderRow from '../cartograph/SliderRow.jsx'
 function TimeTicker() {
   const tick = useTimeOfDay((s) => s.tick)
   const last = useRef(Date.now())
-  useFrame(() => { const n = Date.now(); tick(n - last.current); last.current = n })
+  useTownFrame(() => { const n = Date.now(); tick(n - last.current); last.current = n })
   return null
 }
 function SkyStateTicker() {
-  useFrame((_, d) => useSkyState.getState().tick(Math.min(d, 0.1)))
+  useTownFrame((_, d) => useSkyState.getState().tick(Math.min(d, 0.1)))
   return null
 }
 function FrameLimiter() {
@@ -88,7 +89,7 @@ function FrameLimiter() {
 function SceneDiag() {
   const { scene } = useThree()
   const count = useRef(0)
-  useFrame(() => {
+  useTownFrame(() => {
     if (++count.current % 300 !== 0) return  // every 5 sec at 60fps
     scene.traverse(o => {
       if (o.isLight && o.isDirectionalLight && o.castShadow) {
@@ -1158,7 +1159,7 @@ export function HeroPreview({ keyframes, motion }) {
     pushCamera({ position: p, target: q, fov })
   }, [n, motion.length, keyframes, played])
 
-  useFrame(() => {
+  useTownFrame(() => {
     // 0) Keep liveCamera fresh (Key here reads this synchronously)
     liveCamera.camera = camera
     liveCamera.controls = controls

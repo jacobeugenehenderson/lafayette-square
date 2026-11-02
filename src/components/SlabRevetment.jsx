@@ -33,7 +33,8 @@
  */
 
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
-import { useThree, useFrame } from '@react-three/fiber'
+import { useThree } from '@react-three/fiber'
+import { useTownFrame } from '../lib/useTownFrame.js'
 import * as THREE from 'three'
 import InstancedBoulders from './InstancedBoulders.jsx'
 import { makeRevetmentMaterial } from './revetmentMaterial.js'
@@ -167,7 +168,7 @@ export default function SlabRevetment({ lookId, bakeLastMs, visible = true }) {
   const levels = useMemo(() => { try { return waterLevelsIfWet({ datum: terrainDatum(), water: terrainWater() }) } catch (e) {
     if (!_saidNoLevels) { _saidNoLevels = true; console.error(`[SlabRevetment] ⛔ ${e.message} — the stone's wetted band has no level to stand at`) }
     return null } }, [doc, groundGen])
-  useFrame(({ camera: cam }) => { if (levels) drape.uniforms.uWaterY.value = stone.uniforms.uWaterY.value = levels.levelAt(cam.position.x, cam.position.z, phaseNow()) })
+  useTownFrame(({ camera: cam }) => { if (levels) drape.uniforms.uWaterY.value = stone.uniforms.uWaterY.value = levels.levelAt(cam.position.x, cam.position.z, phaseNow()) })
   useEffect(() => () => { drapeMaterial.dispose(); stoneMaterial.dispose(); drapeDepth.dispose(); stoneDepth.dispose() }, [drapeMaterial, stoneMaterial, drapeDepth, stoneDepth])
   useEffect(() => () => { palette?.forEach(g => g.dispose()) }, [palette])
 
@@ -246,7 +247,7 @@ export default function SlabRevetment({ lookId, bakeLastMs, visible = true }) {
   const frustum = useMemo(() => new THREE.Frustum(), [])
   const _m = useMemo(() => new THREE.Matrix4(), [])
   const _c = useMemo(() => new THREE.Vector3(), [])
-  useFrame(() => {
+  useTownFrame(() => {
     if (!visible || !faces.length) return
     const c = camera.position, q = camera.quaternion
     if (lastAt.current && lastAt.current.overhead === overhead && c.distanceTo(lastAt.current.p) < RESELECT_M && q.angleTo(lastAt.current.q) < RESELECT_RAD) return

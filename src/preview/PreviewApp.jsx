@@ -6,7 +6,7 @@
  * The GPU monitor (right panel) governs additions — every layer toggle
  * notes a Δ-event so spikes are tagged with their cause.
  */
-import { Canvas, useFrame } from '@react-three/fiber'
+import { Canvas } from '@react-three/fiber'
 import Town from '../components/Town.jsx'
 import { kitDayChannel, TREE_WIND_FIELD_KEYS } from '../cartograph/skyLightChannels.js'
 import { surfaceQuality, townCanvasProps } from '../lib/qualityProfile.js'

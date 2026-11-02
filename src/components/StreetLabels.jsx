@@ -1,5 +1,6 @@
 import { useRef, useMemo } from 'react'
-import { useFrame, useThree } from '@react-three/fiber'
+import { useThree } from '@react-three/fiber'
+import { useTownFrame } from '../lib/useTownFrame.js'
 import SceneLabel from './SceneLabel.jsx'
 import { prepareLabelLod, assignLabelLod, metersPerPixel, SCREEN_LABEL_SPACING_PX } from '../lib/labelLod.js'
 
@@ -24,7 +25,7 @@ export default function StreetLabels({ placements, y = 0, style, active = true }
   )
   const groups = useMemo(() => prepareLabelLod(items), [items])
 
-  useFrame(() => {
+  useTownFrame(() => {
     if (!active) return
     const targetSpacing = SCREEN_LABEL_SPACING_PX * metersPerPixel(camera, heightPx)
     assignLabelLod(items, groups, targetSpacing, (i, vis) => {

@@ -22,7 +22,8 @@
  *   9. A FRAME CALLBACK'S THROW IS NAMED: src/lib/useTownFrame.js, run: inside a boundary it is stopped and rethrown at
  *      render as thrown; outside one it is reported to the sink under its town, keyed to its subscriber (its label), and
  *      cleared when that unmounts; it is never called again. Read: both boundaries provide FrameBoundary; <Town> resets it
- *      at its roots and no boundary encloses a <Canvas> (Canvas forwards contexts in); LightShow's own copy is retired.
+ *      at its roots and no boundary encloses a <Canvas> (Canvas forwards contexts in); LightShow's own copy is retired; and
+ *      no file in src but useTownFrame.js imports R3F's useFrame (the ban).
  *   6. THE REVEAL HEARS IT: a boundary around a layer the reveal waits on (Town.jsx's PHYSICAL, read from source) marks
  *      that class failed on a Refusal and on giving up, so the gate says why the town is held; a clean remount clears
  *      a failure it wrote (never another producer's) with a mark of its own (the gate hears only new marks); every class has exactly one such boundary. Stage's
@@ -43,7 +44,7 @@
  *   · a second terrain reader in a shot · a frame throw goes unstopped · a frame throw in a boundary is not rethrown
  *   · a frame throw outside a boundary is not reported · a boundary that does not provide FrameBoundary · LightShow
  *   back on a bare useFrame · a frame failure never cleared · a frame failure keyed to its reason · Town does not
- *   reset FrameBoundary · a boundary around a Canvas
+ *   reset FrameBoundary · a boundary around a Canvas · a direct useFrame import
  *   → each must go red.
  */
 import { readFileSync } from 'node:fs'
@@ -418,6 +419,10 @@ function frameProviders(files) {
     for (const m of t.matchAll(/<(R3FErrorBoundary|DisplayBoundary|FrameBoundary\.Provider value=\{true\})\b[\s\S]*?<\/(R3FErrorBoundary|DisplayBoundary|FrameBoundary\.Provider)>/g))
       if (/<Canvas\b/.test(m[0])) fails.push(`${f}: a ${m[1].split(' ')[0]} encloses a <Canvas>: its frame-throw context reaches into the R3F tree, where a rethrow takes the whole canvas down`)
   }
+  // THE BAN: the one import of R3F's useFrame in src is useTownFrame's own. A direct one is a frame callback whose throw
+  // freezes the canvas again.
+  const direct = files.filter(([f, t]) => f !== 'src/lib/useTownFrame.js' && /^import\s*\{[^}]*\buseFrame\b[^}]*\}\s*from\s*'@react-three\/fiber'/m.test(t)).map(([f]) => f)
+  if (direct.length) fails.push(`${direct.length} file(s) import R3F's useFrame directly, not through src/lib/useTownFrame.js: ${direct.slice(0, 6).join(', ')}`)
   const ls = get('src/displays/lightShow/LightShow.jsx')
   if (!/\buseTownFrame\(/.test(ls) || /\bframeErr\b|\bframeDead\b/.test(ls)) fails.push('LightShow keeps its own frame catch-and-rethrow beside useTownFrame (two copies of one rule)')
   return fails
@@ -479,6 +484,7 @@ if (process.argv.includes('--mutants')) {
     ['a frame failure keyed to its reason', { frame: must('layer: key.current,', 'layer: `frame: ${reason.slice(0, 60)}`,') }],
     ['Town does not reset FrameBoundary', { files: swap('src/components/Town.jsx', 'if (!loaded) return <FrameBoundary.Provider value={false}>', 'if (!loaded) return <FrameBoundary.Provider value={true}>') }],
     ['a boundary around a Canvas', { files: (fs) => [...fs, ['src/__mutant.jsx', "export const App = () => <R3FErrorBoundary name=\"all\"><Canvas><Town /></Canvas></R3FErrorBoundary>\n"]] }],
+    ['a direct useFrame import', { files: (fs) => [...fs, ['src/__mutant.jsx', "import { useFrame, useThree } from '@react-three/fiber'\nexport const Spin = () => { useFrame(() => {}); return null }\n"]] }],
     ['LightShow back on a bare useFrame', { files: swap('src/displays/lightShow/LightShow.jsx', 'useTownFrame((_, delta) => {', 'useFrame((_, delta) => {') }],
     ['Stage drops the banner', { files: swap('src/stage/StageApp.jsx', '<FailuresBanner />', '') }],
   ]

@@ -27,7 +27,8 @@
  * runs at apex or any subpath (project_kit_deploy_path_agnostic).
  */
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
-import { Canvas, useFrame } from '@react-three/fiber'
+import { Canvas } from '@react-three/fiber'
+import { useTownFrame } from '../lib/useTownFrame.js'
 import { PerspectiveCamera, useGLTF } from '@react-three/drei'
 import RegimeControls from '../components/RegimeControls.jsx'
 import * as THREE from 'three'
@@ -215,14 +216,14 @@ function SceneCamera({ cam }) {
 function TimeTicker() {
   const tick = useTimeOfDay(s => s.tick)
   const last = useRef(Date.now())
-  useFrame(() => {
+  useTownFrame(() => {
     if (typeof tick !== 'function') return
     const n = Date.now(); tick(n - last.current); last.current = n
   })
   return null
 }
 function SkyStateTicker() {
-  useFrame((_, d) => {
+  useTownFrame((_, d) => {
     const sky = useSkyState.getState()
     if (typeof sky.tick === 'function') sky.tick(Math.min(d, 0.1))
   })
@@ -419,7 +420,7 @@ function HeroTree({ lookId }) {
   // Bark/deformer uniforms applied per frame: material.userData.shader
   // doesn't exist until three compiles the program on first render, so a
   // pre-paint effect would early-return forever (matches Skeleton).
-  useFrame(() => {
+  useTownFrame(() => {
     if (!atlas.treeMaterial || !barkUniforms) return
     applyBarkUniforms(
       atlas.treeMaterial,
