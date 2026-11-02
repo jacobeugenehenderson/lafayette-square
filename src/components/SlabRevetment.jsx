@@ -289,7 +289,7 @@ export default function SlabRevetment({ lookId, bakeLastMs, visible = true }) {
       // Stones, where a drape chunk their span overlaps is chosen. A stone chunk spans the arc [ci·CHUNK_M, (ci+1)·CHUNK_M]
       // (shoreChunks.js; the last is short), a drape chunk the arc of its stations: matched by ARC LENGTH, never by the
       // stone chunk's index fraction, which runs behind by the last chunk's shortfall (Zob, 2026-10-29).
-      // ⭐ margin 2 is MEASURED, not chosen: at margin 1 four stones go missing at a seam, at 2 the two windows resolve identically.
+      // Each stone chunk is settled with its neighbours' context (revetmentNear.js#STONE_MARGIN, measured).
       const n = f.ctx.nChunks, total = f.ctx.total, per = f.ranges[0] ? f.ranges[0][1] - f.ranges[0][0] : 1, nA = f.G.nAlong - 1
       const kAt = (s) => Math.min(f.ranges.length - 1, Math.floor(((s / total) * nA) / per))
       for (let ci = 0; ci < n; ci++) {

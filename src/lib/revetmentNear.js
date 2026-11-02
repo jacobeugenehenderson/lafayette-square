@@ -16,10 +16,15 @@
  * ⭐ AND IT IS BOUNDED BY THE WINDOW, never by a count (Zob's condition, 2026-11-02): measured on Huron, the whole shore once is
  * 3,739 stone chunks and 1.1 M stones at ~71 KB a chunk (464 B a stone), so a session that toured it would hold ~265 MB. The
  * cache keeps the stone chunks of the CURRENT near set and the one BEFORE it (`retainStones`): a camera crossing a chunk
- * boundary and back builds nothing twice, and the bound is two near sets, whatever the town.
+ * boundary and back builds nothing twice, and the bound is two near sets, whatever the town. The shore's own candidate memo
+ * (shoreChunks.js, ~168 KB a chunk on Huron, unbounded before) is kept to the same window (shoreChunks.js#retainCandidates).
  * ▶ node checks/claims-a-reselect-reuses-what-it-built.mjs [--mutants]
  */
-import { chunkStones, shoreContext } from './shoreChunks.js'
+import { chunkStones, shoreContext, retainCandidates } from './shoreChunks.js'
+
+/** The context a stone chunk is settled in, chunks on each side (shoreChunks.js#chunkStones). ⭐ MEASURED, not chosen: at 1
+ *  four stones go missing at a seam, at 2 the two windows resolve identically (SlabRevetment, 2026-10-29). */
+export const STONE_MARGIN = 2
 
 /** A face's stone context: the shore every stone chunk of it is resolved against (shoreChunks.js#shoreContext), from the
  *  face as SlabRevetment seats it (its toe, berm, drawn ground at exag 1 and water) and the town's palette size and seed.
@@ -35,18 +40,22 @@ export function stonesOf(f, ci, partsAt) {
   const hit = f.stones.get(ci)
   if (hit) return hit
   const out = []
-  for (const st of chunkStones(f.ctx, ci, 2)) { const g = partsAt(st.p[0], st.p[2]); out.push({ ...st, p: [st.p[0], st.p[1] - g.raw - g.y, st.p[2]], ground: g.raw, groundY: g.y }) }
+  for (const st of chunkStones(f.ctx, ci, STONE_MARGIN)) { const g = partsAt(st.p[0], st.p[2]); out.push({ ...st, p: [st.p[0], st.p[1] - g.raw - g.y, st.p[2]], ground: g.raw, groundY: g.y }) }
   f.stones.set(ci, out)
   return out
 }
 
 /** Keep, in each face's `stones`, only the chunks of the current near set (`now`) and the previous one (`before`), each a
- *  list of [face, ci]; the rest are dropped. Faces that are not `faces` (a set from before the faces were rebuilt) keep nothing. */
+ *  list of [face, ci], and in its candidate memo only what their windows read; the rest are dropped. Faces that are not `faces` (a set from before the faces were rebuilt) keep nothing. */
 export function retainStones(faces, now, before = []) {
   const keep = new Map(faces.map(f => [f, new Set()]))
   for (const [f, ci] of now) keep.get(f)?.add(ci)
   for (const [f, ci] of before) keep.get(f)?.add(ci)
-  for (const f of faces) for (const ci of [...f.stones.keys()]) if (!keep.get(f).has(ci)) f.stones.delete(ci)
+  for (const f of faces) {
+    for (const ci of [...f.stones.keys()]) if (!keep.get(f).has(ci)) f.stones.delete(ci)
+    // ⭐ the candidates too: only those the kept chunks' windows read (one bounded policy for the shore's memory)
+    retainCandidates(f.ctx, keep.get(f), STONE_MARGIN)
+  }
 }
 
 /** The near set's identity: the drawn drape chunks and the stone chunks, in the order they are built. Two reselects with

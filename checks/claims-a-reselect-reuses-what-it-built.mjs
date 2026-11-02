@@ -19,12 +19,14 @@
 //     4 · the near useTownFrame returns before setBuilt when the near set's signature (nearSignature) is unchanged;
 //     5 · the drape meshes are keyed by chunk key, never by array index;
 //     6 · no component calls chunkStones: stones reach the map only through stonesOf;
-//     7 · (planted, no slab) retainStones keeps exactly the chunks of the current near set and the one before;
+//     7 · (planted, no slab) retainStones keeps exactly the chunks of the current near set and the one before, and the
+//         shore's candidate memo exactly the windows those chunks read (each ± STONE_MARGIN);
 //     8 · the near useTownFrame calls retainStones, so the cache is bounded by the window, never a session's whole shore.
 // ▶ node checks/claims-a-reselect-reuses-what-it-built.mjs [--slab=<dir holding <town>/>] [--town=<id>] [--mutants]
 //   --mutants: the cache bypassed → 2 · a stone's drawn-ground y, or its raw ground, not subtracted → 1 · the early return removed → 4 · the drape
 //   keyed by index → 5 · groundGen dropped from the faces' deps → 3 · the cache hoisted out of the faces → 3 · a component
-//   resolving its own stones → 6 · retention keeps everything → 7 · retention forgets the previous set → 7 · the retention
+//   resolving its own stones → 6 · retention keeps everything → 7 · the candidate memo unbounded, or kept without the window → 7 · retention forgets the
+//   previous set → 7 · the retention
 //   call removed → 8. Each must turn it RED.
 import { readFileSync, readdirSync, existsSync, writeFileSync, mkdtempSync } from 'node:fs'
 import { join, dirname } from 'node:path'
@@ -100,11 +102,16 @@ function behaviour(M, seated, { report = false } = {}) {
 }
 /** 7 · retainStones keeps exactly the chunks of this near set and the one before, on a planted face (no slab needed). */
 function retention(M) {
-  const fails = [], f = { key: 'planted', stones: new Map([0, 1, 2, 3, 4, 5].map(ci => [ci, [ci]])) }, g = { key: 'other', stones: new Map([[9, [9]]]) }
+  const cand = (n) => ({ _cand: new Map(Array.from({ length: n }, (_, c) => [c, [c]])) })
+  const fails = [], f = { key: 'planted', stones: new Map([0, 1, 2, 3, 4, 5].map(ci => [ci, [ci]])), ctx: cand(20) }, g = { key: 'other', stones: new Map([[9, [9]]]), ctx: cand(20) }
   M.retainStones([f, g], [[f, 3], [f, 4]], [[f, 1], [g, 9]])
-  const kept = [...f.stones.keys()].sort().join(','), keptG = [...g.stones.keys()].join(',')
-  if (kept !== '1,3,4') fails.push(`7 · retainStones kept chunks [${kept}] of a face whose near set is [3,4] after [1]: it must keep exactly 1,3,4`)
-  if (keptG !== '9') fails.push(`7 · retainStones dropped a chunk of the previous near set on another face`)
+  const ks = (m) => [...m.keys()].sort((a, b) => a - b).join(',')
+  if (ks(f.stones) !== '1,3,4') fails.push(`7 · retainStones kept chunks [${ks(f.stones)}] of a face whose near set is [3,4] after [1]: it must keep exactly 1,3,4`)
+  if (ks(g.stones) !== '9') fails.push(`7 · retainStones dropped a chunk of the previous near set on another face`)
+  // the candidate memo: exactly what the kept chunks' windows read (each ± the margin), on both faces
+  const win = (cs) => [...new Set(cs.flatMap(c => Array.from({ length: 2 * M.STONE_MARGIN + 1 }, (_, i) => c - M.STONE_MARGIN + i)))].filter(c => c >= 0 && c < 20).sort((a, b) => a - b).join(',')
+  if (ks(f.ctx._cand) !== win([1, 3, 4])) fails.push(`7 · the candidate memo kept [${ks(f.ctx._cand)}], not the windows of the kept chunks [${win([1, 3, 4])}]`)
+  if (ks(g.ctx._cand) !== win([9])) fails.push(`7 · the other face's candidate memo kept [${ks(g.ctx._cand)}], not [${win([9])}]`)
   return fails
 }
 
@@ -185,7 +192,7 @@ const bf = behaviour(M, seated, { report: true })
 say(!bf.length && seated.length > 0, `every stone chunk of ${seated.map(s => s.t).join(', ') || 'no town'}: cached = fresh, built once` + (bf.length ? `\n      ${bf.join('\n      ')}` : ''))
 const sf = source(REV_SRC, components)
 const rf = retention(M)
-say(!rf.length, 'retainStones keeps this near set and the one before, nothing else' + (rf.length ? `\n      ${rf.join('\n      ')}` : ''))
+say(!rf.length, 'retainStones keeps this near set and the one before, and the candidates their windows read, nothing else' + (rf.length ? `\n      ${rf.join('\n      ')}` : ''))
 say(!sf.length, `SlabRevetment: the cache is made with the faces and bounded by the window, an unchanged near set returns before setBuilt, the drape is keyed by chunk, stones only through stonesOf` + (sf.length ? `\n      ${sf.join('\n      ')}` : ''))
 
 if (process.argv.includes('--mutants')) {
@@ -202,6 +209,8 @@ if (process.argv.includes('--mutants')) {
   judge('a stone\'s drawn-ground y not subtracted', behaviour(await nearWith('st.p[1] - g.raw - g.y', 'st.p[1] - g.raw'), one))
   judge('a stone\'s raw ground not subtracted', behaviour(await nearWith('st.p[1] - g.raw - g.y', 'st.p[1] - g.y'), one))
   judge('retention keeps everything', retention(await nearWith('if (!keep.get(f).has(ci)) f.stones.delete(ci)', 'if (false) f.stones.delete(ci)')))
+  judge('the candidate memo left unbounded', retention(await nearWith('    retainCandidates(f.ctx, keep.get(f), STONE_MARGIN)\n', '')))
+  judge('the candidate memo kept to the chunks alone, no window', retention(await nearWith('retainCandidates(f.ctx, keep.get(f), STONE_MARGIN)', 'retainCandidates(f.ctx, keep.get(f), 0)')))
   judge('retention forgets the previous near set', retention(await nearWith('  for (const [f, ci] of before) keep.get(f)?.add(ci)\n', '')))
   const rev = (a, b) => { if (!REV_SRC.includes(a)) throw new Error(`⛔ mutant target gone from SlabRevetment.jsx: ${JSON.stringify(a)}`); return REV_SRC.replace(a, b) }
   judge('the early return removed', source(rev('lastSet.current.sig === sig) return', 'lastSet.current.sig === sig) {}'), components))
