@@ -1,0 +1,168 @@
+
+=== flight 1 (4 busy spans)
+-- span 4186 ms
+  task:  3732ms loop dep:chunk-NBSWMX6K:17285 | 193ms performWorkUntilDeadline dep:chunk-NBSWMX6K:457 | 101ms (program) (native) | 45ms (anon) kit:src/lib/shoreChunks.js:100
+  self:  647ms sample kit:src/lib/drawnGround.js:96
+         601ms at kit:src/lib/shoreChunks.js:99
+         440ms (anon) kit:src/lib/shoreChunks.js:100
+         326ms neigh kit:src/lib/shoreChunks.js:250
+         267ms ulp32 kit:src/lib/drawnGround.js:67
+         219ms resolveWindow kit:src/lib/shoreChunks.js:236
+         187ms (anon) kit:src/lib/revetmentFromSlab.js:324
+         101ms (program) (native)
+  kit:   647ms sample kit:src/lib/drawnGround.js:96
+         601ms at kit:src/lib/shoreChunks.js:99
+         440ms (anon) kit:src/lib/shoreChunks.js:100
+         326ms neigh kit:src/lib/shoreChunks.js:250
+         267ms ulp32 kit:src/lib/drawnGround.js:67
+         219ms resolveWindow kit:src/lib/shoreChunks.js:236
+         187ms (anon) kit:src/lib/revetmentFromSlab.js:324
+         106ms walk kit:src/components/Town.jsx:488
+-- span 413 ms
+  task:  182ms performWorkUntilDeadline dep:chunk-NBSWMX6K:457 | 80ms loop dep:chunk-NBSWMX6K:17285 | 56ms (anon) dep:chunk-NUMECXU6:18625 | 43ms (program) (native)
+  self:  43ms (program) (native)
+         42ms updateHostComponent dep:chunk-NBSWMX6K:8067
+         31ms (garbage collector) (native)
+         24ms jsxDEV dep:react_jsx-dev-runtime:605
+         18ms insetOf ward:src/scene/Scene.jsx:34
+         13ms StreetLabels kit:src/components/StreetLabels.jsx:23
+         9ms now (native)
+         8ms townClockOf kit:src/lib/townClock.js:42
+  kit:   43ms (no kit/ward frame: (program))
+         42ms (no kit/ward frame: updateHostComponent)
+         31ms (no kit/ward frame: (garbage collector))
+         18ms insetOf ward:src/scene/Scene.jsx:34
+         13ms StreetLabels kit:src/components/StreetLabels.jsx:23
+         9ms (no kit/ward frame: now)
+         8ms SlabRevetment kit:src/components/SlabRevetment.jsx:64
+         8ms townClockOf kit:src/lib/townClock.js:42
+-- span 73 ms
+  task:  69ms loop dep:chunk-NBSWMX6K:17285 | 4ms (program) (native) | 0ms tick ward:src/scene/Scene.jsx:88
+  self:  7ms renderObject dep:chunk-TIG2MKL5:17924
+         5ms setMaterial dep:chunk-TIG2MKL5:14495
+         5ms bindVertexArray (native)
+         4ms setProgram dep:chunk-TIG2MKL5:18029
+         4ms (program) (native)
+         4ms projectObject dep:chunk-TIG2MKL5:17781
+         4ms WebGLRenderer.renderBufferDirect dep:chunk-TIG2MKL5:17542
+         3ms update dep:chunk-TIG2MKL5:11361
+  kit:   7ms (no kit/ward frame: renderObject)
+         6ms (no kit/ward frame: update)
+         5ms (no kit/ward frame: setMaterial)
+         5ms (no kit/ward frame: bindVertexArray)
+         4ms (no kit/ward frame: setProgram)
+         4ms (no kit/ward frame: (program))
+         4ms (no kit/ward frame: projectObject)
+         4ms (no kit/ward frame: WebGLRenderer.renderBufferDirect)
+
+=== flight 2 (36 busy spans)
+-- span 744 ms
+  task:  322ms loop dep:chunk-NBSWMX6K:17285 | 283ms performWorkUntilDeadline dep:chunk-NBSWMX6K:457 | 54ms (program) (native) | 39ms (anon) dep:chunk-NUMECXU6:18625
+  self:  76ms updateHostComponent dep:chunk-NBSWMX6K:8067
+         54ms (program) (native)
+         41ms projectObject dep:chunk-TIG2MKL5:17781
+         40ms jsxDEV dep:react_jsx-dev-runtime:605
+         25ms now (native)
+         24ms wants kit:src/components/SlabRevetment.jsx:222
+         22ms updateMatrixWorld dep:chunk-TIG2MKL5:5120
+         18ms townClockOf kit:src/lib/townClock.js:42
+  kit:   76ms (no kit/ward frame: updateHostComponent)
+         54ms (no kit/ward frame: (program))
+         41ms (no kit/ward frame: projectObject)
+         25ms (no kit/ward frame: now)
+         24ms SlabRevetment kit:src/components/SlabRevetment.jsx:64
+         24ms wants kit:src/components/SlabRevetment.jsx:222
+         22ms (no kit/ward frame: updateMatrixWorld)
+         20ms (no kit/ward frame: renderObject)
+-- span 165 ms
+  task:  98ms performWorkUntilDeadline dep:chunk-NBSWMX6K:457 | 39ms loop dep:chunk-NBSWMX6K:17285 | 12ms (program) (native) | 7ms (anon) dep:chunk-NUMECXU6:18625
+  self:  26ms updateHostComponent dep:chunk-NBSWMX6K:8067
+         13ms jsxDEV dep:react_jsx-dev-runtime:605
+         12ms (program) (native)
+         7ms now (native)
+         6ms (garbage collector) (native)
+         5ms placeNeon kit:src/lib/neonPlaces.js:45
+         4ms setMaterial dep:chunk-TIG2MKL5:14495
+         3ms (anon) dep:@react-three_drei:15109
+  kit:   26ms (no kit/ward frame: updateHostComponent)
+         12ms (no kit/ward frame: (program))
+         8ms SlabRevetment kit:src/components/SlabRevetment.jsx:64
+         7ms (no kit/ward frame: now)
+         6ms (no kit/ward frame: (garbage collector))
+         5ms placeNeon kit:src/lib/neonPlaces.js:45
+         5ms (no kit/ward frame: ?)
+         5ms NeonBands kit:src/components/NeonBands.jsx:322
+-- span 112 ms
+  task:  94ms loop dep:chunk-NBSWMX6K:17285 | 15ms (program) (native) | 4ms performWorkUntilDeadline dep:chunk-NBSWMX6K:457
+  self:  15ms (program) (native)
+         10ms projectObject dep:chunk-TIG2MKL5:17781
+         9ms wants kit:src/components/SlabRevetment.jsx:222
+         7ms updateMatrixWorld dep:chunk-TIG2MKL5:5120
+         7ms walk kit:src/components/Town.jsx:508
+         7ms renderObject dep:chunk-TIG2MKL5:14009
+         4ms intersectsObject dep:chunk-TIG2MKL5:8433
+         3ms walk kit:src/components/Town.jsx:488
+  kit:   15ms (no kit/ward frame: (program))
+         10ms (no kit/ward frame: projectObject)
+         9ms wants kit:src/components/SlabRevetment.jsx:222
+         9ms (no kit/ward frame: renderObject)
+         7ms walk kit:src/components/Town.jsx:488
+         7ms walk kit:src/components/Town.jsx:508
+         6ms (no kit/ward frame: updateMatrixWorld)
+         4ms (no kit/ward frame: intersectsObject)
+
+=== flight 3 (37 busy spans)
+-- span 380 ms
+  task:  175ms performWorkUntilDeadline dep:chunk-NBSWMX6K:457 | 174ms loop dep:chunk-NBSWMX6K:17285 | 8ms (program) (native) | 8ms (garbage collector) (native)
+  self:  50ms updateHostComponent dep:chunk-NBSWMX6K:8067
+         29ms jsxDEV dep:react_jsx-dev-runtime:605
+         23ms now (native)
+         11ms applyMatrix4 dep:chunk-TIG2MKL5:2915
+         10ms projectObject dep:chunk-TIG2MKL5:17781
+         10ms WebGLRenderer.renderBufferDirect dep:chunk-TIG2MKL5:17542
+         8ms (program) (native)
+         8ms updateMatrixWorld dep:chunk-TIG2MKL5:5120
+  kit:   50ms (no kit/ward frame: updateHostComponent)
+         30ms walk kit:src/components/Town.jsx:488
+         23ms (no kit/ward frame: now)
+         16ms (anon) kit:src/components/SlabRevetment.jsx:272
+         12ms (no kit/ward frame: renderObject)
+         10ms (no kit/ward frame: projectObject)
+         10ms (no kit/ward frame: WebGLRenderer.renderBufferDirect)
+         8ms (no kit/ward frame: (program))
+-- span 304 ms
+  task:  157ms loop dep:chunk-NBSWMX6K:17285 | 92ms performWorkUntilDeadline dep:chunk-NBSWMX6K:457 | 39ms (program) (native) | 7ms (garbage collector) (native)
+  self:  39ms (program) (native)
+         32ms updateHostComponent dep:chunk-NBSWMX6K:8067
+         25ms projectObject dep:chunk-TIG2MKL5:17781
+         19ms wants kit:src/components/SlabRevetment.jsx:222
+         16ms jsxDEV dep:react_jsx-dev-runtime:605
+         15ms updateMatrixWorld dep:chunk-TIG2MKL5:5120
+         15ms walk kit:src/components/Town.jsx:508
+         8ms now (native)
+  kit:   39ms (no kit/ward frame: (program))
+         32ms (no kit/ward frame: updateHostComponent)
+         25ms (no kit/ward frame: projectObject)
+         19ms wants kit:src/components/SlabRevetment.jsx:222
+         15ms walk kit:src/components/Town.jsx:508
+         14ms (no kit/ward frame: updateMatrixWorld)
+         8ms (no kit/ward frame: now)
+         8ms (anon) kit:src/components/SlabRevetment.jsx:272
+-- span 147 ms
+  task:  78ms performWorkUntilDeadline dep:chunk-NBSWMX6K:457 | 32ms (anon) dep:chunk-NUMECXU6:18625 | 24ms loop dep:chunk-NBSWMX6K:17285 | 9ms (program) (native)
+  self:  26ms updateHostComponent dep:chunk-NBSWMX6K:8067
+         11ms jsxDEV dep:react_jsx-dev-runtime:605
+         9ms (program) (native)
+         5ms insetOf ward:src/scene/Scene.jsx:34
+         5ms now (native)
+         2ms updateMatrixWorld dep:chunk-TIG2MKL5:5120
+         2ms placeNeon kit:src/lib/neonPlaces.js:45
+         2ms renderObject dep:chunk-TIG2MKL5:17924
+  kit:   26ms (no kit/ward frame: updateHostComponent)
+         9ms (no kit/ward frame: (program))
+         8ms (anon) kit:src/components/SlabRevetment.jsx:272
+         6ms (no kit/ward frame: ?)
+         5ms insetOf ward:src/scene/Scene.jsx:34
+         5ms (no kit/ward frame: now)
+         3ms (no kit/ward frame: renderObject)
+         2ms (no kit/ward frame: createElement)
