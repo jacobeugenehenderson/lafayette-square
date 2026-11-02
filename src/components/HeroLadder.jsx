@@ -23,7 +23,7 @@ import { forwardRef, useMemo } from 'react'
 import { useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { Pass } from 'postprocessing'
-import { _pyramidRefs } from './DownsamplePyramid.jsx'
+import { _pyramidRefs, PYRAMID_LEVELS, LEVEL0_REACH_PX } from './DownsamplePyramid.jsx'
 import { _dofRefs, _heroLadderRefs, DOF_BLUR_GLSL, HERO_LEVELS } from './RomanceDoF.jsx'
 
 const vert = /* glsl */`
@@ -155,7 +155,11 @@ class HeroLadderPass extends Pass {
   render(renderer, inputBuffer) {
     if (!this.targets.length) this._makeTargets()
     const rect = _dofRefs.heroRect.current            // null = no hero (nothing picked, or off screen)
-    const meshes = _dofRefs.heroMeshes.current, want = !!rect && _dofRefs.maxBlur.current > 0
+    // ⭐ No blur under a pixel, no mask (Boz's ruling, 2026-11-02; Sigil's measurement: maxBlur 0.0135–0.031 at the hero):
+    // the subtraction changes nothing when even the most blur reaches less than one pixel, so the mask's draw (the hero
+    // redrawn) is skipped. The pixel is the unit; the reach is the ladder's own (DownsamplePyramid.jsx#LEVEL0_REACH_PX).
+    const blurPx = _dofRefs.maxBlur.current * PYRAMID_LEVELS * LEVEL0_REACH_PX
+    const meshes = _dofRefs.heroMeshes.current, want = !!rect && blurPx >= 1
     if (want && !meshes?.length && !this._said) { this._said = true; console.error('[dof] ⛔ the hero is on screen but nothing draws it (focusObject.js#focusMeshes) — it is not taken out of the blur beside it') }
     _heroLadderRefs.on.current = want && !!meshes?.length && !!this.liveCamera && !!this.liveScene
     if (!_heroLadderRefs.on.current) return

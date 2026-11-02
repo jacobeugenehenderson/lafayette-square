@@ -80,10 +80,12 @@ function Strands({ count, strands, glassRef, coreRef, socketRef, cordRef }) {
   const dark = useMemo(() => new THREE.MeshStandardMaterial({ color: CORD, roughness: 0.8, metalness: 0 }), [])
   useEffect(() => () => { bulb.dispose(); tube.dispose(); glass.dispose(); core.dispose(); dark.dispose() }, [bulb, tube, glass, core, dark])
   return (<>
-    <instancedMesh name="light-show:glass" ref={glassRef} args={[bulb, glass, count]} frustumCulled={false} />
+    {/* Glass, sockets and cords add next to nothing to the image (clear glass at 0.22; small, dark): the hero's coverage
+        mask leaves them out, and draws the light cores (focusObject.js#focusMeshes). */}
+    <instancedMesh name="light-show:glass" ref={glassRef} args={[bulb, glass, count]} frustumCulled={false} userData={{ coverage: false }} />
     <instancedMesh name="light-show:light" ref={coreRef} args={[bulb, core, count]} frustumCulled={false} />
-    <instancedMesh name="light-show:sockets" ref={socketRef} args={[tube, dark, count]} frustumCulled={false} />
-    <instancedMesh name="light-show:cords" ref={cordRef} args={[tube, dark, strands]} frustumCulled={false} />
+    <instancedMesh name="light-show:sockets" ref={socketRef} args={[tube, dark, count]} frustumCulled={false} userData={{ coverage: false }} />
+    <instancedMesh name="light-show:cords" ref={cordRef} args={[tube, dark, strands]} frustumCulled={false} userData={{ coverage: false }} />
   </>)
 }
 

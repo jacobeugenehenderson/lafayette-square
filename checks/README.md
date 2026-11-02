@@ -207,7 +207,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-deadend-look.mjs` | RENDER THE NINE. Read-only. |
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 
-## safe — 390. This is `npm test`.
+## safe — 391. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -529,6 +529,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-the-ground-is-painted-once.mjs` | IS EVERY POINT OF THE GROUND PAINTED BY EXACTLY ONE GROUP? |
 | `checks/claims-the-ground-tiles-without-a-gap.mjs` | DOES THE DRAWN GROUND TILE THE DISC, WITH NO SEAM LEFT OPEN? |
 | `checks/claims-the-grove-shows-only-finished-trees.mjs` | CAN THE GROVE SHOW A TREE THAT ISN'T THIS TOWN'S, OR ISN'T BAKED? |
+| `checks/claims-the-hero-mask-is-what-the-hero-adds.mjs` | "IS THE HERO'S COVERAGE MASK WHAT THE HERO ADDS TO THE IMAGE, AND IS IT SKIPPED WHEN NOTHING BLURS?" (Boz's ruling, |
 | `checks/claims-the-hero-matte-is-coverage.mjs` | CLAIM — THE HERO LADDER TAKES THE HERO OUT BY ITS COVERAGE (2026-10-28, Ferrule; Zob's plan PASS with four edits). |
 | `checks/claims-the-horizon-takes-the-towns-cover.mjs` | DOES THE HORIZON CARRY THE TOWN'S COVER, NEVER A ROAD? |
 | `checks/claims-the-impostor-shoots-a-tree-whose-leaves-touch-wood.mjs` | DO THE LEAVES IN THE TREE THE IMPOSTOR PHOTOGRAPHS HANG ON WOOD? |

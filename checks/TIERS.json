@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 562,
+  "total": 563,
   "counts": {
-    "safe": 390,
+    "safe": 391,
     "local-effect": 32,
     "live": 140
   },
@@ -3496,6 +3496,13 @@
       "tier": "safe",
       "why": [
         "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-the-hero-mask-is-what-the-hero-adds.mjs",
+      "tier": "safe",
+      "why": [
+        "importSource of src/lib/focusObject.js — read, safe"
       ]
     },
     {
