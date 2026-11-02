@@ -1,0 +1,71 @@
+{
+ "town": "provincetown",
+ "mode": "still",
+ "rows": [
+  {
+   "cam": "far",
+   "noise": 0,
+   "off": 167.95,
+   "on": 167.21,
+   "diff": 0,
+   "borderPct": 0,
+   "innerPct": 0,
+   "drawnOff": 221706,
+   "drawnOn": 204516,
+   "total": 221706,
+   "pass": true
+  },
+  {
+   "cam": "mid",
+   "noise": 0,
+   "off": 159.4,
+   "on": 156.86,
+   "diff": 0,
+   "borderPct": 0,
+   "innerPct": 0,
+   "drawnOff": 221706,
+   "drawnOn": 175965,
+   "total": 221706,
+   "pass": true
+  },
+  {
+   "cam": "close",
+   "noise": 0,
+   "off": 146.65,
+   "on": 141.52,
+   "diff": 0,
+   "borderPct": 0,
+   "innerPct": 0,
+   "drawnOff": 221706,
+   "drawnOn": 161889,
+   "total": 221706,
+   "pass": true
+  },
+  {
+   "cam": "closeLowSun",
+   "noise": 0,
+   "off": 143.81,
+   "on": 139.48,
+   "diff": 0,
+   "borderPct": 0,
+   "innerPct": 0,
+   "drawnOff": 221706,
+   "drawnOn": 170319,
+   "total": 221706,
+   "pass": true
+  }
+ ],
+ "load": [
+  1.88720703125,
+  2.056640625,
+  2.1376953125
+ ],
+ "log": [
+  "== tree cull A/B · provincetown · Stage still · M1 headless · load 1.7 1.9 2.1 ==",
+  "  far         off 167.95 → on 167.21 ms GPU (Δ -0.7) · drawn 221706 → 204516 of 221706 · frozen diff 0% (border 0% / inner 0%) vs same-instant noise 0% → NO-OP · uptime 2.7",
+  "  mid         off 159.4 → on 156.86 ms GPU (Δ -2.5) · drawn 221706 → 175965 of 221706 · frozen diff 0% (border 0% / inner 0%) vs same-instant noise 0% → NO-OP · uptime 2.5",
+  "  close       off 146.65 → on 141.52 ms GPU (Δ -5.1) · drawn 221706 → 161889 of 221706 · frozen diff 0% (border 0% / inner 0%) vs same-instant noise 0% → NO-OP · uptime 2.4",
+  "  (dusk set)",
+  "  closeLowSun off 143.81 → on 139.48 ms GPU (Δ -4.3) · drawn 221706 → 170319 of 221706 · frozen diff 0% (border 0% / inner 0%) vs same-instant noise 0% → NO-OP · uptime 1.9"
+ ]
+}

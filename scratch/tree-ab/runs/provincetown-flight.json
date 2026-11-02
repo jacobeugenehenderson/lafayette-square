@@ -1,0 +1,46 @@
+{
+ "town": "provincetown",
+ "mode": "flight",
+ "rows": [
+  {
+   "rate": 1,
+   "on": false,
+   "mainMean": 14.619444444113308,
+   "worst": 1033.7999999523163,
+   "rewritesPerS": 0
+  },
+  {
+   "rate": 1,
+   "on": true,
+   "mainMean": 14.312222224970656,
+   "worst": 1033.7999999523163,
+   "rewritesPerS": 229.75
+  },
+  {
+   "rate": 4,
+   "on": false,
+   "mainMean": 28.650833334028718,
+   "worst": 1033.7999999523163,
+   "rewritesPerS": 0
+  },
+  {
+   "rate": 4,
+   "on": true,
+   "mainMean": 33.857361115184084,
+   "worst": 1903.7999999523163,
+   "rewritesPerS": 172.125
+  }
+ ],
+ "load": [
+  1.30859375,
+  2.05322265625,
+  2.17529296875
+ ],
+ "log": [
+  "== tree cull A/B · provincetown · Preview flights · M1 headless · load 1.6 2.3 2.3 ==",
+  "  CPU 1× · cull off · rewrites 0.0/s · main 14.62 ms/frame (30-frame mean) · worst long frame 1034 ms · uptime 2.1",
+  "  CPU 1× · cull ON  · rewrites 229.8/s · main 14.31 ms/frame (30-frame mean) · worst long frame 1034 ms · uptime 2.0",
+  "  CPU 4× · cull off · rewrites 0.0/s · main 28.65 ms/frame (30-frame mean) · worst long frame 1034 ms · uptime 1.6",
+  "  CPU 4× · cull ON  · rewrites 172.1/s · main 33.86 ms/frame (30-frame mean) · worst long frame 1904 ms · uptime 1.3"
+ ]
+}
