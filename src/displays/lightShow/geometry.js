@@ -79,3 +79,17 @@ export function avgGlow(extent, lum) {
   const d = extent.ridge.yM * AVG_GLOW_HEIGHT_OF_RIDGE
   return { y: d, intensity: AVG_GLOW_LUX * d * d * lum }
 }
+
+/**
+ * The strands' INSTANCE ORDER: the glow's strands first, then the rest, so a mesh's draw count can stop at what hangs
+ * (LightShow.jsx: at glow only the glow's strands are drawn, never the rest as zero-scaled instances). `n` strands,
+ * `isGlow(s)` which are the glow's. → { pos: strand → its place, glow: the glow's strands, all: every strand, in order }.
+ * ▶ node checks/claims-a-display-draws-only-what-hangs.mjs
+ */
+export function strandOrder(n, isGlow) {
+  const glow = [], rest = []
+  for (let s = 0; s < n; s++) (isGlow(s) ? glow : rest).push(s)
+  const all = [...glow, ...rest], pos = new Array(n)
+  all.forEach((s, k) => { pos[s] = k })
+  return { pos, glow, all }
+}

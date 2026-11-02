@@ -31,7 +31,7 @@ import { validateDrawer, compileRun, showAt, showSeconds, glowColour, inSeason, 
 import { kelvinToRgb, validateDisplayChannel } from '../showChannel.js'
 import { nightsOn, displayStateAt, refuseScheduleSense, prevDate } from '../showSchedule.js'
 import { getTodSlotRow, getTodSlotDaysAhead } from '../../cartograph/animatedParam.js'
-import { checkFaces, strandEnds, pinnacleFace, pinnacleWash, bulbRadius, cordRadius, SOCKET_OF_BULB, avgGlow } from './geometry.js'
+import { checkFaces, strandEnds, pinnacleFace, pinnacleWash, bulbRadius, cordRadius, SOCKET_OF_BULB, avgGlow, strandOrder } from './geometry.js'
 import useDisplayPreview from '../preview.js'
 import { drawerUrls } from '../drawerUrl.js'
 import { readDrawerJson, rasterFrame } from './drawerRead.js'
@@ -110,9 +110,14 @@ export default function LightShow({ display, channel: given, extent, calendar, c
   useMemo(() => { if (compiled) refuseScheduleSense(channel, getTodSlotDaysAhead(useTimeOfDay.getState().currentTime, 366), showSeconds(compiled), where) }, [judged, compiled, where])   // eslint-disable-line react-hooks/exhaustive-deps
   const ends = useMemo(() => F ? strandEnds(st.show, extent.ridge.sides, extent.ridge.halfWidthM, st.ringRadiusM) : [], [F, st, extent])
   const every = st.show / st.glow, isGlow = (s) => s % every === Math.floor(every / 2)   // the real strands among the show's
+  // ⭐ ONLY WHAT HANGS IS DRAWN (Boz's (3), 2026-11-02; Zob's 2a): the instances are ORDERED glow strands first, so a mesh's
+  // draw count can stop at what hangs. At glow (most of every night) the GPU draws the glow's strands only, never the rest
+  // as zero-scaled instances; out of season nothing is drawn at all. ▶ node checks/claims-a-display-draws-only-what-hangs.mjs
+  const order = useMemo(() => strandOrder(ends.length, isGlow), [ends, every])   // eslint-disable-line react-hooks/exhaustive-deps
 
   const root = useRef(), glassRef = useRef(), coreRef = useRef(), socketRef = useRef(), cordRef = useRef(), pinRef = useRef(), lightRef = useRef()
   const hung = useRef(null)                                     // which strands hang now: 'none' | 'glow' | 'all'
+  const unlit = useRef(false)                                   // the light cores cleared and hidden (off: nothing to colour)
   const day = useRef(null)                                      // the nights of the day before and of today, once a day
 
   const pinFaces = useMemo(() => {
@@ -159,43 +164,54 @@ export default function LightShow({ display, channel: given, extent, calendar, c
     if (pinRef.current) pinRef.current.visible = !!show
     // ── where: hang the strands (ridge to foot ring): none out of season, the glow's by day and at glow, all in a show ─
     const hang = !up ? 'none' : show ? 'all' : 'glow'
+    root.current.visible = hang !== 'none'                                              // out of season: nothing submitted
     if (hung.current !== hang) {
+      const hangs = hang === 'all' ? order.all.length : hang === 'glow' ? order.glow.length : 0
+      for (const m of [glassRef, coreRef, socketRef]) m.current.count = hangs * rows     // draw only what hangs
+      cordRef.current.count = hangs
       const footY = st.footHeightM, put = (mesh, i, x, y, z, sx, sy) => mesh.setMatrixAt(i, tmp.m.compose(tmp.p.set(x, y, z), tmp.q, tmp.s.set(sx, sy, sx)))
       ends.forEach((e, s) => {
         const on = hang === 'all' || (hang === 'glow' && isGlow(s))
         const len = Math.hypot(e.bx - e.tx, footY - extent.ridge.yM, e.bz - e.tz), k = on ? 1 : 0
         const r = bulbRadius(len, rows) * k, sr = r * SOCKET_OF_BULB.radius, sh = r * SOCKET_OF_BULB.height
         tmp.u.set(e.tx - e.bx, extent.ridge.yM - footY, e.tz - e.bz).normalize(); tmp.q.setFromUnitVectors(tmp.Y, tmp.u)   // up the strand
-        put(cordRef.current, s, (e.tx + e.bx) / 2, (extent.ridge.yM + footY) / 2, (e.tz + e.bz) / 2, cordRadius(len, rows) * k, len * k)
+        put(cordRef.current, order.pos[s], (e.tx + e.bx) / 2, (extent.ridge.yM + footY) / 2, (e.tz + e.bz) / 2, cordRadius(len, rows) * k, len * k)
         for (let j = 0; j < rows; j++) {
           const t = (j + 0.5) / rows, x = e.tx + (e.bx - e.tx) * t, y = extent.ridge.yM + (footY - extent.ridge.yM) * t, z = e.tz + (e.bz - e.tz) * t
-          put(glassRef.current, s * rows + j, x, y, z, r, r)
-          put(coreRef.current, s * rows + j, x, y, z, r * CORE_OF_BULB, r * CORE_OF_BULB)
+          const i = order.pos[s] * rows + j
+          put(glassRef.current, i, x, y, z, r, r)
+          put(coreRef.current, i, x, y, z, r * CORE_OF_BULB, r * CORE_OF_BULB)
           const o = r + sh / 2 - r * 0.15                                                 // the socket, on the bulb's cord side
-          put(socketRef.current, s * rows + j, x + tmp.u.x * o, y + tmp.u.y * o, z + tmp.u.z * o, sr, sh)
+          put(socketRef.current, i, x + tmp.u.x * o, y + tmp.u.y * o, z + tmp.u.z * o, sr, sh)
         }
       })
       for (const m of [glassRef, coreRef, socketRef, cordRef]) m.current.instanceMatrix.needsUpdate = true
       hung.current = hang
     }
     if (dim) { const cur = dim.byDisplay[display.id] ?? 1, to = uplightTarget(mode, display); dim.byDisplay[display.id] = cur + (to - cur) * Math.min(1, delta * 1.5) }
-    // ── what: colour every bulb ───────────────────────────────────────────────────────────────────────────────────
+    // ── what: colour every bulb that hangs ─────────────────────────────────────────────────────────────────────────────
+    // OFF (hung by day, or Stage's Off): the light cores add nothing, so they are hidden and not coloured, once, until lit.
+    if (!show && (mode === 'off' || hang === 'none')) {
+      if (!unlit.current) { coreRef.current.visible = false; if (lightRef.current) lightRef.current.intensity = 0; unlit.current = true }
+      return
+    }
+    if (unlit.current) { coreRef.current.visible = true; unlit.current = false }
     const avg = [0, 0, 0]; let n = 0
     // The show OVERTAKES the glow (Jacob, 2026-10-31): a glow strand's bulb stays lit white until the show's front reaches
     // it, then it takes the show's colour; at the close the white takes the strands back the same way. Never a fade-out.
-    ends.forEach((e, s) => {
+    for (const s of hang === 'all' ? order.all : order.glow) {
       const c = Math.floor(s * F.w / st.show), real = isGlow(s)
       for (let j = 0; j < rows; j++) {
         const row = F.pinH + j, r = show ? (show.reveal ? show.reveal(c, row) : 'on') : 'off'
         const rgb = r === 'spark' ? [255, 246, 228] : r === 'on' ? show.colour(c, row).map(v => v * lit.show) : real && mode !== 'off' && !toDark ? glowColour(warm, lit.glow, c, j, now) : [0, 0, 0]
         tmp.c.setRGB(rgb[0] / 255, rgb[1] / 255, rgb[2] / 255)          // the light inside the glass (additive: unlit adds nothing)
-        coreRef.current.setColorAt(s * rows + j, tmp.c)
+        coreRef.current.setColorAt(order.pos[s] * rows + j, tmp.c)
         if (rgb[0] + rgb[1] + rgb[2] > 0) { avg[0] += rgb[0]; avg[1] += rgb[1]; avg[2] += rgb[2]; n++ }
       }
-    })
+    }
     coreRef.current.instanceColor.needsUpdate = true
     // ── the pinnacle: each face's strip, washing up it ──────────────────────────────────────────────────────────────
-    if (pinRef.current && pinFaces) pinFaces.forEach((face, k) => {
+    if (show && pinRef.current && pinFaces) pinFaces.forEach((face, k) => {             // only in a show (it is hidden otherwise)
       const lo = [0, 0, 0], hi = [0, 0, 0]; let nl = 0, nh = 0
       if (show) for (let c = k * F.w / F.faces; c < (k + 1) * F.w / F.faces; c += 4) for (let row = 0; row < F.pinH; row += 3) {
         const v = show.colour(c, row), into = row >= F.pinH / 2 ? lo : hi

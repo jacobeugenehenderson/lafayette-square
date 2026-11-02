@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 561,
+  "total": 562,
   "counts": {
-    "safe": 389,
+    "safe": 390,
     "local-effect": 32,
     "live": 140
   },
@@ -297,6 +297,13 @@
       "tier": "safe",
       "why": [
         "importSource of src/displays/dim.js — read, safe"
+      ]
+    },
+    {
+      "file": "checks/claims-a-display-draws-only-what-hangs.mjs",
+      "tier": "safe",
+      "why": [
+        "importSource of src/displays/lightShow/geometry.js — read, safe"
       ]
     },
     {
