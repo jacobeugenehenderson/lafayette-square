@@ -23,7 +23,7 @@
  *      with the levels there, never removes the last key, sets a schedule and refuses one that crowds the show or whose
  *      ends pass each other AT THE GESTURE, reads an old Look through its one reader and saves the new shape on its first
  *      write, refuses an invalid write and leaves the store as it was, saves, and reverts; the card's keys carry no ▲/▼;
- *      Stage lights the display from the store; the Tonight strip reads the schedule's nights;
+ *      Stage lights the display from the store; the Tonight strip reads the schedule's nights and says tonight's clock change;
  *  10. a minute prints HH:MM and a length M:SS from the WHOLE minute / second (never 19:60 or 4:60).
  * Usage: node checks/claims-a-display-is-authored-on-its-own-channel.mjs [--mutants] [--kelvin]
  *   --kelvin: prints the nearest temperature and its residual against the old glow colour.
@@ -167,6 +167,7 @@ async function verdict({ chan, param, view, bake, eng, mount, pin, hook, manifes
     if (!m || +m[1] > 23 || +m[2] > 59 || +m[1] * 60 + +m[2] !== want) badClock = `${t.toFixed(1)} prints "${txt}"`
   }
   F(!badClock, `a minute is printed wrong: ${badClock}`)
+  F(/return townClockChange\(noon\(D\), noon\(nextDate\(D\)\)\)/.test(sa) && /\{clock && <div className="text-caption"[^>]*>\{clock\}<\/div>\}/.test(sa) && /change\.kind === 'skip' \? `The clock skips \$\{change\.from\}–\$\{change\.to\} tonight: a show there does not play\.` : `The clock runs \$\{change\.from\}–\$\{change\.to\} twice tonight: a show there plays twice\.`/.test(sa), "Stage's Tonight strip does not say tonight's clock change (townClockChange, noon to noon)")
   F(/import \{ runSeconds, hhmm, mmss \} from '\.\.\/displays\/lightShow\/engine\.js'/.test(sa) && !/const hhmm = /.test(sa), "Stage's Tonight strip does not print through the engine's one hhmm and mmss")
   let badLen = null
   for (let t = 0; t <= 1000 && !badLen; t += 0.1) { const txt = E.mmss(t), m = txt.match(/^(\d+):(\d\d)$/); if (!m || +m[2] > 59 || +m[1] * 60 + +m[2] !== Math.round(t)) badLen = `${t.toFixed(1)} s prints "${txt}"` }
@@ -213,6 +214,7 @@ if (process.argv.includes('--mutants')) {
     ['a level below 0 accepted', { chan: (s) => s.replace('if (k.glow < 0 || k.show < 0) throw', 'if (false) throw') }],
     ['a new key seeded with nothing', { store: (s) => s.replace('[slotId]: levelsAt(ch, sm[slotId], sm) }', '[slotId]: { glow: 0, show: 0, kelvin: 3000 } }') }],
     ['the gesture not judging the schedule', { store: (s) => s.replace('      refuseScheduleSense(next, getTodSlotDaysAhead(useTimeOfDay.getState().currentTime, 366), runSeconds, where)\n', '') }],
+    ['Tonight silent on a clock change', { stage: (s) => s.replace('      {clock && <div className="text-caption" style={{ color: \'var(--on-surface-variant)\' }}>{clock}</div>}\n', '') }],
     ['the Schedule block not on the card', { stage: (s) => s.replace('      <ScheduleBlock display={display} channel={read.channel} />\n', '') }],
     ['the Schedule block silent on a refusal', { stage: (s) => s.replace('{(refused || standing) && <div role="alert"', '{false && <div role="alert"') }],
     ['the Lit card offering ▲/▼ on a display', { stage: (s) => s.replace('channel={read.channel}\n      noEdges', 'channel={read.channel}') }],

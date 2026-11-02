@@ -43,7 +43,7 @@ import useFailures, { failuresFor } from '../lib/failures.js'
 import { runSeconds, hhmm, mmss } from '../displays/lightShow/engine.js'
 import { defaultDisplayChannel, DISPLAY_FIELDS, validateDisplayChannel } from '../displays/showChannel.js'
 import { nightsOn, displayStateAt, prevDate, nextDate, refuseShortCadence } from '../displays/showSchedule.js'
-import { townClockOf } from '../lib/townClock.js'
+import { townClockOf, townDateAt, townClockChange } from '../lib/townClock.js'
 import { getTodSlotRow, NAMED_TOD_SLOTS } from '../cartograph/animatedParam.js'
 import { PLUGINS as DISPLAY_PLUGINS } from '../displays/Displays.jsx'
 import { keyframeFocusIds } from '../lib/focusObject.js'
@@ -218,6 +218,10 @@ function TonightStrip({ display }) {
     const ch = read.channel, at = (d) => nightsOn(ch, d, getTodSlotRow, secs)
     return { before: at(prevDate(D)), tonight: at(D), after: at(nextDate(D)) }
   }, [read, D, secs])
+  const change = useMemo(() => {                                     // the town's clock between tonight's noon and tomorrow's
+    const noon = (d) => townDateAt({ year: +d.slice(0, 4), month: +d.slice(5, 7), day: +d.slice(8, 10), minute: 720 })
+    return townClockChange(noon(D), noon(nextDate(D)))
+  }, [D])
   if (!nights) return null
   const ch = read.channel, x = (abs) => ((abs - 720) / 1440) * 100      // noon to noon: abs minutes from D's 00:00
   const stateAt = (abs) => abs < 1440 ? displayStateAt(ch, nights.before, nights.tonight, D, abs, getTodSlotRow) : displayStateAt(ch, nights.tonight, nights.after, nextDate(D), abs - 1440, getTodSlotRow)
@@ -231,9 +235,11 @@ function TonightStrip({ display }) {
   const dark = nights.tonight.find(n => n.closesDark && n.lastStart != null)
   const line = !lit.length ? `Tonight: no Ambient${times.length ? `, ${times.length} shows` : ''}.`
     : `Tonight: Ambient ${lit.map(([a, b]) => `${hhmm((720 + a) % 1440)}–${hhmm((720 + b) % 1440)}`).join(', ')} · ${times.length} shows, ${mmss(secs)} each${dark ? ` · dark after the ${hhmm(dark.lastStart % 1440)} show` : ''}`
+  const clock = change && (change.kind === 'skip' ? `The clock skips ${change.from}–${change.to} tonight: a show there does not play.` : `The clock runs ${change.from}–${change.to} twice tonight: a show there plays twice.`)
   return (
     <div className="py-1" aria-label="Tonight's schedule">
       <div className="text-caption" style={{ color: 'var(--on-surface-variant)' }}>{line}</div>
+      {clock && <div className="text-caption" style={{ color: 'var(--on-surface-variant)' }}>{clock}</div>}
       <div className="relative rounded my-1" style={{ height: 10, background: 'var(--surface-container)', border: '1px solid var(--outline-variant)' }}>
         {lit.map(([a, b]) => <div key={a} className="absolute rounded" style={{ left: `${a / 1440 * 100}%`, width: `${(b - a) / 1440 * 100}%`, top: 0, bottom: 0, background: 'var(--tod-dusk)', opacity: 0.6 }} />)}
         {times.map(t => <div key={t} title={hhmm(t % 1440)} className="absolute" style={{ left: `${x(t)}%`, top: -2, bottom: -2, width: 2, background: 'var(--on-surface)' }} />)}
@@ -252,8 +258,7 @@ function readChannel(authored, id) {
 
 /**
  * A display's own channel, edited (Jacob, 2026-11-01: the show gets "its own in-look scheduler with the same kind of
- * faders"): Glow, Show, Glow colour and Show every, keyed on the day with the ▲/▼ fades, where a fade of 0 is a switch.
- * The first edit gives this Look its own copy of the default; ↺ drops it, back to the default. Lights the display live
+ * faders"): Ambient, Show and Ambient colour keyed on the day's slots, and its Schedule (ScheduleBlock). The first edit gives this Look its own copy of the default; ↺ drops it, back to the default. Lights the display live
  * (<Town overrides.displays>), and the bake carries it (scene.json#displays).
  */
 function DisplayChannel({ display }) {

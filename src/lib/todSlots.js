@@ -88,7 +88,7 @@ export function todSlotRowOf(place, date) {
   return row
 }
 /** The most a slot moves from one day to the next, in minutes (the clock change moves every slot 60 at once).
- *  claims-every-slot-has-a-time-every-day asserts it at every latitude; refuseWindowSense rests on it. */
+ *  claims-every-slot-has-a-time-every-day asserts it at every latitude; showSchedule.js#refuseScheduleSense rests on it. */
 export const SLOT_DAY_MOVE_MAX_MIN = 90
 
 /**
