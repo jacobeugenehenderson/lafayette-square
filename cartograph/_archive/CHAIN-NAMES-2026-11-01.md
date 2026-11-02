@@ -68,7 +68,7 @@ canon is not swept; README §START HERE carries one glossary line for it. ▶ `n
 - **`cartograph/FOUNDRY.md`** (rot: bake-scene.js freezes heroKeyframes and heroMotion whole):
   - was: per-shot camera (SC.5) freezes only Browse heading, not Hero keyframes / Browse altitude (those stay live).
 
-- **`cartograph/PREVIEW.md`** (rot: Publish uploads to R2; git is not involved):
+- **`cartograph/PREVIEW.md`** (half rot: Publish still commits the scoped paths locally, but pushes nothing (serve.js `POST /looks/<id>/publish`, "IT NO LONGER PUSHES A BRANCH"), then uploads to R2. A first correction here said "git is not involved", which was false; Zob caught it):
   - was: one click commits the scoped slab pathspecs + pushes.
 
 - **`cartograph/ARCHITECTURE.md`** (rot: "Stage →" (now "Look →") only navigates since 2026-10-04):
