@@ -21,7 +21,7 @@ canon is not swept; README §START HERE carries one glossary line for it. ▶ `n
 | Stage (the look-authoring step) · "Stage →" | Look · "Look →" | Stage is now only the function |
 | Stage's ↻ | a **Foundry** button | ↻ now means only Preview's Reload |
 | raw step ids in banners (skeleton, coast, pipeline…) | words, through `src/lib/stepWords.js` | "The Foundry owes N steps" |
-| `cartograph/BAKE.md` | `cartograph/FOUNDRY.md` | git mv, every pointer repointed |
+| the old BAKE doc | `cartograph/FOUNDRY.md` | git mv, every pointer repointed |
 
 ## The false sentences this pass corrected, verbatim
 
@@ -29,7 +29,7 @@ canon is not swept; README §START HERE carries one glossary line for it. ▶ `n
 - `- **Bake buttons** — Designer's **"Stage →"** = bake, then enter Stage on the opening keyframe. Stage's **"↻"** = bake in place, stay put. Both accept **⌥-click to force a full rebuild** (bypass the dirty-check). A small orange dot lights when authoring edits exist since the last bake (indicator only — never disables the action).`
 - `- **Authoring** (Stage → Bake → Preview) → **COMMENT IT OUT**, or you will pour a scene and then inspect R2's *older* copy.`
 
-**FOUNDRY.md** (was BAKE.md):
+**FOUNDRY.md** (the old BAKE doc):
 - §0: `Designer's "Stage →" fires it implicitly in the background; Stage's "↻" re-fires it in place.`
 - §1 Outputs: `⛔ **Written there, but PUBLISHED to R2** — the tree is gitignored and the pour's last step uploads it (below)` (Publish uploads it; a Foundry run never does)
 

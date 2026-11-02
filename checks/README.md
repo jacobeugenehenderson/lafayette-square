@@ -211,7 +211,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-deadend-look.mjs` | RENDER THE NINE. Read-only. |
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 
-## safe — 381. This is `npm test`.
+## safe — 382. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -503,6 +503,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-the-camera-has-one-definition.mjs` | DOES EVERY APP DRIVE THE CAMERA THE SAME WAY? |
 | `checks/claims-the-canvas-is-the-towns.mjs` | "DOES EVERY APP DRAW ITS TOWN THROUGH THE CANVAS THE TOWN'S QUALITY PROFILE ASKS FOR?" |
 | `checks/claims-the-capture-frame-is-the-clip-frame.mjs` | THE FRAME A BAND IS CUT IN MUST BE THE FRAME THE CAMERA CLIPS IN. |
+| `checks/claims-the-chain-has-one-set-of-names.mjs` | DOES THE OPERATOR READ ONE SET OF NAMES FOR THE CHAIN, AND NO RETIRED ONE? |
 | `checks/claims-the-coast-is-one-line-on-the-lattice.mjs` | CLAIM — THE COAST IS ONE LINE ON THE LATTICE (Boz's ruling, 2026-10-27; ②'s shareIntoFull lesson, in ①). ① holds the shoreline |
 | `checks/claims-the-coast-runs-on-past-the-rim.mjs` | "PAST THE RIM, DOES THE WATER END WHERE THE REAL COAST DOES?" — BRIEF-the-coast-runs-on-past-the-rim. |
 | `checks/claims-the-corner-extent-is-carried.mjs` | ⭐⭐⭐ THE CORNER'S EXTENT IS CARRIED, NOT RECOVERED — and this reads the artifact, never a rule. |

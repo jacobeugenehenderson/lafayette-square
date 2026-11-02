@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 557,
+  "total": 558,
   "counts": {
-    "safe": 381,
+    "safe": 382,
     "local-effect": 32,
     "live": 144
   },
@@ -3175,6 +3175,13 @@
       "tier": "safe",
       "why": [
         "imports package(s) @gltf-transform/core, @gltf-transform/extensions, meshoptimizer — not read from source"
+      ]
+    },
+    {
+      "file": "checks/claims-the-chain-has-one-set-of-names.mjs",
+      "tier": "safe",
+      "why": [
+        "runs `git grep -n -F BAKE.md -- *.md` — local, read-only"
       ]
     },
     {

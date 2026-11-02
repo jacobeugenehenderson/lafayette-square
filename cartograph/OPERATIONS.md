@@ -2,7 +2,7 @@
 
 > **The engineering/operator counterpoint to [FEATURES.md](FEATURES.md).** FEATURES is the *brochure* — what it is, why it's special (user/investor-facing). **This is the *manual* — here's the panel, here's the knob, here's when to turn it (operator-facing).** Same tools, two books: one sells it, one runs it. Reference-kind (eternal-present); **operator** audience (distinct from FEATURES = user/investor, and from ARCHITECTURE/ORIENTATION/RIBBONS = developer). Engineer-internals behind these knobs live in `ARCHITECTURE.md`; the geometry in `RIBBONS.md`.
 
-**The Cartograph has three functions, Stage · Preview · Publish, and the twelve steps sit inside them:** Stage holds 01 Extent · 02 Intake · 03 Skeleton · 04 Survey · 05 Seal · 06 Section · 07 Foundry · 08 Slab · 09 Look; Preview is 10 Preview; Publish holds 11 Publish · 12 Promote.
+**The Cartograph has three functions, Stage · Preview · Publish, and the twelve steps sit inside them:** Stage holds 01 Extent · 02 Intake · 03 Skeleton · 04 Survey · 05 Seal · 06 Section · 07 Foundry · 08 Slab · 09 Look; Preview is 10 Preview; Publish holds 11 Publish · 12 Promote. These are the only names on the screens and in this manual: ▶ `node checks/claims-the-chain-has-one-set-of-names.mjs`
 
 ---
 
