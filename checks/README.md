@@ -131,7 +131,7 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `checks/claims-the-paint-stack-flattens.mjs` | unreadable | writeFileSync — only under its own temp dir · computed import of a temp-dir module whose source cannot be read · re-runs its own file (process.execPath + its own path) — the same tier as itself · imports cartograph/bake-ground.js, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/terrainLoad.js, which can: imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync |
 | `checks/claims-the-paint-takes-the-rim-crossings.mjs` | unreadable | writeFileSync · child_process with a non-literal command — cannot be read · imports cartograph/bake-ground.js, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/terrainLoad.js, which can: imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync |
 | `checks/claims-the-pour-reads-the-towns-norm.mjs` | unreadable | child_process with a non-literal command — cannot be read |
-| `checks/claims-the-pour-records-itself-once.mjs` | unreadable | writeFileSync · mkdirSync · deletes files · computed import of a temp-dir module, and not every write is shown to stay in its temp dir · imports cartograph/pour-code.mjs, which can: runs `git` — not a known read-only git subcommand, runs `git` — not a known read-only git subcommand · imports cartograph/pourSteps.mjs, which can: writeFileSync |
+| `checks/claims-the-pour-runs-in-one-place.mjs` | unreadable | writeFileSync · mkdirSync · deletes files · imports cartograph/pourSteps.mjs, which can: writeFileSync, imports cartograph/pour-code.mjs, which can: runs `git` — not a known read-only git subcommand, runs `git` — not a known read-only git subcommand |
 | `checks/claims-the-publish-can-stage-what-it-promises.mjs` | unreadable | runs `git` — not a known read-only git subcommand |
 | `checks/claims-the-slab-addresses-files-by-where-it-was-fetched.mjs` | unreadable | imports vite — its server resolves localhost over DNS (caught by the no-network guard) · imports package(s) vite — not read from source |
 | `checks/claims-the-slab-ships-compressed.mjs` | outbound | calls fetch() · imports a network module · writeFileSync · mkdirSync · deletes files · importSource of src/lib/slabWire.js — read, safe · importSource of scripts/slab-wire.mjs, which can: writeFileSync · importSource of scripts/upload-baked-to-r2.mjs, which can: calls fetch(), writeFileSync · importSource of scripts/upload-baked-to-r2.mjs — read, safe · importSource of scripts/upload-baked-to-r2.mjs redirects src/lib/slabWire.js — read, safe · importSource of scripts/upload-baked-to-r2.mjs — read, safe · importSource of scripts/upload-baked-to-r2.mjs redirects scripts/slab-wire.mjs — read, safe · importSource of workers/production-sites/src/index.js, which can: calls fetch() · importSource of workers/production-sites/src/index.js — read, safe · importSource of workers/production-sites/src/index.js redirects src/lib/slabWire.js — read, safe · importSource of workers/staging-sites/src/index.js, which can: calls fetch() · importSource of workers/staging-sites/src/index.js — read, safe · importSource of workers/staging-sites/src/index.js redirects src/lib/slabWire.js — read, safe · computed import() with no readable target — runs arbitrary modules |
@@ -208,7 +208,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-deadend-look.mjs` | RENDER THE NINE. Read-only. |
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 
-## safe — 387. This is `npm test`.
+## safe — 388. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -466,6 +466,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-proto-vertex-provenance.mjs` | Sizes the handles build: a SOURCE vertex can resolve its centreline node by carried identity |
 | `checks/claims-proto-wall.mjs` | ⭐ THE WALL, ENFORCED BY READING THE SOURCE — not by a comment claiming it. |
 | `checks/claims-public-urls-come-from-the-town-domain.mjs` | EVERY PUBLIC URL THE PLAYER BUILDS TAKES THE TOWN'S DOMAIN FROM ONE HELPER. |
+| `checks/claims-publish-only-publishes.mjs` | "DOES PUBLISH ONLY PUBLISH — AND DOES EVERY STEP HAVE ONE BUTTON, IN ONE PLACE?" (Jacob, 2026-11-01: "we should start really |
 | `checks/claims-radius-has-one-home.mjs` | them. The disc radius lives in `neighborhood_boundary.json` (the applied disc — what |
 | `checks/claims-ramp-ends-classified.mjs` | CLAIM — EVERY HIGHWAY END IS ACCOUNTED FOR, AND AN AT-GRADE END LIES INSIDE THE TOWN'S ASPHALT (H-3 check 5). |
 | `checks/claims-recentre-removes-asymmetry.mjs` | READ-ONLY. Jacob, 2026-09-04: "there is NO asymmetrical case for the CHAIN ITSELF, for |

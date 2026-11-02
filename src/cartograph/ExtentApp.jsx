@@ -36,10 +36,11 @@ import { useTownFrame } from '../lib/useTownFrame.js'
 import { Text, Line } from '@react-three/drei'
 import RegimeControls from '../components/RegimeControls.jsx'
 import useCartographStore from './stores/useCartographStore.js'
+import { stagePath } from '../lib/authoringAddress.js'
 import {
   fetchSkeletonLabels, fetchStreetNames, discardMap, geocodePlace, fetchExtent, fetchGeography,
   fetchStreetGeom, fetchNeighborhood, saveNeighborhood, commitExtent, fetchBoundary,
-  pourMap, fetchRibbons, fetchMap, fetchLooks, createLook, bakeLook, fetchBuildingFootprints,
+  fetchLooks, createLook, fetchBuildingFootprints,
   fetchBuildingOverrides, saveBuildingOverrides, rescopeMap, rollbackExtent,
   fetchStreets, fetchBoundaryFromStreets, fetchMaps, fetchSkeleton, renameDraftScene,
   fetchAddressStatus,
@@ -1080,12 +1081,8 @@ export default function ExtentApp() {
   const [query, setQuery] = useState('')
   const [seeding, setSeeding] = useState(false)
   const [seedError, setSeedError] = useState(null)
-  // The last Foundry run's outcome, shown beside its button: { error:{at,message,rolledBack} } or { promoteDiff }; `at` is the progress label it stopped on.
+  // The last save's outcome, shown beside its button: { error:{at,message,rolledBack} } or { saved:{scene,lookId} }; `at` is the progress label it stopped on.
   const [bakeResult, setBakeResult] = useState(null)
-  // ⭐ A RE-POUR IS A QUESTION, NEVER A FAILURE (2026-10-28, Jacob: LS's Bake read "Bake failed at 'Baking slab': The pour code
-  // changed" after its own pour). The server stops a Bake that would re-pour and names the files (428); the Extent Bake asks,
-  // as the Designer's BakeModal does, and bakes on the operator's yes. { scene, files, resolve } while it asks.
-  const [repourAsk, setRepourAsk] = useState(null)
   const [fetchSources, setFetchSources] = useState(null)   // per-source ✓/count/error after a Fetch
   // Intake starts BLANK: nothing has been fetched yet, so show no map until the
   // operator Searches (or Fetches). No defaulting to the active scene's map.
@@ -1883,15 +1880,15 @@ export default function ExtentApp() {
     const clampZoom = (z) => Math.max(0.03, Math.min(40, z))
     const authoredCam = _cam?.isOrthographicCamera
       ? { x: _cam.position.x, z: _cam.position.z, zoom: clampZoom(_cam.zoom) } : null
-    // the Bake, or the server's re-pour question (428) asked and answered: yes re-bakes with the re-pour confirmed, Cancel stops
-    const bakeOrAsk = async (lookId) => {
-      try { return await bakeLook(lookId, { force: true }) } catch (e) {
-        if (e.code !== 'REPOUR_CONFIRM') throw e
-        const yes = await new Promise(resolve => setRepourAsk({ scene: e.repour?.scene || scene, files: e.repour?.files || [], resolve }))
-        setRepourAsk(null)
-        if (!yes) throw Object.assign(new Error('the Foundry did not run: running every step was cancelled'), { cancelled: true })
-        return bakeLook(lookId, { force: true, repour: true })
-      }
+    // The scene's Look, made when it has none (a hood committed before Looks existed, or by a script): ⛔ never the default
+    // Look (Altadena-as-LS, 2026-07-14). The Designer is switched to it.
+    const ensureLook = async () => {
+      const idx = await fetchLooks().catch(() => null)
+      let lookId = idx?.looks?.find(l => l.scene === scene)?.id
+      if (!lookId) { const r = await createLook({ name: name.trim() || scene, scene, id: scene }); lookId = r.id }
+      const store = useCartographStore.getState()
+      if (store.setActiveLook && store.activeLookId !== lookId) store.setActiveLook(lookId)
+      return lookId
     }
     try {
       // Flush the roster overrides BEFORE the pour — the debounced autosave may
@@ -1912,36 +1909,19 @@ export default function ExtentApp() {
         const b = await fetchBoundary(scene)
         if (!b) throw new Error(`'${scene}' is committed, but its boundary is missing after the re-apply.`)
         useCartographStore.setState({ sceneBoundary: b })
-        stageTo({ label: 'Foundry: making the Slab', i: 2, n: 2 })
-        const idx = await fetchLooks().catch(() => null)
-        let lookId = idx?.looks?.find(l => l.scene === scene)?.id
-        // A committed hood may still have NO Look of its own — poured before Looks
-        // existed, or by a script. The FIRST bake out of Extent MUST create one, else
-        // bakeLook falls back to the default (lafayette-square) Look and the new hood's
-        // slab clobbers LS (Altadena-as-LS, 2026-07-14). Mirrors the first-pour path.
-        if (!lookId) { const r = await createLook({ name: name.trim() || scene, scene, id: scene }); lookId = r.id }
-        await bakeOrAsk(lookId)
-        // Switch the Designer to THIS hood's Look — else the pulldown/scene stay on
-        // the previous (default LS) Look. Mirrors the first-pour path.
-        const store = useCartographStore.getState()
-        if (store.setActiveLook && store.activeLookId !== lookId) store.setActiveLook(lookId)
-        const rb = await fetchRibbons(scene).catch(() => null)
-        if (rb) useCartographStore.setState({ sceneRibbons: rb })
-        // Prefetch map.json so the Designer opens with it in memory (no gray-screen fetch).
-        const pm = await fetchMap(scene).catch(() => null)
-        if (pm) useCartographStore.setState({ sceneMap: { scene, map: pm } })
-        setBakeResult({ promoteDiff: rs?.promoteDiff || null })
+        stageTo({ label: 'Saving the Look', i: 2, n: 2 })
+        const lookId = await ensureLook()
         setAppliedRadius(Math.round(radiusM))
         // Committed frame is unchanged (no re-center) → carry the authored view as-is.
         if (authoredCam) { try { localStorage.setItem('cartograph-camera', JSON.stringify(authoredCam)) } catch { /* ignore */ } }
         setBakedSig(bakeSignature)
         saveNeighborhood(scene, { bakedSig: bakeSignature }).catch(() => {})
-        setShot('designer')
+        setBakeResult({ saved: { scene, lookId } })
         return
       }
       // ── Finalize the extent (was "Commit") — re-center to the polygon
       //    centroid, reproject + skeleton, write the boundary circle + metadata.
-      stageTo({ label: 'Committing extent', i: 1, n: 3 })
+      stageTo({ label: 'Committing extent', i: 1, n: 2 })
       // Re-center to the KEPT-buildings centroid so the hood lands at the origin.
       const [lon, lat] = localToWgs84(geo, discCenter.x, discCenter.z)
       // The EXCLUSION loops (frame-independent lon/lat) ride along — the server
@@ -1976,27 +1956,15 @@ export default function ExtentApp() {
           : { x: 0, z: 0, zoom: clampZoom((((typeof window !== 'undefined' && window.innerHeight) || 900)) / (2 * Math.round(radiusM) * 1.3)) }
         localStorage.setItem('cartograph-camera', JSON.stringify(c))
       } catch { /* ignore */ }
-      // ── Build the slab (was "Pour") — pipeline (clipped to the boundary) →
-      //    ribbons → ensure a Look for this scene → bake → open the Designer.
-      stageTo({ label: 'Foundry: the street plan', i: 2, n: 3 })
-      const pr = await pourMap(scene)
-      const idx = await fetchLooks().catch(() => null)
-      let lookId = idx?.looks?.find(l => l.scene === scene)?.id
-      if (!lookId) { const r = await createLook({ name: name.trim() || scene, scene, id: scene }); lookId = r.id }
-      const store = useCartographStore.getState()
-      if (store.setActiveLook && store.activeLookId !== lookId) store.setActiveLook(lookId)
-      stageTo({ label: 'Foundry: making the Slab', i: 3, n: 3 })
-      await bakeOrAsk(lookId)
-      const rb = await fetchRibbons(scene).catch(() => null)
-      if (rb) useCartographStore.setState({ sceneRibbons: rb })
-      // Prefetch map.json so the Designer opens with it in memory (no gray-screen fetch).
-      const pm = await fetchMap(scene).catch(() => null)
-      if (pm) useCartographStore.setState({ sceneMap: { scene, map: pm } })
-      setBakeResult({ promoteDiff: pr?.promoteDiff || null })
-      setAppliedRadius(Math.round(radiusM))   // §4: the baked circle, for re-scope detection
+      // ⭐ EXTENT ENDS AT ITS OWN WORK (Boz's ruling, 2026-11-01: one button per step). It used to pour and run the Foundry
+      // here and open the Designer; the Foundry is Stage's, so Extent saves, makes sure the scene has a Look (Stage opens no
+      // town without one), and points there. The Foundry sees the new boundary and overrides as owed (pour-code.mjs#pourDataReads).
+      stageTo({ label: 'Saving the Look', i: 2, n: 2 })
+      const lookId = await ensureLook()
+      setAppliedRadius(Math.round(radiusM))   // §4: the saved circle, for re-scope detection
       setBakedSig(bakeSignature)
       saveNeighborhood(scene, { bakedSig: bakeSignature }).catch(() => {})
-      setShot('designer')
+      setBakeResult({ saved: { scene, lookId } })
     } catch (e) {
       let rollbackError = null
       if (committedThisRun) {
@@ -2507,7 +2475,7 @@ export default function ExtentApp() {
                   {/* Draft vs applied, said out loud. The map draws the APPLIED disc. */}
                   {appliedRadius > 0 && Math.round(radiusM) !== appliedRadius && (
                     <span className="carto-extent-status" style={{ flexBasis: '100%', marginTop: 4 }}>
-                      draft {Math.round(radiusM)} m · applied {appliedRadius} m → run the Foundry to apply it
+                      draft {Math.round(radiusM)} m · applied {appliedRadius} m → save the extent to apply it
                     </span>
                   )}
                 </div>
@@ -2564,38 +2532,29 @@ export default function ExtentApp() {
                   disabled={building || !(radiusM > 0) || !bakeDirty}
                   onClick={onBuild}
                   style={!building && !bakeDirty ? { opacity: 0.45, cursor: 'default' } : undefined}
-                  title={bakeDirty ? 'Run the Foundry on this scene and open Plan' : 'The Foundry has run — change the boundary, radius, overrides or details to run it again'}>
+                  title={bakeDirty ? 'Save the extent; then run the Foundry in Stage' : 'Saved — change the boundary, radius, overrides or details to save again'}>
                   {building
                     ? (buildStage?.n
                         ? `${buildStage.label}…  ${buildStage.i}/${buildStage.n}`
-                        : `${buildStage?.label || 'The Foundry is running'}…`)
-                    : (bakeDirty ? 'Run the Foundry' : 'Foundry ran')}
+                        : `${buildStage?.label || 'Saving'}…`)
+                    : (bakeDirty ? 'Save extent' : 'Extent saved')}
                 </button>
-                {repourAsk && (
-                  <div className="carto-extent-status warn" role="alertdialog" style={{ flexBasis: '100%', marginTop: 6 }}>
-                    <b>The Foundry will run every step for {repourAsk.scene}.</b> What its last run read has changed (its code, a data file it
-                    reads, its geography or a registry value), or the Foundry would rewrite a file the scene is holding:
-                    <ul style={{ margin: '4px 0 6px 16px' }}>{repourAsk.files.map(f => <li key={f}><code>{f}</code></li>)}</ul>
-                    <button className="carto-btn" onClick={() => repourAsk.resolve(false)}>Cancel</button>{' '}
-                    <button className="carto-btn carto-stage-btn" onClick={() => repourAsk.resolve(true)}>Run every step</button>
+                {bakeResult?.saved && (
+                  <div className="carto-extent-status" style={{ flexBasis: '100%', marginTop: 6 }}>
+                    Extent saved. <a href={stagePath(useCartographStore.getState().looks || [], { scene: bakeResult.saved.scene, lookId: bakeResult.saved.lookId, shot: 'hero' })}>Run the Foundry in Stage →</a>
                   </div>
                 )}
                 {bakeResult?.cancelled && (
                   <div className="carto-extent-status" style={{ flexBasis: '100%', marginTop: 6 }}>
-                    The Foundry did not finish: you cancelled it at “{bakeResult.cancelled.at}”{bakeResult.cancelled.rolledBack ? ' — rolled back to how it was before this run.' : '.'}
+                    Saving did not finish: you cancelled it at “{bakeResult.cancelled.at}”{bakeResult.cancelled.rolledBack ? ' — rolled back to how it was before this run.' : '.'}
                     {bakeResult.cancelled.rollbackError ? ` ⛔ The rollback did NOT complete: ${bakeResult.cancelled.rollbackError}` : ''}
                   </div>
                 )}
                 {bakeResult?.error && (
                   <div className="carto-extent-status warn" style={{ flexBasis: '100%', marginTop: 6 }}>
-                    The Foundry stopped at “{bakeResult.error.at}”: {bakeResult.error.message}
+                    Saving stopped at “{bakeResult.error.at}”: {bakeResult.error.message}
                     {bakeResult.error.rolledBack ? ' — rolled back to how it was before this run.' : ''}
                     {bakeResult.error.rollbackError ? ` ⛔ The rollback did NOT complete: ${bakeResult.error.rollbackError}` : ''}
-                  </div>
-                )}
-                {bakeResult?.promoteDiff && (
-                  <div className="carto-extent-status" style={{ flexBasis: '100%', marginTop: 6 }}>
-                    This Foundry run changed the street layout: {Object.entries(bakeResult.promoteDiff).map(([k, [a, b]]) => `${k} ${a}→${b}`).join(' · ')}
                   </div>
                 )}
               </div>

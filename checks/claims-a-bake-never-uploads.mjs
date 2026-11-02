@@ -11,7 +11,7 @@
  *  1. The bake handler names no upload: no upload script, no `wrangler r2`, no `--env=`, and no script it runs does.
  *  2. Publish freezes the manifest (where the deployment is accepted), then uploads to STAGING, and a failed upload
  *     throws: a loud failure, never a 200.
- *  3. The panel bakes first only when the bake check owes a step.
+ *  3. The panel's Publish runs no Foundry: it sends the publish request alone (Publish only publishes, 2026-11-01).
  * ⭐ MUTATION, run every time: the upload call is put back into a copy of the bake's body, and the judge must go red.
  */
 import { existsSync, readFileSync } from 'node:fs'
@@ -82,12 +82,13 @@ else {
   else ok('a failed upload fails Publish')
 }
 
-// ── 3. The panel bakes first only when a step is owed.
+// ── 3. The panel's Publish runs no Foundry at all (Publish only publishes, 2026-11-01): it sends the publish request and nothing
+// else; while a step is owed the button is off (checks/claims-publish-only-publishes.mjs holds the rest).
 const panel = read('src/preview/PreviewApp.jsx')
 const fn = (panel.match(/async function publishStaging[\s\S]*?\n {2}}\n/) || [])[0] || ''
 if (!fn) bad('src/preview/PreviewApp.jsx has no publishStaging — update this check.')
-else if (/if \([^)]*steps\.length[^)]*\)\s*{\s*const bake = await fetch/.test(fn)) ok('the panel bakes first only when the bake check owes a step')
-else bad('publishStaging bakes unconditionally — a bake that owes nothing still re-stamps the slab, so Publish re-ships it')
+else if (!/\/bake\b/.test(fn) && /fetch\(`\$\{API\}\/publish`/.test(fn)) ok("the panel's Publish runs no Foundry: it sends the publish request alone")
+else bad("publishStaging runs the Foundry — Publish would ship a Slab nobody previewed")
 
 console.log(failed ? `\n⛔ ${failed} failure(s)\n` : '\n✅ a bake never uploads; Publish is the upload\n')
 process.exit(failed ? 1 : 0)
