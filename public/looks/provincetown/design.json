@@ -80,6 +80,70 @@
   },
   "lamps": null,
   "terrainExag": null,
+  "lampGlow": {
+    "animated": "tod",
+    "values": {
+      "dawn": {
+        "grass": 0,
+        "pool": 0.5,
+        "radius": 0.85,
+        "centre": 1.2,
+        "centreSoft": 0.1,
+        "trees": 0.3
+      },
+      "sunrise": {
+        "grass": 0,
+        "pool": 0.5,
+        "radius": 0.75,
+        "centre": 1.2,
+        "centreSoft": 0.1,
+        "trees": 0.3
+      },
+      "sunset": {
+        "grass": 0,
+        "pool": 1.25,
+        "radius": 0.75,
+        "centre": 0.25,
+        "centreSoft": 0.1,
+        "trees": 0.8
+      },
+      "dusk": {
+        "grass": 0,
+        "pool": 1.05,
+        "radius": 0.84,
+        "centre": 1.2,
+        "centreSoft": 0.1,
+        "trees": 1.2
+      },
+      "night": {
+        "grass": 0,
+        "pool": 0.55,
+        "radius": 0.63,
+        "centre": 1.75,
+        "centreSoft": 1,
+        "trees": 0.7
+      },
+      "deep": {
+        "grass": 0,
+        "pool": 0.25,
+        "radius": 1,
+        "centre": 1.2,
+        "centreSoft": 0.1,
+        "trees": 0.3
+      }
+    },
+    "edges": {
+      "sunset": {
+        "fade": "up",
+        "minutes": 30
+      },
+      "sunrise": {
+        "fade": "down",
+        "minutes": 30
+      }
+    },
+    "radiusV": 2
+  },
   "bloom": {
     "animated": "tod",
     "values": {
@@ -111,7 +175,7 @@
         "intensity": 0.22,
         "threshold": 0.4,
         "spread": 0.22,
-        "warmCool": 0.8
+        "warmCool": 0.5
       },
       "dusk": {
         "intensity": 1,
@@ -130,6 +194,43 @@
         "threshold": 0.5,
         "spread": 0.1,
         "warmCool": 0.3
+      }
+    }
+  },
+  "warmth": {
+    "animated": "tod",
+    "values": {
+      "dawn": {
+        "value": 0.3,
+        "tint": 0.5
+      },
+      "sunrise": {
+        "value": 0.62,
+        "tint": 0.7
+      },
+      "noon": {
+        "value": 0.5,
+        "tint": 0.5
+      },
+      "golden": {
+        "value": 0.88,
+        "tint": 0.55
+      },
+      "sunset": {
+        "value": 0.5,
+        "tint": 0.5
+      },
+      "dusk": {
+        "value": 0.3,
+        "tint": 0.55
+      },
+      "night": {
+        "value": 0.32,
+        "tint": 0.5
+      },
+      "deep": {
+        "value": 0.25,
+        "tint": 0.5
       }
     }
   },
@@ -183,10 +284,10 @@
     "animated": "tod",
     "values": {
       "dawn": {
-        "blur": 0.2,
+        "blur": 0.16,
         "heroBlur": 0,
         "softness": 0.5,
-        "melt": 0.56
+        "melt": 0.2
       },
       "sunrise": {
         "blur": 0.15,
@@ -197,11 +298,11 @@
       "noon": {
         "blur": 0,
         "heroBlur": 0,
-        "softness": 0.4,
+        "softness": 0,
         "melt": 0
       },
       "golden": {
-        "blur": 0.16,
+        "blur": 0.1,
         "heroBlur": 0,
         "softness": 0.2,
         "melt": 0.1
@@ -226,20 +327,55 @@
       }
     }
   },
+  "neon": {
+    "animated": "tod",
+    "values": {
+      "noon": {
+        "core": 0.3,
+        "tube": 1,
+        "bleed": 0,
+        "emissive": 0.5,
+        "tubeCm": 2,
+        "linePx": 3,
+        "handoffPx": 5,
+        "lineGain": 2
+      },
+      "night": {
+        "core": 0.5,
+        "tube": 0.5,
+        "bleed": 0.5,
+        "emissive": 1,
+        "tubeCm": 2,
+        "linePx": 3,
+        "handoffPx": 5,
+        "lineGain": 2
+      },
+      "deep": {
+        "core": 1,
+        "tube": 1,
+        "bleed": 0.8,
+        "emissive": 5,
+        "tubeCm": 1.5,
+        "linePx": 5,
+        "handoffPx": 5,
+        "lineGain": 1
+      }
+    }
+  },
   "sky": {
     "overrides": []
   },
   "heroKeyframes": [
     {
       "position": [
-        -540,
-        65,
-        1452
+        -816,
+        137,
+        2319
       ],
       "target": [
-        -206,
-        15,
-        503
+        249,
+        -3,
+        -1444
       ],
       "fov": 22,
       "t": 0,
@@ -247,28 +383,28 @@
     },
     {
       "position": [
-        385,
-        65,
-        541
+        404,
+        116,
+        600
       ],
       "target": [
-        -6,
-        4,
-        117
+        -542,
+        1,
+        -547
       ],
       "fov": 22,
-      "t": 0.498256
+      "t": 0.50071
     },
     {
       "position": [
-        1658,
-        181,
-        -1054
+        1618,
+        154,
+        -1125
       ],
       "target": [
-        283,
-        11,
-        -259
+        207,
+        58,
+        -277
       ],
       "fov": 22,
       "t": 1
@@ -384,29 +520,28 @@
     "monument-lights": {
       "animated": "tod",
       "values": {
-        "dawn": {
-          "glow": 1.36,
-          "show": 2.4,
-          "kelvin": 3810,
-          "showEvery": 60
-        },
         "sunset": {
           "glow": 1.36,
           "show": 2,
-          "kelvin": 2700,
-          "showEvery": 60
+          "kelvin": 2700
         }
       },
-      "edges": {
-        "dawn": {
-          "fade": "down",
-          "minutes": 15
-        },
-        "sunset": {
-          "fade": "up",
-          "minutes": 15
+      "schedule": [
+        {
+          "days": "daily",
+          "ambient": {
+            "on": "golden",
+            "fadeIn": 15,
+            "off": "00:00",
+            "fadeOut": 0
+          },
+          "shows": {
+            "first": "golden",
+            "last": "00:00",
+            "every": 60
+          }
         }
-      }
+      ]
     }
   },
   "clouds": {
