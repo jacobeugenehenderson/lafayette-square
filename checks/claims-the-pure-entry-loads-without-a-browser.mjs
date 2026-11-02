@@ -16,7 +16,7 @@
  * here: the modes are read from the code that loaded. No port is opened; each server is closed after.
  * Usage: node checks/claims-the-pure-entry-loads-without-a-browser.mjs [--mutants]
  *   --mutants (each → RED): a module-scope document read planted in a door lib · a module-scope refusal under a planted
- *   VITE_ mode (plain, destructured, bracketed), under PROD, and under a named vite MODE, each seen only when that mode is
+ *   VITE_ mode (plain, destructured, bracketed, a switch case), under PROD, and under a named vite MODE, each seen only when that mode is
  *   read and tried · the door re-exporting slabUrl.js (bakedUrl's runtime refusal).
  */
 import { existsSync, readdirSync } from 'node:fs'
@@ -68,8 +68,9 @@ async function loadOnce(env, plant = {}) {
  *   MODE       each string literal MODE is compared against (vite's `mode` option)
  * A read is seen in every form (Fuse, 2026-11-02): `import.meta.env.X` · `import.meta.env['X']` · `const { X, Y: y } =
  * import.meta.env` · an alias of the object (`const env = import.meta.env`, then `env.X`, `env['X']`, or destructured from it)
- * · an alias of a value (`const b = import.meta.env.X`, then `b === '…'`). ⛔ A read through anything else (a computed key,
- * the object passed to a function) is not seen: said as the limit, here. */
+ * · an alias of a value (`const b = import.meta.env.X`, then `b === '…'`). Values are the literals compared with `===`/`!==`
+ * (either side) and the `case` literals of a `switch` on the read. ⛔ A read through anything else (a computed key, the object
+ * passed to a function) and a value reached any other way (an `includes`, a lookup table) are not seen: said as the limit, here. */
 export function modesOf(texts) {
   const modes = new Map()
   const add = (k, v) => { if (!modes.has(k)) modes.set(k, new Set()); if (v != null) modes.get(k).add(v) }
@@ -92,6 +93,13 @@ export function modesOf(texts) {
     for (const [re, k] of names) {
       for (const m of t.matchAll(new RegExp(`${re}\\s*[!=]==?\\s*(['"\`])([^'"\`]*)\\1`, 'g'))) add(k, m[2])
       for (const m of t.matchAll(new RegExp(`(['"\`])([^'"\`]*)\\1\\s*[!=]==?\\s*${re}`, 'g'))) add(k, m[2])
+      // switch (X) { case '…': … } (Fuse, 2026-11-02): every case literal of the switch's own body, to its closing brace
+      for (const m of t.matchAll(new RegExp(`\\bswitch\\s*\\(\\s*${re}\\s*\\)\\s*\\{`, 'g'))) {
+        let depth = 1, j = m.index + m[0].length
+        const start = j
+        for (; j < t.length && depth; j++) { if (t[j] === '{') depth++; else if (t[j] === '}') depth--; }
+        for (const c of t.slice(start, j).matchAll(/\bcase\s*(['"`])([^'"`]*)\1\s*:/g)) add(k, c[2])
+      }
     }
   }
   return modes
@@ -128,11 +136,12 @@ if (!existsSync(resolve(ROOT, ENTRY_REL))) { console.log(`⛔ no ${ENTRY_REL}: t
     "const env = import.meta.env\nif (env.VITE_OA === 'oa') d()\nif (env['VITE_OB'] === 'ob') e()\nconst { VITE_OC } = env\nif (VITE_OC === 'oc') f()",
     "if (import.meta.env.PROD) g()",
     "const { DEV } = import.meta.env\nif (import.meta.env.MODE === 'staging') h()",
+    "switch (import.meta.env.VITE_SW) { case 'one': i(); break\n case \"two\": { j() } }\nconst q = { case: 1 }",
   ]
   const m = modesOf(T)
   const got = JSON.stringify([...m].map(([k, v]) => [k, [...v].sort()]).sort())
   const want = JSON.stringify([['MODE', ['staging']], ['NODE_ENV', ['production']], ['VITE_A', ['runtime']], ['VITE_AA', ['no']], ['VITE_BR', ['br']],
-    ['VITE_C', ['edge']], ['VITE_D', []], ['VITE_DS', ['ds']], ['VITE_OA', ['oa']], ['VITE_OB', ['ob']], ['VITE_OC', ['oc']], ['VITE_RN', ['rn']]].sort())
+    ['VITE_C', ['edge']], ['VITE_D', []], ['VITE_DS', ['ds']], ['VITE_OA', ['oa']], ['VITE_OB', ['ob']], ['VITE_OC', ['oc']], ['VITE_RN', ['rn']], ['VITE_SW', ['one', 'two']]].sort())
   if (got !== want) { console.log(`⛔ [self-test] the mode reader reads\n  ${got}\nnot\n  ${want}`); process.exit(1) }
 }
 
@@ -150,6 +159,7 @@ if (process.argv.includes('--mutants')) {
     ['a module-scope refusal in a production build only (PROD)', { [LIB]: "if (import.meta.env.PROD && typeof document === 'undefined') throw new Error('[zob mutant] prod, no page')" }],
     ['a module-scope refusal under a destructured VITE_ mode', { [LIB]: "const { VITE_ZOB_DS: zobDs } = import.meta.env\nif (zobDs === 'runtime') throw new Error('[zob mutant] destructured')" }],
     ['a module-scope refusal under a bracketed VITE_ mode', { [LIB]: "if (import.meta.env['VITE_ZOB_BR'] === 'runtime') throw new Error('[zob mutant] bracketed')" }],
+    ['a module-scope refusal in a switch case on a VITE_ mode', { [LIB]: "switch (import.meta.env.VITE_ZOB_SW) { case 'on': throw new Error('[zob mutant] switch') }" }],
     ['a module-scope refusal under a named vite MODE', { [LIB]: "if (import.meta.env.MODE === 'zob-staging') throw new Error('[zob mutant] mode')" }],
     ['the door re-exporting slabUrl.js (bakedUrl refuses at load under its runtime mode)', { [ENTRY_REL]: "export { adoptSlabManifest as __zobMutant } from '../lib/slabUrl.js'" }],
   ]
