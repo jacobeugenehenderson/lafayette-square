@@ -270,18 +270,21 @@ export const DIRMOON_FIELD_KEYS  = ['value']
 // physical tube, never inflated; `linePx` the far line's on-screen width; `handoffPx` the tube's on-screen diameter
 // at which the two crossfade (the band is NeonBands.jsx#HANDOFF_BAND, a constant); `lineGain` the line's brightness
 // against the tube. Only `tubeCm` rebuilds geometry; the rest are shader uniforms.
+// ⭐ THE CARD SHOWS THREE (Jacob, 2026-11-02: "I don't think the 3D (close up) controls are useful at all at this point.
+// Perhaps when we develop the street view… line width and brightness; maybe glow/emissive"). NEON_FIELDS is the
+// card; core, tube, bleed, tubeCm and handoffPx are not on it but are still the channel's: each Look keeps what it
+// authored and the renderer reads them (the far line is max(core, tube) × emissive × lineGain). Their sliders return
+// with the street view (labels and ranges in cartograph/_archive/OPERATIONS-neon-close-up-sliders-RETIRED-2026-11-02.md).
+// ⛔ NEON_FIELD_KEYS is the CHANNEL's fields, never the card's: the hydrate (migrateGroupChannel) keeps only these
+// keys on a flat channel, so deriving them from the card would drop the five on load and the autosave would erase
+// them. ▶ node checks/claims-the-neon-card-shows-what-jacob-ruled.mjs
 export const NEON_FIELDS = [
-  { key: 'core',      label: 'Hot core',          min: 0,   max: 1,  step: 0.02 },
-  { key: 'tube',      label: 'Tube glow',         min: 0,   max: 1,  step: 0.02 },
-  { key: 'bleed',     label: 'Atmospheric bleed', min: 0,   max: 1,  step: 0.02 },
-  { key: 'emissive',  label: 'Emissive',          min: 0.5, max: 8,  step: 0.1  },
-  { key: 'tubeCm',    label: 'Tube radius (cm)',  min: 0.5, max: 10, step: 0.25 },
   { key: 'linePx',    label: 'Line width (px)',   min: 1,   max: 16, step: 0.5  },
-  { key: 'handoffPx', label: 'Hand-off (px)',     min: 1,   max: 32, step: 0.5  },
-  { key: 'lineGain',  label: 'Line brightness',   min: 0,   max: 4,  step: 0.05 },
+  { key: 'lineGain',  label: 'Brightness',        min: 0,   max: 4,  step: 0.05 },
+  { key: 'emissive',  label: 'Glow',              min: 0.5, max: 8,  step: 0.1  },
 ]
 export const NEON_FLAT_DEFAULTS = { core: 1, tube: 1, bleed: 1, emissive: 4, tubeCm: 1.5, linePx: 5, handoffPx: 5, lineGain: 1 }
-export const NEON_FIELD_KEYS = NEON_FIELDS.map(f => f.key)
+export const NEON_FIELD_KEYS = Object.keys(NEON_FLAT_DEFAULTS)
 
 // Arch (the Horizon card) — the Gateway Arch's look. ⛔ No placement here: WHERE it stands is derived from its real
 // feet through the town's place (src/setpieces/gatewayArch.js#archSite), so no distance or bearing is authored and none

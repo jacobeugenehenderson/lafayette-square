@@ -146,6 +146,10 @@ export default function CartographSkyLight() {
       <SectionLabel label="Neon" />
       <StoreChannel name="neon" label="Neon"
         fields={NEON_FIELDS} flatDefaults={NEON_FLAT_DEFAULTS} />
+      {/* The card shows three of the channel's fields (skyLightChannels.js#NEON_FIELDS); Revert resets all of it. */}
+      <div className="pl-2" style={{ fontSize: 11, color: 'var(--on-surface-subtle)' }}>
+        Revert returns all of Neon to the kit's day, including the close-up settings not shown here.
+      </div>
       <NeonForceOnToggle />
       {/* Milky Way control hidden 2026-05-02, for the photo panorama (JPEG blocks, stretched stars). The photo is
           retired (Jacob, 2026-11-01: "Retire it"); the band on screen is procedural (skyGradient.js#MILKY_WAY_GLSL)

@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 572,
+  "total": 573,
   "counts": {
-    "safe": 398,
+    "safe": 399,
     "local-effect": 32,
     "live": 142
   },
@@ -3730,6 +3730,14 @@
         "imports a mutated copy of src/preview/heroAnim.js from its own temp dir — read as src/preview/heroAnim.js, safe",
         "imports a mutated copy of src/preview/heroAnim.js from its own temp dir — read as src/preview/heroAnim.js, safe",
         "imports package(s) vite — not read from source"
+      ]
+    },
+    {
+      "file": "checks/claims-the-neon-card-shows-what-jacob-ruled.mjs",
+      "tier": "safe",
+      "why": [
+        "computed import of src/cartograph/skyLightChannels.js — read, safe",
+        "computed import of src/cartograph/animatedParam.js — read, safe"
       ]
     },
     {
