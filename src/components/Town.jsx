@@ -201,7 +201,10 @@ export { placeTown } from './TownPlace.jsx'
 // an app importing either gets the same functions and stores. An app module that draws no town imports TownPure.js, so a
 // place card never pulls the renderer (it did, through PlaceList → Town.jsx).
 export { frameInterval, frameTimeLeft, runSliced, rowsInAFrame, useFailures, failuresFor, glyphInk, EMOJI_FONT, COLOUR_ALPHA,
-  WeatherRangeError, kitUrl, tideAt, tideExtrema, tenantOf, titleOf, adoptSlabManifest, useBuildingAddress } from './TownPure.js'
+  WeatherRangeError, kitUrl, tideAt, tideExtrema, tenantOf, titleOf, useBuildingAddress } from './TownPure.js'
+// …and hands over the manifest it already fetched, so the page reads it once (src/lib/slabUrl.js#adoptSlabManifest). Not in
+// TownPure.js: slabUrl.js imports bakedUrl.js, which reads the page at load (a boot-only name; the app's entry takes it here).
+export { adoptSlabManifest } from '../lib/slabUrl.js'
 // The wind sheet's API — the field every wind consumer reads (lib/windSheet.js; contract ARCHITECTURE §8).
 export { WIND_SHEET_GLSL, bindWindSheet } from '../lib/windSheet.js'
 // The Canvas the town is drawn through, from its quality profile — an app spreads it on the <Canvas> it draws the town in.
