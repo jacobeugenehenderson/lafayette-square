@@ -5,7 +5,7 @@
  *   · LEVELS, keyed on the eight time slots (the sun decides only each slot's clock time):
  *       glow    the Ambient light between shows (an HDR level; the Lit card calls it Ambient; the field keeps its name,
  *               so no published shape churns)
- *       show    the show's level (an HDR level; 0 = no show)
+ *       show    the show's level (an HDR level; 0 plays dark: a level never cancels a show, the schedule says when)
  *       kelvin  Ambient's colour temperature (never faded: a colour has no "off")
  *     Every key carries all three; a key with one missing has nothing honest to fall back to, so it is refused.
  *   · WHEN, its `schedule` (./showSchedule.js): entries like calendar invites, Ambient on/off with its fades, and the

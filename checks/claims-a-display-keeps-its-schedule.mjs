@@ -15,7 +15,8 @@
  *   4. DAYS: daily, weekdays; a DATED entry replaces them on its dates; fireworks (no Ambient) play on their date only;
  *   5. REFUSED by name: a bad END, days, key, fade, interval; an entry with nothing; "after the last show" with no shows;
  *      over the year: two ends that pass each other (naming the days), a slot that jumps, two nights that overlap on a date
- *      or across midnight (Zob 3), an Ambient that would never end;
+ *      or across midnight (Zob 3); ONE HOME PER FACT: a key at 0 is a level (a show plays dark, Ambient hangs dark),
+ *      never an off (Jacob, 2026-11-02);
  *   6. THE PUBLISHED SHAPES, read, EXACTLY: PTown's published channel (per-key showEvery, sunset ▲15, dawn ▼15) and the
  *      old default, against the OLD engine and resolver at a pinned full sha, at EVERY minute of 2026 at PTown (glow, show,
  *      kelvin) and every date's showtimes (Zob 2); a pre-display slab plays its declared displays on the default, a
@@ -100,8 +101,13 @@ async function verdict({ sched, chan, slots, clock, view, bake, store } = {}) {
   F(/runs past .*'s night beginning; nights overlap across midnight/.test(judged([{ days: 'daily', ambient: { on: '00:30', fadeIn: 0, off: '05:00', fadeOut: 0 }, shows: null }, { days: { dates: ['2026-12-31'] }, ambient: { on: 'dusk', fadeIn: 0, off: '01:00', fadeOut: 0 }, shows: null }])), 'a dated night running past midnight into the next date\'s night is not refused (Zob 3)')
   const jump = Array.from({ length: 4 }, (_, i) => ({ date: `2026-03-0${i + 1}`, minutes: { ...SM, dusk: i < 2 ? hm(0, 30) : hm(12, 30) } }))
   F(refuses(() => H.refuseScheduleSense(chOf([{ days: 'daily', ambient: { on: 'dusk', fadeIn: 0, off: '23:00', fadeOut: 0 }, shows: null }]), jump, 302.2, 'check'), /Dusk moves 720 minutes from 2026-03-02 to 2026-03-03 here/), 'a schedule ending on a slot that jumps is judged rather than refused')
-  const noShow = (() => { try { H.refuseScheduleSense(chOf([{ days: 'daily', ambient: { on: 'sunset', fadeIn: 0, off: 'after-last-show', fadeOut: 0 }, shows: { first: '19:00', last: '22:00', every: 60 } }], { dusk: { ...KEY, show: 0 }, dawn: { ...KEY, show: 0 } }), year, 302.2, 'check'); return 'ok' } catch (e) { return e.message } })()
-  F(/no show can play, so its Ambient \(to end after the last show\) would never end/.test(noShow), `an Ambient that would never end (Show 0 on every key, so no show plays) is not refused (${noShow.slice(0, 120)})`)
+  // ONE HOME PER FACT (Jacob, 2026-11-02): a key at 0 is a level, never an off. Every key at Show 0 and Ambient 0, Ambient
+  // Dusk → Dawn, shows hourly: the scheduled shows still play (dark), Ambient is still hung (dark), outside it is off.
+  const zero = chOf([{ days: 'daily', ambient: { on: 'dusk', fadeIn: 0, off: 'dawn', fadeOut: 0 }, shows: { first: '00:00', last: '23:00', every: 60 } }], { dusk: { glow: 0, show: 0, kelvin: 3000 }, dawn: { glow: 0, show: 0, kelvin: 3000 } })
+  const z20 = at(zero, D, hm(20)), z2030 = at(zero, D, hm(20, 30)), z12 = at(zero, D, hm(12))
+  F(z20.mode === 'show' && z20.show === 0, `a key at Show 0 cancels a scheduled show (20:00: ${z20.mode})`)
+  F(z2030.mode === 'glow' && z2030.glow === 0, `a key at Ambient 0 unhangs Ambient inside its span (20:30: ${z2030.mode})`)
+  F(z12.mode === 'off', `outside Ambient's span the display is not off (12:00: ${z12.mode})`)
   F(same(H.nightsOn(jacob, '2026-11-26', (d) => T.todSlotRowOf(PT, d), 302.2)[0].starts, [hm(19), hm(20), hm(21), hm(22), hm(23), DAY]), 'a night ending after its last show runs on into the next evening\'s shows')
   // 6. THE PUBLISHED SHAPES, EXACT against the old engine at a pinned full sha, every minute of 2026 at PTown
   const OS = await importSource('src/displays/showChannel.js', { transform: () => resolveImports(atSha('src/displays/showChannel.js'), 'src/displays/showChannel.js'), redirect: { 'src/cartograph/animatedParam.js': { transform: () => resolveImports(atSha('src/cartograph/animatedParam.js'), 'src/cartograph/animatedParam.js') } } })
@@ -156,7 +162,9 @@ else console.log('✅ a display keeps its schedule: shows from a first to a last
 if (process.argv.includes('--mutants')) {
   const mutants = [
     ['the last start exclusive (no midnight show)', { sched: (s) => s.replace('if (o > mod(l - f) || o % shows.every) continue', 'if (o >= mod(l - f) || o % shows.every) continue') }],
-    ['a run clipped (the whole-run gate dropped)', { sched: (s) => s.replace("        if (!(showLevel(p) > 0) || (amb && !(env(p, fixedOff) > 0))) { whole = false; break }", '        void p') }],
+    ['a run clipped (the whole-run gate dropped)', { sched: (s) => s.replace("        if (!(env(p, fixedOff) > 0)) { whole = false; break }", '        void p') }],
+    ['a Show 0 key cancelling a show (two homes)', { sched: (s) => s.replace("        if (!(env(p, fixedOff) > 0)) { whole = false; break }", "        if (!(env(p, fixedOff) > 0) || !(levelsAt(ch, mod(p), rowAt(p)).show > 0)) { whole = false; break }") }],
+    ['an Ambient 0 key unhanging Ambient (two homes)', { sched: (s) => s.replace("    if (n.onAt != null) return { mode: 'glow',", "    if (n.onAt != null && lit.glow > 0) return { mode: 'glow',") }],
     ['every close white (the last show not dark)', { sched: (s) => s.replace("return { mode: 'show', t: (x - s) * 60, dark: n.closesDark && s === n.lastStart, ...lit }", "return { mode: 'show', t: (x - s) * 60, dark: false, ...lit }") }],
     ['every show dark', { sched: (s) => s.replace("dark: n.closesDark && s === n.lastStart", 'dark: n.closesDark') }],
     ['an end read from the night\'s own date (Zob 1)', { sched: (s) => s.replace('const a = windowEndMinute(end, rD), b = DAY + windowEndMinute(end, rN)', 'const a = windowEndMinute(end, rD), b = DAY + windowEndMinute(end, rD)') }],
@@ -168,7 +176,6 @@ if (process.argv.includes('--mutants')) {
     ['the slot bound unguarded', { sched: (s) => s.replace('if (move > SLOT_DAY_MOVE_MAX_MIN) throw', 'if (false) throw') }],
     ['nights overlapping across midnight allowed', { sched: (s) => s.replace('if (e0 > DAY + s1) throw', 'if (false) throw') }],
     ['a night with no end running into the next evening (no cap at the last start)', { sched: (s) => s.replace('        if (!starts.length && fixedOff == null) cap = x + mod(windowEndMinute(shows.last, rowAt(x)) - mod(x))\n', '') }],
-    ['an Ambient that never ends allowed', { sched: (s) => s.replace("if (e.ambient?.off === 'after-last-show' && (!n || n.lastStart == null)) throw", 'if (false) throw') }],
     ['the published cadence not read', { chan: (s) => s.replace('  if (!keyed.length && !marks.length) return ch\n', '  return ch\n') }],
     ['a published cadence with differing keys read as the first', { chan: (s) => s.replace('if (n.length !== 1) throw', 'if (false) throw') }],
     ['the published fades read as hard (the minutes dropped)', { chan: (s) => s.replace("ambient: { on: up[0][0], fadeIn: up[0][1].minutes, off: down[0][0], fadeOut: down[0][1].minutes }", "ambient: { on: up[0][0], fadeIn: 0, off: down[0][0], fadeOut: 0 }") }],

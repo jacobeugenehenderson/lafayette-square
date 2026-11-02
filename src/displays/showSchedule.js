@@ -12,8 +12,11 @@
  *              AMBIENT is the lit-but-not-performing state (Jacob named it); its level is the channel's `glow` key.
  *   · shows    null | { first: END, last: END, every: N }: a start t plays when, on the clock of the date t falls on,
  *              (t − first) mod 1440 ≤ (last − first) mod 1440 and (t − first) mod 1440 is a multiple of N. The last is
- *              the last START, inclusive ("until 00:00" includes a midnight show). Never clipped: a start plays only
- *              if its WHOLE run has Show > 0 and, with Ambient, the Ambient light > 0.
+ *              the last START, inclusive ("until 00:00" includes a midnight show). Never clipped: with Ambient, a start
+ *              plays only if its WHOLE run is inside Ambient's lit span.
+ * ⛔ ONE HOME PER FACT (Jacob, 2026-11-02: "the Timeslot keyframes and the schedule are fighting"): the SCHEDULE alone says
+ * WHEN; the keys say only HOW BRIGHT and WHAT COLOUR. A key at 0 is a level (hung and dark, a show that plays dark), never
+ * an off: it neither cancels a scheduled show nor unhangs Ambient.
  *   END is a sun slot or "HH:MM" on the town's clock.
  * A NIGHT belongs to the date of its first event (Ambient's on, else the first show: ruling (b)). Each later END is its
  * first occurrence AFTER the event before it, read from the slot row of the DATE that occurrence falls on (Zob's
@@ -131,7 +134,6 @@ export function nightOf(ch, entry, date, rowOf, runSeconds) {
     const at = amb.fadeIn > 0 ? Math.min(1, (offAt - onAt) / amb.fadeIn) : 1    // a fade-out starts from where the light is
     return amb.fadeOut > 0 ? at * Math.max(0, 1 - (x - offAt) / amb.fadeOut) : 0
   }
-  const showLevel = (x) => levelsAt(ch, mod(x), rowAt(x)).show
   const starts = []
   if (shows) {
     const horizon = fixedOff != null ? fixedOff + (amb.fadeOut || 0) : start + DAY
@@ -142,8 +144,8 @@ export function nightOf(ch, entry, date, rowOf, runSeconds) {
       const row = rowAt(x), f = windowEndMinute(shows.first, row), l = windowEndMinute(shows.last, row), o = mod(x - f)
       if (o > mod(l - f) || o % shows.every) continue
       let whole = true
-      for (const p of [x, ...Array.from({ length: Math.max(0, Math.ceil(len) - 1) }, (_, k) => x + k + 1), x + len - 1e-6]) {
-        if (!(showLevel(p) > 0) || (amb && !(env(p, fixedOff) > 0))) { whole = false; break }
+      if (amb) for (const p of [x, ...Array.from({ length: Math.max(0, Math.ceil(len) - 1) }, (_, k) => x + k + 1), x + len - 1e-6]) {
+        if (!(env(p, fixedOff) > 0)) { whole = false; break }
       }
       if (whole) {
         if (!starts.length && fixedOff == null) cap = x + mod(windowEndMinute(shows.last, rowAt(x)) - mod(x))
@@ -178,7 +180,7 @@ export function displayStateAt(ch, nightsBefore, nightsToday, date, minute, rowO
     const e = n.env(x)
     const lit = { glow: n.onAt == null ? 0 : lv.glow * e, show: n.onAt == null ? lv.show : lv.show * e, kelvin: here.kelvin }
     if (s != null) return { mode: 'show', t: (x - s) * 60, dark: n.closesDark && s === n.lastStart, ...lit }
-    if (lit.glow > 0) return { mode: 'glow', t: 0, dark: false, ...lit }
+    if (n.onAt != null) return { mode: 'glow', t: 0, dark: false, ...lit }
     return { mode: 'off', t: 0, dark: false, ...lit }
   }
   return { mode: 'off', t: 0, dark: false, glow: 0, show: 0, kelvin: here.kelvin }
@@ -195,8 +197,7 @@ export function showtimesOnDate(nightsBefore, nightsToday) {
  * way round"). `days` the cached year ahead ([{ date, minutes }], todSlots.js#todSlotDays). Refused by name:
  *   · a pair (Ambient on → off; shows first → last) whose length wraps through 0 between consecutive days, or is 0;
  *   · an END slot moving more than SLOT_DAY_MOVE_MAX_MIN in a day (its pass cannot be judged);
- *   · two nights that overlap, on one date or across midnight into the next date's night (Zob's condition 3);
- *   · Ambient that ends after the last show on a night where no show can play (it would never end).
+ *   · two nights that overlap, on one date or across midnight into the next date's night (Zob's condition 3).
  */
 export function refuseScheduleSense(ch, days, runSeconds, where) {
   const byDate = new Map(days.map(d => [d.date, d.minutes])), rowOf = (d) => byDate.get(d)
@@ -228,7 +229,6 @@ export function refuseScheduleSense(ch, days, runSeconds, where) {
   let prevNights = null, prevDateSeen = null
   for (const d of days.slice(0, -1)) {
     const nights = entriesOn(ch.schedule, d.date).map(e => ({ e, n: nightOf(ch, e, d.date, rowOf, runSeconds) }))
-    for (const { e, n } of nights) if (e.ambient?.off === 'after-last-show' && (!n || n.lastStart == null)) throw new Refusal(`[showSchedule] ⛔ ${where}, schedule entry ${ch.schedule.indexOf(e) + 1}: on ${dateRuns([d.date])} no show can play, so its Ambient (to end after the last show) would never end`)
     const spans = nights.filter(x => x.n).map(x => [x.n.start, x.n.end ?? x.n.start + DAY])
     for (let i = 0; i < spans.length; i++) for (let j = i + 1; j < spans.length; j++)
       if (spans[i][0] < spans[j][1] && spans[j][0] < spans[i][1]) throw new Refusal(`[showSchedule] ⛔ ${where}: two entries' nights overlap on ${dateRuns([d.date])}; one night has one entry`)
