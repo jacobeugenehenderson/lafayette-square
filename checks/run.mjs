@@ -233,9 +233,14 @@ if (red.length) {
   for (const r of red) console.log(`   ${r.label} (exit ${r.code})`)
 }
 // ── record, or judge against the base ─────────────────────────────────────────────────────────────────────────────
-const fp = (t) => createHash('sha1').update(t.split(ROOT.replace(/\/$/, '')).join('<ROOT>')).digest('hex').slice(0, 16)
+const norm = (t) => t.split(ROOT.replace(/\/$/, '')).join('<ROOT>'), TAIL_LINES = 40
+const fp = (t) => createHash('sha1').update(norm(t)).digest('hex').slice(0, 16)
 const rowsOf = () => [
-  ...results.map(r => ({ label: r.label, bucket: r.code === 0 && !r.timedOut ? 'green' : r.bucket, code: r.code, out: { stdout: fp(r.stdout), stderr: fp(r.stderr) } })),
+  // A failing row also keeps its output's last lines (root-normalised), so a CHANGED red can be SHOWN, not only flagged
+  // (2026-11-02: two rows read CHANGED and the record could not say what had changed).
+  ...results.map(r => { const green = r.code === 0 && !r.timedOut
+    return { label: r.label, bucket: green ? 'green' : r.bucket, code: r.code, out: { stdout: fp(r.stdout), stderr: fp(r.stderr) },
+      ...(green ? {} : { tail: norm(r.stdout).trimEnd().split('\n').slice(-TAIL_LINES), errTail: norm(r.stderr).trimEnd().split('\n').slice(-TAIL_LINES) }) } }),
   ...declaredBlocked.map(r => ({ label: r.file, bucket: 'blocked', code: null, out: { stdout: '', stderr: '' } })),
 ].sort((a, b) => a.label.localeCompare(b.label))
 if (RECORD) {
@@ -249,6 +254,13 @@ if (base) {
   const d = redsDelta(base, rowsOf()), n = blockingCount(d)
   console.log(`\n${'─'.repeat(72)}\nAGAINST ${AGAINST} (recorded ${base.at} at ${String(base.head).slice(0, 10)}): ${d.new.length} new · ${d.changed.length} changed · ${d.unmeasured.length} unmeasured · ${d.gone.length} gone · ${d.same.length} red before · ${d.fixed.length} fixed`)
   for (const l of deltaLines(d)) console.log(`   ${l}`)
+  // Each CHANGED red, shown: the lines its base output had that it no longer has (−) and the new ones (+), per stream.
+  const now = new Map(rowsOf().map(r => [r.label, r]))
+  for (const c of d.changed) { const was = base.rows.find(r => r.label === c.label), is = now.get(c.label)
+    for (const [k, name] of [['tail', 'stdout'], ['errTail', 'stderr']]) { const A = was?.[k] || [], B = is?.[k] || []
+      const gone = A.filter(l => !B.includes(l)), added = B.filter(l => !A.includes(l))
+      if (gone.length || added.length) { console.log(`\n   ${c.label} — ${name} (last ${TAIL_LINES} lines):`); for (const l of gone) console.log(`     − ${l}`); for (const l of added) console.log(`     + ${l}`) }
+      else if (!was?.[k]) console.log(`\n   ${c.label} — ${name}: the base record keeps no lines for it (recorded before lines were kept, or green there)`) } }
   // ⛔ THE GATE IS THE DELTA: the reds the base already had are printed above and do not fail it; anything it names does.
   process.exit(n ? 1 : 0)
 }

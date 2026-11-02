@@ -9,7 +9,8 @@
  *      GONE (red before, not run now) blocks; a red with the same output does not; a red now green is FIXED.
  *   2. READ from checks/run.mjs: --against refuses with no record for the tree, a record taken dirty, a base that is not
  *      an ancestor of HEAD, and data changed since the record; the run's exit is the delta's; the streams are hashed
- *      APART with the root path replaced (a combined hash varies under load: 8 parallel runs, 8 distinct, measured).
+ *      APART with the root path replaced (a combined hash varies under load: 8 parallel runs, 8 distinct, measured); a failing
+ *      row keeps its last lines, and a CHANGED red is SHOWN (−/+), never only flagged.
  * Usage: node checks/claims-a-merge-cannot-hide-a-red.mjs [--mutants]
  *   --mutants: each way the delta or the wiring could let a red through → RED.
  */
@@ -61,6 +62,8 @@ const WIRING = [
   [/out: \{ stdout: fp\(r\.stdout\), stderr: fp\(r\.stderr\) \}/, 'the record does not hash stdout and stderr apart'],
   [/split\(ROOT\.replace\(\/\\\/\$\/, ''\)\)\.join\('<ROOT>'\)/, 'the fingerprint keeps the root path, so two worktrees never match'],
   [/rev-parse', 'HEAD\^\{tree\}'/, 'the record is not keyed by the tree'],
+  [/\(green \? \{\} : \{ tail: norm\(r\.stdout\)[^\n]*errTail: norm\(r\.stderr\)/, 'a failing row keeps none of its output, so a CHANGED red cannot be shown'],
+  [/for \(const c of d\.changed\)/, '--against flags a CHANGED red without showing what changed'],
 ]
 const wiring = (src) => WIRING.filter(([re]) => !re.test(src)).map(([, why]) => why)
 
@@ -85,6 +88,8 @@ if (process.argv.includes('--mutants')) {
     ['the data refusal removed', swap('d.hash !== base.data?.hash', 'false')],
     ['one stream hashed', swap('out: { stdout: fp(r.stdout), stderr: fp(r.stderr) }', 'out: { stdout: fp(r.out), stderr: "" }')],
     ['the exit not the delta', swap('process.exit(n ? 1 : 0)', 'process.exit(0)')],
+    ['a failing row keeps no lines', swap("...(green ? {} : { tail: norm(r.stdout)", "...(true ? {} : { tail: norm(r.stdout)")],
+    ['a CHANGED red not shown', swap('for (const c of d.changed)', 'for (const c of [])')],
   ]
   let bad = 0
   for (const [name, t] of DELTA) { const f = drive(await load(t)); console.log(`${f.length ? '🔴' : '⚪ SURVIVED'} mutant: ${name}${f.length ? ` (${f.length})` : ''}`); if (!f.length) bad++ }
