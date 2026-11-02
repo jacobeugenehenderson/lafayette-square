@@ -327,7 +327,8 @@
       "why": [
         "importSource of src/displays/lightShow/engine.js — read, safe",
         "importSource of src/displays/showChannel.js — read, safe",
-        "importSource of src/displays/showSchedule.js — read, safe"
+        "importSource of src/displays/showSchedule.js — read, safe",
+        "importSource of src/lib/todSlots.js — read, safe"
       ]
     },
     {
@@ -960,7 +961,8 @@
       "why": [
         "importSource of src/lib/townClock.js — read, safe",
         "importSource of src/displays/showSchedule.js — read, safe",
-        "importSource of src/displays/showChannel.js — read, safe"
+        "importSource of src/displays/showChannel.js — read, safe",
+        "importSource of src/lib/todSlots.js — read, safe"
       ]
     },
     {
