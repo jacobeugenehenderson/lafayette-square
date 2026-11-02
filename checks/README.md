@@ -208,7 +208,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-deadend-look.mjs` | RENDER THE NINE. Read-only. |
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 
-## safe — 386. This is `npm test`.
+## safe — 387. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -519,6 +519,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-the-ease-is-the-corner.mjs` | ⭐⭐⭐ THE EASE IS THE CORNER TEST. `iaCorner` used to be "① TURNS *and* the owner changes" — a |
 | `checks/claims-the-fade-tracks-the-active-disc.mjs` | WHOSE CIRCLE IS THE MAP FADING OVER? |
 | `checks/claims-the-far-shore-is-not-built-at-load.mjs` | NO GEOMETRY IS GENERATED FROM THE GROUND ON THE MAIN THREAD WITHOUT A CAMERA. |
+| `checks/claims-the-focus-matte-draws-after-the-environment.mjs` | DOES EVERYTHING HUNG ON A HERO DRAW AFTER ITS TOWN'S ENVIRONMENT? |
 | `checks/claims-the-frame-makes-no-intersection.mjs` | IS EVERY `ribbons.intersections` ENTRY A PLACE WHERE STREETS MEET? |
 | `checks/claims-the-frame-owns-only-the-frame.mjs` | CLAIM — ON ①'S BLOCK RINGS, THE FRAME (`__boundary__`) OWNS ONLY EDGES THAT LIE ON THE FRAME. The frame is the bb rectangle |
 | `checks/claims-the-ground-covers-every-block.mjs` | CLAIM — THE GROUND COVERS EVERY BLOCK: nothing inside a block is painted by NOBODY. |

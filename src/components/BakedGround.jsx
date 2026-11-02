@@ -44,6 +44,7 @@ import { markTimeline, markPrepared } from '../lib/startupMarks.js'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import { slabUrl, slabFetch, slabStamped } from '../lib/slabUrl.js'
 import { lookOf } from '../lib/lookOf.js'
+import { setGroundOrders } from '../lib/drawOrder.js'
 
 // ── Surface treatment: albedo desaturation + value-range lift ────────────────
 // Jacob 2026-06-30 (Option A): surfaces should be DESATURATED and lit by
@@ -403,6 +404,8 @@ function GroundMeshes({ look, manifest, bin, context, coast, outer, scene: baked
     // ⭐ THE DRAWN GROUND, published for whatever stands on it at runtime (the street eye, the movers, the user's dot):
     // the same function the bake's anchors read (`src/lib/drawnGround.js`), as views on this bin — never a second copy
     setDrawnGround(makeDrawnGround(manifest, bin, { groups: g => !isWaterGroupId(g.id) && g.partition !== false, rawAt: getElevationRaw }))
+    // ⭐ THE ENVIRONMENT'S DRAW ORDER, for this town: the focus matte draws after it (src/lib/drawOrder.js)
+    setGroundOrders(look, manifest.groups)
     // ⛔ a ground baked on a terrain before the pin: its shore is the field's own contour, said once by name
     if (predatesThePin(manifest)) console.error(`[BakedGround] ⛔ STALE SLAB for '${look}': this ground predates the pinned coast (no drawnRaw record). `
       + `It is drawn as it was baked, on the field's own contour, so its shore is NOT ①'s line. ▶ re-bake the ground. ▶ node checks/claims-no-slab-outlives-its-schema.mjs`)

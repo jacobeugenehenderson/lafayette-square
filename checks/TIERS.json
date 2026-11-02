@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 559,
+  "total": 560,
   "counts": {
-    "safe": 386,
+    "safe": 387,
     "local-effect": 32,
     "live": 141
   },
@@ -3400,6 +3400,13 @@
       "reasonClass": "outbound",
       "why": [
         "imports cartograph/fetch-bathymetry.mjs, which can: writeFileSync, mkdirSync, deletes files, imports cartograph/io.js, which can: writeFileSync, imports cartograph/elevationSources.mjs, which can: calls fetch()"
+      ]
+    },
+    {
+      "file": "checks/claims-the-focus-matte-draws-after-the-environment.mjs",
+      "tier": "safe",
+      "why": [
+        "importSource of src/lib/drawOrder.js — read, safe"
       ]
     },
     {
