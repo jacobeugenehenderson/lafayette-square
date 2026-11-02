@@ -1,10 +1,10 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 563,
+  "total": 564,
   "counts": {
     "safe": 391,
     "local-effect": 32,
-    "live": 140
+    "live": 141
   },
   "checks": [
     {
@@ -806,6 +806,19 @@
       "why": [
         "deletes files",
         "copies/renames files",
+        "child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
+      "file": "checks/claims-a-reselect-reuses-what-it-built.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "writeFileSync — only under its own temp dir",
+        "imports cartograph/bake-revetment-far.js, which can: deletes files, imports scripts/slab-wire.mjs, which can: writeFileSync, imports cartograph/io.js, which can: writeFileSync",
+        "computed import of src/lib/shoreChunks.js — read, safe",
+        "computed import of src/lib/boulderGeometry.js — read, safe",
+        "computed import of a temp-dir module whose source cannot be read",
         "child_process with a non-literal command — cannot be read"
       ]
     },

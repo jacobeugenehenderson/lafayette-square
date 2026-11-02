@@ -15,7 +15,7 @@ gated without anyone remembering to gate it, which is what makes this work on to
 
 A non-zero exit is a **finding for the board**, not a runner fault. The suite reports; it does not fix.
 
-## ⛔ live — 140. Never in a default run.
+## ⛔ live — 141. Never in a default run.
 
 Two reason classes, and they are not the same thing. **outbound** — a demonstrated call out.
 **unreadable** — runs code the parser cannot read, so it *may* contact nothing but cannot be shown
@@ -55,6 +55,7 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `checks/claims-a-place-link-sends-its-own-card.mjs` | unreadable | imports checks/_miniflare.mjs, which can: computed import() with no readable target — runs arbitrary modules, runs `npm root -g` — not a known-local command |
 | `checks/claims-a-production-town-plays-the-player-promote-pinned.mjs` | outbound | imports a network module · writeFileSync · deletes files · importSource of scripts/promote-player-to-prod.mjs, which can: calls fetch(), runs `npx` — reaches out · imports checks/_sourceFile.mjs, which can: writeFileSync, deletes files · imports checks/_miniflare.mjs, which can: computed import() with no readable target — runs arbitrary modules, runs `npm root -g` — not a known-local command |
 | `checks/claims-a-reimport-keeps-curation.mjs` | unreadable | deletes files · copies/renames files · child_process with a non-literal command — cannot be read |
+| `checks/claims-a-reselect-reuses-what-it-built.mjs` | unreadable | writeFileSync — only under its own temp dir · imports cartograph/bake-revetment-far.js, which can: deletes files, imports scripts/slab-wire.mjs, which can: writeFileSync, imports cartograph/io.js, which can: writeFileSync · computed import of src/lib/shoreChunks.js — read, safe · computed import of src/lib/boulderGeometry.js — read, safe · computed import of a temp-dir module whose source cannot be read · child_process with a non-literal command — cannot be read |
 | `checks/claims-a-salon-save-keeps-provenance.mjs` | unreadable | writeFileSync · mkdirSync · deletes files · imports arborist/generate-salon.js, which can: writeFile, runs `node` — node runs the code it is handed, imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files |
 | `checks/claims-a-scrub-never-writes-the-keys.mjs` | outbound | calls fetch() · opens a WebSocket · deletes files — only under its own temp dir · runs `/Applications/Google Chrome.app/Contents` — not a known-local command |
 | `checks/claims-a-shot-change-flies.mjs` | outbound | calls fetch() · opens a WebSocket · writeFileSync · deletes files · runs `/Applications/Google Chrome.app/Contents` — not a known-local command |

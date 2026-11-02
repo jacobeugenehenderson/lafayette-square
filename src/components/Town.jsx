@@ -205,6 +205,9 @@ export { WeatherRangeError } from '../lib/weatherAt.js'
 // The kit's one failure sink (src/lib/failures.js): what a boundary took out of the town, and why. The app decides how
 // its visitor sees it; ⛔ never silent.
 export { default as useFailures, failuresFor } from '../lib/failures.js'
+// The kit's one measure of the frame and its one way to spread work across frames (src/lib/frameSlices.js): the town's own
+// first-use work rides it, and an app imports it from here, never by path, so there is one instance and one rAF sampler.
+export { frameInterval, frameTimeLeft, runSliced, rowsInAFrame } from '../lib/frameSlices.js'
 // The wind sheet's API — the field every wind consumer reads (lib/windSheet.js; contract ARCHITECTURE §8).
 export { WIND_SHEET_GLSL, bindWindSheet } from '../lib/windSheet.js'
 // The Canvas the town is drawn through, from its quality profile — an app spreads it (the Ward imports only Town).

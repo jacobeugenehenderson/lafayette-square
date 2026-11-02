@@ -41,7 +41,9 @@ import { makeRevetmentMaterial } from './revetmentMaterial.js'
 import { boulderPalette } from '../lib/boulderGeometry.js'
 import { revetmentDrape, drapeLattices, drapeRelative, FAR_OCTAVES, NEAR_OCTAVES, VERTS_PER_WAVELENGTH } from '../lib/revetmentDrape.js'
 import { decodeFarChunk } from '../lib/farQuant.js'
-import { shoreContext, chunkStones, drapeChunks, CHUNK_M } from '../lib/shoreChunks.js'
+import { drapeChunks, CHUNK_M } from '../lib/shoreChunks.js'
+import { stonesOf, retainStones, stoneContext, nearSignature, missingWork } from '../lib/revetmentNear.js'
+import { runSliced } from '../lib/frameSlices.js'
 import { revetmentFaces, loadRevetment, loadRevetmentFar, loadRevetmentFarUnseen, toeFromBaked, chunkBox } from '../lib/revetmentFromSlab.js'
 import { overheadResolves } from '../lib/cameraRegimes.js'
 import { useTownShot } from './townContext.js'
@@ -99,6 +101,25 @@ function groundRelative(built, step) {
   g.setAttribute('position', new THREE.BufferAttribute(rel, 3)); g.setAttribute('normal', new THREE.BufferAttribute(normal, 3))
   g.setAttribute('aDrawnRaw', new THREE.BufferAttribute(pins, 4))
   return built
+}
+
+/** ⭐ THE FIRST USE, BUILT BETWEEN FRAMES (revetmentNear.js#missingWork; the plan's step 3, Zob PASS 2026-11-02). One chunk a
+ *  step, nearest the camera first, run by the kit's frameSlices.js#runSliced within the frame's own measured time. Only what
+ *  the camera chose reaches it: `jobs` is the near useTownFrame's missing work. A drape whose build throws is said once and
+ *  marked on its face (`failed`): its far chunk stays drawn, and it is not queued again until the faces are rebuilt.
+ *  ▶ node checks/claims-the-far-shore-is-not-built-at-load.mjs (it follows this one named generator from the hook) */
+function* buildPending(jobs, partsAt) {
+  for (const job of jobs) {
+    const { f, k, ci } = job
+    if (job.kind === 'drape') {
+      if (!f.cache.has(k) && !f.failed.has(k)) {
+        try {
+          f.cache.set(k, groundRelative(revetmentDrape({ poly: f.poly, crestAt: f.crestAt, toeAt: f.toeAt, berm: f.berm, groundAt: f.groundAt, waterY: f.waterY, globals: f.G, stations: f.ranges[k], conform: f.G1 }), f.step))
+        } catch (e) { f.failed.add(k); console.error(`[revetment] ⛔ drape chunk ${f.key}#${k} failed; its far chunk stays drawn —`, e) }
+      }
+    } else stonesOf(f, ci, partsAt)
+    yield job.key
+  }
 }
 
 export default function SlabRevetment({ lookId, bakeLastMs, visible = true }) {
@@ -198,13 +219,18 @@ export default function SlabRevetment({ lookId, bakeLastMs, visible = true }) {
         const m = f.poly[Math.min(f.poly.length - 1, Math.round(((a + b) / 2 / (G.nAlong - 1)) * (f.poly.length - 1)))]
         return m || f.poly[0]
       })
-      const ctx = shoreContext({ poly: f.poly, crestAt: f.crestAt, taperAt: f.taperAt, toeAt: f.toeAt, berm: f.berm, groundAt: f.groundAt, waterY: f.waterY, oversample: 10, paletteSize: palette.length, seed: doc.seed })
-      return { ...f, G, G1, ranges, at, ctx, step: doc.far.quant.step, cache: new Map() }
+      const ctx = stoneContext(f, { paletteSize: palette.length, seed: doc.seed })
+      // `cache`: the drape per chunk · `stones`: the stones per stone chunk (revetmentNear.js#stonesOf) · `failed`: drape chunks
+      // whose build threw (said once; their far chunk stays drawn). All are cleared by exactly what rebuilds the faces: this
+      // memo's [doc, palette, groundGen].
+      return { ...f, G, G1, ranges, at, ctx, step: doc.far.quant.step, cache: new Map(), stones: new Map(), failed: new Set() }
     })
   }, [doc, palette, groundGen])
 
   const [built, setBuilt] = useState({ drape: [], stones: [], nearKeys: new Set() })
   const lastAt = useRef(null)
+  const lastSet = useRef(null)          // { faces, sig, stoneAt }: what `built` was made from, so an unchanged near set hands React nothing
+  const pending = useRef(null)          // the running first-use job (frameSlices.js#runSliced): cancelled by a new near set
 
   // ── THE FAR LAYER — the whole armoured shore, always, at every distance ─────
   // ⭐ BAKED, mounted here as views on the fetched bins: one mesh per chunk of the near layer's lattice, so a near chunk
@@ -268,37 +294,55 @@ export default function SlabRevetment({ lookId, bakeLastMs, visible = true }) {
       return overheadResolves(camera, viewH, frustum, _c, Math.hypot(x1 - x0, y1 - y0, z1 - z0) / 2, info.d50, VERTS_PER_WAVELENGTH)
     }
 
-    const drape = [], stones = [], nearKeys = new Set()
+    const drape = [], nearKeys = new Set(), stoneAt = [], drapeWanted = []
     for (const f of faces) {
       const chosen = new Set()
       for (let k = 0; k < f.ranges.length; k++) {
         if (!wants(f, k, f.at[k])) continue
         chosen.add(k)
-        if (!f.cache.has(k)) {
-          try {
-            f.cache.set(k, groundRelative(revetmentDrape({ poly: f.poly, crestAt: f.crestAt, toeAt: f.toeAt, berm: f.berm, groundAt: f.groundAt, waterY: f.waterY, globals: f.G, stations: f.ranges[k], conform: f.G1 }), f.step))
-          } catch (e) { console.error(`[revetment] drape chunk ${f.key}#${k} failed —`, e); continue }
-        }
+        // ⭐ a drape chunk not built yet is NOT built in this frame: it is queued (below) and its far chunk stays drawn
+        if (!f.cache.has(k)) { if (!f.failed.has(k)) drapeWanted.push([f, k]); continue }
         const built = f.cache.get(k)
-        if (built?.stats?.tris) { drape.push(built); nearKeys.add(`${f.key}#${k}`) }
+        if (built?.stats?.tris) { drape.push({ key: `${f.key}#${k}`, geometry: built.geometry }); nearKeys.add(`${f.key}#${k}`) }
       }
       // Stones, where a drape chunk their span overlaps is chosen. A stone chunk spans the arc [ci·CHUNK_M, (ci+1)·CHUNK_M]
       // (shoreChunks.js; the last is short), a drape chunk the arc of its stations: matched by ARC LENGTH, never by the
       // stone chunk's index fraction, which runs behind by the last chunk's shortfall (Zob, 2026-10-29).
-      // ⭐ margin 2 is MEASURED, not chosen: at margin 1 four stones go missing at a seam, at 2 the two windows resolve identically.
+      // Each stone chunk is settled with its neighbours' context (revetmentNear.js#STONE_MARGIN, measured). It is DRAWN only once
+      // every chosen drape chunk it overlaps is built (`covered`), so a chunk's near layer arrives whole.
       const n = f.ctx.nChunks, total = f.ctx.total, per = f.ranges[0] ? f.ranges[0][1] - f.ranges[0][0] : 1, nA = f.G.nAlong - 1
       const kAt = (s) => Math.min(f.ranges.length - 1, Math.floor(((s / total) * nA) / per))
       for (let ci = 0; ci < n; ci++) {
         const sA = ci * CHUNK_M, sB = Math.min(total, sA + CHUNK_M)
-        let any = false
-        for (let k = kAt(sA); k <= kAt(sB) && !any; k++) any = chosen.has(k)
+        let any = false, covered = true
+        for (let k = kAt(sA); k <= kAt(sB); k++) if (chosen.has(k)) { any = true; if (!f.cache.has(k) && !f.failed.has(k)) covered = false }
         if (!any) continue
-        // ground-relative, like the drape: the drawn ground's two parts ride along as `ground` + `groundY` (the lift's aGround)
-        for (const st of chunkStones(f.ctx, ci, 2)) { const g = drawnGroundParts(st.p[0], st.p[2]); stones.push({ ...st, p: [st.p[0], st.p[1] - g.raw - g.y, st.p[2]], ground: g.raw, groundY: g.y }) }
+        stoneAt.push([f, ci, covered])
       }
     }
+    // the near set's missing chunks, nearest the camera first (revetmentNear.js#missingWork)
+    const jobs = missingWork(drapeWanted, stoneAt.filter(([f, ci]) => !f.stones.has(ci)), c)
+    const ready = stoneAt.filter(([f, ci, covered]) => covered && f.stones.has(ci))
+    // ⭐ AN UNCHANGED NEAR SET HANDS REACT NOTHING: same faces, same drawn chunks, same pending work → the same `built`.
+    const sig = nearSignature([...nearKeys], ready.map(([f, ci]) => `${f.key}@${ci}`), jobs.map(j => j.key))
+    if (lastSet.current && lastSet.current.faces === faces && lastSet.current.sig === sig) return
+    pending.current?.cancel()
+    // ground-relative, like the drape: built once per stone chunk and kept on the face while it is in this near set or the
+    // one before (revetmentNear.js#stonesOf, #retainStones)
+    const stones = []
+    for (const [f, ci] of ready) for (const st of f.stones.get(ci)) stones.push(st)
+    retainStones(faces, stoneAt, lastSet.current?.stoneAt)
+    lastSet.current = { faces, sig, stoneAt }
     setBuilt({ drape, stones, nearKeys })
+    // ⭐ THE FIRST USE, BETWEEN FRAMES: what is missing is built by the kit's frameSlices.js#runSliced within the frame's own
+    // measured time, one chunk a step; when it is all built the near set is taken again (a reselect is forced) and drawn whole.
+    if (jobs.length) pending.current = runSliced(buildPending(jobs, drawnGroundParts), () => {
+      pending.current = null
+      if (lastSet.current) lastSet.current.sig = null
+      lastAt.current = null
+    })
   })
+  useEffect(() => () => pending.current?.cancel(), [])
 
   if (!visible || !doc || !palette) return null
   return (
@@ -311,8 +355,8 @@ export default function SlabRevetment({ lookId, bakeLastMs, visible = true }) {
         <mesh key={`far-${m.key}`} geometry={overhead ? m.band : m.far} material={drapeMaterial}
           visible={!built.nearKeys?.has(m.key)} receiveShadow />
       ))}
-      {built.drape.map((d, i) => (
-        <mesh key={i} geometry={d.geometry} material={drapeMaterial} customDepthMaterial={drapeDepth} castShadow receiveShadow />
+      {built.drape.map(d => (
+        <mesh key={d.key} geometry={d.geometry} material={drapeMaterial} customDepthMaterial={drapeDepth} castShadow receiveShadow />
       ))}
       {!!built.stones.length && (
         <InstancedBoulders palette={palette} instances={built.stones} material={stoneMaterial} depthMaterial={stoneDepth} />

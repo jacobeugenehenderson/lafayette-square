@@ -18,6 +18,9 @@ try {
   const page = await chrome.openPage()
   for (const d of ['Page', 'Runtime', 'Profiler']) await page.send(d + '.enable')
   await page.send('Emulation.setDeviceMetricsOverride', { width: W[0], height: W[1], deviceScaleFactor: 2, mobile: false })
+  // SEED=<n>: the movie's start phase seeded as pair.mjs does (Math.random, before the page loads); only the FIRST flight pairs
+  if (process.env.SEED) await page.send('Page.addScriptToEvaluateOnNewDocument', { source: `(() => { let a = ${(+process.env.SEED >>> 0) || 1} >>> 0; Math.random = function () { a = (a + 0x6D2B79F5) >>> 0; let t = a;
+  t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296 } })();` })
   await page.send('Fetch.enable', { patterns: [{ urlPattern: '*', requestStage: 'Request' }] })
   page.on('Fetch.requestPaused', ({ requestId, request }) => {
     if (['GET', 'HEAD', 'OPTIONS'].includes(request.method)) page.send('Fetch.continueRequest', { requestId }).catch(() => {})
@@ -59,6 +62,6 @@ try {
   }
 } catch (e) { out.error = String(e.message || e) } finally { await chrome.close() }
 const { execSync } = await import('node:child_process'); out.load = execSync('sysctl -n vm.loadavg').toString().trim()
-writeFileSync(`spike-${town}-x${thr}.cpuprofiles.json`, JSON.stringify(raw))
+writeFileSync(`spike-${town}-x${thr}${process.env.SEED ? '-s' + process.env.SEED : ''}.cpuprofiles.json`, JSON.stringify(raw))
 console.log(JSON.stringify(out))
 
