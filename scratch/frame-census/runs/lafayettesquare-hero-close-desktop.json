@@ -1,0 +1,418 @@
+{
+ "town": "lafayettesquare",
+ "shot": "hero",
+ "close": true,
+ "mode": "desktop",
+ "tier": {
+  "stored": "desktop",
+  "target": "desktop",
+  "dpr": 1,
+  "buf": "1600x865",
+  "logDepth": true
+ },
+ "cam": {
+  "pos": [
+   -778,
+   97,
+   -152
+  ],
+  "near": 1,
+  "far": 60500.00000000001,
+  "fov": 14.274549238751415
+ },
+ "frame0": {
+  "target": "desktop",
+  "wallMs": 86.7,
+  "calls": 407,
+  "tris": 8742219,
+  "gpuSupported": true,
+  "gpuMs": 181.3913675,
+  "mainMs": 9.626666669050852,
+  "lastMainMs": 5.899999976158142,
+  "loaf": {
+   "n": 1389,
+   "worstMs": 247.09999990463257,
+   "scriptMs": 15840.00000154972,
+   "last": [
+    {
+     "at": 123237.29999995232,
+     "ms": 65.10000002384186,
+     "scriptMs": 9.400000095367432,
+     "blockingMs": 0
+    },
+    {
+     "at": 123302.39999997616,
+     "ms": 95.29999995231628,
+     "scriptMs": 13.299999952316284,
+     "blockingMs": 0
+    },
+    {
+     "at": 123397.79999995232,
+     "ms": 76.30000007152557,
+     "scriptMs": 11.700000047683716,
+     "blockingMs": 0
+    },
+    {
+     "at": 123474.29999995232,
+     "ms": 100.5,
+     "scriptMs": 11.200000047683716,
+     "blockingMs": 0
+    },
+    {
+     "at": 123575,
+     "ms": 76,
+     "scriptMs": 11.699999928474426,
+     "blockingMs": 0
+    },
+    {
+     "at": 123651.10000002384,
+     "ms": 96.29999995231628,
+     "scriptMs": 12.5,
+     "blockingMs": 0
+    },
+    {
+     "at": 123747.60000002384,
+     "ms": 87.89999997615814,
+     "scriptMs": 9.600000023841858,
+     "blockingMs": 0
+    },
+    {
+     "at": 123835.60000002384,
+     "ms": 71.29999995231628,
+     "scriptMs": 8.699999928474426,
+     "blockingMs": 0
+    },
+    {
+     "at": 123907.10000002384,
+     "ms": 95.89999997615814,
+     "scriptMs": 13.700000047683716,
+     "blockingMs": 0
+    },
+    {
+     "at": 124003.10000002384,
+     "ms": 85,
+     "scriptMs": 11.5,
+     "blockingMs": 0
+    },
+    {
+     "at": 124088.19999992847,
+     "ms": 89.5,
+     "scriptMs": 11.399999976158142,
+     "blockingMs": 0
+    },
+    {
+     "at": 124177.89999997616,
+     "ms": 75.70000004768372,
+     "scriptMs": 10.299999952316284,
+     "blockingMs": 0
+    },
+    {
+     "at": 124253.69999992847,
+     "ms": 94,
+     "scriptMs": 10.699999928474426,
+     "blockingMs": 0
+    },
+    {
+     "at": 124347.69999992847,
+     "ms": 92,
+     "scriptMs": 12.799999952316284,
+     "blockingMs": 0
+    },
+    {
+     "at": 124439.79999995232,
+     "ms": 77,
+     "scriptMs": 10.700000047683716,
+     "blockingMs": 0
+    },
+    {
+     "at": 124516.89999997616,
+     "ms": 96.70000004768372,
+     "scriptMs": 13.100000023841858,
+     "blockingMs": 0
+    },
+    {
+     "at": 124613.69999992847,
+     "ms": 80,
+     "scriptMs": 11.5,
+     "blockingMs": 0
+    },
+    {
+     "at": 124693.89999997616,
+     "ms": 91.29999995231628,
+     "scriptMs": 7.300000071525574,
+     "blockingMs": 0
+    },
+    {
+     "at": 124785.29999995232,
+     "ms": 88.80000007152557,
+     "scriptMs": 9.100000023841858,
+     "blockingMs": 0
+    },
+    {
+     "at": 124874.29999995232,
+     "ms": 80.10000002384186,
+     "scriptMs": 8.400000095367432,
+     "blockingMs": 0
+    }
+   ]
+  }
+ },
+ "rows": [
+  {
+   "cls": "lamps",
+   "meshes": 1,
+   "instances": 585,
+   "tris": 2517840,
+   "inFrustumShare": 0.362,
+   "sampled": 212,
+   "unoccludedShare": 0.165,
+   "subPixel": 0,
+   "visibleEst": 0.06,
+   "dGpuMs": 20.31,
+   "noise": 0.49,
+   "restMs": 186.69
+  },
+  {
+   "cls": "trees",
+   "meshes": 162,
+   "instances": 17652,
+   "tris": 847296,
+   "inFrustumShare": 0.316,
+   "sampled": 400,
+   "unoccludedShare": 0.275,
+   "subPixel": 0,
+   "visibleEst": 0.087,
+   "dGpuMs": 50.63,
+   "noise": 1.71,
+   "restMs": 186.53
+  },
+  {
+   "cls": "ground",
+   "meshes": 43,
+   "instances": 43,
+   "tris": 256074,
+   "inFrustumShare": 0.21,
+   "sampled": 400,
+   "unoccludedShare": 0.052,
+   "subPixel": 0,
+   "visibleEst": 0.011,
+   "dGpuMs": 27.05,
+   "noise": 0.44,
+   "restMs": 180.68
+  },
+  {
+   "cls": "buildings",
+   "meshes": 9,
+   "instances": 9,
+   "tris": 33696,
+   "inFrustumShare": 0.451,
+   "sampled": 400,
+   "unoccludedShare": 0.028,
+   "subPixel": 0,
+   "visibleEst": 0.012,
+   "dGpuMs": 24.57,
+   "noise": 3.89,
+   "restMs": 182.72
+  },
+  {
+   "cls": "sky",
+   "meshes": 6,
+   "instances": 6,
+   "tris": 14210.333333333334,
+   "inFrustumShare": 0.006,
+   "sampled": 4,
+   "unoccludedShare": 0.75,
+   "subPixel": 0,
+   "visibleEst": 0.004,
+   "dGpuMs": -3.43,
+   "noise": 7.3,
+   "restMs": 186.06
+  },
+  {
+   "cls": "displays",
+   "meshes": 2,
+   "instances": 2,
+   "tris": 6696,
+   "inFrustumShare": 0.238,
+   "sampled": 61,
+   "unoccludedShare": 0.377,
+   "subPixel": 0,
+   "visibleEst": 0.09,
+   "dGpuMs": -0.55,
+   "noise": 5.64,
+   "restMs": 182.95
+  },
+  {
+   "cls": "other:town:park",
+   "meshes": 187,
+   "instances": 187,
+   "tris": 2337,
+   "inFrustumShare": 0.29,
+   "sampled": 69,
+   "unoccludedShare": 0.159,
+   "subPixel": 0,
+   "visibleEst": 0.046,
+   "dGpuMs": -4.73,
+   "noise": 3.73,
+   "restMs": 173.25
+  },
+  {
+   "cls": "water",
+   "meshes": 3,
+   "instances": 3,
+   "tris": 853,
+   "inFrustumShare": 0.844,
+   "sampled": 103,
+   "unoccludedShare": 0.971,
+   "subPixel": 0,
+   "visibleEst": 0.819,
+   "dGpuMs": 1.03,
+   "noise": 2.27,
+   "restMs": 175.47
+  }
+ ],
+ "px": [
+  {
+   "k": 1,
+   "buf": "1600x952",
+   "ms": 185.5546920344827
+  },
+  {
+   "k": 0.5,
+   "buf": "800x452",
+   "ms": 77.97614603333332
+  }
+ ],
+ "targets": {
+  "atRatio": 1,
+  "full": {
+   "canvas": "1600x865",
+   "targets": [
+    [
+     "1600x865",
+     32
+    ],
+    [
+     "800x432.5",
+     8
+    ],
+    [
+     "800x432",
+     6
+    ],
+    [
+     "400x216",
+     6
+    ],
+    [
+     "217x217",
+     2
+    ],
+    [
+     "200x108",
+     6
+    ],
+    [
+     "100x54",
+     6
+    ],
+    [
+     "50x27",
+     2
+    ],
+    [
+     "25x13",
+     2
+    ],
+    [
+     "12x6",
+     2
+    ],
+    [
+     "6x3",
+     2
+    ]
+   ]
+  },
+  "half": {
+   "canvas": "800x432",
+   "targets": [
+    [
+     "1600x865",
+     32
+    ],
+    [
+     "800x432.5",
+     8
+    ],
+    [
+     "800x432",
+     6
+    ],
+    [
+     "400x216",
+     6
+    ],
+    [
+     "217x217",
+     2
+    ],
+    [
+     "200x108",
+     6
+    ],
+    [
+     "100x54",
+     6
+    ],
+    [
+     "50x27",
+     2
+    ],
+    [
+     "25x13",
+     2
+    ],
+    [
+     "12x6",
+     2
+    ],
+    [
+     "6x3",
+     2
+    ]
+   ]
+  }
+ },
+ "load": [
+  1.29931640625,
+  1.962890625,
+  2.5185546875
+ ],
+ "log": [
+  "== lafayettesquare · hero (close) · desktop · headless Chrome, this desktop's GPU · load 2.44 2.36 2.77 ==",
+  "  ⛔ never settled within 120 s; numbers below are NOT steady state",
+  "  close camera: close to focus:arch",
+  "  tier: {\"stored\":\"desktop\",\"target\":\"desktop\",\"dpr\":1,\"buf\":\"1600x865\",\"logDepth\":true}",
+  "  camera {\"pos\":[-778,97,-152],\"near\":1,\"far\":60500.00000000001,\"fov\":14.274549238751415} · buffer 1600x865 · occluder meshes 9",
+  "  frame (all passes): 407 draws · 8.74M tris · gpu 181.4 ms",
+  "  lamps            1m     585 inst   2.52M tris · in frustum 36% · unoccluded 17% of 212 (sub-px 0) · visible≈6% · Δgpu 20.3 ms ±0.5 of 186.69",
+  "  trees          162m   17652 inst   0.85M tris · in frustum 32% · unoccluded 28% of 400 (sub-px 0) · visible≈9% · Δgpu 50.6 ms ±1.7 of 186.53",
+  "  ground          43m      43 inst   0.26M tris · in frustum 21% · unoccluded 5% of 400 (sub-px 0) · visible≈1% · Δgpu 27.0 ms ±0.4 of 180.68",
+  "  buildings        9m       9 inst   0.03M tris · in frustum 45% · unoccluded 3% of 400 (sub-px 0) · visible≈1% · Δgpu 24.6 ms ±3.9 of 182.72",
+  "  sky              6m       6 inst   0.01M tris · in frustum 1% · unoccluded 75% of 4 (sub-px 0) · visible≈0% · Δgpu -3.4 ms ±7.3 of 186.06",
+  "  displays         2m       2 inst   0.01M tris · in frustum 24% · unoccluded 38% of 61 (sub-px 0) · visible≈9% · Δgpu -0.5 ms ±5.6 of 182.95",
+  "  other:town:park   187m     187 inst   0.00M tris · in frustum 29% · unoccluded 16% of 69 (sub-px 0) · visible≈5% · Δgpu -4.7 ms ±3.7 of 173.25",
+  "  water            3m       3 inst   0.00M tris · in frustum 84% · unoccluded 97% of 103 (sub-px 0) · visible≈82% · Δgpu 1.0 ms ±2.3 of 175.47",
+  "  window ×1 (canvas 1600x952): gpu 185.6 ms",
+  "  window ×0.5 (canvas 800x452): gpu 78.0 ms",
+  "  targets @ ratio 1: canvas 1600x865 · 1600x865×32 800x432.5×8 800x432×6 400x216×6 217x217×2 200x108×6 100x54×6 50x27×2 25x13×2 12x6×2 6x3×2",
+  "  targets @ ratio 0.5: canvas 800x432 · 1600x865×32 800x432.5×8 800x432×6 400x216×6 217x217×2 200x108×6 100x54×6 50x27×2 25x13×2 12x6×2 6x3×2",
+  "  page ERR Warning: Cannot update a component (`%s`) while rendering a different component (`%s`). To locate the bad setState() call inside `%s`, follow the stack trace as described in https://reactjs.org/link/setstate-in-render%s SlabRevetment GroundMeshes GroundMeshes \n    at GroundMeshes (http://localhost:5",
+  "  page ERR [atmosphere] ⛔ the sky holds its last state — [sky] 2026-11-01T16:30:03.946Z's reading lacks cloudCover, weatherCode",
+  "  page ERR [WindSheet] ⛔ holding the last wind: [wind] 2026-11-01T16:30:04.039Z's reading lacks weatherCode",
+  "  page ERR [WindSheet] ⛔ holding the last wind: [wind] 2026-11-01T16:30:04.139Z's reading lacks weatherCode",
+  "  page ERR [WindSheet] ⛔ holding the last wind: [wind] 2026-11-01T16:30:04.218Z's reading lacks weatherCode",
+  "  page ERR [WindSheet] ⛔ holding the last wind: [wind] 2026-11-01T16:30:04.322Z's reading lacks weatherCode"
+ ]
+}

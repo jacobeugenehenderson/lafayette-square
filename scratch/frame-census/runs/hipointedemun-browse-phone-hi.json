@@ -1,0 +1,315 @@
+{
+ "town": "hipointedemun",
+ "shot": "browse",
+ "close": false,
+ "mode": "phone-hi",
+ "tier": {
+  "stored": "phone-hi",
+  "target": "phone-hi",
+  "dpr": 1,
+  "buf": "242x525",
+  "logDepth": false
+ },
+ "cam": {
+  "pos": [
+   0,
+   7286,
+   0
+  ],
+  "near": 7257.761521509318,
+  "far": 60500.00000000001,
+  "fov": 45
+ },
+ "frame0": {
+  "target": "phone-hi",
+  "wallMs": 24.1,
+  "calls": 170,
+  "tris": 720758,
+  "gpuSupported": true,
+  "gpuMs": 22.287789833333328,
+  "mainMs": 3.8333333293596903,
+  "lastMainMs": 2.8000000715255737,
+  "loaf": {
+   "n": 37,
+   "worstMs": 133.69999992847443,
+   "scriptMs": 583.7000002861023,
+   "last": [
+    {
+     "at": 5560.700000047684,
+     "ms": 50,
+     "scriptMs": 0,
+     "blockingMs": 0
+    },
+    {
+     "at": 5777.700000047684,
+     "ms": 60.299999952316284,
+     "scriptMs": 0,
+     "blockingMs": 0
+    },
+    {
+     "at": 6010.300000071526,
+     "ms": 56.89999997615814,
+     "scriptMs": 5.200000047683716,
+     "blockingMs": 0
+    },
+    {
+     "at": 6114.300000071526,
+     "ms": 59.799999952316284,
+     "scriptMs": 5.100000023841858,
+     "blockingMs": 0
+    },
+    {
+     "at": 6228.700000047684,
+     "ms": 52.799999952316284,
+     "scriptMs": 5.300000071525574,
+     "blockingMs": 0
+    },
+    {
+     "at": 6328.700000047684,
+     "ms": 60.199999928474426,
+     "scriptMs": 6,
+     "blockingMs": 0
+    },
+    {
+     "at": 6435.399999976158,
+     "ms": 60,
+     "scriptMs": 0,
+     "blockingMs": 0
+    },
+    {
+     "at": 6661,
+     "ms": 62.10000002384186,
+     "scriptMs": 5.199999928474426,
+     "blockingMs": 0
+    },
+    {
+     "at": 6777.5,
+     "ms": 50.200000047683716,
+     "scriptMs": 0,
+     "blockingMs": 0
+    },
+    {
+     "at": 6995,
+     "ms": 59.89999997615814,
+     "scriptMs": 0,
+     "blockingMs": 0
+    },
+    {
+     "at": 7343.899999976158,
+     "ms": 58.800000071525574,
+     "scriptMs": 0,
+     "blockingMs": 0
+    },
+    {
+     "at": 7451.600000023842,
+     "ms": 60,
+     "scriptMs": 0,
+     "blockingMs": 0
+    },
+    {
+     "at": 7560.899999976158,
+     "ms": 58.10000002384186,
+     "scriptMs": 5.400000095367432,
+     "blockingMs": 0
+    },
+    {
+     "at": 7667.600000023842,
+     "ms": 62.700000047683716,
+     "scriptMs": 5.799999952316284,
+     "blockingMs": 0
+    },
+    {
+     "at": 8260.5,
+     "ms": 59.60000002384186,
+     "scriptMs": 5.100000023841858,
+     "blockingMs": 0
+    },
+    {
+     "at": 8365.800000071526,
+     "ms": 62.39999997615814,
+     "scriptMs": 0,
+     "blockingMs": 0
+    },
+    {
+     "at": 8477.300000071526,
+     "ms": 58,
+     "scriptMs": 0,
+     "blockingMs": 0
+    },
+    {
+     "at": 8583.5,
+     "ms": 60,
+     "scriptMs": 0,
+     "blockingMs": 0
+    },
+    {
+     "at": 8693.5,
+     "ms": 57.300000071525574,
+     "scriptMs": 0,
+     "blockingMs": 0
+    },
+    {
+     "at": 8927.399999976158,
+     "ms": 51.300000071525574,
+     "scriptMs": 0,
+     "blockingMs": 0
+    }
+   ]
+  }
+ },
+ "rows": [
+  {
+   "cls": "ground",
+   "meshes": 46,
+   "instances": 46,
+   "tris": 399511,
+   "inFrustumShare": 1,
+   "sampled": 400,
+   "unoccludedShare": 1,
+   "subPixel": 0,
+   "visibleEst": 1,
+   "dGpuMs": 4.49,
+   "noise": 0.42,
+   "restMs": 18.8
+  },
+  {
+   "cls": "lamps",
+   "meshes": 1,
+   "instances": 1227,
+   "tris": 196320,
+   "inFrustumShare": 1,
+   "sampled": 400,
+   "unoccludedShare": 0,
+   "subPixel": 400,
+   "visibleEst": 0,
+   "dGpuMs": -1.26,
+   "noise": 0.14,
+   "restMs": 19.46
+  },
+  {
+   "cls": "trees",
+   "meshes": 21,
+   "instances": 34824,
+   "tris": 69648,
+   "inFrustumShare": 1,
+   "sampled": 400,
+   "unoccludedShare": 0.978,
+   "subPixel": 9,
+   "visibleEst": 0.978,
+   "dGpuMs": 5.23,
+   "noise": 0.13,
+   "restMs": 20.08
+  },
+  {
+   "cls": "buildings",
+   "meshes": 3,
+   "instances": 3,
+   "tris": 43323,
+   "inFrustumShare": 1,
+   "sampled": 400,
+   "unoccludedShare": 1,
+   "subPixel": 0,
+   "visibleEst": 1,
+   "dGpuMs": -0.06,
+   "noise": 0.05,
+   "restMs": 20.17
+  },
+  {
+   "cls": "sky",
+   "meshes": 5,
+   "instances": 5,
+   "tris": 10242.333333333334,
+   "inFrustumShare": 0.042,
+   "sampled": 51,
+   "unoccludedShare": 0.98,
+   "subPixel": 0,
+   "visibleEst": 0.041,
+   "dGpuMs": -0.51,
+   "noise": 0.33,
+   "restMs": 19.27
+  },
+  {
+   "cls": "displays",
+   "meshes": 2,
+   "instances": 2,
+   "tris": 738,
+   "inFrustumShare": 1,
+   "sampled": 26,
+   "unoccludedShare": 1,
+   "subPixel": 0,
+   "visibleEst": 1,
+   "dGpuMs": 0.24,
+   "noise": 0.57,
+   "restMs": 20.56
+  }
+ ],
+ "px": [
+  {
+   "k": 1,
+   "buf": "281x611",
+   "ms": 21.401638323529422
+  },
+  {
+   "k": 0.5,
+   "buf": "132x286",
+   "ms": 14.572155616438353
+  }
+ ],
+ "targets": {
+  "atRatio": 1,
+  "full": {
+   "canvas": "242x525",
+   "targets": [
+    [
+     "242x525",
+     14
+    ],
+    [
+     "169x169",
+     2
+    ]
+   ]
+  },
+  "half": {
+   "canvas": "121x262",
+   "targets": [
+    [
+     "242x525",
+     14
+    ],
+    [
+     "169x169",
+     2
+    ]
+   ]
+  }
+ },
+ "load": [
+  2.72900390625,
+  2.44970703125,
+  2.57421875
+ ],
+ "log": [
+  "== hipointedemun · browse · phone-hi · headless Chrome, this desktop's GPU · load 2.29 2.21 2.50 ==",
+  "  settled at t+9s (170 draws stable 6 s)",
+  "  tier: {\"stored\":\"phone-hi\",\"target\":\"phone-hi\",\"dpr\":1,\"buf\":\"242x525\",\"logDepth\":false}",
+  "  camera {\"pos\":[0,7286,0],\"near\":7257.761521509318,\"far\":60500.00000000001,\"fov\":45} · buffer 242x525 · occluder meshes 3",
+  "  frame (all passes): 170 draws · 0.72M tris · gpu 22.3 ms",
+  "  ground          46m      46 inst   0.40M tris · in frustum 100% · unoccluded 100% of 400 (sub-px 0) · visible≈100% · Δgpu 4.5 ms ±0.4 of 18.8",
+  "  lamps            1m    1227 inst   0.20M tris · in frustum 100% · unoccluded 0% of 400 (sub-px 400) · visible≈0% · Δgpu -1.3 ms ±0.1 of 19.46",
+  "  trees           21m   34824 inst   0.07M tris · in frustum 100% · unoccluded 98% of 400 (sub-px 9) · visible≈98% · Δgpu 5.2 ms ±0.1 of 20.08",
+  "  buildings        3m       3 inst   0.04M tris · in frustum 100% · unoccluded 100% of 400 (sub-px 0) · visible≈100% · Δgpu -0.1 ms ±0.0 of 20.17",
+  "  sky              5m       5 inst   0.01M tris · in frustum 4% · unoccluded 98% of 51 (sub-px 0) · visible≈4% · Δgpu -0.5 ms ±0.3 of 19.27",
+  "  displays         2m       2 inst   0.00M tris · in frustum 100% · unoccluded 100% of 26 (sub-px 0) · visible≈100% · Δgpu 0.2 ms ±0.6 of 20.56",
+  "  window ×1 (canvas 281x611): gpu 21.4 ms",
+  "  window ×0.5 (canvas 132x286): gpu 14.6 ms",
+  "  targets @ ratio 1: canvas 242x525 · 242x525×14 169x169×2",
+  "  targets @ ratio 0.5: canvas 121x262 · 242x525×14 169x169×2",
+  "  page ERR [instance] \"hipointedemun\" has no contact.email, cary.email, cary.smsNumber. These are PUBLIC — they render on the legal page, which every installation shows and which no module flag gates. Unset, the page shows a labelled gap instead of a contact; before this check it rendered a dead \"mailto:null\" ",
+  "  page ERR Warning: Cannot update a component (`%s`) while rendering a different component (`%s`). To locate the bad setState() call inside `%s`, follow the stack trace as described in https://reactjs.org/link/setstate-in-render%s SlabRevetment GroundMeshes GroundMeshes \n    at GroundMeshes (http://localhost:5",
+  "  page ERR [BakedGround] ⛔ \"hipointedemun\": surface \"crop\" is drawn WITHOUT calendar (day of year, physics — finding f-usda-corn-grain-dates-MO missing). Those features are ABSENT, not defaulted — ▶ cartograph/surfaces.mjs",
+  "  page ERR [BakedGround] ⛔ \"hipointedemun\": surface \"sand\" is drawn WITHOUT beachSlopeDeg (°, derived — no coastline (coastDist absent)); beachBandM (m, derived — no coastline (coastDist absent)); rippleSpacingM (m, physics — no source); rippleHeightM (m, physics — no source). Those features are ABSENT, not de",
+  "  page ERR [BakedGround] ⛔ \"hipointedemun\": ground rule duneGrass has no distance to the water (no __water__ runs in shape.json — this town has no shoreline) — it draws nothing on this town's sand.",
+  "  page ERR [atmosphere] ⛔ the sky holds its last state — [sky] 2026-11-01T16:30:01.018Z's reading lacks cloudCover, weatherCode"
+ ]
+}
