@@ -83,11 +83,11 @@ The **Hero shot is the authored bounce**, replayed identically here, in Look, an
 
 | surface | lives in | who writes it | reaches Preview? |
 |---|---|---|---|
-| `scene.layerVis` | the Slab | Designer / Look | ✅ (mount-gates decorations) |
+| `scene.layerVis` | the Slab | Plan / Look | ✅ (mount-gates decorations) |
 | **Preview inspection toggles** | **`localStorage: preview.layers.v3`** | **Preview only** | ✅ **and nothing upstream can touch it** |
 | per-platform inclusion manifest | the Look | Preview's publish gate (§0.2) | deployment policy |
 
-⛔ **Turning layers on in the Designer does NOT turn them on in Preview.** Nor does a Foundry run, nor
+⛔ **Turning layers on in Plan does NOT turn them on in Preview.** Nor does a Foundry run, nor
 running every step from the Seal. Ground/buildings/trees off in `preview.layers.v3` renders **identically
 to a broken Slab**, with nothing on screen saying so — the operator reasonably concludes the pipeline
 broke. ⭐ **Preview should surface "N layers hidden" without expanding SCENE.** Not built.
@@ -162,7 +162,7 @@ Two caveats that, unstated, would mislead (`PreviewApp.jsx#SceneCaveats`):
 ## 5. The flow — Look → Foundry → Preview
 
 1. **Look** — the operator authors the Look live (WYSIWYG); autosaves to `design.json` (`STAGE.md`).
-2. **Foundry** — one button freezes `design.json` → `scene.json` and makes the geometry/AO into the Slab (`FOUNDRY.md`). Look's **Foundry** button runs it in place; the Designer's "Look →" only opens Look, which offers a Foundry run when the Slab is older than what the Foundry reads.
+2. **Foundry** — one button freezes `design.json` → `scene.json` and makes the geometry/AO into the Slab (`FOUNDRY.md`). Look's **Foundry** button runs it in place; Plan's "Look →" only opens Look, which offers a Foundry run when the Slab is older than what the Foundry reads.
 3. **Preview** — open `/preview.html?look=<id>` (or follow "← Stage" / "Preview →" between the two). Walk the Slab at the authored shots, scrub the day, flip to phone mode, watch the GPU panel. **If the Slab holds at acceptable mobile cost → it's ready for the LS app. If a layer is hot → back to Look to lighten it. If it looks wrong → the Foundry run didn't propagate (re-run the Foundry / Reload ↻), not a Preview bug.**
 
 Preview closes the authoring loop without authoring anything: it is the operator's *verdict surface*.

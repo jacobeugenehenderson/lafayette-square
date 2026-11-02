@@ -130,7 +130,7 @@ Where channels persist (verified in `bake-scene.js`):
 legacy player — `{ center:[x,z], altitude }`, authored only by the Camera card's **Set as Browse frame**, frozen into
 `scene.json#browseFrame`, read as a square on the ground (half-side = altitude · tan(fov/2)) fitted whole into each
 surface's free region. None authored → the town's own disc, said once. The **working view** is where the operator left
-Look's camera: Designer ↔ Browse hands it across, and Hero/Street → Browse and a reload return to it (per tab,
+Look's camera: Plan ↔ Browse hands it across, and Hero/Street → Browse and a reload return to it (per tab,
 sessionStorage, never frozen). One module: `src/camera/browseFrame.js`.
 ▶ `node checks/claims-browse-frame.mjs` · `node checks/claims-authored-framing-reaches-the-player.mjs` (with `KIT_DIR=.` before a pin move)
 *(The 2026-09-09 investigation this replaces: `_archive/STAGE-browse-frame-5.1-2026-10-04.md`.)*
@@ -153,7 +153,7 @@ sessionStorage, never frozen). One module: `src/camera/browseFrame.js`.
 - **`FOUNDRY.md`** — step 07, which runs `bake-scene.js` (the paired keystone).
 - **`PREVIEW.md`** — the inspection surface that reads the frozen Look back (closes `Look → Foundry → Preview`).
 - **`SLAB-CONTRACT.md §4`** — the `scene.json` byte format + the `neon`/`lampGlow`/channel fields (the SSOT this doc points to).
-- **`ARCHITECTURE.md §2` / §2.1 / §3 / §5 / §7** — the Designer/Stage split, the three tools, the Looks model, live-edit rendering, the single-owner-channel doctrine.
+- **`ARCHITECTURE.md §2` / §2.1 / §3 / §5 / §7** — Plan/Stage split, the three tools, the Looks model, live-edit rendering, the single-owner-channel doctrine.
 - **`HANDOFF-channel-variant-cascade.md`** (repo root) — the per-shot look-override arc (§1.5); landed 2026-06-29, platform axis still open.
 - **`SECTION.md` / `SURVEY.md`** — the two upstream tools whose frozen shape Look styles.
 - **`meteorologist/` (CANON · WEATHER-MODEL · STATUS · STAGE_MIGRATION)** — the clouds staging area and the (historical) in-Stage migration plan.

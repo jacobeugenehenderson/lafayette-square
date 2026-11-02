@@ -2162,7 +2162,7 @@ export default function ExtentApp() {
         {/* Top-left destination nav — peer to Designer / Stage. */}
         <div className="carto-toolbar carto-glass">
           <div className="carto-toolgroup">
-            <button onClick={() => setShot('designer')}>← Designer</button>
+            <button onClick={() => setShot('designer')}>← Plan</button>
           </div>
           <div className="carto-toolgroup">
             <span style={{ padding: '0 6px', fontWeight: 600 }}>◎ Extent</span>
@@ -2564,7 +2564,7 @@ export default function ExtentApp() {
                   disabled={building || !(radiusM > 0) || !bakeDirty}
                   onClick={onBuild}
                   style={!building && !bakeDirty ? { opacity: 0.45, cursor: 'default' } : undefined}
-                  title={bakeDirty ? 'Run the Foundry on this scene and open the Designer' : 'The Foundry has run — change the boundary, radius, overrides or details to run it again'}>
+                  title={bakeDirty ? 'Run the Foundry on this scene and open Plan' : 'The Foundry has run — change the boundary, radius, overrides or details to run it again'}>
                   {building
                     ? (buildStage?.n
                         ? `${buildStage.label}…  ${buildStage.i}/${buildStage.n}`

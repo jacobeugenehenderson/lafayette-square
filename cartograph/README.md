@@ -2,7 +2,7 @@
 
 The neighborhood-ground helper app. Authors the cartograph (streets, blocks, paths, sidewalks, treelawn, lawn, land-use faces) and runs the Foundry to make one canonical bundle per Look, the Slab, that the runtime renders as the city's ground plane. The Cartograph has three functions, Stage, Preview and Publish, and the twelve steps sit inside them: Stage holds 01 Extent · 02 Intake · 03 Skeleton · 04 Survey · 05 Seal · 06 Section · 07 Foundry · 08 Slab · 09 Look; Preview is 10; Publish holds 11 Publish · 12 Promote.
 
-Read [`./ARCHITECTURE.md`](./ARCHITECTURE.md) first for the publish-loop pattern, the Designer/Stage split, and the Looks model. This README is the contract specific to Cartograph.
+Read [`./ARCHITECTURE.md`](./ARCHITECTURE.md) first for the publish-loop pattern, Plan/Stage split, and the Looks model. This README is the contract specific to Cartograph.
 
 ---
 
@@ -28,10 +28,10 @@ Cartograph is a single-canvas app with two modes:
 
 | Mode | Owns | Tools |
 |---|---|---|
-| **Designer** | Geometry: centerlines, measures, caps, couplers, anchors, boundary, eventually tree positions | Survey, Section, Marker; ephemeral per-layer visibility for working clarity |
+| **Plan** | Geometry: centerlines, measures, caps, couplers, anchors, boundary, eventually tree positions | Survey, Section, Marker; ephemeral per-layer visibility for working clarity |
 | **Look**     | Styling per look preset: colors, visibility, materials, future shaders | Surfaces (color + visibility per material), camera shots, time-of-day, environment |
 
-Designer's "Look →" button only opens Look; if the Slab is older than what the Foundry reads, Look says so and offers the **Foundry** run. Look's "＋ Save as new look preset…" is the only deliberate save-as action — it forks the working draft into a new named look preset (`valentines`, `cardinals-win`, etc.).
+Plan's "Look →" button only opens Look; if the Slab is older than what the Foundry reads, Look says so and offers the **Foundry** run. Look's "＋ Save as new look preset…" is the only deliberate save-as action — it forks the working draft into a new named look preset (`valentines`, `cardinals-win`, etc.).
 
 ---
 
@@ -133,7 +133,7 @@ Look and Preview mount the **same component** with the same artifact. The bundle
 
 ## Authoring loop
 
-1. Open `/cartograph` (in Designer by default).
+1. Open `/cartograph` (in Plan by default).
 2. Edit geometry with Survey / Section. Edits autosave to `overlay.json`.
 3. Click **Look →** to open Look on Hero. If the Slab is older than what the Foundry reads, Look says so and offers the **Foundry** run.
 4. Edit colors / visibility in Look's Surfaces. Edits autosave to `looks/<active>/design.json` and show *live* in the rendered scene.
@@ -144,7 +144,7 @@ Look and Preview mount the **same component** with the same artifact. The bundle
 
 ## Cross-references
 
-- [`./ARCHITECTURE.md`](./ARCHITECTURE.md) — project-wide patterns (publish loop, Looks model, Designer/Stage split)
+- [`./ARCHITECTURE.md`](./ARCHITECTURE.md) — project-wide patterns (publish loop, Looks model, Plan/Stage split)
 - `../memory/project_baked_ground_runtime.md` — runtime contract for BakedGround.jsx (parity rule)
 - `../memory/project_bake_pipeline_pure_threejs.md` — Foundry bundle architecture
 - `../memory/project_bake_face_clip.md` — face fills are clipped against ribbon footprint by the Foundry; outer + holes structure

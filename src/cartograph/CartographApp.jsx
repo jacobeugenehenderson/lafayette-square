@@ -641,7 +641,7 @@ function useLoadData() {
 // while the scene's boundary has not been fetched. ⛔ Every town alike: LS's stencil used to be a static import of its own
 // boundary file (LS_STENCIL), a second channel for one town (BRIEF-the-disc-is-one-source §1b).
 function stencilFromBoundary(nb) {
-  return nb ? discOf(nb, 'Designer stencil').ring.map(([x, z]) => [x, z]) : null
+  return nb ? discOf(nb, 'Plan stencil').ring.map(([x, z]) => [x, z]) : null
 }
 
 // Per-scene configuration. The single source of truth for "what's
@@ -809,7 +809,7 @@ export default function CartographApp() {
       () => { if (live) useFailures.getState().clear(activeLookId, 'terrain') },
       (e) => { if (!live) return
         console.error(`[terrain] ⛔ ${reasonOf(e)}`)
-        useFailures.getState().report({ lookId: activeLookId, layer: 'terrain', kind: e instanceof Refusal ? 'refusal' : 'gave-up', reason: e instanceof Refusal ? reasonOf(e) : `not retried in the Designer: ${reasonOf(e)}` }) })
+        useFailures.getState().report({ lookId: activeLookId, layer: 'terrain', kind: e instanceof Refusal ? 'refusal' : 'gave-up', reason: e instanceof Refusal ? reasonOf(e) : `not retried in Plan: ${reasonOf(e)}` }) })
     return () => { live = false }
   }, [activeLookId, bakeLastMs, inDesigner])
 

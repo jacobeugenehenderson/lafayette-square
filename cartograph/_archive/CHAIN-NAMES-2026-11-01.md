@@ -20,6 +20,7 @@ canon is not swept; README §START HERE carries one glossary line for it. ▶ `n
 | Measure (Section's tab) | Section | |
 | Stage (the look-authoring step) · "Stage →" | Look · "Look →" | Stage is now only the function |
 | Stage's ↻ | a **Foundry** button | ↻ now means only Preview's Reload |
+| Designer (the 2D mode) · "← Designer" | Plan · "← Plan" | Jacob: "it's in 'Plan' view which is opposed to the dimensional view"; `shot === 'designer'`, `DesignerTrees` etc. stay |
 | raw step ids in banners (skeleton, coast, pipeline…) | words, through `src/lib/stepWords.js` | "The Foundry owes N steps" |
 | the old BAKE doc | `cartograph/FOUNDRY.md` | git mv, every pointer repointed |
 

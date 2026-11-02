@@ -17,9 +17,9 @@ export default function StatusBar() {
     return (
       <div
         className="carto-status carto-glass carto-status--alarm"
-        title={`No Look's scene is "${lookMissing}", so Designer (style) edits have nowhere to save. Create a Look for this neighborhood.`}
+        title={`No Look's scene is "${lookMissing}", so Plan (style) edits have nowhere to save. Create a Look for this neighborhood.`}
       >
-        ⚠ No Look for {lookMissing} — Designer edits are NOT saving
+        ⚠ No Look for {lookMissing} — Plan edits are NOT saving
       </div>
     )
   }

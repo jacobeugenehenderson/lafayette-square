@@ -1861,7 +1861,7 @@ const useCartographStore = create((set, get) => ({
         set({ looks, defaultLookId, activeLookId: null, lookRefused: town.refused, lookMissingForScene: town.missing, status: town.refused, _looksHydrated: true })
         return
       }
-      if (town.missing) console.error(`[looks] no Look belongs to scene "${town.missing}" — Designer edits will not save`)
+      if (town.missing) console.error(`[looks] no Look belongs to scene "${town.missing}" — Plan edits will not save`)
       if (town.lookId) { try { localStorage.setItem(ACTIVE_LOOK_KEY, town.lookId) } catch { /* ignore */ } }
       const cur = get().scene
       // A store booted with no town takes the resolved one directly (CartographApp's loaders follow `scene`); a store
@@ -2188,7 +2188,7 @@ const useCartographStore = create((set, get) => ({
     try { localStorage.setItem(ADDRESS_STORAGE.scene, scene) } catch { /* ignore */ }
     const s = get()
     const activeLookId = s._looksHydrated ? lookForScene(s.looks, scene, s.activeLookId) : s.activeLookId
-    if (s._looksHydrated && !activeLookId) console.error(`[looks] no Look belongs to scene "${scene}" — Designer edits will not save`)
+    if (s._looksHydrated && !activeLookId) console.error(`[looks] no Look belongs to scene "${scene}" — Plan edits will not save`)
     if (activeLookId) { try { localStorage.setItem(ACTIVE_LOOK_KEY, activeLookId) } catch { /* ignore */ } }
     set({
       scene, activeLookId, lookMissingForScene: s._looksHydrated && !activeLookId ? scene : null,
@@ -2434,7 +2434,7 @@ const useCartographStore = create((set, get) => ({
         let refused = null
         if (bnd?.__fetchFailed) refused = `${scene}: neighborhood_boundary.json could not be fetched (${bnd.__fetchFailed})`
         else if (!bnd) refused = `${scene}: there is no neighborhood_boundary.json — no disc, nothing to draw. Author the extent in Extent.`
-        else { try { discOf(bnd, `Designer: ${scene}`) } catch (e) { refused = `${scene}: ${e.message}` } }
+        else { try { discOf(bnd, `Plan: ${scene}`) } catch (e) { refused = `${scene}: ${e.message}` } }
         if (refused) console.error(`[boundary] ⛔ ${refused}`)
         set({ mapGeography: geo, sceneBoundary: refused ? null : bnd, boundaryRefused: refused })
       }

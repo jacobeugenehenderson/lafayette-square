@@ -7,7 +7,7 @@
 // not in code). Five judges, each reading the source:
 //   1 · THE SCREENS — every operator-visible string (JSX text and prose literals in the operator apps, ids, paths, flags,
 //       `code` and ${…} stripped) carries no retired word: bake · re-bake · rebuild · pour · re-pour · the Data Wall ·
-//       the Wall · shape freeze · soft/hard fetch · light/heavy pass · "Measure" as a label. (Arborist is out: the grove
+//       the Wall · shape freeze · soft/hard fetch · light/heavy pass · Designer (the 2D mode is Plan) · "Measure" as a label. (Arborist is out: the grove
 //       keeps its own term, Boz's ruling.)
 //   2 · THE CONVERTED STRINGS — "town"/"map" as the working object is a judgment, so only the strings this pass
 //       converted to "scene" are held: none of them may return.
@@ -22,7 +22,8 @@
 //       retired word, and no tracked file (live or Diary) points at the retired BAKE doc, now cartograph/FOUNDRY.md.
 // ⭐ MUTANTS (--mutants), each must go RED: (a) a "Bake" button label → 1 · (b) a "re-pour" banner → 1 · (c) "the Wall" in
 // OPERATIONS → 5 · (d) a raw step id rendered in a banner → 3 · (e) a new server step with no words → 3 · (f) "Measure"
-// back as a tab label → 1 · (g) a converted "Choose a town" back → 2 · (h) the re-pour consent dropped from Preview → 4.
+// back as a tab label → 1 · (g) a converted "Choose a town" back → 2 · (h) the re-pour consent dropped from Preview → 4 ·
+// (i) "← Designer" back as the Plan button → 1.
 //   node checks/claims-the-chain-has-one-set-of-names.mjs [--mutants]
 // Read-only. Exits 1 on any failing judge or any mutant left GREEN.
 import { readFileSync, readdirSync, statSync } from 'node:fs'
@@ -59,6 +60,7 @@ const RETIRED = [
   ['bake', /\b(re-?)?bak(e|es|ed|ing)\b/i], ['pour', /\b(re-?)?pour(s|ed|ing)?\b/i], ['rebuild', /\brebuil(d|ds|t|ding)\b/i],
   ['the Wall', /\b(the )?data ?wall\b|\bthe wall\b/i], ['shape freeze', /\bshape freeze\b/i],
   ['soft/hard fetch', /\b(soft|hard) fetch\b|\b(light|heavy) (pass|fetch)\b/i],
+  ['Designer', /\bDesigner\b/],   // the 2D mode is Plan (Jacob, 2026-11-01); DesignerTrees etc. are identifiers
 ]
 const MEASURE_LABEL = /label:\s*'Measure'/
 
@@ -140,6 +142,7 @@ const DOC_RETIRED = [
   ['the Wall', /\bData ?Wall\b|\b[Tt]he Wall\b|⟦(THE )?WALL⟧/g, (ctx) => /older canon/i.test(ctx)],
   ['soft/hard fetch', /\b(soft|hard) fetch\b|\b(light|heavy) (pass|fetch)\b/gi, (ctx) => /older canon/i.test(ctx)],
   ['(was Measure)', /\(was Measure\)/g, () => false],
+  ['Designer', /\bDesigner\b/g, () => false],
 ]
 function judgeRegisters(docs, bakePointers) {
   const why = []
@@ -191,6 +194,7 @@ if (process.argv.includes('--mutants')) {
     ['e · a new server step with no words', 3, () => judgeSteps(serve + "\nawait runIfDirty('sky-dome', [], [], 'x')\n", STEP_WORDS, uiFiles)],
     ['f · "Measure" back as a tab label', 1, () => judgeScreens(swap('src/cartograph/Panel.jsx', "label: 'Section' }", "label: 'Measure' }"))],
     ['g · a converted "Choose a town" back', 2, () => judgeConverted(swap('src/cartograph/Toolbar.jsx', 'Choose a scene', 'Choose a town'))],
+    ['i · "← Designer" back as the Plan button', 1, () => judgeScreens(swap('src/cartograph/Toolbar.jsx', '>← Plan</button>', '>← Designer</button>'))],
     ['h · the re-pour consent dropped from Preview', 4, () => judgeRequests({ ...texts, 'src/preview/PreviewApp.jsx': texts['src/preview/PreviewApp.jsx'].replace("${confirmRepour ? '?repour=1' : ''}", '') })],
   ]
   console.log('\n  mutants:')

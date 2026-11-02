@@ -77,7 +77,7 @@ export default function Toolbar() {
       ) : (
         <>
           <div className="carto-toolgroup">
-            <button onClick={() => setShot('designer')}>← Designer</button>
+            <button onClick={() => setShot('designer')}>← Plan</button>
           </div>
           <LooksMenu />
           <div className="carto-toolgroup">
