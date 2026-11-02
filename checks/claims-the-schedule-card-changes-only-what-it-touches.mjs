@@ -21,6 +21,7 @@
  *   7. TIMES AS PEOPLE TYPE AND READ THEM (Jacob, 2026-11-02: "24" refused, a saved 12:00 glowing until noon): typed 24-hour,
  *      12-hour, "midnight", "noon"; shown as the panel shows times, midnight and noon in words; an Ambient that goes off after
  *      noon tomorrow is STATED before the save (never refused) and under the row after.
+ *   8. TONIGHT REFUSES what Publish refuses (scheduleCard.js#yearRefusal over the year ahead), and shows it on the card.
  * Usage: node checks/claims-the-schedule-card-changes-only-what-it-touches.mjs [--mutants]
  */
 import { importSource, sourceOf } from './_importSource.mjs'
@@ -123,6 +124,10 @@ async function verdict({ card, sched, view, store } = {}) {
   A.setDisplayValue('m', 'glow', 0.4, 'sunset')
   const v = state.displays.m.values, was = JSON.parse(others)
   F(v.sunset.glow === 0.4 && v.sunset.show === was.sunset.show && v.sunset.kelvin === was.sunset.kelvin && same(v.dawn, was.dawn) && same(state.displays.m.schedule, now.schedule), `editing one key's level changes more than that level (${JSON.stringify(v)})`)
+  // 8. TONIGHT REFUSES what Publish refuses (staging, 2026-11-02: "0 shows" was said, never refused, and published)
+  const yr = T.todSlotDays(PT, new Date('2026-11-02T17:00:00Z'), 366)
+  const none = S.validateDisplayChannel({ animated: 'tod', values: { dusk: { glow: 1, show: 2, kelvin: 3000 } }, schedule: [{ days: 'daily', ambient: { on: 'dusk', fadeIn: 0, off: '22:00', fadeOut: 0 }, shows: { first: '23:00', last: '23:30', every: 30 } }] }, 'check')
+  F(/its shows \(first show 23:00, last show starts 23:30, every 30 min\) play on no night of the year/.test(K.yearRefusal(none, yr, SECS) || '') && K.yearRefusal(ch, yr, SECS) === null, `Tonight's year judgment does not refuse shows that play on no night, or refuses Jacob's night (${K.yearRefusal(none, yr, SECS)}; ${K.yearRefusal(ch, yr, SECS)})`)
   // 5. wired
   const sa = code(view ? view(sourceOf('src/stage/StageApp.jsx')) : sourceOf('src/stage/StageApp.jsx'))
   const block = sa.slice(sa.indexOf('const CAPTION = '), sa.indexOf('function LanternChannel'))
@@ -141,6 +146,7 @@ async function verdict({ card, sched, view, store } = {}) {
   F(/const values = read\.channel\.values, keys = keyedSlots\(values\), selected = keys\.includes\(picked\) \? picked : keys\[0\]/.test(lit) && /keys\.map\(s => <Pill key=\{s\} on=\{s === selected\}[^>]*onClick=\{\(\) => setPicked\(s\)\}>/.test(lit), 'the keys are not picked by name (the levels shown are not the picked key\'s)')
   F(/unkeyedSlots\(values\)\.map\(s => <Action key=\{s\}[^>]*onClick=\{\(\) => put\(\(\) => \{ addSlot\(id, s\); setPicked\(s\) \}\)\}>/.test(lit) && /\{keys\.length > 1 && <Action danger[^>]*onClick=\{\(\) => put\(\(\) => removeSlot\(id, selected\)\)\}>Remove key<\/Action>\}/.test(lit), '"+ key at" does not add and pick the slot, or "Remove key" is offered on the last key')
   F(/<Tonight display=\{display\} channel=\{read\.channel\} keys=\{keys\} selected=\{selected\} onSelect=\{setPicked\} \/>/.test(lit) && /keys\.map\(s => \{\s*const m = getTodSlotRow\(D\)\[s\], on = s === selected/.test(sa) && /onClick=\{\(\) => onSelect\?\.\(s\)\}/.test(sa), 'Tonight does not mark the keys at their times tonight, or a marker does not pick its key')
+  F(/const refused = useMemo\(\(\) => yearRefusal\(channel, getTodSlotDaysAhead\(now, 366\), secs\), \[channel, D, secs\]\)/.test(sa) && /\{refused && <div role="alert"[^>]*>Refused, and Publish refuses it too: \{plainReason\(\{ message: refused \}\)\}<\/div>\}/.test(sa), "Tonight does not show the year's refusal (what Publish refuses)")
   return fails
 }
 
@@ -151,6 +157,8 @@ else console.log("✅ the schedule card changes only what it touches: each gestu
 
 if (process.argv.includes('--mutants')) {
   const mutants = [
+    ['Tonight silent on the year\'s refusal', { view: (s) => s.replace(/      \{refused && <div role="alert"[^\n]*\n/, '') }],
+    ['the year\'s refusal swallowed', { card: (s) => s.replace("try { refuseScheduleSense(ch, days, secs, 'Tonight'); return null } catch (e) { return String(e?.message || e) }", "return null") }],
     ['a gesture dropping a sibling (the lost shows)', { card: (s) => s.replace("export const setAmbient = (list, i, field, value) => editEntry(list, i, { ambient: { ...list[i].ambient, [field]: value } })", "export const setAmbient = (list, i, field, value) => editEntry(list, i, { ambient: { ...list[i].ambient, [field]: value }, shows: null })") }],
     ['shows added from a constant', { card: (s) => s.replace('editEntry(list, i, { shows: { ...DEFAULT().shows } })', "editEntry(list, i, { shows: { first: '20:00', last: '23:00', every: 60 } })") }],
     ['a single show refused again', { sched: (s) => s.replace("if (L === 0 && what === 'Ambient' && (HHMM.test(from) || HHMM.test(to)))", 'if (L === 0 && (HHMM.test(from) || HHMM.test(to)))') }],
