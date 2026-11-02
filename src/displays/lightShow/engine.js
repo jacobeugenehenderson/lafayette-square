@@ -56,6 +56,7 @@ export function validateDrawer(drawer, where) {
 export function validateDisplay(display, drawer, where) {
   validateDrawer(drawer, where)
   drawerDir(display.drawer, where)   // under displays/<name>/, as the bake demands
+  if (display.backDim !== undefined && !(display.backDim >= 0 && display.backDim <= 1)) throw new Refusal(`[lightShow] ⛔ ${where}: backDim (${display.backDim}) is how far the bulbs facing away from the eye dim, 0 … 1`)
   if (display.dimUplights !== undefined && !(display.dimUplights >= 0 && display.dimUplights <= 1)) throw new Refusal(`[lightShow] ⛔ ${where}: dimUplights (${display.dimUplights}) is a fraction of the uplights, 0 … 1`)
   const st = display.strands
   if (!(st?.glow > 0 && st?.show > 0 && st?.ringRadiusM > 0)) throw new Refusal(`[lightShow] ⛔ ${where}: strands needs glow, show and ringRadiusM`)
@@ -180,6 +181,21 @@ export const mmss = (seconds) => { const t = Math.round(seconds); return `${Math
  * `level` the channel's glow, and a gentle shimmer (a motion, centred on 1, so `level` is the glow's time-averaged
  * level: Boz, 2026-11-01). ▶ node checks/claims-a-display-is-authored-on-its-own-channel.mjs
  */
+/**
+ * THE BACK DIM (Jacob, 2026-11-01: "dimming the rear lights away from the camera … for greater dimension"; released by Boz
+ * after his eye on the show channel): a bulb's light × 1 − backDim × (1 − n·ĥ) / 2 × |h|, where n is the bulb's outward
+ * direction from the set-piece's axis (horizontal, unit), v the unit direction from the bulb to the eye, h v's horizontal
+ * part (|h| the cosine of the eye's elevation) and ĥ its direction. At eye level: whole facing the eye, × (1 − backDim) on
+ * the far side. The cue fades with the eye's elevation, and straight down there is none (Zob, 2026-11-02: with the 3-D v
+ * an overhead camera dimmed EVERY bulb by backDim / 2, a global change, not a front/back cue; a bare horizontal v is NaN
+ * straight down). Derived from the camera every frame; `backDim` is the display's own authored value (identity record,
+ * 0 … 1; absent = 0, no dim, the neutral default), glow and show alike. ▶ node checks/claims-a-display-dims-its-far-side.mjs
+ */
+export function backDimFactor(backDim, nx, nz, vx, vy, vz) {
+  const len = Math.hypot(vx, vy, vz) || 1, hx = vx / len, hz = vz / len, h = Math.hypot(hx, hz)
+  if (!(h > 0)) return 1                                              // straight down: no front or back to cue
+  return 1 - backDim * (1 - (nx * hx + nz * hz) / h) / 2 * h
+}
 export const GLOW_SHIMMER = 0.25
 export function glowColour(base, level, c, row, now) { const h = hash(c * 131 + row), w = level * (1 + GLOW_SHIMMER * Math.sin(now * 1.5 + h * 30)); return [base[0] * w, base[1] * w, base[2] * w] }
 

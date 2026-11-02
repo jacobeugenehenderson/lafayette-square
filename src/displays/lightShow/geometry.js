@@ -79,3 +79,29 @@ export function avgGlow(extent, lum) {
   const d = extent.ridge.yM * AVG_GLOW_HEIGHT_OF_RIDGE
   return { y: d, intensity: AVG_GLOW_LUX * d * d * lum }
 }
+
+/**
+ * The strands' INSTANCE ORDER: the glow's strands first, then the rest, so a mesh's draw count can stop at what hangs
+ * (LightShow.jsx: at glow only the glow's strands are drawn, never the rest as zero-scaled instances). `n` strands,
+ * `isGlow(s)` which are the glow's. → { pos: strand → its place, glow: the glow's strands, all: every strand, in order }.
+ * ▶ node checks/claims-a-display-draws-only-what-hangs.mjs
+ */
+export function strandOrder(n, isGlow) {
+  const glow = [], rest = []
+  for (let s = 0; s < n; s++) (isGlow(s) ? glow : rest).push(s)
+  const all = [...glow, ...rest], pos = new Array(n)
+  all.forEach((s, k) => { pos[s] = k })
+  return { pos, glow, all }
+}
+
+/**
+ * A BULB DRAWN TO ITS SIZE (Boz's (2), 2026-11-02: at the hero camera PTown's 5,760 bulbs, 184 triangles each, are a few
+ * pixels or less). bulbPx: a bulb's projected radius in framebuffer pixels, its radius over its distance times the camera's
+ * focal length in pixels (framebuffer height / (2·tan(fov/2))). Below ONE pixel (the unit, not a town number) its glass and
+ * socket cannot be told apart, so only its light is drawn, as a camera-facing card of the light's own projected AREA: a
+ * square of side r·CARD_SIDE has the disc's area π·r². At the switch both forms are under a pixel, so nothing can be seen
+ * to change there and no hysteresis is needed. ▶ node checks/claims-a-bulb-is-drawn-to-its-size.mjs
+ */
+export const CARD_SIDE = Math.sqrt(Math.PI)
+export const bulbPx = (radiusM, distanceM, focalPx) => (distanceM > 0 ? (radiusM * focalPx) / distanceM : Infinity)
+export const bulbAsCard = (radiusM, distanceM, focalPx) => bulbPx(radiusM, distanceM, focalPx) < 1

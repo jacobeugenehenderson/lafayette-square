@@ -75,6 +75,7 @@ export default {
     drawer: 'displays/monument-lights/looks.json',            // under the town's contentRoot: its content, not the kit's
     season: 'monument-lighting',
     strands: { glow: 20, show: 60, ringRadiusM: 31, footHeightM: 6.1 },   // 6.1 m = 20 ft
+    backDim: 0.3,                       // the bulbs on the far side from the eye dim to 70% (src/displays/lightShow/engine.js#backDimFactor); Jacob's eye owed
     dimUplights: 0.15,                  // while lit (glow or show), the monument's floods fade to 15% of what the Look authors
     // All 26 looks, spread so each tradition recurs and no two neighbours share a main colour; Progress Pride → Chevron →
     // Trans (vertical stripes, the chevron, horizontal stripes); Doves → Red Ribbon → White Bulbs close (Jacob, 2026-10-31).
