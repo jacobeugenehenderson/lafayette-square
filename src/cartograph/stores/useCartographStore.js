@@ -47,9 +47,10 @@ import {
   migrateLampGlow, resolveLampGlowAtMinute,
   resolveGroupAtMinute, migrateGroupChannel,
   NAMED_TOD_SLOTS_BY_ID, getTodSlotMinutes, todSlotAtMinute, todEdgePatch,
-  stampLampGlowRadius, keyedStepAt,
+  stampLampGlowRadius, getTodSlotDaysAhead,
 } from '../animatedParam.js'
 import { defaultDisplayChannel, validateDisplayChannel } from '../../displays/showChannel.js'
+import { levelsAt, refuseShortCadence, refuseScheduleSense } from '../../displays/showSchedule.js'
 import {
   BLOOM_FIELD_KEYS, BLOOM_FLAT_DEFAULTS,
   WARMTH_FIELD_KEYS, WARMTH_FLAT_DEFAULTS,
@@ -281,13 +282,15 @@ function createGroupChannelActions({ name, fieldKeys, flatDefaults }, set, get) 
 // copies the neutral default, a key is never removed below one, and every write is validated, so a channel Stage holds
 // is one the bake and <Displays> accept. Revert drops the Look's channel: the display is lit by the default again.
 function displayChannelActions(set, get) {
+  // Every write reads the authored channel through the validator (a Look from before the schedule reads through its one
+  // reader, showChannel.js#readShowScheduleV1, and this write saves the new shape: Jacob's write, stated on the card).
   const write = (id, fn) => {
     set(s => {
-      const cur = s.displays?.[id] || defaultDisplayChannel()
-      const next = fn(cur)
-      if (!next || next === cur) return s
-      validateDisplayChannel(next, `Stage › Displays › ${id}`)
-      return { displays: { ...(s.displays || {}), [id]: next } }
+      const where = `Stage › Displays › ${id}`
+      const cur = s.displays?.[id] ? validateDisplayChannel(s.displays[id], where) : defaultDisplayChannel()
+      const next = fn(cur, where)
+      if (!next) return s
+      return { displays: { ...(s.displays || {}), [id]: validateDisplayChannel(next, where) } }
     })
     get()._saveDesignDebounced()
   }
@@ -296,17 +299,23 @@ function displayChannelActions(set, get) {
       ? { ...ch, values: { ...ch.values, [slotId]: { ...ch.values[slotId], [key]: value } } } : null),
     addDisplaySlot: (id, slotId) => write(id, (ch) => {
       if (!NAMED_TOD_SLOTS_BY_ID[slotId] || slotId in ch.values) return null
-      const sm = getTodSlotMinutes(useTimeOfDay.getState().currentTime), m = sm[slotId]
-      const seed = { ...resolveGroupAtMinute({ ...ch, edges: undefined }, m, sm, ['glow', 'show', 'kelvin']), showEvery: keyedStepAt(ch, 'showEvery', m, sm) }
-      return { ...ch, values: { ...ch.values, [slotId]: seed } }
+      const sm = getTodSlotMinutes(useTimeOfDay.getState().currentTime)
+      return { ...ch, values: { ...ch.values, [slotId]: levelsAt(ch, sm[slotId], sm) } }
     }),
     removeDisplaySlot: (id, slotId) => write(id, (ch) => {
       if (!(slotId in ch.values) || Object.keys(ch.values).length < 2) return null
       const values = { ...ch.values }; delete values[slotId]
-      const edges = { ...(ch.edges || {}) }; delete edges[slotId]
-      return { ...ch, values, edges }
+      return { ...ch, values }
     }),
-    setDisplayTransition: (id, slotId, fade, minutes) => write(id, (ch) => ({ animated: 'tod', ...todEdgePatch(ch, slotId, fade, minutes) })),
+    // The display's SCHEDULE, the whole list at once (showSchedule.js). `runSeconds` the display's show length: an
+    // interval shorter than it, two ends that pass each other, or nights that overlap, over the year ahead at the town,
+    // are refused AT THE GESTURE, by name, and the channel stays as it was.
+    setDisplaySchedule: (id, schedule, runSeconds) => write(id, (ch, where) => {
+      const next = validateDisplayChannel({ ...ch, schedule }, where)
+      refuseShortCadence(next, runSeconds, where)
+      refuseScheduleSense(next, getTodSlotDaysAhead(useTimeOfDay.getState().currentTime, 366), runSeconds, where)
+      return next
+    }),
     revertDisplay: (id) => {
       set(s => { const next = { ...(s.displays || {}) }; delete next[id]; return { displays: next } })
       get()._saveDesignDebounced()
@@ -2069,7 +2078,7 @@ const useCartographStore = create((set, get) => ({
         return
       }
     }
-    set({ bakeRunning: true, bakeError: null, bakeProgress: null })
+    set({ bakeRunning: true, bakeError: null, bakeProgress: null, bakeStreetLayout: null })
     try {
       // (b) SETTLE pending writes before the bake reads disk — WITHOUT bumping
       // input mtimes (that defeats the bake's incremental dirty-skip → an
@@ -2096,7 +2105,8 @@ const useCartographStore = create((set, get) => ({
       // browser will hit cache and show stale geometry. r.ms (duration) is
       // not unique — incremental bakes can return identical small durations.
       // Use Date.now() to guarantee uniqueness.
-      set({ bakeRunning: false, bakeStale: false, bakeLastMs: Date.now(), bakeDurationMs: r.ms })
+      // ⭐ the Foundry's report of the street layout (serve.js: changed · unchanged · not owed), shown by BakeModal until dismissed
+      set({ bakeRunning: false, bakeStale: false, bakeLastMs: Date.now(), bakeDurationMs: r.ms, bakeStreetLayout: r.streetLayout ?? { unknown: true } })
       // ⭐ THE 2D MAP REFRESHES ITSELF (Jacob, 2026-09-26: "it should always update"). It is built from the ribbons +
       // map.json this page fetched at scene load, and a bake can re-pour both (pipeline + promote), as can a CLI
       // pour — measured 2026-09-24: huron's verges drawn as curbed blocks from pre-re-pour ribbons. So after a bake,
@@ -2157,6 +2167,8 @@ const useCartographStore = create((set, get) => ({
   bakeProgress: null,
   // { scene, files, resume } — a Bake refused because the pour's code changed; BakeModal asks before re-pouring
   repourConfirm: null,
+  // The last Foundry run's street-layout outcome ({ changed } · { unchanged } · { skipped }; { unknown } when it said none).
+  bakeStreetLayout: null,
   // ⭐ a stopped coast step's pieces (serve.js#coastResidualAsk), while the operator looks at them: { scene, identity, n, m2, pieces,
   // viewing (the piece framed, or null for the list), accepting, error, resume }
   coastResidual: null,

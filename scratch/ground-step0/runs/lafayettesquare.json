@@ -1,0 +1,385 @@
+{
+ "town": "lafayettesquare",
+ "info": {
+  "meshes": 43,
+  "transparent": 43,
+  "kinds": {
+   "face": 14,
+   "mat": 29
+  },
+  "roRange": [
+   0,
+   42
+  ]
+ },
+ "cams": {
+  "far": {
+   "pos": [
+    -15,
+    71.36,
+    743.1999999999999
+   ],
+   "tgt": [
+    -15,
+    0,
+    -15
+   ]
+  },
+  "high": {
+   "pos": [
+    -15,
+    535.1999999999999,
+    29.6
+   ],
+   "tgt": [
+    -15,
+    0,
+    -15
+   ]
+  },
+  "close": {
+   "pos": [
+    -15,
+    30,
+    92.03999999999999
+   ],
+   "tgt": [
+    -15,
+    10,
+    -15
+   ]
+  }
+ },
+ "rows": [
+  {
+   "cam": "far",
+   "base": {
+    "ms": 118.79,
+    "c": 760,
+    "t": 12400190
+   },
+   "noise": {
+    "changedPct": 2.42,
+    "meanAbs": 1.99
+   },
+   "v": {
+    "V1": {
+     "ms": 119.57,
+     "c": 760,
+     "t": 12400190,
+     "d": {
+      "changedPct": 23.66,
+      "meanAbs": 8.87
+     }
+    },
+    "V1r": {
+     "ms": 121.07,
+     "c": 760,
+     "t": 12400190,
+     "d": {
+      "changedPct": 21.72,
+      "meanAbs": 8.28
+     }
+    },
+    "V2": {
+     "ms": 112.31,
+     "c": 702,
+     "t": 12011954,
+     "d": {
+      "changedPct": 33.06,
+      "meanAbs": 20.39
+     }
+    },
+    "V3": {
+     "ms": 98.47,
+     "c": 676,
+     "t": 11895922,
+     "d": {
+      "changedPct": 38.81,
+      "meanAbs": 45.45
+     }
+    }
+   }
+  },
+  {
+   "cam": "high",
+   "base": {
+    "ms": 67.98,
+    "c": 542,
+    "t": 12396664
+   },
+   "noise": {
+    "changedPct": 1.06,
+    "meanAbs": 1.2
+   },
+   "v": {
+    "V1": {
+     "ms": 67.28,
+     "c": 542,
+     "t": 12396664,
+     "d": {
+      "changedPct": 10.5,
+      "meanAbs": 4.81
+     }
+    },
+    "V1r": {
+     "ms": 69.22,
+     "c": 542,
+     "t": 12396664,
+     "d": {
+      "changedPct": 9.26,
+      "meanAbs": 4.33
+     }
+    },
+    "V2": {
+     "ms": 67.92,
+     "c": 490,
+     "t": 12008724,
+     "d": {
+      "changedPct": 12.5,
+      "meanAbs": 6.85
+     }
+    },
+    "V3": {
+     "ms": 49.97,
+     "c": 470,
+     "t": 11893266,
+     "d": {
+      "changedPct": 80.98,
+      "meanAbs": 165.46
+     }
+    }
+   }
+  },
+  {
+   "cam": "close",
+   "base": {
+    "ms": 43.3,
+    "c": 580,
+    "t": 12397878
+   },
+   "noise": {
+    "changedPct": 0,
+    "meanAbs": 0.14
+   },
+   "v": {
+    "V1": {
+     "ms": 43.59,
+     "c": 580,
+     "t": 12397878,
+     "d": {
+      "changedPct": 0,
+      "meanAbs": 0.14
+     }
+    },
+    "V1r": {
+     "ms": 42.4,
+     "c": 580,
+     "t": 12397878,
+     "d": {
+      "changedPct": 0,
+      "meanAbs": 0.14
+     }
+    },
+    "V2": {
+     "ms": 42.41,
+     "c": 524,
+     "t": 12009650,
+     "d": {
+      "changedPct": 0,
+      "meanAbs": 0.14
+     }
+    },
+    "V3": {
+     "ms": 43.04,
+     "c": 500,
+     "t": 11893626,
+     "d": {
+      "changedPct": 0,
+      "meanAbs": 0.14
+     }
+    }
+   }
+  }
+ ],
+ "perGroup": [
+  {
+   "ro": 20,
+   "dMs": 1.43,
+   "coverPct": 0
+  },
+  {
+   "ro": 38,
+   "dMs": 1.36,
+   "coverPct": 0
+  },
+  {
+   "ro": 18,
+   "dMs": 1.22,
+   "coverPct": 0
+  },
+  {
+   "ro": 24,
+   "dMs": 0.96,
+   "coverPct": 0
+  },
+  {
+   "ro": 22,
+   "dMs": 0.92,
+   "coverPct": 0
+  },
+  {
+   "ro": 15,
+   "dMs": 0.88,
+   "coverPct": 0
+  },
+  {
+   "ro": 29,
+   "dMs": 0.8,
+   "coverPct": 0
+  },
+  {
+   "ro": 21,
+   "dMs": 0.73,
+   "coverPct": 0
+  },
+  {
+   "ro": 35,
+   "dMs": 0.71,
+   "coverPct": 0
+  },
+  {
+   "ro": 23,
+   "dMs": 0.6,
+   "coverPct": 0
+  },
+  {
+   "ro": 41,
+   "dMs": 0.43,
+   "coverPct": 0
+  },
+  {
+   "ro": 31,
+   "dMs": 0.31,
+   "coverPct": 0
+  },
+  {
+   "ro": 40,
+   "dMs": 0.31,
+   "coverPct": 0
+  },
+  {
+   "ro": 14,
+   "dMs": 0.3,
+   "coverPct": 0
+  },
+  {
+   "ro": 36,
+   "dMs": 0.22,
+   "coverPct": 0
+  },
+  {
+   "ro": 17,
+   "dMs": 0.18,
+   "coverPct": 0
+  },
+  {
+   "ro": 26,
+   "dMs": 0.14,
+   "coverPct": 0
+  },
+  {
+   "ro": 32,
+   "dMs": 0.12,
+   "coverPct": 0
+  },
+  {
+   "ro": 28,
+   "dMs": 0.02,
+   "coverPct": 0
+  },
+  {
+   "ro": 25,
+   "dMs": -0.22,
+   "coverPct": 0
+  },
+  {
+   "ro": 37,
+   "dMs": -0.31,
+   "coverPct": 0
+  },
+  {
+   "ro": 27,
+   "dMs": -0.34,
+   "coverPct": 0
+  },
+  {
+   "ro": 42,
+   "dMs": -0.52,
+   "coverPct": 0
+  },
+  {
+   "ro": 39,
+   "dMs": -0.7,
+   "coverPct": 0
+  },
+  {
+   "ro": 19,
+   "dMs": -1.22,
+   "coverPct": 0
+  },
+  {
+   "ro": 33,
+   "dMs": -1.3,
+   "coverPct": 0
+  },
+  {
+   "ro": 34,
+   "dMs": -1.3,
+   "coverPct": 0
+  },
+  {
+   "ro": 16,
+   "dMs": -1.44,
+   "coverPct": 0
+  },
+  {
+   "ro": 30,
+   "dMs": -1.84,
+   "coverPct": 0
+  }
+ ],
+ "half": {
+  "cam": "close",
+  "v0": 16.28,
+  "v3": 15.94
+ },
+ "load": [
+  2.32373046875,
+  2.35302734375,
+  6.01611328125
+ ],
+ "log": [
+  "== ground step 0 · lafayettesquare · Stage headless, this M1 · load 3.4 3.3 7.9 ==",
+  "  ground: 43 meshes, 43 transparent (the fade), kinds {\"face\":14,\"mat\":29}, renderOrder 0…42",
+  "  disc centre [-15,-15] radius 892 m → cameras {\"far\":[-15,71,743],\"high\":[-15,535,30],\"close\":[-15,30,92]}",
+  "  far   cam [-15,71,743] · V0 118.79 ms GPU 760 calls · uptime 2.9 12.40M tris · noise 2.42% (mean 1.99)",
+  "        V1   119.57 ms GPU (   0.8) · 760 calls · diff 23.66% (mean 8.87)",
+  "        V1r  121.07 ms GPU (   2.3) · 760 calls · diff 21.72% (mean 8.28)",
+  "        V2   112.31 ms GPU (  -6.5) · 702 calls · diff 33.06% (mean 20.39)",
+  "        V3    98.47 ms GPU ( -20.3) · 676 calls · diff 38.81% (mean 45.45)",
+  "  high  cam [-15,535,30] · V0 67.98 ms GPU 542 calls · uptime 2.8 12.40M tris · noise 1.06% (mean 1.2)",
+  "        V1    67.28 ms GPU (  -0.7) · 542 calls · diff 10.5% (mean 4.81)",
+  "        V1r   69.22 ms GPU (   1.2) · 542 calls · diff 9.26% (mean 4.33)",
+  "        V2    67.92 ms GPU (  -0.1) · 490 calls · diff 12.5% (mean 6.85)",
+  "        V3    49.97 ms GPU ( -18.0) · 470 calls · diff 80.98% (mean 165.46)",
+  "  close cam [-15,30,92] · V0 43.3 ms GPU 580 calls · uptime 2.2 12.40M tris · noise 0% (mean 0.14)",
+  "        V1    43.59 ms GPU (   0.3) · 580 calls · diff 0% (mean 0.14)",
+  "        V1r    42.4 ms GPU (  -0.9) · 580 calls · diff 0% (mean 0.14)",
+  "        V2    42.41 ms GPU (  -0.9) · 524 calls · diff 0% (mean 0.14)",
+  "        V3    43.04 ms GPU (  -0.3) · 500 calls · diff 0% (mean 0.14)",
+  "  per ribbon group (last cam), top by Δ GPU ms: ro20 1.43ms/0% · ro38 1.36ms/0% · ro18 1.22ms/0% · ro24 0.96ms/0% · ro22 0.92ms/0% · ro15 0.88ms/0% · ro29 0.8ms/0% · ro21 0.73ms/0%",
+  "  sum of per-group Δ 2.4 ms over 29 groups",
+  "  half window (close cam): V0 16.28 ms · ground hidden 15.94 ms (-0.3)"
+ ]
+}

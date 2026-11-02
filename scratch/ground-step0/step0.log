@@ -1,0 +1,39 @@
+== ground step 0 · provincetown · Stage headless, this M1 · load 2.4 18.2 18.5 ==
+  ground: 667 meshes, 53 transparent (the fade), kinds {"face":629,"mat":37,"?":1}, renderOrder 0…51
+  far   cam [-540,65,1452] · V0 66.7 ms 784 calls 20.92M tris · noise 4.49% (mean 1.93)
+        V1     66.7 ms (   0.0) · 782 calls · diff 36.64% (mean 37.79)
+        V1r    66.7 ms (   0.0) · 782 calls · diff 37.64% (mean 38.13)
+        V2       50 ms ( -16.7) · 714 calls · diff 43.48% (mean 47.81)
+        V3     33.4 ms ( -33.3) · 478 calls · diff 45.31% (mean 53.76)
+  high  cam [-206,615,504] · V0 50 ms 594 calls 21.49M tris · noise 0.22% (mean 0.94)
+        V1     50.1 ms (   0.1) · 592 calls · diff 54.88% (mean 66.49)
+        V1r    50.1 ms (   0.1) · 622 calls · diff 49.77% (mean 48.43)
+        V2     33.4 ms ( -16.6) · 562 calls · diff 69.76% (mean 114.14)
+        V3     33.3 ms ( -16.7) · 428 calls · diff 87.66% (mean 143.34)
+  close cam [-273,25,693] · V0 66.7 ms 710 calls 21.32M tris · noise 2.57% (mean 1.28)
+        V1     66.7 ms (   0.0) · 708 calls · diff 27.83% (mean 32.75)
+        V1r    66.7 ms (   0.0) · 708 calls · diff 27.77% (mean 23.82)
+        V2       50 ms ( -16.7) · 642 calls · diff 43.57% (mean 52.1)
+        V3     33.4 ms ( -33.3) · 476 calls · diff 49.83% (mean 58.54)
+  half window (close cam): V0 33.3 ms · ground hidden 16.7 ms (-16.6)
+== ground step 0 · lafayettesquare · Stage headless, this M1 · load 2.1 12.3 16.1 ==
+  ground: 43 meshes, 43 transparent (the fade), kinds {"face":14,"mat":29}, renderOrder 0…42
+  far   cam [-597,114,715] · V0 49.9 ms 572 calls 12.40M tris · noise 0.46% (mean 0.71)
+        V1     49.9 ms (   0.0) · 572 calls · diff 3.67% (mean 2.08)
+        V1r    49.9 ms (   0.0) · 572 calls · diff 5.36% (mean 2.64)
+        V2     33.4 ms ( -16.5) · 520 calls · diff 3.58% (mean 2.14)
+        V3     33.4 ms ( -16.5) · 498 calls · diff 6.53% (mean 3.49)
+  high  cam [3467,603,-1304] · V0 33.3 ms 414 calls 11.88M tris · noise 0% (mean 0.13)
+        V1     33.3 ms (   0.0) · 414 calls · diff 0% (mean 0.13)
+        V1r    33.3 ms (   0.0) · 414 calls · diff 0% (mean 0.13)
+        V2     33.3 ms (   0.0) · 414 calls · diff 0% (mean 0.13)
+        V3     33.3 ms (   0.0) · 414 calls · diff 0% (mean 0.13)
+  close cam [2654,25,-901] · V0 33.3 ms 414 calls 11.88M tris · noise 0% (mean 0.11)
+        V1     33.3 ms (   0.0) · 414 calls · diff 0% (mean 0.13)
+        V1r    33.3 ms (   0.0) · 414 calls · diff 0% (mean 0.14)
+        V2     33.3 ms (   0.0) · 414 calls · diff 0% (mean 0.14)
+        V3     33.3 ms (   0.0) · 414 calls · diff 0% (mean 0.15)
+  half window (close cam): V0 16.7 ms · ground hidden 16.7 ms (0.0)
+== ground step 0 · altadena · Stage headless, this M1 · load 2.9 9.0 14.2 ==
+  ground: 34 meshes, 34 transparent (the fade), kinds {"face":9,"mat":25}, renderOrder 0…33
+  ⛔ no first hero key with a position and aim: cameras cannot be derived

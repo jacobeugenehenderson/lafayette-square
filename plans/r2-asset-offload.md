@@ -56,7 +56,7 @@ git ls-files public/baked | while read f; do echo "$(stat -f%z "$f") ${f##*.}"; 
   anywhere in `src/` (the non-app hosts that exist are arcgisonline, zippopotam, fontsource,
   jsdelivr, and photo URLs inside `src/data/buildings.json`).
 - No `wrangler.toml`; `worker.js` is hand-deployed via the Cloudflare dashboard, routed only at
-  `lafayette-square.com/place/*` (PUBLISH.md §3). Asset requests do not pass through it.
+  `lafayette-square.com/place/*` (retired: `cartograph/_archive/LEGACY-PLAYER-register-RETIRED-2026-11-01.md`). Asset requests do not pass through it.
 - `__BUILD_HASH__` (`vite.config.js:141`) and `atlasVersion` (`InstancedTrees.jsx:738`) both exist.
 
 **Corrected.**
@@ -116,7 +116,7 @@ Allowed origins — **exactly these, no wildcard**:
 | Origin | What it is |
 |---|---|
 | `https://lafayette-square.com` | prod (`deploy.yml` → Pages, `public/CNAME`) |
-| `https://www.lafayette-square.com` | the `www` CNAME (PUBLISH.md §4) |
+| `https://www.lafayette-square.com` | the `www` CNAME (retired: `cartograph/_archive/LEGACY-PLAYER-register-RETIRED-2026-11-01.md`) |
 | `https://jacobeugenehenderson.github.io` | staging — the staging site is a **path** (`/lafayette-square-staging/`) on this host, so the *origin* is the bare host |
 | `http://localhost:5173` | `npm run dev:web` (Vite) |
 | `http://localhost:4173` | `npm run preview` |

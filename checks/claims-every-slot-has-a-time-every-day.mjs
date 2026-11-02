@@ -20,7 +20,8 @@
  *      and Dawn) — it used to drop;
  *   6. the share card never names a moment that did not happen (todSlotAt skips an unreached slot), and Stage's
  *      capture refuses a date that lacks one from the reached flags, as before.
- * Usage: node checks/claims-every-slot-has-a-time-every-day.mjs [--mutants]
+ * Usage: node checks/claims-every-slot-has-a-time-every-day.mjs [--mutants] [--drift]
+ *   --drift: each registered town's day-to-day slot move (median, p99, max): the single-day read's error across midnight.
  */
 import { importSource, sourceOf } from './_importSource.mjs'
 
@@ -64,7 +65,9 @@ async function verdict({ slots, param, share, capture } = {}) {
   // 4. the lights through the real resolvers
   const lamp = K.kitDayChannel('lantern'), disp = S.defaultDisplayChannel()
   const lampAt = (m, sm) => A.resolveGroupAtMinute(lamp, m, sm, K.LANTERN_FIELD_KEYS, K.LANTERN_FLAT_DEFAULTS).intensity
-  const dispAt = (m, sm) => S.displayAt(disp, m, sm).glow
+  // the display's light through its schedule (showSchedule.js), on the day's row (the same row both nights: the test day's)
+  const Hs = await importSource('src/displays/showSchedule.js', param ? { redirect: { 'src/cartograph/animatedParam.js': { transform: param } } } : {})
+  const dispAt = (m, sm) => { const rowOf = () => sm, d = '2026-06-21', nb = Hs.nightsOn(disp, Hs.prevDate(d), rowOf, 300), nt = Hs.nightsOn(disp, d, rowOf, 300); return Hs.displayStateAt(disp, nb, nt, d, m, rowOf).glow }
   const all = (sm, f) => { for (let m = 0; m < 1440; m += 5) if (!f(m, sm)) return m; return null }
   const lw = all(white, (m, sm) => lampAt(m, sm) === 0), dw = all(white, (m, sm) => dispAt(m, sm) === 0)
   const lp = all(polar, (m, sm) => lampAt(m, sm) > 0), dp = all(polar, (m, sm) => dispAt(m, sm) > 0)
@@ -96,6 +99,20 @@ const run = async (m) => { try { return await verdict(m) } catch (e) { return [`
 const fails = await run()
 if (fails.length) { console.log('⛔ a slot has no time, or the lights do not do today\'s thing where the sun misses one:\n  · ' + fails.join('\n  · ')); process.exitCode = 1 }
 else console.log("✅ every slot has a time every day at every latitude, in the day's order; the lamps and the display are off on a white night and on through a polar night; the Night key occurs; the share card names only what happened")
+
+// --drift: how far a slot moves from one day to the next in each registered town (the error of reading today's minute for
+// yesterday's key across midnight: the resolvers' single-day read, cartograph/BACKLOG.md). Printed, never judged here.
+if (process.argv.includes('--drift')) {
+  const T = await importSource('src/lib/todSlots.js'), REG = await importSource('src/instances/registry.js')
+  for (const id of REG.registeredMaps()) {
+    const g = REG.instanceForMap(id)?.geography; if (!g) continue
+    const rows = T.todSlotYear({ lat: g.lat, lon: g.lon, tz: g.timezone }, 2026), moves = []; let max = { m: 0 }
+    for (let k = 1; k < rows.length; k++) for (const s of ['night', 'deep', 'dawn']) {
+      const x = Math.abs(rows[k].minutes[s] - rows[k - 1].minutes[s]) % 1440, m = Math.min(x, 1440 - x); moves.push(m); if (m > max.m) max = { m, s, date: rows[k].date } }
+    moves.sort((a, b) => a - b)
+    console.log(`   ${id}: Night/Deep/Dawn move from one day to the next by a median ${moves[moves.length >> 1].toFixed(2)} min, p99 ${moves[Math.floor(moves.length * 0.99)].toFixed(2)}, max ${max.m.toFixed(1)} (${max.s}, ${max.date})`)
+  }
+}
 
 if (process.argv.includes('--mutants')) {
   const mutants = [

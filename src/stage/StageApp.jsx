@@ -40,9 +40,11 @@ import { StoreChannel } from '../cartograph/CartographSkyLight.jsx'
 import { setPieceOf, townForLook } from '../instance.js'
 import useDisplayPreview from '../displays/preview.js'
 import useFailures, { failuresFor } from '../lib/failures.js'
-import { showtimesOn, runSeconds, hhmm } from '../displays/lightShow/engine.js'
-import { displayAt, defaultDisplayChannel, DISPLAY_FIELDS } from '../displays/showChannel.js'
-import { getTodSlotMinutes } from '../cartograph/animatedParam.js'
+import { runSeconds, hhmm, mmss } from '../displays/lightShow/engine.js'
+import { defaultDisplayChannel, DISPLAY_FIELDS, validateDisplayChannel } from '../displays/showChannel.js'
+import { nightsOn, displayStateAt, prevDate, nextDate } from '../displays/showSchedule.js'
+import { townClockOf } from '../lib/townClock.js'
+import { getTodSlotRow } from '../cartograph/animatedParam.js'
 import { PLUGINS as DISPLAY_PLUGINS } from '../displays/Displays.jsx'
 import { keyframeFocusIds } from '../lib/focusObject.js'
 import useListings from '../hooks/useListings'
@@ -209,28 +211,43 @@ function DisplaysSection() {
  */
 function TonightStrip({ display }) {
   const now = useTimeOfDay(s => s.currentTime), authored = useCartographStore(s => s.displays?.[display.id])
-  const schedule = useMemo(() => authored || defaultDisplayChannel(), [authored])
-  const sm = getTodSlotMinutes(now), at = (m) => displayAt(schedule, m, sm), secs = runSeconds(display.run), times = showtimesOn(at, secs)
-  const x = (m) => ((m - 720 + 1440) % 1440) / 1440 * 100
-  const lit = []                                                     // the glow, as runs of minutes, noon to noon
+  const read = useMemo(() => readChannel(authored, display.id), [authored, display.id])
+  const D = townClockOf(now).date, secs = runSeconds(display.run)
+  const nights = useMemo(() => {
+    if (read.refused) return null
+    const ch = read.channel, at = (d) => nightsOn(ch, d, getTodSlotRow, secs)
+    return { before: at(prevDate(D)), tonight: at(D), after: at(nextDate(D)) }
+  }, [read, D, secs])
+  if (!nights) return null
+  const ch = read.channel, x = (abs) => ((abs - 720) / 1440) * 100      // noon to noon: abs minutes from D's 00:00
+  const stateAt = (abs) => abs < 1440 ? displayStateAt(ch, nights.before, nights.tonight, D, abs, getTodSlotRow) : displayStateAt(ch, nights.tonight, nights.after, nextDate(D), abs - 1440, getTodSlotRow)
+  const lit = []                                                     // the Ambient light, as runs of minutes, noon to noon
   for (let i = 0, from = null; i <= 1440; i += 5) {
-    const m = (720 + i) % 1440, on = i < 1440 && at(m).glow > 0
+    const on = i < 1440 && stateAt(720 + i).glow > 0
     if (on && from == null) from = i
     if (!on && from != null) { lit.push([from, i]); from = null }
   }
-  const len = `${Math.floor(secs / 60)}:${String(Math.round(secs % 60)).padStart(2, '0')}`
-  const line = !lit.length ? `Tonight: no glow${times.length ? `, ${times.length} shows` : ''}.`
-    : `Tonight: glows ${lit.map(([a, b]) => `${hhmm((720 + a) % 1440)}–${hhmm((720 + b) % 1440)}`).join(', ')} · ${times.length} shows, ${len} each`
+  const times = nights.tonight.flatMap(n => n.starts).filter(t => t >= 720 && t < 2160)
+  const dark = nights.tonight.find(n => n.closesDark && n.lastStart != null)
+  const line = !lit.length ? `Tonight: no Ambient${times.length ? `, ${times.length} shows` : ''}.`
+    : `Tonight: Ambient ${lit.map(([a, b]) => `${hhmm((720 + a) % 1440)}–${hhmm((720 + b) % 1440)}`).join(', ')} · ${times.length} shows, ${mmss(secs)} each${dark ? ` · dark after the ${hhmm(dark.lastStart % 1440)} show` : ''}`
   return (
     <div className="py-1" aria-label="Tonight's schedule">
       <div className="text-caption" style={{ color: 'var(--on-surface-variant)' }}>{line}</div>
       <div className="relative rounded my-1" style={{ height: 10, background: 'var(--surface-container)', border: '1px solid var(--outline-variant)' }}>
         {lit.map(([a, b]) => <div key={a} className="absolute rounded" style={{ left: `${a / 1440 * 100}%`, width: `${(b - a) / 1440 * 100}%`, top: 0, bottom: 0, background: 'var(--tod-dusk)', opacity: 0.6 }} />)}
-        {times.map(m => <div key={m} title={hhmm(m)} className="absolute" style={{ left: `${x(m)}%`, top: -2, bottom: -2, width: 2, background: 'var(--on-surface)' }} />)}
+        {times.map(t => <div key={t} title={hhmm(t % 1440)} className="absolute" style={{ left: `${x(t)}%`, top: -2, bottom: -2, width: 2, background: 'var(--on-surface)' }} />)}
       </div>
       <div className="flex justify-between text-caption" style={{ color: 'var(--on-surface-variant)' }}><span>noon</span><span>midnight</span><span>noon</span></div>
     </div>
   )
+}
+
+/** The display's channel as Stage holds it, read as the player reads it (an old Look through its one reader), or the
+ *  refusal by name: never a guess. */
+function readChannel(authored, id) {
+  try { return { channel: authored ? validateDisplayChannel(authored, `Stage › Displays › ${id}`) : defaultDisplayChannel() } }
+  catch (e) { return { refused: String(e?.message || e).replace(/^\[[^\]]*\] ⛔ /, '') } }
 }
 
 /**
@@ -241,22 +258,27 @@ function TonightStrip({ display }) {
  */
 function DisplayChannel({ id }) {
   const authored = useCartographStore(s => s.displays?.[id])
-  const channel = useMemo(() => authored || defaultDisplayChannel(), [authored])
+  const read = useMemo(() => readChannel(authored, id), [authored, id])
   const setValue = useCartographStore(s => s.setDisplayValue), addSlot = useCartographStore(s => s.addDisplaySlot)
-  const removeSlot = useCartographStore(s => s.removeDisplaySlot), setTransition = useCartographStore(s => s.setDisplayTransition)
+  const removeSlot = useCartographStore(s => s.removeDisplaySlot)
   const revert = useCartographStore(s => s.revertDisplay)
+  if (read.refused) return <div role="alert" className="text-caption" style={{ color: 'var(--error)' }}>{read.refused}</div>
+  const published = authored && authored !== read.channel   // a Look from before the schedule, shown as read, saved new on the next edit
   return (
     <TodChannel
       label="Lit"
       fields={DISPLAY_FIELDS}
       flatDefaults={defaultDisplayChannel().values.dusk}
-      channel={channel}
+      channel={read.channel}
+      noEdges
       onSetValue={(key, value, slotId) => setValue(id, key, value, slotId)}
       onFillSlot={(slotId) => addSlot(id, slotId)}
       onRemoveSlot={(slotId) => removeSlot(id, slotId)}
-      onSetTransition={(slotId, fade, minutes) => setTransition(id, slotId, fade, minutes)}
+      onSetTransition={() => {}}
       onRevert={() => revert(id)}
-    />
+    >
+      {published && <div className="text-caption" style={{ color: 'var(--on-surface-variant)' }}>This Look keeps its schedule in the form from before the Schedule block; it is shown as read, and saved in the new form on your next edit.</div>}
+    </TodChannel>
   )
 }
 

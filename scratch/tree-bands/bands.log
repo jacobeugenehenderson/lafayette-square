@@ -1,0 +1,76 @@
+== trees by band · provincetown · Stage headless, this M1 · load 1.9 2.0 2.1 ==
+  far   cam [0,423,4496] · V0 180.05 ms GPU · all trees hidden Δ -48.4 ms covers 18.25% · uptime 5.6
+        band 1 (1279–4973 m, 20 % of instances) Δ   -7.8 ms · covers 13.07%
+        band 2 (4973–5525 m, 20 % of instances) Δ  -10.5 ms · covers 9.57%
+        band 3 (5525–5981 m, 20 % of instances) Δ  -25.6 ms · covers 9.83%
+        band 4 (5981–6445 m, 20 % of instances) Δ  -23.2 ms · covers 9.36%
+        band 5 (6445–∞ m, 20 % of instances) Δ  -19.4 ms · covers 9.83%
+  mid   cam [0,212,1851] · V0 162.64 ms GPU · all trees hidden Δ -34.5 ms covers 31.35% · uptime 4.1
+        band 1 (827–2529 m, 20 % of instances) Δ   -5.0 ms · covers 23.21%
+        band 2 (2529–3073 m, 20 % of instances) Δ   -0.3 ms · covers 19.62%
+        band 3 (3073–3418 m, 20 % of instances) Δ   -0.6 ms · covers 18.53%
+        band 4 (3418–3971 m, 20 % of instances) Δ   -2.3 ms · covers 18.19%
+        band 5 (3971–∞ m, 20 % of instances) Δ   -0.2 ms · covers 18.3%
+  close cam [0,30,635] · V0 152.88 ms GPU · all trees hidden Δ -37.9 ms covers 15.98% · uptime 3.1
+        band 1 (331–1674 m, 20 % of instances) Δ   -9.2 ms · covers 15.3%
+        band 2 (1674–2084 m, 20 % of instances) Δ   -3.7 ms · covers 7.45%
+        band 3 (2084–2406 m, 20 % of instances) Δ   -8.2 ms · covers 7.66%
+        band 4 (2406–2932 m, 20 % of instances) Δ   -5.9 ms · covers 8.47%
+        band 5 (2932–∞ m, 20 % of instances) Δ   -2.3 ms · covers 8.65%
+== trees by band · huron · Stage headless, this M1 · load 3.3 2.9 2.5 ==
+  far   cam [-46,283,2972] · V0 75.89 ms GPU · all trees hidden Δ -11.8 ms covers 43.78% · uptime 4.3
+        band 1 (330–1395 m, 20 % of instances) Δ   -6.5 ms · covers 23.27%
+        band 2 (1395–2047 m, 20 % of instances) Δ   -5.9 ms · covers 16.33%
+        band 3 (2047–2867 m, 20 % of instances) Δ   -6.0 ms · covers 13.47%
+        band 4 (2867–3809 m, 20 % of instances) Δ   -5.6 ms · covers 9.69%
+        band 5 (3809–∞ m, 20 % of instances) Δ   -5.3 ms · covers 8.62%
+  mid   cam [-46,142,1202] · V0 62.33 ms GPU · all trees hidden Δ -7.3 ms covers 48.01% · uptime 2.9
+        band 1 (143–1081 m, 20 % of instances) Δ   -2.3 ms · covers 36.85%
+        band 2 (1081–1605 m, 20 % of instances) Δ   -2.0 ms · covers 13.76%
+        band 3 (1605–2121 m, 20 % of instances) Δ   -0.8 ms · covers 10.23%
+        band 4 (2121–2711 m, 20 % of instances) Δ   -0.8 ms · covers 7.4%
+        band 5 (2711–∞ m, 20 % of instances) Δ    0.5 ms · covers 7.82%
+  close cam [-46,30,388] · V0 57.29 ms GPU · all trees hidden Δ -12.4 ms covers 62.9% · uptime 2.7
+        band 1 (27–1235 m, 20 % of instances) Δ  -10.0 ms · covers 62.47%
+        band 2 (1235–1820 m, 20 % of instances) Δ   -2.5 ms · covers 16.95%
+        band 3 (1820–2419 m, 20 % of instances) Δ   -1.9 ms · covers 12.54%
+        band 4 (2419–2851 m, 20 % of instances) Δ   -2.2 ms · covers 10.49%
+        band 5 (2851–∞ m, 20 % of instances) Δ   -2.3 ms · covers 13.54%
+== trees by band · hipointedemun · Stage headless, this M1 · load 2.6 2.9 2.5 ==
+  far   cam [0,111,1181] · V0 59.6 ms GPU · all trees hidden Δ -11.7 ms covers 38.45% · uptime 2.8
+        band 1 (81–944 m, 20 % of instances) Δ   -4.2 ms · covers 28%
+        band 2 (944–1265 m, 20 % of instances) Δ   -2.4 ms · covers 6.6%
+        band 3 (1265–1572 m, 20 % of instances) Δ   -2.6 ms · covers 8.78%
+        band 4 (1572–1904 m, 20 % of instances) Δ   -2.2 ms · covers 5.57%
+        band 5 (1904–∞ m, 20 % of instances) Δ   -3.3 ms · covers 7.14%
+  mid   cam [0,56,486] · V0 63.68 ms GPU · all trees hidden Δ -17.6 ms covers 74.81% · uptime 2.2
+        band 1 (26–638 m, 20 % of instances) Δ  -11.4 ms · covers 68.45%
+        band 2 (638–839 m, 20 % of instances) Δ   -2.6 ms · covers 25.72%
+        band 3 (839–1067 m, 20 % of instances) Δ   -2.8 ms · covers 30.15%
+        band 4 (1067–1316 m, 20 % of instances) Δ   -1.8 ms · covers 21.66%
+        band 5 (1316–∞ m, 20 % of instances) Δ   -1.3 ms · covers 27.61%
+  close cam [0,30,167] · V0 63.28 ms GPU · all trees hidden Δ -17.9 ms covers 31.37% · uptime 2.4
+        band 1 (15–597 m, 20 % of instances) Δ  -12.6 ms · covers 30.23%
+        band 2 (597–824 m, 20 % of instances) Δ   -2.5 ms · covers 11.12%
+        band 3 (824–990 m, 20 % of instances) Δ   -2.4 ms · covers 7.69%
+        band 4 (990–1147 m, 20 % of instances) Δ   -3.0 ms · covers 8.3%
+        band 5 (1147–∞ m, 20 % of instances) Δ   -3.4 ms · covers 7.4%
+== trees by band · lafayettesquare · Stage headless, this M1 · load 2.6 2.7 2.5 ==
+  far   cam [-15,71,743] · V0 133.01 ms GPU · all trees hidden Δ -55.2 ms covers 77.99% · uptime 3.2
+        band 1 (44–577 m, 20 % of instances) Δ  -21.5 ms · covers 66.45%
+        band 2 (577–793 m, 20 % of instances) Δ  -17.7 ms · covers 22.51%
+        band 3 (793–983 m, 20 % of instances) Δ  -10.5 ms · covers 27.25%
+        band 4 (983–1174 m, 20 % of instances) Δ   -8.7 ms · covers 20.21%
+        band 5 (1174–∞ m, 20 % of instances) Δ   -5.4 ms · covers 24.69%
+  mid   cam [-15,36,297] · V0 79.89 ms GPU · all trees hidden Δ -17.7 ms covers 0% · uptime 2.8
+        band 1 (20–318 m, 20 % of instances) Δ   -3.3 ms · covers 0%
+        band 2 (318–469 m, 20 % of instances) Δ   -5.7 ms · covers 0%
+        band 3 (469–625 m, 20 % of instances) Δ   -8.5 ms · covers 0%
+        band 4 (625–803 m, 20 % of instances) Δ   -7.8 ms · covers 0%
+        band 5 (803–∞ m, 20 % of instances) Δ   -6.9 ms · covers 0%
+  close cam [-15,30,92] · V0 46.87 ms GPU · all trees hidden Δ -3.0 ms covers 0% · uptime 2.4
+        band 1 (3–254 m, 20 % of instances) Δ   -2.2 ms · covers 0%
+        band 2 (254–424 m, 20 % of instances) Δ   -1.2 ms · covers 0%
+        band 3 (424–570 m, 20 % of instances) Δ   -1.2 ms · covers 0%
+        band 4 (570–703 m, 20 % of instances) Δ   -0.9 ms · covers 0%
+        band 5 (703–∞ m, 20 % of instances) Δ    1.2 ms · covers 0%

@@ -1,0 +1,47 @@
+{
+ "town": "hipointedemun",
+ "margin": {
+  "layers": 162,
+  "unread": 0,
+  "coverage": 0.148,
+  "leaf": 0.172,
+  "bark": 0.101,
+  "min": 0.01,
+  "max": 0.34
+ },
+ "rows": [
+  {
+   "cam": "far",
+   "v0": 57,
+   "off": 46.37,
+   "bare": 51.99,
+   "back": 57
+  },
+  {
+   "cam": "mid",
+   "v0": 60.83,
+   "off": 43.96,
+   "bare": 52.88,
+   "back": 60.71
+  },
+  {
+   "cam": "close",
+   "v0": 60.04,
+   "off": 44.18,
+   "bare": 53.33,
+   "back": 60.29
+  }
+ ],
+ "load": [
+  1.6455078125,
+  2.36572265625,
+  2.5302734375
+ ],
+ "log": [
+  "== trees shader + margin · hipointedemun · Stage headless, this M1 · load 2.1 2.7 2.7 ==",
+  "  card pictures passing alphaTest 0.4 (texels, mean over 162 layer pictures): all 0.148 · leaf 0.172 · bark 0.101 · min 0.01 / max 0.34 · unreadable 0 → empty margin ≈ 85% of a card quad",
+  "  far   V0 57 · trees hidden 46.37 (trees 10.6 ms) · bare fragment 51.99 (shading 5.0 ms = 47% of the trees) · restored 57 · uptime 2.0",
+  "  mid   V0 60.83 · trees hidden 43.96 (trees 16.9 ms) · bare fragment 52.88 (shading 7.9 ms = 47% of the trees) · restored 60.71 · uptime 1.6",
+  "  close V0 60.04 · trees hidden 44.18 (trees 15.9 ms) · bare fragment 53.33 (shading 6.7 ms = 42% of the trees) · restored 60.29 · uptime 1.6"
+ ]
+}

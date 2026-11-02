@@ -3,8 +3,8 @@
  * "ARE THE STRANDS THERE ONLY WHEN THEY WOULD BE?" (Jacob, 2026-10-31: "hide the strands out of season"; "All cords
  * should be dark gray and bulbs should be clear".) One set of strands: the glow hangs every (show ÷ glow)-th, a show all.
  *
- *   1. the rule (engine.js#liveState): out of season, or with no calendar read, the strands are not up; in season they
- *      are, lit after dark and hanging dark by day;
+ *   1. the rule (LightShow.jsx: the season by engine.js#inSeason, the light by showSchedule.js#displayStateAt): out of
+ *      season, or with no calendar read, the strands are not up; in season they are, lit after dark and hanging dark by day;
  *   2. the renderer: what hangs is 'none' when not up, 'all' in a show, the glow's strands otherwise; the pinnacle's strips
  *      only in a show; an unlit bulb adds NOTHING (its light is additive, inside clear glass), so it shows as clear; and
  *      the show OVERTAKES the glow (Jacob, 2026-10-31): each bulb is the glow's until the show's front reaches it.
@@ -25,9 +25,14 @@ const at = (date, hours) => ({ date, hours, minutes: 30, seconds: 0 })
 async function verdict({ engine, view, stageMut } = {}) {
   const fails = []
   const E = await importSource('src/displays/lightShow/engine.js', engine ? { transform: engine } : {})
-  const { displayAt, defaultDisplayChannel } = await importSource('src/displays/showChannel.js'), ch = defaultDisplayChannel()
-  const lit = (m) => displayAt(ch, m, SM), times = E.showtimesOn(lit, E.showSeconds(C))
-  const ask = (cal, clock) => E.liveState(D, C, clock, cal, lit, times, 'check')
+  const { defaultDisplayChannel } = await importSource('src/displays/showChannel.js'), ch = defaultDisplayChannel()
+  const H = await importSource('src/displays/showSchedule.js'), rowOf = () => SM
+  // LightShow's composition (asserted against its source below): up by the season, the mode by the schedule while up
+  const ask = (cal, clock) => {
+    const up = E.inSeason(cal, D.season, clock.date, 'check'), minute = clock.hours * 60 + clock.minutes
+    const st = H.displayStateAt(ch, H.nightsOn(ch, H.prevDate(clock.date), rowOf, E.showSeconds(C)), H.nightsOn(ch, clock.date, rowOf, E.showSeconds(C)), clock.date, minute, rowOf)
+    return { up, mode: up ? st.mode : 'off' }
+  }
   if (ask(null, at('2026-11-20', 18)).up !== false) fails.push('with no calendar read, the strands are up: they must not be')
   if (ask(CAL, at('2026-10-31', 18)).up !== false) fails.push('out of season (Oct 31), the strands are up')
   const day = ask(CAL, at('2026-11-20', 12))
@@ -38,8 +43,8 @@ async function verdict({ engine, view, stageMut } = {}) {
   if (!/pinRef\.current\.visible = !!show/.test(ls)) fails.push('LightShow: the pinnacle strips are visible outside a show')
   if (!/const core = useMemo\(\(\) => new THREE\.MeshBasicMaterial\(\{[^}]*blending: THREE\.AdditiveBlending/.test(ls) || !/: \[0, 0, 0\]\n/.test(ls)) fails.push('LightShow: an unlit bulb is not exactly nothing (its light must be additive, black adding 0, inside clear glass)')
   // The show OVERTAKES the glow: a bulb is the show's where the show has reached it, else (a real strand, lit) the glow's.
-  if (!/const rgb = r === 'spark' \? \[255, 246, 228\] : r === 'on' \? show\.colour\(c, row\)[^:]*: real && mode !== 'off' \? glowColour\(/.test(ls)) fails.push('LightShow: the show does not overtake the glow bulb by bulb (the show\'s colour where its front has passed, the glow\'s ahead of it)')
-  if (!/\{ mode, t, up \} = liveState\(/.test(ls)) fails.push('LightShow: the live path does not take `up` from liveState')
+  if (!/const rgb = r === 'spark' \? \[255, 246, 228\] : r === 'on' \? show\.colour\(c, row\)[^:]*: real && mode !== 'off' && !toDark \? glowColour\(/.test(ls)) fails.push('LightShow: the show does not overtake the glow bulb by bulb (the show\'s colour where its front has passed, the glow\'s ahead of it)')
+  if (!/up = inSeason\(calendar, display\.season, clock\.date, where\)/.test(ls) || !/\(\{ mode, t, dark \} = up \? state : \{ mode: 'off', t: 0, dark: false \}\)/.test(ls)) fails.push('LightShow: the live path does not hang the strands by the season and light them by the schedule')
   // Stage can preview each state, the strands hung unlit included (Jacob: "Live, Off, Glow, Show").
   const stage = code(stageMut ? stageMut(sourceOf('src/stage/StageApp.jsx')) : sourceOf('src/stage/StageApp.jsx'))
   if (!/\['live', 'off', 'glow', 'show'\]\.map/.test(stage)) fails.push("Stage's Displays section does not offer Live, Off, Glow and Show")
@@ -53,9 +58,10 @@ else console.log('✅ the strands hang only in season (dark by day, lit after da
 
 if (process.argv.includes('--mutants')) {
   const mutants = [
-    ['strands up out of season', { engine: (s) => s.replace('const up = inSeason(calendar, display.season, clock.date, where)\n', 'const up = true\n') }],
+    ['strands up out of season', { view: (s) => s.replace('up = inSeason(calendar, display.season, clock.date, where)', 'up = true') }],
+    ['the season ignoring the calendar', { engine: (s) => s.replace('  if (calendar == null) return false\n', '  if (calendar == null) return true\n') }],
     ['strands hung regardless of the season', { view: (s) => s.replace("const hang = !up ? 'none' : show ? 'all' : 'glow'", "const hang = show ? 'all' : 'glow'") }],
-    ['the glow faded out under the show, not overtaken', { view: (s) => s.replace(": real && mode !== 'off' ? glowColour(", ": real && mode === 'glow' ? glowColour(") }],
+    ['the glow faded out under the show, not overtaken', { view: (s) => s.replace(": real && mode !== 'off' && !toDark ? glowColour(", ": real && mode === 'glow' && !toDark ? glowColour(") }],
     ['Stage without the Off preview', { stageMut: (s) => s.replace("['live', 'off', 'glow', 'show'].map", "['live', 'glow', 'show'].map") }],
     ['the preview not hanging the strands', { view: (s) => s.replace('let mode, t, now, up = true', 'let mode, t, now, up = false') }],
     ['an unlit bulb drawn black, not clear', { view: (s) => s.replace('blending: THREE.AdditiveBlending, depthWrite: false }), [])\n  const dark', 'depthWrite: false }), [])\n  const dark') }],

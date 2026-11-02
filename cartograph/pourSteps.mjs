@@ -181,14 +181,12 @@ export function pourGuardRefusals(scene, { requirePoured = false } = {}) {
 }
 
 /**
- * Run the pour's steps in order and RECORD each one run (the pipeline records itself in map.json). `run(step)` runs one step's
- * command (serve.js passes runShell); `onLine` sees promote-ribbons' output. → { promoteDiff }, its PROMOTE-DIFF line, or null.
+ * THE street-layout change promote-ribbons reports (its one `PROMOTE-DIFF {json}` line: `{ streets|faces|medians: [before, after] }`),
+ * from one line of its output → the diff, or undefined for any other line. ONE parser: the Foundry's promote-ribbons step reads
+ * its output through this (serve.js, the bake route). (It moved here from runPour, deleted when Extent stopped pouring, 2026-11-01.)
  */
-export async function runPour(steps, { scene, mapJson, lookIds, run }) {
-  let promoteDiff = null
-  for (const st of steps) {
-    await run(st, st.label === 'promote-ribbons' ? (l) => { if (l.startsWith('PROMOTE-DIFF ')) promoteDiff = JSON.parse(l.slice(13)) } : null)
-    if (st.judge !== 'mtime') recordStep(mapJson, lookIds, st.label, st.inputs)
-  }
-  return { promoteDiff }
-}
+export const promoteDiffOf = (line) => (line.startsWith('PROMOTE-DIFF ') ? JSON.parse(line.slice(13)) : undefined)
+/** The street layout after a Foundry run, THREE outcomes and never "no report" (Zob, 2026-11-01): promote-ribbons did not run
+ *  (not owed) · ran and changed it (the diff) · ran and changed nothing. */
+export const streetLayoutOf = (ranPromote, diff) => (!ranPromote ? { skipped: 'not owed' }
+  : diff && Object.keys(diff).length ? { changed: diff } : { unchanged: true })

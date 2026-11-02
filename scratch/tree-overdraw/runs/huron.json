@@ -1,0 +1,132 @@
+{
+ "town": "huron",
+ "info": {
+  "draws": 168,
+  "msaa": {
+   "canvas": true,
+   "samples": 4
+  }
+ },
+ "rows": [
+  {
+   "cam": "far",
+   "v0": 74.53,
+   "v": {
+    "allHidden": {
+     "ms": 65.11,
+     "back": 74.31
+    },
+    "count1": {
+     "ms": 64.04,
+     "back": 72.23
+    },
+    "nearFirst": {
+     "ms": 72.19,
+     "back": 72.01
+    },
+    "prepassNear": {
+     "ms": 74.22,
+     "back": 72.45
+    },
+    "a2c": {
+     "ms": 71.58,
+     "back": 71.78
+    },
+    "noDiscard": {
+     "ms": 73.06,
+     "back": 72.46
+    }
+   }
+  },
+  {
+   "cam": "mid",
+   "v0": 59.93,
+   "v": {
+    "allHidden": {
+     "ms": 51.89,
+     "back": 59.82
+    },
+    "count1": {
+     "ms": 52.28,
+     "back": 59.44
+    },
+    "nearFirst": {
+     "ms": 59.64,
+     "back": 59.86
+    },
+    "prepassNear": {
+     "ms": 64.41,
+     "back": 61.3
+    },
+    "a2c": {
+     "ms": 60.15,
+     "back": 60.03
+    },
+    "noDiscard": {
+     "ms": 60.47,
+     "back": 59.99
+    }
+   }
+  },
+  {
+   "cam": "close",
+   "v0": 53.17,
+   "v": {
+    "allHidden": {
+     "ms": 42.72,
+     "back": 53.37
+    },
+    "count1": {
+     "ms": 43.05,
+     "back": 53.68
+    },
+    "nearFirst": {
+     "ms": 52.98,
+     "back": 52.95
+    },
+    "prepassNear": {
+     "ms": 58.16,
+     "back": 52.85
+    },
+    "a2c": {
+     "ms": 53.59,
+     "back": 53.01
+    },
+    "noDiscard": {
+     "ms": 55.48,
+     "back": 52.55
+    }
+   }
+  }
+ ],
+ "load": [
+  2.33056640625,
+  2.69287109375,
+  2.61083984375
+ ],
+ "log": [
+  "== trees overdraw · huron · Stage headless, this M1 · load 2.2 2.6 2.5 ==",
+  "  hero draws 168 · canvas msaa {\"canvas\":true,\"samples\":4} (alpha-to-coverage needs a multisampled target; the composer's buffer decides)",
+  "  far   cam [-46,283,2972] · V0 74.53 ms GPU · uptime 3.6",
+  "        allHidden   Δ   -9.4 ms (restored 74.31) · uptime 3.3",
+  "        count1      Δ  -10.5 ms (restored 72.23) · uptime 3.4",
+  "        nearFirst   Δ   -2.3 ms (restored 72.01) · uptime 3.3",
+  "        prepassNear Δ   -0.3 ms (restored 72.45) · uptime 3.8",
+  "        a2c         Δ   -3.0 ms (restored 71.78) · uptime 3.9",
+  "        noDiscard   Δ   -1.5 ms (restored 72.46) · uptime 3.8",
+  "  mid   cam [-46,142,1202] · V0 59.93 ms GPU · uptime 3.5",
+  "        allHidden   Δ   -8.0 ms (restored 59.82) · uptime 3.3",
+  "        count1      Δ   -7.6 ms (restored 59.44) · uptime 3.1",
+  "        nearFirst   Δ   -0.3 ms (restored 59.86) · uptime 2.8",
+  "        prepassNear Δ    4.5 ms (restored 61.3) · uptime 2.5",
+  "        a2c         Δ    0.2 ms (restored 60.03) · uptime 2.5",
+  "        noDiscard   Δ    0.5 ms (restored 59.99) · uptime 2.5",
+  "  close cam [-46,30,388] · V0 53.17 ms GPU · uptime 2.6",
+  "        allHidden   Δ  -10.5 ms (restored 53.37) · uptime 2.4",
+  "        count1      Δ  -10.1 ms (restored 53.68) · uptime 2.4",
+  "        nearFirst   Δ   -0.2 ms (restored 52.95) · uptime 2.4",
+  "        prepassNear Δ    5.0 ms (restored 52.85) · uptime 2.4",
+  "        a2c         Δ    0.4 ms (restored 53.01) · uptime 2.3",
+  "        noDiscard   Δ    2.3 ms (restored 52.55) · uptime 2.3"
+ ]
+}

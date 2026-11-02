@@ -70,11 +70,11 @@ const { bad, plan } = await judge(route)
 if (plan) console.log(`── bake progress ── plan ${plan.length} step(s): ${plan.join(' · ')} ${bad.length ? '⛔' : '✅'}`)
 for (const x of bad) console.log(`   ⛔ ${x}`)
 // ── the two mutations, each must go red
-const ANCHOR = 'const { timeout, ...rest } = opts'
+const ANCHOR = 'const { timeout, onLine: tap, ...rest } = opts'
 const MUT = [
   ['a bare runShell( added to the bake route', () => judge(route + "\n      await runShell('node x.js')\n")],
   ['runStep passing `timeout` through to runShell', () => fnOf(src, 'runStep')?.includes(ANCHOR)
-    ? judge(route, (t) => t.replace(ANCHOR, 'const rest = opts')) : null],
+    ? judge(route, (t) => t.replace(ANCHOR, 'const { onLine: tap } = opts, rest = opts')) : null],
 ]
 let blind = 0
 for (const [name, run] of MUT) {
