@@ -60,8 +60,8 @@ against the old slab before the press.
   produces on the same slab is a standing disclosure (Huron: `[BakedGround] ⛔ "huron": surface "sand" is drawn WITHOUT
   rippleSpacingM…`, kit `BakedGround.jsx`, absent and not defaulted, by design). It is LISTED, not red. Red is a `⛔` the
   candidate produces that the live player doesn't, on the same slab. ⛔ The baseline is a run, never a list of known
-  messages (that's a skip list). Ward's reading, pending Boz: a SINK entry stays red outright under (ii), because a
-  standing "isn't drawn" on a live town is the breakage (ii) names, so the diff covers console `⛔` only.
+  messages (that's a skip list). A SINK entry stays red outright under (ii) (confirmed by Boz, 2026-11-02): a standing
+  "isn't drawn" on a live town is the breakage (ii) names, so the diff covers console `⛔` only.
 
 ## The work
 
