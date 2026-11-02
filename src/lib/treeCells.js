@@ -26,27 +26,34 @@ export function windReachM(tw, feltMax) {
 export const floorReachPx = (tw) => (LEAN_FACTOR + FLUTTER_FACTOR) * tw.floorPx
 
 /**
- * Group instances into square cells. The cell edge is derived, never a constant: about √N cells of about √N instances
- * each over the town's disc (edge = 2R / N^¼), which balances the per-frame cell test (√N cells) against what one cell
- * entering or leaving costs to rewrite (√N instances); never below twice the largest card's reach. The cell size changes
- * only the cost, never the picture (a cell is kept whenever any part of its bound reaches the frustum). → { edge, cells: [{ cx, cz, r, idx: [instance indices] }] }
- * `inst[i]` = { x, z, reach } where reach is that card's own static bound (canopy/card half-extent × its scale).
+ * THE TOWN'S ONE CELL EDGE, from every tree the hero foundation draws (InstancedTrees holds the whole list; Zob: one source,
+ * the instances, at the right population). About √N cells of about √N instances over their own extent (edge = 2R / N^¼),
+ * which balances the per-frame cell test against what one cell entering or leaving costs to rewrite; never below twice the
+ * largest card's reach. ⛔ Per DRAW (one species × azimuth, ~770 instances in PTown) this made cells ~0.4 × the town and kept
+ * 81–98 % of the cards (measured 2026-11-02, scratch/tree-ab). `pts` = [{ x, z, reach }].
  */
-export function buildCells(inst, discRadius) {
-  if (!inst.length) return { edge: 0, cells: [] }
-  const maxReach = inst.reduce((a, t) => Math.max(a, t.reach), 0)
-  const edge = Math.max(2 * maxReach, (2 * discRadius) / Math.pow(inst.length, 0.25))
+export function cellEdgeFor(pts) {
+  if (!pts.length) return 0
+  let cx = 0, cz = 0, maxReach = 0
+  for (const t of pts) { cx += t.x; cz += t.z; maxReach = Math.max(maxReach, t.reach) }
+  cx /= pts.length; cz /= pts.length
+  let R = 0; for (const t of pts) R = Math.max(R, Math.hypot(t.x - cx, t.z - cz))
+  return Math.max(2 * maxReach, (2 * Math.max(R, 1)) / Math.pow(pts.length, 0.25))
+}
+
+/** Group a draw's instances into the town's cells (the shared `edge`). → [{ cx, cz, r, idx: [instance indices] }] */
+export function buildCells(inst, edge) {
+  if (!inst.length || !(edge > 0)) return []
   const map = new Map()
   for (let i = 0; i < inst.length; i++) {
     const t = inst[i], k = `${Math.floor(t.x / edge)},${Math.floor(t.z / edge)}`
     let c = map.get(k); if (!c) map.set(k, c = { idx: [], minX: Infinity, maxX: -Infinity, minZ: Infinity, maxZ: -Infinity, reach: 0 })
     c.idx.push(i); c.minX = Math.min(c.minX, t.x); c.maxX = Math.max(c.maxX, t.x); c.minZ = Math.min(c.minZ, t.z); c.maxZ = Math.max(c.maxZ, t.z); c.reach = Math.max(c.reach, t.reach)
   }
-  const cells = [...map.values()].map((c) => {
+  return [...map.values()].map((c) => {
     const cx = (c.minX + c.maxX) / 2, cz = (c.minZ + c.maxZ) / 2
     return { cx, cz, r: Math.hypot(c.maxX - cx, c.maxZ - cz) + c.reach, idx: c.idx }
   })
-  return { edge, cells }
 }
 
 /**
@@ -64,11 +71,13 @@ export function planesOf(e) {
  * the town plus the tallest card), widened by `windM` metres and, at its own distance, by `pxMargin` pixels
  * (`metresPerPx(dist)` from the live camera). → Uint8Array, 1 = visible.
  */
-export function visibleCells(cells, planes, { yLo, yHi, windM, pxMargin, camPos, metresPerPx }) {
+export function visibleCells(cells, planes, { yLo, yHi, windM, pxMargin, camPos, metresPerPx, prev = null, stayM = 0 }) {
   const out = new Uint8Array(cells.length), ym = (yLo + yHi) / 2, yh = (yHi - yLo) / 2
   for (let k = 0; k < cells.length; k++) {
     const c = cells[k], dist = Math.hypot(c.cx - camPos[0], ym - camPos[1], c.cz - camPos[2])
-    const r = Math.hypot(c.r + windM, yh) + pxMargin * metresPerPx(dist)
+    // HYSTERESIS: a cell already shown leaves only once its bound grown by `stayM` (one cell edge) clears the frustum, so a
+    // flight does not rewrite a draw every time a cell grazes the edge. It only ever keeps MORE, so it stays a no-op.
+    const r = Math.hypot(c.r + windM + (prev && prev[k] ? stayM : 0), yh) + pxMargin * metresPerPx(dist)
     let ok = 1
     for (const p of planes) { if (p[0] * c.cx + p[1] * ym + p[2] * c.cz + p[3] < -r) { ok = 0; break } }
     out[k] = ok

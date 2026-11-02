@@ -30,6 +30,7 @@ import { anchoredRaw } from '../lib/anchorGate.js'
 import { treeDbg } from './OverheadTrees.jsx'
 import { slabUrl } from '../lib/slabUrl.js'
 import { buildCells, planesOf, visibleCells, sameSet, windReachM, floorReachPx, treeCull } from '../lib/treeCells.js'
+export { cellEdgeFor } from '../lib/treeCells.js'
 import { treeWindUniforms } from './treeAtlasMaterial.js'
 import { terrainExag } from '../utils/terrainShader.js'
 import { getLiveWind, WIND_SPRING } from '../lib/windSheet.js'
@@ -188,18 +189,10 @@ const _q = (k, d) => {
 // hides. ⛔ AMPLITUDE IS FREE — the Look's treeWind figures are uniforms, so
 // a coarser grid is compensated by turning Amplitude UP, not by more triangles.
 const _PV = new THREE.Matrix4()
-// The extent the cells tile: this draw's OWN instances, always (Zob, 2026-11-02): the cells partition the instances, so their
-// bounds are the input — never the town's stencil, which would make a fresh pour and a published town partition differently.
-function discRadiusOf(list) {
-  let r = 0, cx = 0, cz = 0
-  for (const t of list) { cx += t.x; cz += t.z } cx /= Math.max(1, list.length); cz /= Math.max(1, list.length)
-  for (const t of list) r = Math.max(r, Math.hypot(t.x - cx, t.z - cz))
-  return Math.max(r, 1)
-}
 const FRONT_GRID = _q('frontGrid', 8)
 const BACK_GRID  = _q('backGrid', 1)
 
-export function HeroImpostorSpecies({ asset, instances, visible = true, opacity = 1 }) {
+export function HeroImpostorSpecies({ asset, instances, visible = true, opacity = 1, cellEdge = 0 }) {
   const refs = useRef({})
   const invalidate = useThree(s => s.invalidate)
 
@@ -315,11 +308,12 @@ export function HeroImpostorSpecies({ asset, instances, visible = true, opacity 
       for (let i = 0; i < d.instances.length; i++) { const r = ground[2 * i], y = ground[2 * i + 1], sc = d.instances[i].scale || 1
         rawLo = Math.min(rawLo, r); rawHi = Math.max(rawHi, r); yLo = Math.min(yLo, y); yHi = Math.max(yHi, y); sMax = Math.max(sMax, sc) }
       d.full = { mat: im.instanceMatrix.array.slice(), ground, glow, n: d.instances.length, rawLo, rawHi, yLo, yHi, topM: rec.heightM * sMax }
-      d.cells = buildCells(d.instances.map((t) => ({ x: t.x, z: t.z, reach: half * (t.scale || 1) })), discRadiusOf(d.instances)).cells
+      d.cells = buildCells(d.instances.map((t) => ({ x: t.x, z: t.z, reach: half * (t.scale || 1) })), cellEdge)
+      d.edge = cellEdge
       d.vis = null
     }
     invalidate()
-  }, [draws, invalidate])
+  }, [draws, invalidate, cellEdge])
 
   // ⭐ DRAW ONLY THE TREES THE FRAME CAN SHOW (src/lib/treeCells.js). Each frame tests the cells; a draw's buffers are rewritten
   // only when its set of visible cells changes. ⛔ Not-yet (no live wind: the sheet is not mounted) culls nothing.
@@ -348,7 +342,7 @@ export function HeroImpostorSpecies({ asset, instances, visible = true, opacity 
       if (!im || !d.full || !d.cells) continue
       const f = d.full
       const yLo = Math.min(f.rawLo * ex, f.rawHi * ex) + f.yLo, yHi = Math.max(f.rawLo * ex, f.rawHi * ex) + f.yHi + f.topM
-      const vis = visibleCells(d.cells, planes, { yLo, yHi, windM, pxMargin, camPos, metresPerPx: (dist) => dist * k })
+      const vis = visibleCells(d.cells, planes, { yLo, yHi, windM, pxMargin, camPos, metresPerPx: (dist) => dist * k, prev: d.vis instanceof Uint8Array ? d.vis : null, stayM: d.edge })
       if (sameSet(vis, d.vis)) continue
       d.vis = vis
       const mat = im.instanceMatrix.array, gr = d.geo.attributes.aGround.array, gw = d.geo.attributes.aLampGlow.array

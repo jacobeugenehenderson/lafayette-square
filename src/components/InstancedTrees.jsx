@@ -32,7 +32,7 @@ import {
 } from './treeAtlasMaterial'
 import { buildImpostorGeometry } from './impostorGeometry.js'
 import { useOverheadMode, useOverheadAssets, OverheadSpecies, OverheadLightDriver, TreeWindDriver, treeDbg, treeDbgVal } from './OverheadTrees.jsx'
-import { useHeroImpostorAssets, HeroImpostorSpecies } from './HeroImpostorTrees.jsx'
+import { useHeroImpostorAssets, HeroImpostorSpecies, cellEdgeFor } from './HeroImpostorTrees.jsx'
 import { treesRevealVerdict, applyTreesReveal } from './treesReveal.js'
 import { groundPairs } from '../utils/elevation'
 import { treeAnchorsVerdict, anchoredRaw } from '../lib/anchorGate.js'
@@ -948,6 +948,17 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, canopyOve
   )
   const { assets: heroAssets, arrived: heroPagesArrived } = useHeroImpostorAssets({ enabled: heroFoundationEnabled, lookName, heroImpostorBySpecies: heroImpostorRecords, species: heroLoadSpecies })
 
+  // ⭐ THE TOWN'S ONE CELL EDGE for the hero cull (src/lib/treeCells.js#cellEdgeFor): from every hero card's own position and
+  // reach (its card half-extent × scale), so every species' cells share one grid (Zob: one source, the right population).
+  const heroCellEdge = useMemo(() => {
+    const heroImps = groups?.heroImpostors
+    if (!heroAssets || !heroImps) return 0
+    const pts = []
+    for (const [species, list] of heroImps.entries()) { const a = heroAssets.get(species); if (!a) continue
+      const half = Math.max(a.heightM || 0, 2 * (a.canopyRadiusM || 0)) / 2
+      for (const t of list) pts.push({ x: t.x, z: t.z, reach: half * (t.scale || 1) }) }
+    return cellEdgeFor(pts)
+  }, [heroAssets, groups])
   // ⭐ THE REVEAL (a `prepared:trees` startup mark, src/lib/startupMarks.js): the trees are PREPARED when every card
   // page and Browse disc page has ARRIVED (useHeroImpostorAssets' and useOverheadAssets' own readiness) and every model tree's GLB has loaded. A card without its page draws nothing, so its page is part of the physical tree (Jacob: physical
   // arrives at once). ⛔ Arrival, never `onUpdate` (the GPU upload): held hidden, a tree never draws, so never uploads.
@@ -988,7 +999,7 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, canopyOve
       {heroAssets && !treeDbg('noTrees') && Array.from(heroImpostors.entries()).map(([species, instances]) => {
         const asset = heroAssets.get(species)
         return asset
-          ? <HeroImpostorSpecies key={`hero#${species}`} asset={asset} instances={instances} visible={!overheadMode} />
+          ? <HeroImpostorSpecies key={`hero#${species}`} asset={asset} instances={instances} visible={!overheadMode} cellEdge={heroCellEdge} />
           : null
       })}
       {/* Mesh-role trees: real 3D geometry (lod1). */}
