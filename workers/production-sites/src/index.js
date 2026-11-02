@@ -1,14 +1,14 @@
 /**
  * theward-production-sites — every town's own production site, from one Worker.
  *
- *   provincetown.online/_player/<file>  →  R2 `player/provincetown/<file>`   (a "legacy" town: its pinned copy)
- *   provincetown.online/_ward/<sha>/…   →  R2 `ward/<sha>/…`                 (a "ward" town: its pinned Ward build)
- *   provincetown.online/kit/<sha>/…     →  R2 `kit/<sha>/…`                  (a "ward" town: the renderer's own files)
+ *   provincetown.online/_ward/<sha>/…   →  R2 `ward/<sha>/…`                 (its pinned Ward build)
+ *   provincetown.online/kit/<sha>/…     →  R2 `kit/<sha>/…`                  (the renderer's own files)
  *   provincetown.online/baked/<look>/…  →  R2 `baked/<look>/…`               (the prod slab, same origin)
- *   provincetown.online/<anything else> →  that town's player's index.html, told which town it is
+ *   provincetown.online/<anything else> →  that town's Ward build's index.html, told which town it is
  *
  * ⭐ WHICH PLAYER is the host record's (`route.js#appOf`), written by Promote from the town's staging
- * record — the player that was checked there. A "ward" page is also told `ward-kit-base`,
+ * record — the Ward build that was checked there; a record naming the retired legacy player refuses by name. The page
+ * is also told `ward-kit-base`,
  * `<origin>/kit/<kit>/`: the same `<ward-asset-base>kit/<sha>/` shape staging stamps, same-origin
  * here as the slab is (no per-town CORS).
  *   www.provincetown.online/…           →  301 to the apex
@@ -85,15 +85,6 @@ export default {
       return serve(request, obj, { stored: true })
     }
 
-    if (r.kind === 'player') {
-      const obj = await env.ASSETS.get(r.key)
-      if (!obj) {
-        return text(`"${rec.map}"'s player has no "${r.key}" — promote the town again; `
-          + 'its pinned copy is incomplete.', 404)
-      }
-      return serve(request, obj)
-    }
-
     // ── A document. ⛔ A town is only live if its production slab is there: a player with no
     // slab renders a page that looks like a site and is not one. Asked of `manifest.json`, the one
     // slab file whose name never changes (every other is served under its content — slabNames.js).
@@ -101,17 +92,14 @@ export default {
     if (!(await env.ASSETS.head(slab))) {
       return text(`"${rec.look}" has no production slab — nothing at ${slab}.`, 404)
     }
-    let kitBase = null
-    if (r.app === 'ward') {
-      // ⛔ A Ward page pointed at a kit bundle that is not there draws with no textures and no
-      // clouds, and looks like a site. Ask the bundle's manifest (written last by Promote).
-      const kitManifest = `kit/${rec.kit}/manifest.json`
-      if (!(await env.ASSETS.head(kitManifest))) return text(`"${rec.map}" pins kit ${rec.kit}, but its bundle is not in production — nothing at ${kitManifest}. Promote it again.`, 404)
-      kitBase = `${url.origin}/kit/${rec.kit}/`
-    }
+    // ⛔ A Ward page pointed at a kit bundle that is not there draws with no textures and no
+    // clouds, and looks like a site. Ask the bundle's manifest (written last by Promote).
+    const kitManifest = `kit/${rec.kit}/manifest.json`
+    if (!(await env.ASSETS.head(kitManifest))) return text(`"${rec.map}" pins kit ${rec.kit}, but its bundle is not in production — nothing at ${kitManifest}. Promote it again.`, 404)
+    const kitBase = `${url.origin}/kit/${rec.kit}/`
     const obj = await env.ASSETS.get(r.key)
-    if (!obj) return text(`"${rec.map}" has no pinned player — nothing at ${r.key}. Promote it.`, 404)
-    return townPage(serve(request, obj, r.app === 'ward' ? { stored: true } : {}), rec, url, env, kitBase)
+    if (!obj) return text(`"${rec.map}" has no pinned Ward build — nothing at ${r.key}. Promote it.`, 404)
+    return townPage(serve(request, obj, { stored: true }), rec, url, env, kitBase)
   },
 }
 
@@ -139,7 +127,7 @@ async function townPage(response, rec, url, env, kitBase) {
     .on('head', { element(el) {
       el.prepend(`<meta name="ward-look" content="${esc(rec.look)}" />`
         + `<meta name="ward-asset-base" content="${esc(url.origin)}/" />`
-        + (kitBase ? `<meta name="ward-kit-base" content="${esc(kitBase)}" />` : '')
+        + `<meta name="ward-kit-base" content="${esc(kitBase)}" />`
         // ⭐ The domain Operations confirmed when this town was promoted (Promote writes it into
         // the host record). The same value the staging Worker asks Operations for live; read from
         // the record here so a production page never depends on Operations being up.

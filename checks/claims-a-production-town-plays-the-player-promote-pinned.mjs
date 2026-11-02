@@ -4,8 +4,8 @@
  *  NONE, NONE?"  The production twin of claims-a-staging-town-names-its-player.
  *
  * WHY (BRIEF-ls-onto-the-ward Phase 2, 2026-09-29). Promote pins whichever player the town's staging
- * record names: `legacy` → the kit's player, `ward` → the Ward build + its kit bundle, write-once per
- * commit. The production Worker plays what the host record says (`route.js#appOf`). ⛔ No default
+ * record names: `ward` → the Ward build + its kit bundle, write-once per commit. A record naming the retired
+ * `legacy` player refuses (2026-11-01). The production Worker plays what the host record says (`route.js#appOf`). ⛔ No default
  * player anywhere: no staging record refuses the promote, and a host record that names no player is a
  * 500 — except a pre-v2 record whose `player` is the old build TIMESTAMP, which proves it legacy
  * (Boz, 2026-09-29: absence alone proves nothing).
@@ -18,14 +18,15 @@
  * ⛔ Mutation-tested 2026-09-29: (1) a missing app read as legacy, (2) a bare {map, look, domain}
  *    record read as legacy, (3) Promote defaulting a missing staging record — each turns this red.
  *
- * ⭐ The share card (2026-11-01): the towns record's three refusals and `--card-only`'s one-key write, each run as a mutant
+ * ⭐ The share card (2026-11-01): the town's own record's three refusals (none, not JSON, no entry) and `--card-only`'s one-key write, each run as a mutant
  *    of the script (sourceFile) that must turn it red; writes are seen through a stand-in `npx` on PATH, never made.
- * ⛔ LOCAL ONLY. Usage: node checks/claims-a-production-town-plays-the-player-promote-pinned.mjs
+ * ⛔ LOCAL ONLY. Usage: node checks/claims-a-production-town-plays-the-player-promote-pinned.mjs [--mutants]
+ *   --mutants also re-runs part A with a legacy host record served as the Ward (route.js#appOf), which must turn it red.
  */
 import { mkdtempSync, writeFileSync, chmodSync, existsSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { sourceFile } from './_sourceFile.mjs'
-import { STAGING_TOWNS, STAGING_TOWNS_LIST, townsKey } from '../src/lib/townsRecordKeys.js'
+import { stagingTownsKey, townsKey } from '../src/lib/townsRecordKeys.js'
 import { createServer } from 'node:http'
 import { createHash } from 'node:crypto'
 import { execFile } from 'node:child_process'
@@ -40,7 +41,10 @@ const expect = (what, ok, got) => { if (!ok) fails.push(`${what} — got ${got.s
 const kitTags = (b) => b.match(/<meta name="ward-kit-base" content="([^"]*)"/g) || []
 
 // ── A. The production Worker ────────────────────────────────────────────────
-const { mf, r2, get } = await workerInMiniflare(join(ROOT, 'workers/production-sites/src/index.js'))
+const ROUTE = join(ROOT, 'workers/production-sites/src/route.js')
+// --mutants (2026-11-01): a legacy record served as the Ward must turn part A red.
+const LEGACY_AS_WARD = { [ROUTE]: (t) => t.replace("  if (rec.app === 'legacy') return { refuse: retired }", "  if (rec.app === 'legacy') return { app: 'ward' }") }
+const { mf, r2, get } = await workerInMiniflare(join(ROOT, 'workers/production-sites/src/index.js'), {}, process.argv.includes('--mutate-legacy') ? { mutate: LEGACY_AS_WARD } : {})
 const W = hex(), K = hex()
 const towns = ['ward', 'legacy', 'old', 'bare', 'odd', 'nokit', 'noapp'].map((t) => ({ t, map: mint(t) }))
 const T = Object.fromEntries(towns.map(({ t, map }) => [t, { map, look: map, domain: `${map}.example` }]))
@@ -79,12 +83,12 @@ r = await at('ward', '/_player/index.html')
 expect('a "ward" town has no /_player/', r.status === 404, r)
 r = await at('nokit')
 expect('a "ward" town whose kit bundle is missing refuses, naming the kit', r.status === 404 && r.body.includes('kit/'), r)
+// ⛔ A record still naming the retired legacy player is a town the census missed: it refuses BY NAME, serving neither its
+// pinned legacy copy nor the Ward (a silent player switch) — Zob, 2026-11-01.
 for (const t of ['legacy', 'old']) {
   r = await at(t, '/deep/route')
-  expect(`a ${t === 'old' ? 'pre-v2 (timestamped)' : 'v2 legacy'} town serves the kit's player, and no kit base from the Worker`, r.status === 200 && r.body.includes('LEGACY') && kitTags(r.body).length === 0, r)
+  expect(`a ${t === 'old' ? 'pre-v2 (timestamped)' : 'v2 legacy'} record refuses by name, serving neither player`, r.status === 500 && r.body.includes(T[t].map) && /retired player \(legacy\)/.test(r.body) && !r.body.includes('LEGACY') && !r.body.includes('WARD'), r)
 }
-r = await at('legacy', `/_ward/${W}/index.html`)
-expect('a "legacy" town has no /_ward/', r.status === 404, r)
 for (const t of ['bare', 'odd', 'noapp']) {
   r = await at(t)
   expect(`a host record that names no player (${t}) refuses by name`, r.status === 500 && (r.body.includes(T[t].map) || /player|app/.test(r.body)), r)
@@ -108,11 +112,7 @@ function seedStaging(app) {
   putS(`staging/ward/${PW}/build.json`, { ward: PW, kit: PK, files: Object.fromEntries(Object.entries(wardFiles).map(([k, v]) => [k, sha256(v)])) })
   for (const [rel, b] of Object.entries(kitFiles)) putS(`staging/kit/${PK}/${rel}`, b)
   putS(`staging/kit/${PK}/manifest.json`, { kit: PK, files: Object.fromEntries(Object.entries(kitFiles).map(([k, v]) => [k, sha256(v)])) })
-  const lman = { files: [{ rel: 'index.html', md5: md5('<p>'), bytes: 3 }, { rel: `looks/${MAP}/design.json`, md5: md5('{}'), bytes: 2 }, { rel: 'towns.json', md5: md5(townsJson), bytes: townsJson.length }] }
-  putS('staging/player/manifest.json', lman)
-  putS('staging/player/build.json', { assetBase: 'runtime', builtAt: '2026-09-29T00:00:00.000Z', manifestMd5: md5(JSON.stringify(lman)) })
-  putS('staging/player/index.html', '<p>'); putS(`staging/player/looks/${MAP}/design.json`, '{}'); putS('staging/player/towns.json', townsJson)
-  putS(STAGING_TOWNS, townsJson); putS(STAGING_TOWNS_LIST, { sha256: sha256(townsJson), bytes: townsJson.length, builtAt: '2026-11-01T00:00:00.000Z' })
+  putS(stagingTownsKey(MAP), townsJson)   // the town's own share-card record, written by its Publish
 }
 const server = createServer((req, res) => {
   const k = decodeURIComponent(req.url.split('?')[0].slice(1))
@@ -140,21 +140,22 @@ async function promote(args = [`--map=${MAP}`, `--look=${MAP}`, '--dry-run'], sc
 async function cardFails(script) {
   const f = []
   const exp = (what, ok, got) => { if (!ok) f.push(`${what} — got ${got.status}: ${String(got.body).slice(0, 180).replace(/\n/g, ' ')}`) }
-  // ⛔ The towns record is published before Promote pins it (Zob, 2026-11-01): no list, a list that does not match, or a record
-  // without this town → Promote refuses by name, and never falls back to the legacy player's copy.
-  seedStaging('ward'); store.delete(STAGING_TOWNS_LIST)
+  // ⛔ The town's share-card record is published (by its Publish) before Promote pins it: none, one that is not JSON, or one
+  // without this town → Promote refuses by name, and never reads another town's record or the retired legacy player's copy.
+  const KEY = stagingTownsKey(MAP)
+  seedStaging('ward'); store.delete(KEY)
   let p = await promote(undefined, script)
-  exp('Promote refuses when the towns record was never published', p.code !== 0 && p.out.includes('publish-towns-record'), { status: p.code, body: p.out })
-  seedStaging('ward'); putS(STAGING_TOWNS, JSON.stringify({ other: { title: 'x' } }))
+  exp("Promote refuses when the town's share card was never published", p.code !== 0 && p.out.includes(KEY) && p.out.includes('has not been published'), { status: p.code, body: p.out })
+  seedStaging('ward'); putS(KEY, '{not json')
   p = await promote(undefined, script)
-  exp('Promote refuses a towns record that does not match its list', p.code !== 0 && p.out.includes('does not match'), { status: p.code, body: p.out })
-  seedStaging('ward'); { const other = JSON.stringify({ other: { title: 'x' } }); putS(STAGING_TOWNS, other); putS(STAGING_TOWNS_LIST, { sha256: sha256(other) }) }
+  exp("Promote refuses a share-card record that is not JSON", p.code !== 0 && p.out.includes('is not JSON'), { status: p.code, body: p.out })
+  seedStaging('ward'); putS(KEY, JSON.stringify({ other: { title: 'x' } }))
   p = await promote(undefined, script)
-  exp('Promote refuses a towns record with no entry for the town', p.code !== 0 && p.out.includes(`no entry for "${MAP}"`), { status: p.code, body: p.out })
+  exp('Promote refuses a share-card record with no entry for the town', p.code !== 0 && p.out.includes(`no entry for "${MAP}"`), { status: p.code, body: p.out })
   // ⭐ --card-only (Boz, 2026-11-01): the same verification, then sites/<map>/towns.json and nothing else.
-  seedStaging('ward'); store.delete(STAGING_TOWNS_LIST)
+  seedStaging('ward'); store.delete(KEY)
   p = await promote([`--map=${MAP}`, '--card-only'], script)
-  exp('--card-only refuses an unpublished towns record, as the full promote does', p.code !== 0 && p.out.includes('publish-towns-record') && !putsSeen().length, { status: p.code, body: `${p.out} puts=${putsSeen().join(',')}` })
+  exp('--card-only refuses an unpublished share card, as the full promote does', p.code !== 0 && p.out.includes('has not been published') && !putsSeen().length, { status: p.code, body: `${p.out} puts=${putsSeen().join(',')}` })
   seedStaging('ward')
   p = await promote([`--map=${MAP}`, '--card-only'], script)
   const puts = putsSeen()
@@ -167,10 +168,10 @@ try {
   // Each refusal and the card-only bound, removed in turn from a copy of the script: each must turn the card half red.
   const must = (from, to) => (s) => { if (!s.includes(from)) throw new Error(`mutant anchor gone: ${from.slice(0, 70)}`); return s.replace(from, to) }
   for (const [name, transform] of [
-    ['no towns list read as fine', must("  if (!listBuf) throw new Error(`no ${STAGING_TOWNS_LIST}", "  if (false) throw new Error(`no ${STAGING_TOWNS_LIST}")],
-    ['a record that does not match its list pinned', must('  if (sha256(townsBuf) !== townsList.sha256) throw', '  if (false) throw')],
-    ['a record with no entry for the town pinned', must('  if (!JSON.parse(townsBuf)[map]) throw', '  if (false) throw')],
-    ['--card-only skips the verification', must("    const townsBuf = await verifiedTownsRecord()\n    console.log(`card", "    const townsBuf = await getBytes(STAGING_TOWNS)\n    console.log(`card")],
+    ['no share card read as fine', must("  if (!townsBuf) throw new Error(`no ${key}", "  if (false) throw new Error(`no ${key}")],
+    ['a record that is not JSON pinned', must("  try { rec = JSON.parse(townsBuf) } catch { throw new Error(`${key} is not JSON", "  try { rec = JSON.parse(townsBuf) } catch { rec = { [map]: {} }; if (false) throw new Error(`${key} is not JSON")],
+    ['a record with no entry for the town pinned', must('  if (!rec?.[map]) throw', '  if (false) throw')],
+    ['--card-only skips the verification', must("    const townsBuf = await verifiedTownsRecord()\n    console.log(`card", "    const townsBuf = await getBytes(stagingTownsKey(map))\n    console.log(`card")],
     ['--card-only writes beyond its key', must('    await pinTownsRecord(townsBuf)\n    console.log(JSON.stringify({ ok: true, map, cardOnly', "    await put(`hosts/${map}.json`, Buffer.from('{}'), 'x.json')\n    await pinTownsRecord(townsBuf)\n    console.log(JSON.stringify({ ok: true, map, cardOnly")],
   ]) {
     const got = await cardFails(sourceFile('scripts/promote-player-to-prod.mjs', { transform }))
@@ -197,10 +198,15 @@ try {
   expect('a shared key already in production with different bytes refuses — write-once, never overwritten', p.code !== 0 && /write-once/.test(p.out) && p.out.includes(`kit/${PK}/clouds/almanac.json`), { status: p.code, body: p.out })
   seedStaging('legacy')
   p = await promote()
-  j = null; try { j = JSON.parse(p.last) } catch { /* the legacy dry run ends on its own line */ }
-  expect('Promote plans a "legacy" town from the kit\'s player, as before', p.code === 0 && /--dry-run: nothing copied/.test(p.out), { status: p.code, body: p.out })
+  expect('Promote refuses a staging record naming the retired legacy player, by name', p.code !== 0 && p.out.includes('retired player (legacy)'), { status: p.code, body: p.out })
 } finally { server.close() }
 
+if (process.argv.includes('--mutants')) {
+  // part A again, in a child, with the mutant applied to the Worker: it must fail
+  const child = await run('node', [new URL(import.meta.url).pathname, '--mutate-legacy'], { cwd: ROOT }).then(() => 0, (e) => e.code ?? 1)
+  console.log(`${child ? '🔴' : '⚪ SURVIVED'} mutant: a legacy host record served as the Ward`)
+  if (!child) fails.push('mutant survived: a legacy host record served as the Ward')
+}
 if (fails.length) {
   console.error(`⛔ ${fails.length} failure(s):`)
   for (const f of fails) console.error('   ' + f)

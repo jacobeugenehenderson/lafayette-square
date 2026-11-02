@@ -32,7 +32,9 @@ NO ROUTINE PURGE: content names give a changed file a fresh name, and our reader
 - **FOLLOW-UP BRIEFS OWED (named, not written):** the photos data move (LS 249 + Huron 59 root `/photos/` paths, Huron's off-host
   logo, LS's 5 missing photos `modern-dollar/03`, `lsrc/01,02,03,06`; first rule OPERATIONS § Photographs ROT vs plan) · console-only ⛔ refusals (154) ·
   Stage has no page boundary (a throw outside any, e.g. HorizonControls' useTownPlace on an unplaced town, still blanks it; the
-  Ward has SceneBroken) · the 130 safe-tier reds have no baseline ·
+  Ward has SceneBroken) · the Ward owes a check that DRAWS a content-named town end to end (a manifest stamped `names: sha256-16` →
+  only content names asked → a drawn frame): the coverage claims-a-hashed-town-loads-end-to-end held for the retired kit player
+  (retired 6565b6f2; theward's download-weight counts content names, it draws nothing) · the 130 safe-tier reds have no baseline ·
   the Ward: `useFailures` not shown to visitors.
 - **STANDING REDS (Ward):** society-frames-what-it-lights + society-flight-has-no-long-frame fail identically before and after the
   pin (Kalends' A/B; frames went green once on the base); cause not established.

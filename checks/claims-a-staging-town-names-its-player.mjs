@@ -3,7 +3,8 @@
  * "DOES EVERY STAGING TOWN SERVE THE PLAYER ITS RECORD NAMES — AND A TOWN THAT NAMES NONE, NONE?"
  *
  * WHY (BRIEF-ward-on-staging, 2026-09-28). The staging Worker serves each town the player its R2
- * record (`staging/sites/<map>/player.json`) names: `ward` or `legacy`. ⛔ A town with no record must
+ * record (`staging/sites/<map>/player.json`) names: `ward`. ⛔ A record naming the retired `legacy` kit player must
+ * refuse BY NAME and serve nothing, never the Ward in its place (2026-11-01). ⛔ A town with no record must
  * 404 and say so — a default player would serve a town the wrong app with nothing on the page to
  * tell (`CLAUDE.md` Layer 0 q2). And a "ward" town's page must name the kit bundle its build pins in
  * `<meta name="ward-kit-base">`, because the renderer's `kitUrl()` reads that and nothing else.
@@ -13,7 +14,7 @@
  *    pass. The source is read too, for the two things behaviour cannot see: no town id written into
  *    the Worker, and no renderer file reading a kit asset through `BASE_URL`.
  * ⛔ Mutation-tested 2026-09-28: `player` defaulted to "legacy" → the no-record town serves 200 and
- *    this goes red.
+ *    this goes red. --mutants (2026-11-01): a legacy record served as the Ward · /_player/ served from the bucket → red.
  *
  * ⛔ LOCAL ONLY — no network, no R2. Usage: node checks/claims-a-staging-town-names-its-player.mjs
  */
@@ -40,9 +41,11 @@ for (const f of walk(join(ROOT, 'src'))) {
 }
 
 // ── Behaviour ────────────────────────────────────────────────────────────────
+async function behaviour(mutate = null) {
+  const out = []
 const SLAB_BASE = 'https://assets.example/staging/'
 const { mf, r2, get: fetchIt } = await workerInMiniflare(WORKER,
-  { SITE_PREFIX: 'staging/sites/', PLAYER_PREFIX: 'staging/player/', WARD_PREFIX: 'staging/ward/', SLAB_BASE, OPERATIONS_URL: 'http://ops.invalid' })
+  { SITE_PREFIX: 'staging/sites/', WARD_PREFIX: 'staging/ward/', SLAB_BASE, OPERATIONS_URL: 'http://ops.invalid' }, { mutate })
 const [none, legacy, ward, bogus, bare] = ['none', 'legacy', 'ward', 'bogus', 'bare'].map(mint)
 const WARD_SHA = hex(), KIT_SHA = hex()
 for (const t of [none, legacy, ward, bogus]) await r2.put(`staging/baked/${t}/manifest.json`, '{}')
@@ -55,7 +58,7 @@ await r2.put(`staging/ward/${WARD_SHA}/index.html`, `<!doctype html><html><head>
 await r2.put(`staging/ward/${WARD_SHA}/build.json`, JSON.stringify({ ward: WARD_SHA, kit: KIT_SHA }), { httpMetadata: { contentType: 'application/json', cacheControl: 'no-cache' } })
 
 const get = (p) => fetchIt(`https://staging.example${p}`)
-const expect = (what, ok, got) => { if (!ok) fails.push(`${what} — got ${got.status}: ${got.body.slice(0, 160).replace(/\n/g, ' ')}`) }
+const expect = (what, ok, got) => { if (!ok) out.push(`${what} — got ${got.status}: ${got.body.slice(0, 160).replace(/\n/g, ' ')}`) }
 const kitTags = (b) => b.match(/<meta name="ward-kit-base" content="([^"]*)"/g) || []
 
 let r = await get(`/${none}/`)
@@ -65,7 +68,9 @@ expect('a town with no slab keeps its slab 404', r.status === 404 && r.body.incl
 r = await get(`/${bogus}/`)
 expect('an unknown player must be refused', r.status === 500 && r.body.includes('sometimes'), r)
 r = await get(`/${legacy}/deep/route`)
-expect('a "legacy" town serves the kit player, with its own kit base and no second one', r.status === 200 && r.body.includes('LEGACY') && kitTags(r.body).length === 1 && r.body.includes('ward-asset-base'), r)
+expect('a record naming the retired legacy player refuses by name, serving neither player', r.status === 500 && r.body.includes(legacy) && r.body.includes('retired player (legacy)') && !r.body.includes('LEGACY') && !r.body.includes('WARD'), r)
+r = await get('/_player/index.html')
+expect('/_player/ (the retired legacy player) is said by name, never served from the bucket', r.status === 404 && r.body.includes('retired') && !r.body.includes('LEGACY'), r)
 // Before the kit bundle exists, a "ward" town must refuse rather than draw without the renderer's files.
 r = await get(`/${ward}/`)
 expect('a "ward" town whose kit bundle is unpublished must 404 naming the kit sha', r.status === 404 && r.body.includes(KIT_SHA), r)
@@ -82,9 +87,26 @@ r = await get(`/${ward}/nothing.png`)
 expect('a missing town file names itself', r.status === 404 && r.body.includes('nothing.png'), r)
 await mf.dispose()
 
+  return out
+}
+fails.push(...await behaviour())
 if (fails.length) {
   console.error(`⛔ ${fails.length} failure(s):`)
   for (const f of fails) console.error('   ' + f)
   process.exit(1)
 }
 console.log('✅ every staging town serves the player its record names; no record, no player, and a Ward page names its kit bundle')
+if (process.argv.includes('--mutants')) {
+  const must = (from, to) => (t) => { if (!t.includes(from)) throw new Error(`[mutant] anchor gone: ${from.slice(0, 70)}`); return t.replace(from, to) }
+  const LIB = join(ROOT, 'src/lib/stagingPlayer.js')
+  let alive = 0
+  for (const [name, m] of [
+    ['a legacy record served as the Ward', { [LIB]: (t) => must("  if (rec.player === 'legacy') return", '  if (false) return')(t).replace("if (rec.player !== 'ward')", "if (rec.player !== 'ward' && rec.player !== 'legacy')") }],
+    ['/_player/ served from the bucket again', { [WORKER]: must('    if (map === RETIRED_PLAYER_SEGMENT) return text(', "    if (map === RETIRED_PLAYER_SEGMENT) { const o = await env.ASSETS.get('staging/player/' + (parts.join('/') || 'index.html')); if (o) return serve(request, o) }\n    if (map === RETIRED_PLAYER_SEGMENT) return text(") }],
+  ]) {
+    const f = await behaviour(m)
+    console.log(`${f.length ? '🔴' : '⚪ SURVIVED'} mutant: ${name}${f.length ? ` (${f[0].slice(0, 100)})` : ''}`)
+    if (!f.length) alive++
+  }
+  if (alive) process.exit(1)
+}

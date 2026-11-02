@@ -4,7 +4,7 @@
 //
 // ⭐ THE CLAIM (Sigil, 2026-11-01; Boz's ruling, Zob's co-sign; Jacob: "all tabs from within the environment").
 // The operator tabs are DERIVED, never listed: every tracked .html, except what the town player ships, which is
-// index.html and tracked public/**.html (publish-player-to-staging ships tracked public/ files). Each wears exactly one
+// index.html and tracked public/**.html (publish-kit-bundle ships tracked public/ files). Each wears exactly one
 // icon link, to src/operator/ward-mark.svg: the Ward's tab mark, copied byte-for-byte from theward-online and recorded
 // in src/operator/ward-mark.source.json. The town player keeps its own mark (the one-icon ruling,
 // claims-a-town-has-one-icon). Five judges, each reading the source of truth:
@@ -15,7 +15,7 @@
 //       it; judge 3 still rejects a data: icon on any operator tab. No decoder until someone inlines the mark.
 //   3 · EVERY OPERATOR TAB — each derived operator page has exactly one rel~=icon link, and it is the mark.
 //   4 · THE PLAYER UNTOUCHED — no player page names the mark, and no src/ code imports it (the build then keeps it out
-//       of the player's graph; measured 2026-11-01: scripts/player-graph.mjs#notThePlayers classes it operator).
+//       of the player's graph).
 //   5 · EVERY BUILT OR ROUTED PAGE IS JUDGED — vite.config.js's serveHelperApps routes and rollupOptions.input are
 //       tracked pages, and each is the player's index.html or inside the operator set.
 // ⭐ MUTANTS (--mutants), each must go RED: (a) a tab with no icon → 3 · (b) a tab wearing a town's mark → 3 ·

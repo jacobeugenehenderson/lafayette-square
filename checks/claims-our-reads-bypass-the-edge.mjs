@@ -12,9 +12,10 @@
  *     cache headers: an object is read (warming the edge), then changed in the bucket, then read again.
  *     probe must not call the changed object fresh (else it is never put back); writeIndex must append to the
  *     CHANGED history (else it forgets manifests a visitor may hold).
- *   ③ THE PLAYER COPY (promote-player-to-prod, legacy), run against the same edge with `npx` stubbed: staging's
- *     player is read by a visitor (its .js cached), republished, then promoted. Production must get the NEW bytes. A
- *     plain read copies a self-consistent stale build (stamp, manifest and .js all cached) and exits 0.
+ *   ③ THE PLAYER COPY (promote-player-to-prod, the Ward), run against the same edge with `npx` stubbed: a visitor's
+ *     page reads staging's Ward pointer (current.json, cached), the Ward republishes a new build, then the town is
+ *     promoted. Production must get the NEW build. A plain read pins the edge's copy of the pointer: a self-consistent
+ *     older build, exit 0. (The retired legacy player's copy was this leg until 2026-11-01.)
  *   ④ BY SOURCE, every file under scripts/, cartograph/ and scratch/promote-rollback/ (plus the compression gate):
  *     no read leans on fetch's `cache: 'no-store'` or a `?cb=${Date.now()}` bust (both measured to do nothing here,
  *     or to be reused); and in a file that imports freshUrl, every fetch/getStored/fetchRaw reads through it, unless
@@ -134,17 +135,24 @@ async function legPlayerCopy(S, fails) {
   const tmp = mkdtempSync(join(tmpdir(), 'reads-bypass-promote-'))
   const bucket = {}
   const edge = await fakeEdge(bucket)
-  const publish = (v) => {   // what publish-player-to-staging leaves: the files, their manifest, the stamp naming it
-    const files = { 'index.html': `<!doctype html><!-- ${v} -->`, 'looks/fx/design.json': '{}', 'app.js': `export const build = '${v}'\n` }
-    for (const [rel, body] of Object.entries(files)) bucket[`staging/player/${rel}`] = Buffer.from(body)
-    const man = Buffer.from(JSON.stringify({ files: Object.entries(files).map(([rel, body]) => ({ rel, md5: md5(Buffer.from(body)) })) }))
-    bucket['staging/player/manifest.json'] = man
-    bucket['staging/player/build.json'] = Buffer.from(JSON.stringify({ assetBase: 'runtime', builtAt: v, manifestMd5: md5(man) }))
+  const sha256 = (b) => createHash('sha256').update(b).digest('hex')
+  const KIT = 'c'.repeat(40)
+  const kitFiles = { 'k.js': 'export const kit = 1\n' }
+  bucket[`staging/kit/${KIT}/k.js`] = Buffer.from(kitFiles['k.js'])
+  bucket[`staging/kit/${KIT}/manifest.json`] = Buffer.from(JSON.stringify({ kit: KIT, files: { 'k.js': sha256(Buffer.from(kitFiles['k.js'])) } }))
+  bucket['staging/sites/fx/player.json'] = Buffer.from('{"player":"ward"}')
+  bucket['staging/sites/fx/towns.json'] = Buffer.from('{"fx":{"title":"Fx","description":null,"icon":null,"iconFrom":"not baked"}}')
+  const publish = (v) => {   // what the Ward's publish leaves: a build at its own sha, its list, then the pointer LAST
+    const sha = (v === 'v1' ? 'a' : 'b').repeat(40)
+    const files = { 'index.html': `<!doctype html><!-- ${v} -->`, 'app.js': `export const build = '${v}'\n` }
+    for (const [rel, body] of Object.entries(files)) bucket[`staging/ward/${sha}/${rel}`] = Buffer.from(body)
+    bucket[`staging/ward/${sha}/build.json`] = Buffer.from(JSON.stringify({ ward: sha, kit: KIT, builtAt: v, files: Object.fromEntries(Object.entries(files).map(([rel, body]) => [rel, sha256(Buffer.from(body))])) }))
+    bucket['staging/ward/current.json'] = Buffer.from(JSON.stringify({ sha, kit: KIT }))
+    return sha
   }
-  bucket['staging/sites/fx/player.json'] = Buffer.from('{"player":"legacy"}')
   publish('v1')
-  for (const k of ['build.json', 'manifest.json', 'index.html', 'looks/fx/design.json', 'app.js']) await fetch(edge.base + 'staging/player/' + k)   // a visitor loads them all
-  publish('v2')
+  for (const k of ['staging/ward/current.json', 'staging/sites/fx/player.json']) await fetch(edge.base + k)   // a visitor's page asks the pointer: the edge caches it
+  const s2 = publish('v2')
   const bin = join(tmp, 'bin'), puts = join(tmp, 'puts')
   mkdirSync(bin); mkdirSync(puts)
   writeFileSync(join(bin, 'npx'), `#!/bin/sh\nk=$(printf %s "$5" | tr / _)\ncat > "${puts}/$k"\n`)
@@ -155,10 +163,10 @@ async function legPlayerCopy(S, fails) {
         env: { ...process.env, PATH: `${bin}:${process.env.PATH}`, ASSET_BASE: edge.base, R2_BUCKET: 'b' }, stdio: 'ignore' })
       p.on('close', ok)
     })
-    const got = join(puts, 'b_player_fx_app.js')
-    if (code !== 0) fails.push(`③ promote-player-to-prod exited ${code} on a republished staging player (it read the edge's copy and refused)`)
+    const got = join(puts, `b_ward_${s2}_app.js`)
+    if (code !== 0) fails.push(`③ promote-player-to-prod exited ${code} on a republished Ward (it read the edge's copy and refused)`)
     else if (!existsSync(got) || readFileSync(got, 'utf8') !== "export const build = 'v2'\n") {
-      fails.push(`③ promote-player-to-prod pinned ${existsSync(got) ? JSON.stringify(readFileSync(got, 'utf8').trim()) : 'nothing'} for app.js — the edge's stale build, into a live town`)
+      fails.push(`③ promote-player-to-prod did not pin the republished Ward build ${s2.slice(0, 8)} (it read the edge's copy of staging/ward/current.json) — the old build, into a live town`)
     }
   } finally { edge.close(); rmSync(tmp, { recursive: true, force: true }) }
 }
@@ -234,7 +242,6 @@ const MUTANTS = [
   ['the gate reads a file plain', 'gate', 'fetchRaw(freshUrl(url), ae)', 'fetchRaw(url, ae)'],
   ['the player copy reads plain with no-store', 'promote', 'r = await fetch(freshUrl(PUBLIC_BASE + key))', "r = await fetch(PUBLIC_BASE + key, { cache: 'no-store' })"],
   ['the player copy reads plain', 'promote', 'r = await fetch(freshUrl(PUBLIC_BASE + key))', 'r = await fetch(PUBLIC_BASE + key)'],
-  ['the pinned-already HEAD reads plain', 'promote', 'fetch(freshUrl(PUBLIC_BASE + dest + f.rel), { method: \'HEAD\' })', "fetch(PUBLIC_BASE + dest + f.rel, { method: 'HEAD' })"],
   ['Operations reads a served manifest with a Date.now() bust', 'serve', 'fetch(freshUrl(`${base}${manifestPath(look)}`))', 'fetch(`${base}${manifestPath(look)}?cb=${Date.now()}`)'],
   ['Operations reads the production page plain', 'serve', 'fetch(freshUrl(`https://${domain}/`))', 'fetch(`https://${domain}/`)'],
 ]

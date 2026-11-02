@@ -5,7 +5,7 @@
  * `staging.theward.online/<map>/link/<token>` on staging and `<domain>/link/<token>` in production.
  * ⛔ Before 2026-09-26 it pointed at `…/_player/link/<token>`, which both Workers answer as a missing
  * FILE — a 404 on a phone, mid-handoff. This drives each Worker's real `fetch` with a fake bucket and
- * asserts the link path gets the player's index.html (the SPA), not a 404; and that the app's router
+ * asserts the link path gets the town's Ward build's index.html (the SPA), not a 404; and that the app's router
  * strips the town segment so `/huron/link/<token>` is the link page.
  *
  *   node checks/claims-the-device-link-page-is-served-on-both-sites.mjs
@@ -34,16 +34,18 @@ const expect = async (what, res, wantIndex) => {
 }
 console.log('The device-link page is served on both sites\n')
 
-const stgEnv = { SLAB_BASE: 'https://assets.theward.online/staging/', PLAYER_PREFIX: 'staging/player/', SITE_PREFIX: 'staging/sites/',
-  ASSETS: bucket({ 'staging/player/index.html': 'STAGING-INDEX', 'staging/baked/huron/manifest.json': '{}',
-    // A staging town serves the player its record names (claims-a-staging-town-names-its-player); this route is the kit's.
-    'staging/sites/huron/player.json': JSON.stringify({ player: 'legacy' }) }) }
+const W = 'a'.repeat(40), K = 'b'.repeat(40)
+const stgEnv = { SLAB_BASE: 'https://assets.theward.online/staging/', SITE_PREFIX: 'staging/sites/', WARD_PREFIX: 'staging/ward/',
+  ASSETS: bucket({ [`staging/ward/${W}/index.html`]: 'STAGING-INDEX', 'staging/ward/current.json': JSON.stringify({ sha: W, kit: K }),
+    [`staging/kit/${K}/manifest.json`]: '{}', 'staging/baked/huron/manifest.json': '{}',
+    // A staging town serves the player its record names (claims-a-staging-town-names-its-player): the Ward.
+    'staging/sites/huron/player.json': JSON.stringify({ player: 'ward' }) }) }
 await expect('staging  /huron/link/AbC123 → the player page',
   await staging.fetch(new Request('https://staging.theward.online/huron/link/AbC123'), stgEnv), 'STAGING-INDEX')
 
 const prodEnv = { ASSETS: bucket({
-  'hosts/provincetown.online.json': JSON.stringify({ v: 2, app: 'legacy', map: 'provincetown', look: 'provincetown', domain: 'provincetown.online' }), /* fixture */
-  'player/provincetown/index.html': 'PROD-INDEX', 'baked/provincetown/manifest.json': '{}' }) }
+  'hosts/provincetown.online.json': JSON.stringify({ v: 2, app: 'ward', map: 'provincetown', look: 'provincetown', domain: 'provincetown.online', ward: W, kit: K }), /* fixture */
+  [`ward/${W}/index.html`]: 'PROD-INDEX', [`kit/${K}/manifest.json`]: '{}', 'baked/provincetown/manifest.json': '{}' }) }
 await expect('prod     provincetown.online/link/AbC123 → the player page',
   await production.fetch(new Request('https://provincetown.online/link/AbC123'), prodEnv), 'PROD-INDEX')
 

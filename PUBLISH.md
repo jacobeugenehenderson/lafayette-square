@@ -34,8 +34,8 @@ If these drift apart you get "Unknown-action" errors, because an older deploymen
 
 | What changed | What to do |
 |---|---|
-| Frontend → **staging** | press **Publish** in Preview — it uploads the slab + the shared player to R2; no branch. ▶ `node checks/claims-the-publish-gate-pushes-where-staging-deploys.mjs` |
-| Promote **staging → prod** | press **Promote to Production** in Preview, per town — slab → `baked/<look>/`, the staged player pinned to `player/<map>/`, then the host record; the town's own domain is then asked what it serves (§0.5). ⛔ No git push. Lafayette Square: legacy, §1 |
+| Frontend → **staging** | press **Publish** in Preview — it uploads the town's slab, then its share card, to R2; no branch. The player is the Ward's, which publishes itself. ▶ `node checks/claims-the-publish-gate-pushes-where-staging-deploys.mjs` |
+| Promote **staging → prod** | press **Promote to Production** in Preview, per town — slab → `baked/<look>/`, the Ward build and kit bundle staging serves pinned to `ward/<sha>/` + `kit/<sha>/`, then the host record; the town's own domain is then asked what it serves (§0.5). ⛔ No git push. Lafayette Square: legacy, §1 |
 | Apps Script only | `cd apps-script && npx clasp push && npx clasp deploy -i <ID>` |
 | Both | Do both. Order doesn't matter. |
 | Worker only | Update in Cloudflare dashboard |
@@ -56,7 +56,7 @@ If these drift apart you get "Unknown-action" errors, because an older deploymen
 |---|---|---|
 | Address | `staging.theward.online/<map>/` — unlisted, durable | the town's own domain, e.g. `provincetown.online` (`www.` 301s to it) |
 | Served by | `workers/staging-sites` — town from the PATH | `workers/production-sites` — town from the HOST (`hosts/<domain>.json`) |
-| Player | `staging/player/` — ONE build, shared by every town | `player/<map>/` — that same build, **pinned per town** by Promote |
+| Player | the Ward build `staging/ward/current.json` names, and its kit bundle | that build and bundle, **pinned per town** by Promote (`ward/<sha>/`, `kit/<sha>/`, write-once) |
 | Slab | `staging/baked/<look>/`, from `assets.theward.online` | `baked/<look>/`, served **through the town's own domain** (same origin) |
 | Gesture | **Publish to Staging** (one Map) | **Promote to Production** (one Map; no other town changes) |
 
@@ -74,17 +74,15 @@ If these drift apart you get "Unknown-action" errors, because an older deploymen
   `wrangler deploy` runs the check first and refuses. ▶ `node checks/claims-a-worker-deploy-darkens-no-town.mjs`
 - ⛔ **No fallback across towns, anywhere.** A host with no record, a town with no prod slab, another town's
   key — each 404s by name. ▶ `node checks/claims-a-production-host-serves-only-its-own-town.mjs`
-- **Lafayette Square is the legacy exception until its cutover:** `lafayette-square.com` (§1, GitHub Pages
-  from `main`) keeps serving; Promote refuses it by name. At cutover `.com` 301s to `lafayettesquare.online`
-  (ruled 2026-09-26), **only after** the new site is serving and Jacob has seen it.
+- **Lafayette Square is served like every town:** `lafayette-square.com` and `www.` answer 301 → `https://lafayettesquare.online/`
+  (measured 2026-11-01), whose host record plays the Ward.
 
 ---
 
 ## 1. Frontend (GitHub Pages) — RETIRED at Lafayette Square's cutover (2026-10-30)
 
-Every town, Lafayette Square included, is served per §0.5. ⛔ Nothing pushes `main`. Until `lafayette-square.com` 301s to
-`lafayettesquare.online` (`BRIEF-ls-cutover-to-its-address` step 5) that address still serves `main`'s last Pages build; the
-workflow and `public/CNAME` retire in its step 6. The old procedure: `cartograph/_archive/PUBLISH-1-github-pages-RETIRED-2026-10-30.md`.
+Every town, Lafayette Square included, is served per §0.5. ⛔ Nothing pushes `main`. `lafayette-square.com` 301s to
+`lafayettesquare.online` (measured 2026-11-01); the workflow and `public/CNAME` retire in `BRIEF-ls-cutover-to-its-address` step 6. The old procedure: `cartograph/_archive/PUBLISH-1-github-pages-RETIRED-2026-10-30.md`.
 
 ## 2. Backend (Google Apps Script)
 
@@ -139,24 +137,13 @@ The Apps Script reads/writes to a Google Sheets workbook. Key sheets:
 | Handles | Device → handle/avatar mapping |
 | QRDesigns | Styled QR images per listing |
 
-## 3. Cloudflare Worker (`worker.js`)
+## 3. Cloudflare Worker (`worker.js`) — RETIRED with Lafayette Square's `.com`
 
-⛔ **Lafayette Square legacy, until its cutover:** serves lafayette-square.com only. Every Ward town's link preview, the town's and a place's, is written by the kit's site Workers (`workers/production-sites`, `workers/staging-sites`) through `src/lib/shareCard.js`. Injects per-place OG meta tags for social link previews on `/place/*` routes.
+`lafayette-square.com` and `www.` answer 301 → `https://lafayettesquare.online/` (measured 2026-11-01), so the `.com` zone's
+`/place/*` proxy and its DNS (§4) serve nothing a visitor reaches. Every town's link preview, a place's included, is written by
+the kit's site Workers through `src/lib/shareCard.js`. The old procedure: `cartograph/_archive/LEGACY-PLAYER-register-RETIRED-2026-11-01.md`.
 
-Deploy via Cloudflare dashboard: **Workers & Pages > lafayette-square-proxy > Edit Code**, paste `worker.js`, save and deploy.
-
-Route: `lafayette-square.com/place/*` on the `lafayette-square.com` zone.
-
-## 4. DNS (Cloudflare)
-
-`lafayette-square.com` DNS is managed by Cloudflare (proxied):
-
-| Record | Value |
-|--------|-------|
-| `A` (×4) | `185.199.108–111.153` (GitHub Pages) |
-| `CNAME www` | `jacobeugenehenderson.github.io` |
-
-GitHub repo Settings > Pages: custom domain `lafayette-square.com`, Enforce HTTPS on.
+## 4. DNS (Cloudflare) — RETIRED with the `.com` (§3)
 
 ## 5. Supabase (Cary — not yet live)
 
@@ -295,7 +282,6 @@ Committed on `docs/conformance-2026-09-21`, **none of it pushed or deployed**. O
 - **Lafayette Square has no `prominence_rank`.** `claims-the-directory-has-exactly-one-order` fails on it until LS is re-ranked.
 - **ROADMAP H-29's silent-override half** — an override key that resolves to nothing is still a silent no-op; the check is owed.
 - **Huron's 14 address+phone pairs** — open, as listed in the coordinator's handoff.
-- ✅ **DONE 2026-09-24 — the staging player carries the published-layer reader.** `node scripts/publish-player-to-staging.mjs` ran (439 files, 50.6 MB → `theward-assets/staging/player/`, build stamp 2026-09-24T20:48Z), so staging.theward.online now lays `staging/live/<look>/listings.json` over the Sheet (Baileys' closed on staging LS). ⚠️ That player is built from `docs/conformance-2026-09-21` — the whole unpushed branch is live on STAGING (not production).
 - **Parked in operations:** balances via Stripe Connect · the moderation queue and mail · whether staging is gated · Namecheap sync · photos (tabled as the likely courtesy line) · a rewrite of the handbook's "A report is not proof of wrongdoing…" sentence.
 
 ## Troubleshooting
