@@ -26,9 +26,15 @@ drawn versus visible (culling), AO, buildings, Provincetown and High Point.
 > need to tighten the perf not ONLY because we always need to, but because we also need to add more to the map and we need to carve
 > out a budget!"
 
-The next content that needs room is **signal lights** (traffic signals). None of our four towns meaningfully has them. So the
-deliverable is not only "faster". It is a **budget per shot with named headroom**. ⛔ Layer 0: a budget is per town × shot × device
-class, derived from measurement, and never a constant that happens to fit LS.
+**Jacob, refining it the same night:** "no; too literal. The point is we need all the space we can get, period. We need the agents to
+survey and census the overdraws, and either develop or develop and deploy a plan to just not draw things we can't see. That means a
+person would improve perf on their desktop by shrinking their browser window because the effective frustum is the literal, rendered
+scene. We also need to collapse the 3-layer tree impostors to a single layer past a certain cone of detail; note we should still keep
+the lesser impostors attached to the hires windsheet."
+
+So the goal is **maximum headroom**, not a budget sized for one new feature. The governing rule: **nothing is drawn that the rendered
+frame can't show.** Cost tracks the actual viewport and frustum, so a smaller window is measurably cheaper. ⛔ Layer 0: every cut-off
+(the detail cone, a pixel threshold) is derived from the camera and viewport, never a constant fitted to LS.
 
 ## 1. The question
 
@@ -66,5 +72,16 @@ Then one verdict per class, among:
 - **arrival-time only**;
 - **cause not established**.
 
-Finally a **proposed budget** per shot and device class, with the headroom it leaves for signal lights. Jacob rules the budget; fix
-briefs follow from his ruling.
+## 5. Phase two: build it (authorised by Jacob: "develop and deploy a plan to just not draw things we can't see")
+
+Each fix is planned to Boz and Zob, built with its check, Zob-reviewed and merged by Boz. Publishing stays Jacob's press.
+- **Cull to the rendered frame**, per class: frustum (per instance for instanced classes) and occlusion where the census shows it pays.
+  The check: halving the viewport measurably cuts drawn instances and GPU ms on the same shot.
+- **Trees: one band past the detail cone.** Beyond a cone derived from the camera and pixel density, an impostor draws one band, not
+  three. It stays bound to the hi-res wind sheet, the same `windAt`/`windDetail` as the near trees. (The bands are already flat,
+  2 triangles each, with the flutter in the fragment stage; `impostorGeometry.js#buildOverheadBandDisc`, 2026-10-04.) The band
+  geometry is built in the player, so which bands draw is a runtime choice; the shipped band pictures stay as they are.
+- **Lamps, AO and buildings**, as the census rules.
+- ⭐ Prefer runtime changes over re-bakes: a player update never breaks a published slab
+  (`feedback_a_player_update_never_breaks_a_published_slab`), so the shipped impostor assets stay as they are wherever possible.
+Report the before and after per shot, same instrument.
