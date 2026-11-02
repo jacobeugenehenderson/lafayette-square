@@ -2,9 +2,9 @@
   "generated_by": "node checks/tier.mjs --json",
   "total": 561,
   "counts": {
-    "safe": 387,
+    "safe": 388,
     "local-effect": 32,
-    "live": 142
+    "live": 141
   },
   "checks": [
     {
@@ -2783,11 +2783,10 @@
     },
     {
       "file": "checks/claims-publish-only-publishes.mjs",
-      "tier": "live",
-      "reasonClass": "outbound",
+      "tier": "safe",
       "why": [
-        "importSource of cartograph/serve.js (its span: foundryOwed), which can: calls fetch()",
-        "importSource of cartograph/pourSteps.mjs, which can: writeFileSync, imports cartograph/pour-code.mjs, which can: runs `git` — not a known read-only git subcommand, runs `git` — not a known read-only git subcommand",
+        "importSource of cartograph/serve.js (its span: foundryOwed) — read, safe",
+        "importSource of cartograph/pourSteps.mjs (its span: export const promoteDiffOf → end) — read, safe",
         "importSource of cartograph/serve.js (its span: runStep) — read, safe",
         "importSource of src/cartograph/BakeModal.jsx (its span: streetLayoutWords) — read, safe"
       ]

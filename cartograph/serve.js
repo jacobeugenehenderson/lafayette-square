@@ -409,15 +409,21 @@ function newestMtime(p) {
  * Foundry's own plan, asked through its own route (GET /looks/<id>/bake: the bake body with P.plan, which runs nothing), so
  * there is no second staleness model. A Foundry running for the Look, or Extent pouring its scene, is owed too (a Slab being
  * rewritten is not the Slab Preview showed); so is a plan that cannot be read: unknown is never "nothing owed".
+ * The rule is here; `readPlan` only carries the question to the plan route (askFoundryPlan, below).
  */
-async function foundryOwed(id) {
+async function foundryOwed(id, readPlan = askFoundryPlan) {
   if (_bakesInFlight.has(id)) return [{ step: null, why: ['the Foundry is running for this Look'] }]
   const scene = readLooksIndex().looks.find(l => l.id === id)?.scene
   if (scene && _seedsInFlight.has(scene)) return [{ step: null, why: [`Extent is pouring ${scene}`] }]
+  const { ok, status, body: j } = await readPlan(id)
+  if (!ok) return [{ step: null, why: [`the Foundry's plan could not be read: ${j?.error || `HTTP ${status}`}`] }]
+  return Array.isArray(j?.stale) ? j.stale : [{ step: null, why: ["the Foundry's plan named no steps"] }]
+}
+/** The Foundry's plan for a Look, from its own route (GET /looks/<id>/bake runs nothing) → { ok, status, body }. ⛔ A loopback:
+ *  the plan is the bake body walked with P.plan, ~650 lines bound to the route, so it is asked, not copied. */
+async function askFoundryPlan(id) {
   const r = await fetch(`http://127.0.0.1:${PORT}/looks/${encodeURIComponent(id)}/bake`)
-  const j = await r.json().catch(() => ({}))
-  if (!r.ok) return [{ step: null, why: [`the Foundry's plan could not be read: ${j.error || `HTTP ${r.status}`}`] }]
-  return Array.isArray(j.stale) ? j.stale : [{ step: null, why: ["the Foundry's plan named no steps"] }]
+  return { ok: r.ok, status: r.status, body: await r.json().catch(() => ({})) }
 }
 
 /**

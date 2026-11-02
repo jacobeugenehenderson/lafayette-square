@@ -15,7 +15,7 @@ gated without anyone remembering to gate it, which is what makes this work on to
 
 A non-zero exit is a **finding for the board**, not a runner fault. The suite reports; it does not fix.
 
-## ⛔ live — 142. Never in a default run.
+## ⛔ live — 141. Never in a default run.
 
 Two reason classes, and they are not the same thing. **outbound** — a demonstrated call out.
 **unreadable** — runs code the parser cannot read, so it *may* contact nothing but cannot be shown
@@ -100,7 +100,6 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `checks/claims-pilgrim-monument-site.mjs` | unreadable | computed import() with no readable target — runs arbitrary modules · imports cartograph/terrainLoad.js, which can: imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync |
 | `checks/claims-preview-frame-cost-splits.mjs` | outbound | calls fetch() · opens a WebSocket · deletes files — only under its own temp dir · runs `/Applications/Google Chrome.app/Contents` — not a known-local command · runs `pkill -9 -f 'user-data-dir=${profile}'` — a ${…} spliced in before the shell parses: its stages cannot be read |
 | `checks/claims-preview-phone-runs-production-passes.mjs` | unreadable | imports vite — its server resolves localhost over DNS (caught by the no-network guard) · imports package(s) vite — not read from source |
-| `checks/claims-publish-only-publishes.mjs` | outbound | importSource of cartograph/serve.js (its span: foundryOwed), which can: calls fetch() · importSource of cartograph/pourSteps.mjs, which can: writeFileSync, imports cartograph/pour-code.mjs, which can: runs `git` — not a known read-only git subcommand, runs `git` — not a known read-only git subcommand · importSource of cartograph/serve.js (its span: runStep) — read, safe · importSource of src/cartograph/BakeModal.jsx (its span: streetLayoutWords) — read, safe |
 | `checks/claims-references-are-sound.mjs` | unreadable | runs `git ls-files --error-unmatch ${script}` — a ${…} spliced in before the shell parses: its stages cannot be read |
 | `checks/claims-repour-changes-nothing.mjs` | unreadable | runs `git ls-files "cartograph/data/` — local, read-only · runs `git show HEAD:${P}` — a ${…} spliced in before the shell parses: its stages cannot be read |
 | `checks/claims-settle-never-crosses-the-open-close.mjs` | outbound | writeFileSync · deletes files · computed import() with no readable target — runs arbitrary modules · imports cartograph/bake-coast.mjs, which can: writeFileSync, mkdirSync, deletes files, imports cartograph/io.js, which can: writeFileSync, imports cartograph/elevationSources.mjs, which can: calls fetch(), imports cartograph/pour-code.mjs, which can: runs `git` — not a known read-only git subcommand, runs `git` — not a known read-only git subcommand, imports cartograph/fetch-lidar-flights.mjs, which can: mkdirSync |
@@ -209,7 +208,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-deadend-look.mjs` | RENDER THE NINE. Read-only. |
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 
-## safe — 387. This is `npm test`.
+## safe — 388. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -467,6 +466,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-proto-vertex-provenance.mjs` | Sizes the handles build: a SOURCE vertex can resolve its centreline node by carried identity |
 | `checks/claims-proto-wall.mjs` | ⭐ THE WALL, ENFORCED BY READING THE SOURCE — not by a comment claiming it. |
 | `checks/claims-public-urls-come-from-the-town-domain.mjs` | EVERY PUBLIC URL THE PLAYER BUILDS TAKES THE TOWN'S DOMAIN FROM ONE HELPER. |
+| `checks/claims-publish-only-publishes.mjs` | "DOES PUBLISH ONLY PUBLISH — AND DOES EVERY STEP HAVE ONE BUTTON, IN ONE PLACE?" (Jacob, 2026-11-01: "we should start really |
 | `checks/claims-radius-has-one-home.mjs` | them. The disc radius lives in `neighborhood_boundary.json` (the applied disc — what |
 | `checks/claims-ramp-ends-classified.mjs` | CLAIM — EVERY HIGHWAY END IS ACCOUNTED FOR, AND AN AT-GRADE END LIES INSIDE THE TOWN'S ASPHALT (H-3 check 5). |
 | `checks/claims-recentre-removes-asymmetry.mjs` | READ-ONLY. Jacob, 2026-09-04: "there is NO asymmetrical case for the CHAIN ITSELF, for |

@@ -186,6 +186,8 @@ would start 91 m out) — confirm with Jacob before LS's next bake.
 - `src/data/buildings.json` in every pour's inputs (Class D).
 - derive.js reads cap ends from raw/centerlines.json by NAME (ends within 2 m), a fallback no guard sees; LS has 11 capped centerlines,
   all shadowed by overlay caps today (Zob, 2026-10-28). A candidate to retire.
+- `serve.js#askFoundryPlan`'s loopback (Zob, 2026-11-01): extract the Foundry's plan from the bake route into `foundryPlan(id)`, called by
+  GET /bake and `foundryOwed`; retires the loopback. Owner: Fuse.
 
 **Branches kept:** `plumb/ls-historic-districts` (9477fdd8, 91178f33): KEEP, a ruling owed; it declares LS's historicDistricts in
 sources.json but writes the OLD dir (`cartograph/data/lafayette-square`), so re-point it to `lafayettesquare` before any merge ·

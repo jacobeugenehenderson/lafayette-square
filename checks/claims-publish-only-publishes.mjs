@@ -25,10 +25,12 @@ const uncomment = (t) => t.split('\n').filter((l) => !/^\s*(\/\/|\*)/.test(l)).j
 async function guard(transform) {
   const fails = []
   const G = await importSource('cartograph/serve.js', { span: { functions: ['foundryOwed'] }, suffix: '\nexport { foundryOwed }', ...(transform ? { transform } : {}),
-    prefix: "const _bakesInFlight = { has: (k) => globalThis.__bif.has(k) }, _seedsInFlight = { has: (k) => globalThis.__sif.has(k) }, PORT = 1\nconst readLooksIndex = () => ({ looks: [{ id: 'a-look', scene: 'a-scene' }] })\nconst fetch = (...a) => globalThis.__fetch(...a)" })
+    prefix: "const _bakesInFlight = { has: (k) => globalThis.__bif.has(k) }, _seedsInFlight = { has: (k) => globalThis.__sif.has(k) }\nconst readLooksIndex = () => ({ looks: [{ id: 'a-look', scene: 'a-scene' }] })" })
   const asked = []
-  const plan = (status, body) => { globalThis.__fetch = async (url, o) => { asked.push([url, o?.method || 'GET']); return { ok: status === 200, status, json: async () => body } } }
-  const run = async (bif = [], sif = []) => { globalThis.__bif = new Set(bif); globalThis.__sif = new Set(sif); return G.foundryOwed('a-look') }
+  let answer = null
+  const plan = (status, body) => { answer = { ok: status === 200, status, body } }
+  const readPlan = async (id) => { asked.push(id); return answer }
+  const run = async (bif = [], sif = []) => { globalThis.__bif = new Set(bif); globalThis.__sif = new Set(sif); return G.foundryOwed('a-look', readPlan) }
   try {
     plan(200, { stale: [] })
     let o = await run(['a-look'])
@@ -38,14 +40,14 @@ async function guard(transform) {
     plan(200, { stale: [{ step: 'ground', why: ['x'] }] })
     o = await run()
     if (o[0]?.step !== 'ground') fails.push(`A · the Foundry's plan naming a step is not owed (${JSON.stringify(o)})`)
-    if (!asked.every(([u, m]) => /\/looks\/a-look\/bake$/.test(u) && m === 'GET')) fails.push(`A · foundryOwed does not ask the Foundry's own plan route, a GET (${JSON.stringify(asked)})`)
+    if (!asked.length || !asked.every((i) => i === 'a-look')) fails.push(`A · foundryOwed does not ask the Foundry's plan for this Look (${JSON.stringify(asked)})`)
     plan(500, { error: 'boom' })
     o = await run()
     if (!o.length) fails.push("A · a plan that cannot be read is read as nothing owed (unknown is never 'nothing')")
     plan(200, { stale: [] })
     o = await run()
     if (o.length) fails.push(`A · an empty plan is owed (${JSON.stringify(o)})`)
-  } finally { delete globalThis.__fetch; delete globalThis.__bif; delete globalThis.__sif }
+  } finally { delete globalThis.__bif; delete globalThis.__sif }
   return fails
 }
 
@@ -58,6 +60,9 @@ function route(serve) {
   else if ((git >= 0 && git < owed) || (up >= 0 && up < owed)) fails.push('B · the publish route asks foundryOwed AFTER git or an upload')
   if (!/if \(owed\.length\) \{[\s\S]{0,400}res\.writeHead\(409[\s\S]{0,400}Run the Foundry first[\s\S]{0,300}return\s*\}/.test(r)) fails.push('B · an owed step does not answer 409 "Run the Foundry first" and return')
   if (/runStep\(|runIfDirty\(|\/bake\b[^\n]*method: 'POST'|bakeLook\(/.test(r)) fails.push('B · the publish route runs the Foundry itself')
+  const ask = serve.slice(serve.indexOf('async function askFoundryPlan('), serve.indexOf('\n}\n', serve.indexOf('async function askFoundryPlan(')))
+  if (!/async function foundryOwed\(id, readPlan = askFoundryPlan\)/.test(serve) || !/await fetch\(`http:\/\/127\.0\.0\.1:\$\{PORT\}\/looks\/\$\{encodeURIComponent\(id\)\}\/bake`\)/.test(ask) || /method/.test(ask))
+    fails.push("B · foundryOwed does not ask the Foundry's own plan route by a GET (askFoundryPlan)")
   return fails
 }
 
@@ -93,7 +98,7 @@ function extent(x) {
 // ── F ──
 async function street(t = {}) {
   const fails = []
-  const P = await importSource('cartograph/pourSteps.mjs', t.ps ? { transform: t.ps } : {})
+  const P = await importSource('cartograph/pourSteps.mjs', { span: { from: 'export const promoteDiffOf' }, ...(t.ps ? { transform: t.ps } : {}) })
   const d = P.promoteDiffOf('PROMOTE-DIFF {"streets":[40,42]}')
   if (JSON.stringify(d) !== '{"streets":[40,42]}' || P.promoteDiffOf('promote changes x') !== undefined) fails.push('F · promoteDiffOf does not read the PROMOTE-DIFF line (and only it)')
   const outs = [P.streetLayoutOf(false, null), P.streetLayoutOf(true, { streets: [40, 42] }), P.streetLayoutOf(true, null)]
@@ -130,7 +135,8 @@ if (process.argv.includes('--mutants')) {
     ['the publish route calls the Foundry', { serve: must('      const owed = await foundryOwed(id)\n', "      await fetch(`http://127.0.0.1:${PORT}/looks/${id}/bake`, { method: 'POST' })\n      const owed = await foundryOwed(id)\n") }],
     ['the guard removed', { serve: must('      const owed = await foundryOwed(id)\n', '      const owed = []\n') }],
     ['the Foundry running not owed', { guard: must("  if (_bakesInFlight.has(id)) return [{ step: null, why: ['the Foundry is running for this Look'] }]\n", '') }],
-    ['an unreadable plan read as nothing owed', { guard: must("  if (!r.ok) return [{ step: null, why:", '  if (!r.ok) return []; void [{ step: null, why:') }],
+    ['an unreadable plan read as nothing owed', { guard: must("  if (!ok) return [{ step: null, why:", '  if (!ok) return []; void [{ step: null, why:') }],
+    ['the plan asked by a POST, which runs the Foundry', { serve: must("  const r = await fetch(`http://127.0.0.1:${PORT}/looks/${encodeURIComponent(id)}/bake`)", "  const r = await fetch(`http://127.0.0.1:${PORT}/looks/${encodeURIComponent(id)}/bake`, { method: 'POST' })") }],
     ["Preview's Foundry run back", { preview: must("      const pub = await fetch(`${API}/publish`, { method: 'POST' })", "      await fetch(`${API}/bake`, { method: 'POST' })\n      const pub = await fetch(`${API}/publish`, { method: 'POST' })") }],
     ['a code change asks again', { serve: must('        else if (lsAsks.length && !repourConfirmed) {', '        else if ((codeNewer.length || lsAsks.length) && !repourConfirmed) {') }],
     ['Extent pours again', { extent: must('  fetchLooks, createLook, fetchBuildingFootprints,', '  pourMap, fetchLooks, createLook, fetchBuildingFootprints,') }],
