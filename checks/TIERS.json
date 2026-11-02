@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 564,
+  "total": 565,
   "counts": {
-    "safe": 392,
+    "safe": 393,
     "local-effect": 32,
     "live": 140
   },
@@ -297,6 +297,14 @@
       "why": [
         "writeFileSync",
         "computed import() with no readable target — runs arbitrary modules"
+      ]
+    },
+    {
+      "file": "checks/claims-a-display-dims-its-far-side.mjs",
+      "tier": "safe",
+      "why": [
+        "importSource of src/displays/lightShow/engine.js — read, safe",
+        "importSource of src/instances/registry.js — read, safe"
       ]
     },
     {

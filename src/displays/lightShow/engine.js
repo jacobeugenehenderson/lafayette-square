@@ -56,6 +56,7 @@ export function validateDrawer(drawer, where) {
 export function validateDisplay(display, drawer, where) {
   validateDrawer(drawer, where)
   drawerDir(display.drawer, where)   // under displays/<name>/, as the bake demands
+  if (display.backDim !== undefined && !(display.backDim >= 0 && display.backDim <= 1)) throw new Refusal(`[lightShow] ⛔ ${where}: backDim (${display.backDim}) is how far the bulbs facing away from the eye dim, 0 … 1`)
   if (display.dimUplights !== undefined && !(display.dimUplights >= 0 && display.dimUplights <= 1)) throw new Refusal(`[lightShow] ⛔ ${where}: dimUplights (${display.dimUplights}) is a fraction of the uplights, 0 … 1`)
   const st = display.strands
   if (!(st?.glow > 0 && st?.show > 0 && st?.ringRadiusM > 0)) throw new Refusal(`[lightShow] ⛔ ${where}: strands needs glow, show and ringRadiusM`)
@@ -180,6 +181,15 @@ export const mmss = (seconds) => { const t = Math.round(seconds); return `${Math
  * `level` the channel's glow, and a gentle shimmer (a motion, centred on 1, so `level` is the glow's time-averaged
  * level: Boz, 2026-11-01). ▶ node checks/claims-a-display-is-authored-on-its-own-channel.mjs
  */
+/**
+ * THE BACK DIM (Jacob, 2026-11-01: "dimming the rear lights away from the camera … for greater dimension"; released by Boz
+ * after his eye on the show channel): a bulb's light × 1 − backDim × (1 − n·v) / 2, where n is the bulb's outward
+ * direction from the set-piece's axis (horizontal, unit) and v the unit direction from the bulb to the eye. Facing the eye
+ * (n·v = 1) it is whole; on the far side (n·v = −1) it is dimmed by backDim. Derived from the camera every frame, never
+ * a fixed side; `backDim` is the display's own authored value (identity record, 0 … 1; absent = 0, no dim, the neutral
+ * default), for the glow and the show alike. ▶ node checks/claims-a-display-dims-its-far-side.mjs
+ */
+export function backDimFactor(backDim, nx, nz, vx, vy, vz) { return 1 - backDim * (1 - (nx * vx + nz * vz) / (Math.hypot(vx, vy, vz) || 1)) / 2 }
 export const GLOW_SHIMMER = 0.25
 export function glowColour(base, level, c, row, now) { const h = hash(c * 131 + row), w = level * (1 + GLOW_SHIMMER * Math.sin(now * 1.5 + h * 30)); return [base[0] * w, base[1] * w, base[2] * w] }
 

@@ -27,7 +27,7 @@ import { useTownFrame } from '../../lib/useTownFrame.js'
 import * as THREE from 'three'
 import useTimeOfDay from '../../hooks/useTimeOfDay'
 import { townClockOf } from '../../lib/townClock.js'
-import { validateDrawer, compileRun, showAt, showSeconds, glowColour, inSeason, uplightTarget, OPEN_SECONDS } from './engine.js'
+import { validateDrawer, compileRun, showAt, showSeconds, glowColour, inSeason, uplightTarget, OPEN_SECONDS, backDimFactor } from './engine.js'
 import { kelvinToRgb, validateDisplayChannel } from '../showChannel.js'
 import { nightsOn, displayStateAt, refuseScheduleSense, prevDate } from '../showSchedule.js'
 import { getTodSlotRow, getTodSlotDaysAhead } from '../../cartograph/animatedParam.js'
@@ -113,6 +113,8 @@ export default function LightShow({ display, channel: given, extent, calendar, c
   const st = display.strands
   if (!(st?.glow > 0 && st?.show > 0 && st?.ringRadiusM > 0)) throw new Refusal(`[LightShow] ⛔ ${where}: strands needs glow, show and ringRadiusM`)
   if (st.show % st.glow || st.glow % extent.ridge.sides) throw new Refusal(`[LightShow] ⛔ ${where}: strands.show (${st.show}) must be a whole multiple of strands.glow (${st.glow}), and glow of the ridge's ${extent.ridge.sides} sides, so the glow strands are show strands`)
+  const backDim = display.backDim ?? 0                          // the display's own; absent is the neutral default: no dim
+  if (!(backDim >= 0 && backDim <= 1)) throw new Refusal(`[LightShow] ⛔ ${where}: backDim (${display.backDim}) is how far the bulbs facing away from the eye dim, 0 … 1`)
   if (!(st.footHeightM >= 0 && st.footHeightM < extent.ridge.yM)) throw new Refusal(`[LightShow] ⛔ ${where}: strands.footHeightM (${st.footHeightM}) must be authored, from the base up to below the ridge (${extent.ridge.yM.toFixed(1)} m)`)
   const preview = useDisplayPreview(s => s.modes[display.id])
   // Load the drawer only when the display can be on: Stage's preview, or a calendar to read the season from; from the
@@ -143,7 +145,13 @@ export default function LightShow({ display, channel: given, extent, calendar, c
       box.expandByPoint(new THREE.Vector3(e.tx, extent.ridge.yM, e.tz)); box.expandByPoint(new THREE.Vector3(e.bx, footY, e.bz))
       r = Math.max(r, bulbRadius(Math.hypot(e.bx - e.tx, footY - extent.ridge.yM, e.bz - e.tz), rows))
     }
-    return { box, r, world: new THREE.Box3(), fb: new THREE.Vector2() }
+    // each bulb's place in the set-piece's frame and its outward direction from the axis (for the back dim)
+    const at = new Float32Array(ends.length * rows * 5)
+    ends.forEach((e, s) => { for (let j = 0; j < rows; j++) {
+      const t = (j + 0.5) / rows, x = e.tx + (e.bx - e.tx) * t, y = extent.ridge.yM + (footY - extent.ridge.yM) * t, z = e.tz + (e.bz - e.tz) * t, h = Math.hypot(x, z) || 1
+      at.set([x, y, z, x / h, z / h], (s * rows + j) * 5)
+    } })
+    return { box, r, at, world: new THREE.Box3(), fb: new THREE.Vector2(), eye: new THREE.Vector3() }
   }, [ends, st, extent, rows])
   const day = useRef(null)                                      // the nights of the day before and of today, once a day
 
@@ -237,6 +245,7 @@ export default function LightShow({ display, channel: given, extent, calendar, c
     }
     if (unlit.current) { unlit.current = false; showLight() }
     const avg = [0, 0, 0]; let n = 0
+    const eye = backDim > 0 ? root.current.worldToLocal(reach.eye.copy(three.camera.position)) : null   // the eye, in the set-piece's frame
     // The show OVERTAKES the glow (Jacob, 2026-10-31): a glow strand's bulb stays lit white until the show's front reaches
     // it, then it takes the show's colour; at the close the white takes the strands back the same way. Never a fade-out.
     for (const s of hang === 'all' ? order.all : order.glow) {
@@ -244,7 +253,9 @@ export default function LightShow({ display, channel: given, extent, calendar, c
       for (let j = 0; j < rows; j++) {
         const row = F.pinH + j, r = show ? (show.reveal ? show.reveal(c, row) : 'on') : 'off'
         const rgb = r === 'spark' ? [255, 246, 228] : r === 'on' ? show.colour(c, row).map(v => v * lit.show) : real && mode !== 'off' && !toDark ? glowColour(warm, lit.glow, c, j, now) : [0, 0, 0]
-        tmp.c.setRGB(rgb[0] / 255, rgb[1] / 255, rgb[2] / 255)          // the light inside the glass (additive: unlit adds nothing)
+        let k = 1
+        if (eye) { const b = (s * rows + j) * 5, A = reach.at; k = backDimFactor(backDim, A[b + 3], A[b + 4], eye.x - A[b], eye.y - A[b + 1], eye.z - A[b + 2]) }
+        tmp.c.setRGB(rgb[0] / 255 * k, rgb[1] / 255 * k, rgb[2] / 255 * k)   // the light inside the glass (additive: unlit adds nothing), its far side dimmed
         coreRef.current.setColorAt(order.pos[s] * rows + j, tmp.c)
         if (rgb[0] + rgb[1] + rgb[2] > 0) { avg[0] += rgb[0]; avg[1] += rgb[1]; avg[2] += rgb[2]; n++ }
       }

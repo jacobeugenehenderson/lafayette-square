@@ -207,7 +207,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-deadend-look.mjs` | RENDER THE NINE. Read-only. |
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 
-## safe — 392. This is `npm test`.
+## safe — 393. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -230,6 +230,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-a-corner-is-where-one-turns.mjs` | ⭐⭐⭐ A CORNER IS WHERE ① TURNS — THE LABEL NEVER DECIDES IT. A CENSUS, not a gate: where the owner label changes on |
 | `checks/claims-a-curb-arc-belongs-to-one-tile.mjs` | CLAIM — IN THE FROZEN SHAPE, A CURB CONTOUR BELONGS TO ONE TILE, SO A RUN (skelId · side · poly) IS LISTED ONCE. |
 | `checks/claims-a-deck-is-every-object-that-covers-it.mjs` | IS EVERY POINT A DECK OBJECT COVERS ON THE DECK? |
+| `checks/claims-a-display-dims-its-far-side.mjs` | "DOES A DISPLAY DIM ITS FAR SIDE FROM THE EYE, BY ITS OWN AUTHORED AMOUNT, FROM THE CAMERA EVERY FRAME?" (Jacob, |
 | `checks/claims-a-display-dims-its-set-piece-only-while-lit.mjs` | "DO A SET-PIECE'S UPLIGHTS DIM ONLY WHILE ITS DISPLAY IS LIT?" (Jacob, 2026-10-31: "it's only during the show/glow that |
 | `checks/claims-a-display-draws-only-what-hangs.mjs` | "DOES THE LIGHT SHOW DRAW ONLY WHAT HANGS, AND NOTHING WHILE IT IS DARK?" (Boz's (3), 2026-11-02, after the PTown frame |
 | `checks/claims-a-display-hangs-only-in-season.mjs` | "ARE THE STRANDS THERE ONLY WHEN THEY WOULD BE?" (Jacob, 2026-10-31: "hide the strands out of season"; "All cords |
