@@ -38,7 +38,8 @@ index.html → main.jsx → App.jsx              ← URL route switch, top-level
     │       │   ├── TownScope                 what the leaves read (townContext.js): the shot, the selection
     │       │   │                             (selectedId + onSelectBuilding), the listings — no player store
     │       │   ├── TownPlace                 the ONE writer of the town's place (lib/townPlace.js — sun, moon,
-    │       │   │                             season, sky), its terrain and, when given, its clock (<Town time>).
+    │       │   │                             season, sky), its terrain and, when given, its clock (<Town time>: an
+    │       │   │                             instant that holds · <Town timeOffsetMs>: now + offset, ticking).
     │       │   │                             Town draws nothing until the place and terrain are this town's.
     │       │   ├── FrameLimiter · TimeTicker · SkyStateTicker · ShaderLinkGuard
     │       │   ├── StageShadows · StageFog · LampGlowDriver · NeonDriver
