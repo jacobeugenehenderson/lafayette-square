@@ -170,11 +170,13 @@ export const runSeconds = (run) => OPEN_SECONDS * 2 + run.reduce((a, s) => {
 
 /**
  * THE SCHEDULE IS THE DISPLAY'S OWN LOOK CHANNEL (r-a-display-is-authored-on-its-own-look-channel; Boz's rulings and Zob's
- * conditions, 2026-11-01). `at(minute)` is the channel on the town's day, { glow, show, kelvin, showEvery }
- * (../showChannel.js#displayAt over that day's slot minutes); the engine keeps no clock and no sun of its own.
+ * conditions, 2026-11-01). `at(minute)` is the channel on the town's day, { glow, show, kelvin, showEvery, open }
+ * (../showChannel.js#displayAt over that day's slot minutes; `open`, inside one of its show windows); the engine keeps
+ * no clock and no sun of its own.
  *   · A SHOWTIME is a minute m of the town's clock with m % showEvery = 0 (from the town's midnight; showEvery is the
- *     one in force at m) at which the WHOLE run has show > 0: a show is never clipped, so a run the channel's show would
- *     fall to 0 under is no showtime. Inside a run, its level follows the channel.
+ *     one in force at m) at which the WHOLE run has show > 0 and lies inside a window: a show is never clipped, so a run
+ *     the channel's show would fall to 0 under, or that a window would end, is no showtime. Inside a run, its level
+ *     follows the channel.
  *   · Off the shows it GLOWS while the channel's glow > 0, and is off otherwise.
  * `showtimesOn` reads one day; a run that starts late crosses midnight on that day's channel (the next day's slots differ
  * by a minute or two).
@@ -182,12 +184,12 @@ export const runSeconds = (run) => OPEN_SECONDS * 2 + run.reduce((a, s) => {
 const DAY_MIN = 1440
 export function showtimesOn(at, seconds) {
   const out = [], len = seconds / 60
+  const plays = (m) => { const a = at(m); return a.show > 0 && a.open }   // Show above 0, inside a window (displayAt#open)
   for (let m = 0; m < DAY_MIN; m++) {
-    const { showEvery, show } = at(m)
-    if (m % showEvery || !(show > 0)) continue
+    if (m % at(m).showEvery || !plays(m)) continue
     let whole = true
-    for (let k = 1; k < len && whole; k++) if (!(at((m + k) % DAY_MIN).show > 0)) whole = false
-    if (whole && !(at((m + len - 1e-6) % DAY_MIN).show > 0)) whole = false
+    for (let k = 1; k < len && whole; k++) if (!plays((m + k) % DAY_MIN)) whole = false
+    if (whole && !plays((m + len - 1e-6) % DAY_MIN)) whole = false
     if (whole) out.push(m)
   }
   return out
