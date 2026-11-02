@@ -1,6 +1,6 @@
 # BAKE §4.6 as it stood before 2026-09-26 — the LS tree-gate table (measured 2026-07-23)
 
-Retired from `cartograph/BAKE.md §4.6` on 2026-09-26: its counts were a single town's, dated, and no longer reproduced (LS bakes 5111, not 5001). The live home is `BAKE.md §4.6`, which carries the rule and the commands.
+Retired from `cartograph/FOUNDRY.md §4.6` on 2026-09-26: its counts were a single town's, dated, and no longer reproduced (LS bakes 5111, not 5001). The live home is `FOUNDRY.md §4.6`, which carries the rule and the commands.
 
 ## 4.6 What the tree gates actually exclude (measured 2026-07-23)
 

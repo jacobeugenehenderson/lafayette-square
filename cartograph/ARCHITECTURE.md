@@ -33,7 +33,7 @@ The codebase is a **public-facing runtime app** plus a small set of **standalone
 └────────────────┘                  └──────────────────────────────┘
 ```
 
-**Note on Meteorologist's shape:** it shipped as a **standalone app** (`/meteorologist.html`), not a Stage panel — the earlier "authoring UI lives inside Stage" plan was not executed. The publish-loop pattern still holds; only the editor's housing differs. See [`../meteorologist/ARCHITECTURE.md`](../meteorologist/ARCHITECTURE.md). **Note on Stage's artifact:** the planned `stage-config.json` never materialized — every Stage channel folds **field-by-field into `scene.json`** (the slab); there is no separate stage-config layer (see `BAKE.md §5`, `DOC-CODE-COHERENCE.md` B1).
+**Note on Meteorologist's shape:** it shipped as a **standalone app** (`/meteorologist.html`), not a Stage panel — the earlier "authoring UI lives inside Stage" plan was not executed. The publish-loop pattern still holds; only the editor's housing differs. See [`../meteorologist/ARCHITECTURE.md`](../meteorologist/ARCHITECTURE.md). **Note on Stage's artifact:** the planned `stage-config.json` never materialized — every Stage channel folds **field-by-field into `scene.json`** (the slab); there is no separate stage-config layer (see `FOUNDRY.md §5`, `DOC-CODE-COHERENCE.md` B1).
 
 **Properties of this pattern, used everywhere:**
 
@@ -456,7 +456,7 @@ The post-FX stack is **declared once and installed identically in production, St
 - **Decision (why):** a fork duplicates the pipeline + the driver and drifts (proven — Preview's DoF rotted). Declaring the pipeline once + installing it by mode makes "add a pass / fix a driver / change an order" touch *one* place, inherited by all three surfaces. The `platform` field also **absorbs `preview-measurement`'s inclusion manifest** (one SSoT, not two). Follow-on Phases 4 (the scene tree onto the same manifest) + 5 (fold render-conformance/preview-measurement in) remain in the HANDOFF.
 
 ### Bake chain — async, re-read, dirty-skip
-- **Async handler:** `serve.js` POST `/looks/:id/bake` runs each step via `runStep` (non-blocking, progress to BakeModal, no clock kill, Cancel — `BAKE.md §2`); a per-look `_bakesInFlight` set rejects concurrent bakes against the same Look (409).
+- **Async handler:** `serve.js` POST `/looks/:id/bake` runs each step via `runStep` (non-blocking, progress to BakeModal, no clock kill, Cancel — `FOUNDRY.md §2`); a per-look `_bakesInFlight` set rejects concurrent bakes against the same Look (409).
 - **Re-read key:** Stage passes `bakeLastMs` to <Town>; **it must be `Date.now()` on every bake completion**, never the bake duration — it is what makes a consumer read the new bytes (on disk it rides the URL as `?bake=`, SLAB-CONTRACT §10.2).
 - **Dirty-skip:** `writeIfChanged` (§7) — skip identical bytes, but touch mtime on no-op; **patch another step's output before writing your own** (else the patch is newer than your output and `needsRebuild` reruns you every bake). Input artifacts produced outside serve's graph (e.g. `skeleton.json`) pass `{touch:false}`.
 
@@ -469,7 +469,7 @@ clean/ (skeleton.json ← skeleton.js · overlay.json ← Survey/Measure) ─┤
   node bake-terrain.js → src/data/terrain.{json,bin}
 POST /api/cartograph/looks/<id>/bake  (incremental; ?force=1 forces) → public/baked/<id>/*
   the step list is the route's own (`bakePlan()`) — ▶ node checks/claims-bake-progress-shows-the-route.mjs prints it;
-  what each step reads and writes: BAKE.md §2
+  what each step reads and writes: FOUNDRY.md §2
 Runtime reads public/baked/<id>/* + the live src/data/* (trees/water/paths/lamps/ribbons).
 ```
 

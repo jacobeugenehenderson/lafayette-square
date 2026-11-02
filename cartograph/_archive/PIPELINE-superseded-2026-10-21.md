@@ -552,7 +552,7 @@ the bake.
 **How you would tell it was wrong:** something authored and visible in the tool is missing from the
 deployed map. That is always a bake-completeness question, never a rendering one.
 
-→ `BAKE.md` · `STAGE.md` · `PREVIEW.md` · `SLAB-CONTRACT.md`
+→ `FOUNDRY.md` · `STAGE.md` · `PREVIEW.md` · `SLAB-CONTRACT.md`
 
 ---
 
@@ -642,7 +642,7 @@ and do not add line numbers.
 | **P7** | Curb stroke | one continuous stroke per block, wrapping the whole silhouette | `RIBBONS.md §3.5` |
 | **P8** | Land use / median | per-block color; the tree-lawn picks up its block's color | `RIBBONS.md §3.5` |
 | **P9** | Materials | every band mapped to a layer; per-Look colors | `STAGE.md` |
-| **P10** | Bake siblings | ground / ao / buildings / lamps / scene → the slab | `BAKE.md` |
+| **P10** | Bake siblings | ground / ao / buildings / lamps / scene → the slab | `FOUNDRY.md` |
 
 **One module, two consumers:** P4–P8 run through the *same* construction for both the live 2D view and
 the offline bake — **live == bake by construction.** ⚠️ That is a property of the *path*, not a

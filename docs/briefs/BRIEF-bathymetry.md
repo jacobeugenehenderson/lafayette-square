@@ -16,7 +16,7 @@ the depth at which the bottom stops showing, depth does not matter.
 
 ## What is built — the consumer (`7c33bfbe`)
 `bake-terrain` writes the bed under the mapped water: the USACE equilibrium profile h = A·y^⅔ down to the town's
-visibility depth (`BAKE.md` "the bed"; `references/` f-cem-dean-a-table, r-bottom-visibility-default). The water
+visibility depth (`FOUNDRY.md` "the bed"; `references/` f-cem-dean-a-table, r-bottom-visibility-default). The water
 thins over it. ⭐ Real depth REPLACES the profile inside that band, and nothing downstream changes.
 ▶ `node checks/claims-the-shore-is-closed.mjs` (the median depth never shrinks going out).
 
@@ -57,7 +57,7 @@ level sits.
 - **Datum:** VDatum converts the lidar's NAVD88 to the town's tidal datums at its position (step 2 above). A lake has no
   tide: its datum is the lake's own chart datum or mean level, from its source. ⛔ A coastal town with no conversion
   fails loudly; it never keeps the flight's level in silence.
-- **Consumers — BUILT** (0962f27b … f52ad01f; the contract is `cartograph/BAKE.md` "every consumer reads the level"):
+- **Consumers — BUILT** (0962f27b … f52ad01f; the contract is `cartograph/FOUNDRY.md` "every consumer reads the level"):
   the level, the traced high-water flood, the tide-band ground, the revetment. Loam: the datum. Strand: the level and the shore.
 - ⭐ **The shape, ruled 2026-09-27 (Jacob): a LOW-tide level and a HIGH-tide level per town, and a clock between them.**
   Build the two levels now (the default shown = high; low = MLLW from the same VDatum call); the clock is next. And a

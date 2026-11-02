@@ -2,7 +2,7 @@
 
 > ## ✅ DONE + FOLDED INTO CANON (2026-07-05, Ward). This brief is retired; live doctrine now lives in:
 > - **`NEIGHBORHOOD-INPUTS.md §5.2`** (the roster editor — polygon membership + `activate`/`hide`) **& `§5.1`** (the render ledger — retired the LS source hardwire).
-> - **`cartograph/PIPELINE.md §prebake`** (membership applied in `pipeline.js` → the single `map.json` source) · **`BAKE.md` step 4** (render ledger + belt-and-suspenders cull) · **`PREBAKE.md §2.5`** · **`ARCHITECTURE.md`** (bake-buildings) · **`OPERATIONS.md`** (the operator flow, step 7 "Edit buildings") · **`INTAKE.md`** (commit persists the polygon).
+> - **`cartograph/PIPELINE.md §prebake`** (membership applied in `pipeline.js` → the single `map.json` source) · **`FOUNDRY.md` step 4** (render ledger + belt-and-suspenders cull) · **`PREBAKE.md §2.5`** · **`ARCHITECTURE.md`** (bake-buildings) · **`OPERATIONS.md`** (the operator flow, step 7 "Edit buildings") · **`INTAKE.md`** (commit persists the polygon).
 > **What shipped:** the neighborhood is the boundary-STREET polygon (not the circle); toggle-ghost curation in the Extent tool; `{activate,hide}` per-scene overrides; per-scene render ledger (LS byte-identical). Branch `roster-editor` (commits `1e3ff4b1`→`f75d5358`). *The body below is the historical brief — kept for context; the canon supersedes it.*
 
 > **Agent: WARM → Ward** (in the `roster-editor` worktree). Supervised live (Jacob + Boz); build in reviewable steps.
@@ -23,7 +23,7 @@ The only building-inclusion control today is the coarse **center+radius clip** �
 1. `CLAUDE.md` (route gate) → `ORIENTATION.md` → `README.md §⭐ START HERE`.
 2. **`NEIGHBORHOOD-INPUTS.md §5.1–5.2`** (the Building Ledger + pre-bake feature add/remove — this IS the spec) and **§0.0** (the governing law: every artifact is a best guess, everything overridable — hide is the SHAPE-layer instance).
 3. `project_doped_artifact_placecard_edit_pattern` (the override-store pattern) and `project_v2_measure_translucency_strokes` (selection-highlight precedent).
-4. `cartograph/BAKE.md` + `cartograph/PIPELINE.md §prebake/§pour` (where the clip + bake live).
+4. `cartograph/FOUNDRY.md` + `cartograph/PIPELINE.md §prebake/§pour` (where the clip + bake live).
 
 ## The interface (per the RE-SCOPED banner — Jacob, 2026-07-04)
 **Surface = the Designer** (`src/cartograph/CartographApp.jsx`), **mounting `SlabBuildings` (interactive) in the ortho top-down view for the curation mode** — you get top-down clicking *and* the existing `idAtFace`/`discard` machinery *and* WYSIWYG (watch it vanish in the real scene). Curation is a per-building override alongside color/roof, unified in the ledger. *(This supersedes the original "Extent tool footprint overlay" surface — the Designer already ships the selection + discard machinery; reinventing it on flat Extent footprints was the waste Ward caught. Verified: the Designer's current 2D building layer `SceneMapLayers` draws flat footprints that are NOT clickable, and `idAtFace` lives on `SlabBuildings` — so mounting `SlabBuildings` in ortho is the bridge that gives top-down + machinery.)*

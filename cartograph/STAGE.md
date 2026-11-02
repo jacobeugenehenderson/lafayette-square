@@ -1,8 +1,8 @@
 # Stage — the Look tool
 
-> **Status: v0.2 (2026-07-04; base v0.1 2026-06-09) — topic-doc + poured-scene camera note.** The keystone Reference for the **Stage** tool — the third of cartograph's three authoring tools (Survey · Section · Stage; `ARCHITECTURE.md §2.1`). Grounded against `bake-scene.js` (the channel inventory it freezes) and the SC.1–SC.7 channel wiring, not assembled from prose. Paired with **`BAKE.md`** (the publish stage that runs `bake-scene.js`) and **`SLAB-CONTRACT.md §4`** (the `scene.json` format).
+> **Status: v0.2 (2026-07-04; base v0.1 2026-06-09) — topic-doc + poured-scene camera note.** The keystone Reference for the **Stage** tool — the third of cartograph's three authoring tools (Survey · Section · Stage; `ARCHITECTURE.md §2.1`). Grounded against `bake-scene.js` (the channel inventory it freezes) and the SC.1–SC.7 channel wiring, not assembled from prose. Paired with **`FOUNDRY.md`** (the publish stage that runs `bake-scene.js`) and **`SLAB-CONTRACT.md §4`** (the `scene.json` format).
 >
-> The Stage is **both** an *idea* (the LOOK stage — `… section → bake → stage`) and a *tool* (the Look-authoring surface in `CartographApp`, plus the standalone `/stage` page). This doc owns *what the Stage authors and how it persists*. It does **not** re-document the `scene.json` byte format (that's `SLAB-CONTRACT.md §4`) or the bake chain that emits it (that's `BAKE.md`).
+> The Stage is **both** an *idea* (the LOOK stage — `… section → bake → stage`) and a *tool* (the Look-authoring surface in `CartographApp`, plus the standalone `/stage` page). This doc owns *what the Stage authors and how it persists*. It does **not** re-document the `scene.json` byte format (that's `SLAB-CONTRACT.md §4`) or the bake chain that emits it (that's `FOUNDRY.md`).
 
 ---
 
@@ -12,7 +12,7 @@ The **Stage** authors the **LOOK** — and only the look. Materials, color, visi
 
 Two load-bearing facts:
 
-1. **The Stage is wall #2 — the store dies into `scene.json`.** Survey freezes chains→polygons (wall #1); the Stage freezes the live **look store** into a flat snapshot the runtime trusts (wall #2). Past the bake, no store exists — the runtime reads `scene.json` cold (`BAKE.md §0`, `[[project_two_bakes_two_walls]]`).
+1. **The Stage is wall #2 — the store dies into `scene.json`.** Survey freezes chains→polygons (wall #1); the Stage freezes the live **look store** into a flat snapshot the runtime trusts (wall #2). Past the bake, no store exists — the runtime reads `scene.json` cold (`FOUNDRY.md §0`, `[[project_two_bakes_two_walls]]`).
 
 2. **Every look channel is a *time-of-day curve*, not a scalar.** The Stage's vocabulary is the **TodChannel**: a value keyed at the day's eight named sun moments (dawn · sunrise · noon · golden · sunset · dusk · night · deep night = the sun's nadir, `animatedParam.js#NAMED_TOD_SLOTS`), each slot's minute computed from SunCalc at the town's own latitude and date, so a single Look renders golden-hour, noon, and deep-night faithfully. Sky pivoted (2026-05-20 ADR) to kit-canonical 4-anchor cards + per-Look *sparse overrides*; the rest follow `{ values: {…} }`. The operator drags a slider at the current scrubbed time; the channel records the curve. *(`skyLightChannels.js` defaults · `skyGrid.js` migration.)*
 
@@ -43,7 +43,7 @@ Two load-bearing facts:
 >
 > **Light Sources card (was "Lamps"; 2026-06-22, expanded 2026-06-30)** — the man-made emitters:
 > - **`lantern`** — the lamp's own light: **Bulb · Glow · Glow size · Colour**, TOD-animatable, × the automatic dusk→night turn-on; its Colour colours every lamp light (warm gaslamps at Dusk, cold glitter at Night in the kit's day). It no longer drives the pools — each knob moves one thing (`OPERATIONS` "Lamps").
-> - **`lantern`** = `{ intensity: Bulb, glow: Glow }` and **`lampGlow`** = `{ pool, radius, trees }` (2026-09-26) — five knobs, each moving one thing (`OPERATIONS` "Lamps"); the pool reach is derived, not a knob. The pool renders **baked into the ground** (the contour-correct ring map's R channel; G = contact shadow), not a floating disc — see `BAKE.md` / `SLAB-CONTRACT.md §3.1`.
+> - **`lantern`** = `{ intensity: Bulb, glow: Glow }` and **`lampGlow`** = `{ pool, radius, trees }` (2026-09-26) — five knobs, each moving one thing (`OPERATIONS` "Lamps"); the pool reach is derived, not a knob. The pool renders **baked into the ground** (the contour-correct ring map's R channel; G = contact shadow), not a floating disc — see `FOUNDRY.md` / `SLAB-CONTRACT.md §3.1`.
 > - **`archLight`** ("Arch uplights") — the Gateway Arch's foot uplights; moved here from Hero & Horizon 2026-06-30 (a light source, not framing).
 >
 > ⚠️ **Open (Phase B):** the lamp is conceptually **three** things the panel still conflates as two — the **fixture** (lantern + its aura, which is really Bloom), the **ground pool**, and the **canopy emitter**; and the pool should be its own knob, not slaved to Lantern Brightness (`scratch/LOOK-PANEL-TAXONOMY.md`).
@@ -70,7 +70,7 @@ How it persists + resolves (the store is the convergence point — `useCartograp
 |---|---|
 | **Input** | the operator's intent, dragged on the Stage cards |
 | **Working draft** | `public/looks/<id>/design.json` — autosaved within ~300 ms of every tweak (`ARCHITECTURE.md §3` layer 1); survives reloads; never prompts |
-| **Who freezes it** | `bake-scene.js` (run as the `scene` step of the bake — `BAKE.md §2` step 6) |
+| **Who freezes it** | `bake-scene.js` (run as the `scene` step of the bake — `FOUNDRY.md §2` step 6) |
 | **Output** | `public/baked/<id>/scene.json` — the flat per-Look snapshot (**wall #2**) |
 | **Format SSOT** | `SLAB-CONTRACT.md §4` |
 | **Who consumes it** | the runtime's look consumers — `CelestialBodies` (sky/light), `PostProcessing` (post-FX), `GatewayArch` (arch), `NeonBands` (neon), `BakedLamps` (lampGlow), material binders — all via `useSceneJson`, cache-busted by `scene.json.bakedAt` |
@@ -108,13 +108,13 @@ Where channels persist (verified in `bake-scene.js`):
 - ✅ **SC.2 / SC.3** post-FX — 10 channels baked & consumed (`PostProcessing`); the hardwired night-bloom boost was deleted in favor of operator-authored bloom + `skyGain` (`ARCHITECTURE.md §7`).
 - ✅ **SC.7** arch + horizon — promoted off the `archState` module bridge in `StageApp.jsx`; now persists across reloads and reaches production via the slab.
 - ✅ **Neon** — per-Look core/tube/bleed curve; defaults `1/1/1`.
-- ✅ **Materials / surfaces** — per-material PBR + colors, layer/LU colors, `layerVis` (which is also a bake lever — `BAKE.md §2`).
+- ✅ **Materials / surfaces** — per-material PBR + colors, layer/LU colors, `layerVis` (which is also a bake lever — `FOUNDRY.md §2`).
 - ✅ **Per-shot look overrides** (channel-variant cascade, §1.5) — implicit per-channel overrides per shot (`shotLooks`), resolved at `useSceneJson` (production) / `activeChannel` (Stage); shot axis shipped end-to-end. Platform axis still unbuilt.
 
 **PARTIAL (the V1 tail — "Slab completeness" in `BACKLOG.md`):**
 - 🟡 **SC.5 camera** — Browse heading fully baked; Hero keyframes author + bake whole (aim, time, length, mode); Browse altitude / Hero target / Street position intentionally live (§4). The Browse frame bakes and every surface opens on it (§5.1).
   - **⚠️ Poured-scene 3D framing (`CartographApp.jsx CameraRig`) — PARTIAL / OPEN BUG (2026-07-03/04).** The `SHOTS` table is **LS-authored ABSOLUTE coordinates** — browse sits on LS's building centroid (95, −158) framed to LS's 1292×1025 bounds. For any *other* poured scene those numbers frame the wrong place, so the perspective-shot apply branch gained a **scene-scaled, origin-centered override** for `sceneKey !== 'lafayette-square' && sceneBoundary?.radius > 0`: **browse** = overhead over the origin, altitude fit to the boundary radius R (`(R*1.12)/(min(1,aspect)·tan(fov/2))`); **hero** = a scaled static oblique (`[-R·.75, R·.5, R·.75] → [0, R·.02, 0]`); **street** = ground-level at the origin. `sceneBoundary` is added to the effect deps + the applied-shot key so the override re-applies when the async boundary lands.
-    - **⚠️ STILL BROKEN — this did NOT fix the symptom.** Browse still frames **"too high and slightly to the left"** for a poured scene, and after the upstream street clip (`BAKE.md` / `pipeline.js`) made the 2D content bounds symmetric the operator reports **"no difference"** in 3D. The baked ground is a **centered ±1461 disc** and the ribbons content bounds are now symmetric (center ≈ origin), yet browse does not frame centered — **root cause unfound.** Jacob: **"don't correct the wrong symptom"** — do *not* just tweak the altitude factor (a 1.3 bump was tried and reverted to 1.12). The open question is why the origin-centered override does not produce a centered frame — a camera-path / content-fit that overrides it, unexamined. **This is the primary open item; the next agent must own it.**
+    - **⚠️ STILL BROKEN — this did NOT fix the symptom.** Browse still frames **"too high and slightly to the left"** for a poured scene, and after the upstream street clip (`FOUNDRY.md` / `pipeline.js`) made the 2D content bounds symmetric the operator reports **"no difference"** in 3D. The baked ground is a **centered ±1461 disc** and the ribbons content bounds are now symmetric (center ≈ origin), yet browse does not frame centered — **root cause unfound.** Jacob: **"don't correct the wrong symptom"** — do *not* just tweak the altitude factor (a 1.3 bump was tried and reverted to 1.12). The open question is why the origin-centered override does not produce a centered frame — a camera-path / content-fit that overrides it, unexamined. **This is the primary open item; the next agent must own it.**
 - 🟡 **SC.4 time defaults** — DawnTimeline is scrub-only; no "save default hour" / sun-curve surface persists. The field is omitted from `scene.json` until that surface exists.
 
 **FORWARD-COMPAT (round-trips, runtime deferred):**
@@ -150,7 +150,7 @@ sessionStorage, never baked). One module: `src/camera/browseFrame.js`.
 
 ## Cross-references
 
-- **`BAKE.md`** — the publish stage that runs `bake-scene.js` (the paired keystone).
+- **`FOUNDRY.md`** — the publish stage that runs `bake-scene.js` (the paired keystone).
 - **`PREVIEW.md`** — the inspection surface that reads the baked Look back (closes `stage → bake → preview`).
 - **`SLAB-CONTRACT.md §4`** — the `scene.json` byte format + the `neon`/`lampGlow`/channel fields (the SSOT this doc points to).
 - **`ARCHITECTURE.md §2` / §2.1 / §3 / §5 / §7** — the Designer/Stage split, the three tools, the Looks model, live-edit rendering, the single-owner-channel doctrine.

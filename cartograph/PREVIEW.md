@@ -1,6 +1,6 @@
 # Preview — inspecting the slab
 
-> **Status: v0.1 (2026-06-10), doctrine amended 2026-06-17 — the topic-doc.** The keystone Reference for the **Preview** stage — the third beat of `… stage → bake → preview`. Grounded against the live render tree in `src/preview/PreviewApp.jsx` and the cost machinery in `src/preview/GpuMonitor.jsx`, not assembled from prose. Completes the front-half rebuild trio: paired with **`STAGE.md`** (authors the Look) and **`BAKE.md`** (freezes it into the slab). Preview *reads* what those two produced — **and, as of the 2026-06-17 standup, *authors deployment policy* at the publish gate** (§0.2).
+> **Status: v0.1 (2026-06-10), doctrine amended 2026-06-17 — the topic-doc.** The keystone Reference for the **Preview** stage — the third beat of `… stage → bake → preview`. Grounded against the live render tree in `src/preview/PreviewApp.jsx` and the cost machinery in `src/preview/GpuMonitor.jsx`, not assembled from prose. Completes the front-half rebuild trio: paired with **`STAGE.md`** (authors the Look) and **`FOUNDRY.md`** (freezes it into the slab). Preview *reads* what those two produced — **and, as of the 2026-06-17 standup, *authors deployment policy* at the publish gate** (§0.2).
 >
 > ▶ **Measurement (Phase 2 E, 2026-10-04):** the startup sequence, TIME TO WARD, per-artifact cost and residency are measured (§4a). **Still unbuilt:** thermal, a real-device reading, and per-target budgets that are measured rather than INTERIM (`deviceProfiles.js`); the June design is `HANDOFF-preview-measurement.md`.
 >
@@ -30,7 +30,7 @@ Two load-bearing facts:
 The *only other* divergences are the GPU profiler, the phone frame, and the layer-toggle matrix laid over the top. This is what makes the desktop cost numbers honest — they measure the shipping desktop render, not a proxy.
 
 2. **Preview mirrors the *Look*; it authors *deployment policy*** (amended 2026-06-17 — a scoped refinement of `feedback_stage_is_source_preview_is_mirror`, "we've grown"). Two halves:
-   - **The Look mirrors** (unchanged). Stage authors the art → the Look serializes → Preview reads the frozen `scene.json` + baked geometry cold (past **wall #2** — `BAKE.md §0`); no live re-derivation. If a *Look* looks right in Stage but wrong in Preview, the bug is the bake (it didn't propagate), never Preview.
+   - **The Look mirrors** (unchanged). Stage authors the art → the Look serializes → Preview reads the frozen `scene.json` + baked geometry cold (past **wall #2** — `FOUNDRY.md §0`); no live re-derivation. If a *Look* looks right in Stage but wrong in Preview, the bug is the bake (it didn't propagate), never Preview.
    - **Deployment policy is authored at the gate.** *Which channels ship to desktop vs. mobile* is **not Look-art — it is a cost-driven deployment decision**, and the cost instrument lives in Preview. So the per-surface **deployment** (`cartograph/data/<map>/deployment.json`) **is owned and edited in Preview** (the publish gate), where the operator decides-while-measuring. This overturned the prior "Preview never writes the slab" rule (`HANDOFF-preview-measurement.md §doctrine`); the distinction it protected — inclusion ("what ships") ≠ the inspection toggles ("what am I measuring") — survives via a *separate editorial surface*: the amber deployment panel, which never reads or writes the inspection store.
    - **The gate now has a button (✅ shipped 2026-06-30, `d1b86dd4`).** The Preview **"Publish" panel** realizes the *one-command save ceremony* (`OPERATIONS.md §Named levers #2`): one click commits the scoped slab pathspecs + pushes. *(The share-image capture moved to Stage, 2026-10-11.)* All DEV-ONLY (git endpoints in `cartograph/serve.js`; the panel hides when the backend is unreachable).
 
@@ -162,7 +162,7 @@ Two caveats that, unstated, would mislead (`PreviewApp.jsx#SceneCaveats`):
 ## 5. The flow — Stage → Bake → Preview
 
 1. **Stage** — the operator authors the Look live (WYSIWYG); autosaves to `design.json` (`STAGE.md`).
-2. **Bake** — one button freezes `design.json` → `scene.json` and pours the geometry/AO into the slab (`BAKE.md`). Stage's "↻" re-fires it in place; Designer's "Stage →" fires it implicitly.
+2. **Bake** — one button freezes `design.json` → `scene.json` and pours the geometry/AO into the slab (`FOUNDRY.md`). Stage's "↻" re-fires it in place; Designer's "Stage →" fires it implicitly.
 3. **Preview** — open `/preview.html?look=<id>` (or follow "← Stage" / "Preview →" between the two). Walk the slab at the authored shots, scrub the day, flip to phone mode, watch the GPU panel. **If the slab holds at acceptable mobile cost → it's ready for the LS app. If a layer is hot → back to Stage to lighten it. If it looks wrong → the bake didn't propagate (re-bake / soft-reload), not a Preview bug.**
 
 Preview closes the authoring loop without authoring anything: it is the operator's *verdict surface*.
@@ -176,14 +176,14 @@ Preview closes the authoring loop without authoring anything: it is the operator
 - **"All on" equals the shipping cost.** Toggles gate `.visible`, never the mount; the all-on total is the production render's cost.
 - **Trust the all-on total, not the sum of deltas.** Shared overdraw makes per-layer deltas non-additive; they isolate *causes*, the total measures *cost*.
 - **Milliseconds are the budget.** Draws/tris are context; frame-time is what users feel. 16ms is the per-layer bar anchor; 33ms is the spike line.
-- **A wrong Preview is a wrong bake, never a Preview bug.** Looks-right-in-Stage / wrong-in-Preview = the bake didn't propagate. Diagnose the bake, then upstream (`BAKE.md §4`).
+- **A wrong Preview is a wrong bake, never a Preview bug.** Looks-right-in-Stage / wrong-in-Preview = the bake didn't propagate. Diagnose the bake, then upstream (`FOUNDRY.md §4`).
 
 ---
 
 ## Cross-references
 
 - **`STAGE.md`** — the Look-authoring tool whose `design.json` the bake freezes; Preview's upstream source.
-- **`BAKE.md`** — the publish stage that pours the slab Preview reads; the paired keystone (`BAKE.md §3` lists every artifact).
+- **`FOUNDRY.md`** — the publish stage that pours the slab Preview reads; the paired keystone (`FOUNDRY.md §3` lists every artifact).
 - **`SLAB-CONTRACT.md`** — the slab's byte format + producer/consumer contracts (the SSOT this doc points to for §1).
 - **`FEATURES.md §3`** (the capability, in a marketer's words) · **`OPERATIONS.md` § Preview** (the knobs) · **`HANDOFF-preview-measurement.md`** (the June design; what is still unbuilt of it: thermal and a real-device reading, §4a).
 - **Code:** `src/preview/PreviewApp.jsx` (render tree + toggle convention) · `src/preview/GpuMonitor.jsx` (cost attribution) · `StripChart.jsx` · `PhoneFrame.jsx` · `TriggerBar.jsx` · `phoneBus.js` · `heroAnim.js` (shared camera model).

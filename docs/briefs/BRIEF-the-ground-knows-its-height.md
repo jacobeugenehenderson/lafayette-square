@@ -48,7 +48,7 @@ at a time (load ≤ 8), scratch slabs only. No Publish or Promote. LS's pour sta
 **Known, not yet in canon:** below 1 cm `gusset.mjs` reads ①'s ε band, not the gusset, and at 0.3 m with B = 5 m it
 reads a slope by construction. Two lines are boarded: `band(a, [])` makes the capacity guard load-bearing, and
 `withSide` is A15's last recovery (BACKLOG). The registers (`ARCHITECTURE` "Ground conformance" / "Terrain doctrine",
-`SECTION`/`RIBBONS`, `FEATURES`, `BAKE.md`) are rewritten when level-across is green and a town ships.
+`SECTION`/`RIBBONS`, `FEATURES`, `FOUNDRY.md`) are rewritten when level-across is green and a town ships.
 ---
 
 ## 0. What this is (Jacob, 2026-10-07/08)
@@ -109,7 +109,7 @@ and its ramps, flares and tapers are the same profile easing h → 0, not cuts.
 ## 2. Read first (the canon, to the section)
 
 - `ORIENTATION.md`, then `README.md §⭐ START HERE`, and the topic canon below.
-- `cartograph/BAKE.md` §the steps (1 pipeline → 2 promote-ribbons → … terrain … 3 ground) and the terrain block
+- `cartograph/FOUNDRY.md` §the steps (1 pipeline → 2 promote-ribbons → … terrain … 3 ground) and the terrain block
   (`bake-terrain.js` reads the coast and lidar only: confirm it reads nothing the ribbons make).
 - `cartograph/ARCHITECTURE.md`: "Ground conformance — one DRAWN surface, everything sits on it", "Terrain doctrine —
   one dial, corner-mean anchor", and the `PAINT_ORDER` decision rule.
@@ -286,7 +286,7 @@ and one pour → its ground (`bake-reads.json`: LS's shipped ground came from an
   declaration: re-pouring it is Jacob's call. Never put an old version of a served file on disk.
 - ⛔ No Publish or Promote.
 - Commit through explicit pathspecs only, checking each commit's name-status.
-- **Registers:** `ARCHITECTURE` "Ground conformance" and "Terrain doctrine", rewritten in place · `BAKE.md` (the step
+- **Registers:** `ARCHITECTURE` "Ground conformance" and "Terrain doctrine", rewritten in place · `FOUNDRY.md` (the step
   order) · `SECTION` / `RIBBONS` (the heights along ① and the deformer's profile) · `FEATURES` (sidewalks that stay level on hills; the kerb
   as built) · `OPERATIONS` (any new authored tolerance).
 - **Superseded text goes to the Diary** (`cartograph/_archive/`, dated). `BRIEF-corner-ramps-and-kerb §9`'s kerb item

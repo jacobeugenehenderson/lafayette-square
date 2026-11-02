@@ -30,7 +30,7 @@ poured town** (Layer 0 — a finding true only on Provincetown is not yet a find
 
 - `arborist/ARCHITECTURE.md` — **"Tree-render reality at LS"** and the size rules (`bandFor`, `normalizeScale`).
 - `arborist/BACKLOG.md` — **"A SPECIES HAS TWO SIZE WINDOWS, AND THE TOWN PICKS ONE"** (2026-08-28). ⭐ This is the likely frame for "too large": street-grown vs forest-grown height, chosen per installation. It touches the rubric keystone and **needs a standup before any build** — you are measuring for it, not building it.
-- `cartograph/BAKE.md §4.5/§4.6` (a census is the union of its wells; the tree gates) and `ROADMAP` **H-17** (the ruled real-where-real, extrapolated-where-necessary pattern; surveyed is nudged, invented is dropped; the dissolve).
+- `cartograph/FOUNDRY.md §4.5/§4.6` (a census is the union of its wells; the tree gates) and `ROADMAP` **H-17** (the ruled real-where-real, extrapolated-where-necessary pattern; surveyed is nudged, invented is dropped; the dissolve).
 
 ## Code sites
 

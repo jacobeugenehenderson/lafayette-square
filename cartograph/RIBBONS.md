@@ -1398,7 +1398,7 @@ TURNS (`protoRAt`; `SECTION` rule 6), never where an owner changes, and bend vs 
 
 ### 3.6 The Wall + the bake
 
-Survey-exit freezes the live `protoShapeTiles` → `shape.json` (`serve.js` POST `/shape`); the full slab bake (`bake-ground.js`) runs the same `buildTileGround` (+ `STREET_SMOOTH`) → the slab. WYSIWYG: live == bake, one module. (`ORIENTATION §3 (the Wall)`, `BAKE.md`.)
+Survey-exit freezes the live `protoShapeTiles` → `shape.json` (`serve.js` POST `/shape`); the full slab bake (`bake-ground.js`) runs the same `buildTileGround` (+ `STREET_SMOOTH`) → the slab. WYSIWYG: live == bake, one module. (`ORIENTATION §3 (the Wall)`, `FOUNDRY.md`.)
 
 ---
 

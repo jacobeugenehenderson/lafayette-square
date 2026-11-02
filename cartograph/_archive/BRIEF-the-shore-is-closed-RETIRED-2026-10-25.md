@@ -109,7 +109,7 @@ has a name**, which the rulings above now forbid. Re-run all five yourself; don'
 ## The work, in order. Stop and report to Jacob at the end of each step.
 
 0. **Confirm the premises.** Read this brief, `BRIEF-boulder-revetment.md` (all of it: §5 the cross-section, §6 the rulings
-   and the predicate), `cartograph/BAKE.md`'s shore rule and the bed, and `ROADMAP H-4`. Open every code site above. Tell
+   and the predicate), `cartograph/FOUNDRY.md`'s shore rule and the bed, and `ROADMAP H-4`. Open every code site above. Tell
    Jacob what you found, especially the height-vs-width inference. ⛔ If the code contradicts this brief, stop and flag.
 1. **The median as a region, made visible.** Build it per town from the two edges in ruling 1. Make it independently
    visible as a **solid diagnostic region with every treatment off**, on the production surfaces (Stage/Preview — ⛔ not a
@@ -131,7 +131,7 @@ its HEIGHT (built before the flatten) moved to `BRIEF-the-ground-knows-its-heigh
    to suit one town (`CLAUDE.md` Layer 0, Class D).
 4. **Build, on Jacob's go.** Then the three-part fix: the binary armour gate and the "named bare passes" semantics are
    **removed**, not left beside the new path (`claims-every-metre-of-drawn-shore-is-named` changes meaning — rewrite it,
-   don't leave it green beside the new check) · registers `cartograph/BAKE.md` (the shore rule), `OPERATIONS`,
+   don't leave it green beside the new check) · registers `cartograph/FOUNDRY.md` (the shore rule), `OPERATIONS`,
    `FEATURES` · superseded text to the Diary.
 
 ## Can the instrument see the change?

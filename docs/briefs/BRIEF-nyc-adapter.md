@@ -51,7 +51,7 @@ just do it in extent"*).
 - `cartograph/SURVEY.md` §4 (the authoring panel — what a width write IS).
 - `ROADMAP.md` **A23** (a machine value in the operator's authoring file must record its author) and
   **A09** (OSM node tags dropped at ingest).
-- `cartograph/BAKE.md` §4.5 (a census is the union of its wells).
+- `cartograph/FOUNDRY.md` §4.5 (a census is the union of its wells).
 - ⭐ **The state adapters are new (2026-10-05, Sward) — read the commits whole before writing a line:**
   `git show 09e8ee84` (the state records: wells + vocabularies; a town's state is the one its OWN OSM
   `addr:state` votes; sub-state wells allowed) and `git show 301da475` (USDA Cropland Data Layer,

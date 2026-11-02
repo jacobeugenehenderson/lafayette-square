@@ -3,10 +3,10 @@
 Superseded text, kept verbatim for the record. Why: Jacob, 2026-10-04 — *"I don't think it makes sense to 'upload' at
 that step. If the operator turns things off or adjusts the pyramid, that's supposed to be 'accepted' when they publish
 and promote."* A bake now ends on disk; Publish freezes the manifest (accepting the deployment) and uploads to staging.
-Live homes: `cartograph/OPERATIONS.md` (*Bake* › THE UPLOAD · *Publish*) · `PUBLISH.md §6` · `cartograph/BAKE.md` ·
+Live homes: `cartograph/OPERATIONS.md` (*Bake* › THE UPLOAD · *Publish*) · `PUBLISH.md §6` · `cartograph/FOUNDRY.md` ·
 `cartograph/FEATURES.md` (Preview). ▶ `node checks/claims-a-bake-never-uploads.mjs`
 
-## `cartograph/BAKE.md` — removed lines
+## `cartograph/FOUNDRY.md` — removed lines
 
 > ⛔⛔ **AND THE POUR'S LAST STEP IS AN UPLOAD (2026-09-01).** `public/baked/` is gitignored; the slab is
 > served from R2. `scripts/upload-baked-to-r2.mjs` runs at the end of the bake and **a failed upload fails

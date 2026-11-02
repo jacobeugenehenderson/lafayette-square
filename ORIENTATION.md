@@ -59,7 +59,7 @@ One compass frame, true GPS positions, no rotation constants (`cartograph/ARCHIT
 
 **Intake.** OSM, parcels, measured widths, footprints, aerials, lidar, labelled by source in one pass. What we take
 in we keep, or a named rule says why not (`claims-intake-is-lossless`). A census is the union of its wells: lamps
-and trees union every source and dedupe, never the first source found (`cartograph/BAKE.md §4.5`).
+and trees union every source and dedupe, never the first source found (`cartograph/FOUNDRY.md §4.5`).
 
 **Skeleton.** The traced lines become a clean, named, simplified frame: a block should have about four corners, not
 thirty wiggles. It is the single source of truth downstream, built to spec; reality comes from Survey.

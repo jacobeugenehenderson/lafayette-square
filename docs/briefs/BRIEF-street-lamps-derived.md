@@ -74,7 +74,7 @@ streetlamps."* **Go on the streetlamp brief.**
 - No bake or pour without Jacob's go in your own window. LS is not re-poured (standing ruling); a lamp-only bake
   of LS needs his explicit go.
 - Commit only your own paths (`git commit -- <paths>`); the working tree is shared.
-- Canon: `ROADMAP H-17` (close what lands), `cartograph/BAKE.md` (the lamp wells), `OPERATIONS` (the knobs),
+- Canon: `ROADMAP H-17` (close what lands), `cartograph/FOUNDRY.md` (the lamp wells), `OPERATIONS` (the knobs),
   `FEATURES` (towns get street lamps). Commit messages name the register reached.
 
 **The instruction is confirm-then-build:** measure, tell Jacob what you found and your proposal, then build. If

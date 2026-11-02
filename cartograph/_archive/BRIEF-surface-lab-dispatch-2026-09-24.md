@@ -70,7 +70,7 @@ Jacob's two examples are **one mechanism**: a distance derived from the map's ow
 - **Trail junction:** dirt distressed around the union.
 
 **It already half-exists:**
-- `bake-ground-ao.js` (the Bake's last step, `cartograph/BAKE.md`) writes per-town rasters, **`ground.poolmap.png`** (R lamp pool · G contact shadow) and **`ground.colormap.png`** (albedo). Their contracts are in `SLAB-CONTRACT.md §3.1–3.2`.
+- `bake-ground-ao.js` (the Bake's last step, `cartograph/FOUNDRY.md`) writes per-town rasters, **`ground.poolmap.png`** (R lamp pool · G contact shadow) and **`ground.colormap.png`** (albedo). Their contracts are in `SLAB-CONTRACT.md §3.1–3.2`.
 - `BakedGround.jsx` already hands them to the grass shader.
 
 **Context maps are more channels baked the same way, from the scene.** Candidates; **propose the set, don't assume it:**
@@ -136,7 +136,7 @@ What is checkable, and must be (mutation-test each: seen to FAIL):
 
 **Canon:**
 - `ORIENTATION`;
-- `cartograph/BAKE.md` (step 8, ground-ao);
+- `cartograph/FOUNDRY.md` (step 8, ground-ao);
 - `SLAB-CONTRACT.md §3`;
 - `docs/briefs/BRIEF-field-shader.md` §4 and its closing gate: the grass factory as template, and the parameter-home wall;
 - `docs/briefs/BRIEF-boulder-revetment.md`;
