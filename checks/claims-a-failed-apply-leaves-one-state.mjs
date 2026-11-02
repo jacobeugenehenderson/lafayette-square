@@ -16,7 +16,7 @@
  *   apply/commit-rollback-rescope   serve.js snapshots on commit + rescope and restores on both.
  *   promote/gesture-not-silent      the pour's ONE promote-ribbons step (cartograph/pourSteps.mjs, which every route runs)
  *                                   passes --yes, serve.js declares none of its own, and --yes prints PROMOTE-DIFF.
- *   extent/error-beside-bake        onBuild's failure goes to bakeResult (rendered by the Bake
+ *   extent/error-beside-bake        onBuild's failure goes to bakeResult (rendered by the Foundry
  *                                   button, naming the step), not seedError.
  *   extent/camera-unchanged-by-failure   no −discCenter translate; a failure restores the prior camera.
  *
@@ -74,7 +74,7 @@ function run(S) {
     `the pour's promote-ribbons step is not declared once with --yes (${promoteCalls.join(' | ') || 'none'}; serve.js declares ${ownCalls} of its own), or --yes no longer prints PROMOTE-DIFF`)
   const onBuild = S.extent.slice(S.extent.indexOf('const onBuild = async'), S.extent.indexOf('(Re-scope folded into onBuild'))
   assert('extent/error-beside-bake',
-    /setBakeResult\([^\n]*\{ error: \{ step/.test(onBuild) && !/setSeedError\(`Pour failed/.test(onBuild) && /Bake failed at “\{bakeResult\.error\.step\}”/.test(S.extent),
+    /setBakeResult\([^\n]*\{ error: \{ at: step/.test(onBuild) && !/setSeedError\(`Pour failed/.test(onBuild) && /The Foundry stopped at “\{bakeResult\.error\.at\}”/.test(S.extent),
     'a failed Bake no longer reports beside the Bake button with the step name')
   assert('extent/camera-unchanged-by-failure',
     !/authoredCam\.x - discCenter\.x/.test(onBuild) && /localStorage\.setItem\('cartograph-camera', priorCam\)/.test(onBuild),
@@ -87,7 +87,7 @@ const MUTATIONS = [
   { name: 'apply/covers-the-pour', apply: (S) => ({ ...S, module: S.module.replace("join(mapCleanDir(scene), 'map.json'), ", '') }) },
   { name: 'apply/commit-rollback-rescope', apply: (S) => ({ ...S, serve: S.serve.replace("restoreApply(scene, 'prebak-rescope')", 'false') }) },
   { name: 'promote/gesture-not-silent', apply: (S) => ({ ...S, pour: S.pour.replace('cmd: `node promote-ribbons.js ${flag} --yes`', 'cmd: `node promote-ribbons.js ${flag}`') }) },
-  { name: 'extent/error-beside-bake', apply: (S) => ({ ...S, extent: S.extent.replace('setBakeResult(e.cancelled ? { cancelled: { step, rolledBack: committedThisRun } } : { error: { step', 'setSeedError(e.cancelled ? { cancelled: { step, rolledBack: committedThisRun } } : { error: { step') }) },
+  { name: 'extent/error-beside-bake', apply: (S) => ({ ...S, extent: S.extent.replace('setBakeResult(e.cancelled ? { cancelled: { at: step', 'setSeedError(e.cancelled ? { cancelled: { at: step') }) },
   { name: 'extent/camera-unchanged-by-failure', apply: (S) => ({ ...S, extent: S.extent.replace('? { x: authoredCam.x, z: authoredCam.z, zoom: authoredCam.zoom }', '? { x: authoredCam.x - discCenter.x, z: authoredCam.z - discCenter.z, zoom: authoredCam.zoom }') }) },
 ]
 
