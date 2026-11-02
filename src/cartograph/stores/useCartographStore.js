@@ -1833,9 +1833,10 @@ const useCartographStore = create((set, get) => ({
   activeLookId: BOOT_TOWN.lookId,
   // The served 0-state Look id (index.json `default`). null until _loadLooks.
   defaultLookId: null,
-  // Set when a ?look= link was refused (it names no Look, or disagrees with ?scene=): no town is resolved, and
-  // nothing may quietly resolve one (Toolbar's self-correction stands down) until the operator picks a Look.
-  lookRefused: null,
+  // Set when the address was refused (a ?look= naming no Look or disagreeing with ?scene=, or a /stage/<town> no Look
+  // belongs to): no town is resolved, and nothing may quietly resolve one (Toolbar's self-correction stands down) until
+  // the operator picks a Look. From the page's first render (BOOT_TOWN), so Stage says why before the Looks load.
+  lookRefused: BOOT_TOWN.refused,
   _looksHydrated: false,
 
   _loadLooks: async () => {

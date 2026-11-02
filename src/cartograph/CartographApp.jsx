@@ -33,7 +33,7 @@ import { shallow } from 'zustand/shallow'
 import { reloadTerrain, onTerrainReload } from '../utils/terrainShader'
 import { streetEyeY } from '../utils/elevation'
 import R3FErrorBoundary from '../components/R3FErrorBoundary'
-import { HeroPreview, useStageMovie } from '../stage/StageApp.jsx'
+import { HeroPreview, useStageMovie, StageNoTown } from '../stage/StageApp.jsx'
 import { SHOT_LABELS, streetStandOf } from '../camera/shots.js'
 import { assertKeyframesAimed } from '../preview/heroAnim.js'
 import { derivedOpeningKeyframe } from '../lib/cameraRegimes.js'
@@ -1163,7 +1163,10 @@ export default function CartographApp() {
         <Toolbar />
         <StatusBar />
 
-        {!inDesigner && (
+        {/* ⛔ No town, no panel: its controls read the town's place, and one thrown outside any boundary blanked the page
+            (/stage/lafayette-square/hero, 2026-11-01). Stage says why instead. */}
+        {!inDesigner && !activeLookId && <StageNoTown />}
+        {!inDesigner && activeLookId && (
           <StagePanelReal shot={shot}
             setShot={(s) => useCartographStore.getState().setShot(s)}
             keyframes={keyframes} setKeyframes={setKeyframes}

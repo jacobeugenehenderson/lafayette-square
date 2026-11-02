@@ -2941,7 +2941,7 @@
       "file": "checks/claims-stage-boots-the-address-town.mjs",
       "tier": "safe",
       "why": [
-        "reads repo files only"
+        "importSource of src/lib/authoringAddress.js — read, safe"
       ]
     },
     {

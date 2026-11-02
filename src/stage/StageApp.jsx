@@ -1241,6 +1241,18 @@ function Collapsible({ label, costMs, defaultOpen = false, children }) {
 
 // ── Stage Panel ─────────────────────────────────────────────────────────────
 
+/** Stage with no town open: why (the address's refusal, from authoringAddress.js#resolveTown), in place of the panel. */
+export function StageNoTown() {
+  const refused = useCartographStore(s => s.lookRefused), hydrated = useCartographStore(s => s._looksHydrated)
+  if (!refused && !hydrated) return null
+  return (
+    <div className="absolute top-4 right-4 w-[400px] z-10 glass-panel rounded-xl p-3" role="alert" style={ALERT_STYLE}>
+      <div className="section-heading mb-1">No town is open</div>
+      <div className="text-body">{refused ?? 'Pick a Look to open its town.'}</div>
+    </div>
+  )
+}
+
 export function StagePanel({ shot, setShot, keyframes, setKeyframes, heroMotion, setHeroMotion, surfacesSlot, skyLightSlot, postSlot, lookForkSlot, shareSlot }) {
   const cam = useCameraState()
 
