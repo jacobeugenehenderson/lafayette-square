@@ -19,7 +19,7 @@
 //       Extent's `repourAsk.resolve(true)`, Preview's `${API}/bake${confirmRepour ? '?repour=1' : ''}` and
 //       `publishStaging(true)`, and api.js's `force=1`/`repour=1` query. A later relabel cannot quietly drop the consent.
 //   5 · THE REGISTERS — the operator and marketer registers (prose: code spans, fences and link targets stripped) carry no
-//       retired word, and no doc (live or Diary) points at the retired BAKE doc, now cartograph/FOUNDRY.md.
+//       retired word, and no tracked file (live or Diary) points at the retired BAKE doc, now cartograph/FOUNDRY.md.
 // ⭐ MUTANTS (--mutants), each must go RED: (a) a "Bake" button label → 1 · (b) a "re-pour" banner → 1 · (c) "the Wall" in
 // OPERATIONS → 5 · (d) a raw step id rendered in a banner → 3 · (e) a new server step with no words → 3 · (f) "Measure"
 // back as a tab label → 1 · (g) a converted "Choose a town" back → 2 · (h) the re-pour consent dropped from Preview → 4.
@@ -162,7 +162,9 @@ const serve = read('cartograph/serve.js')
 const docs = REGISTERS.map((f) => [f, read(f)])
 // git grep exits 1 when it finds nothing, which is the answer wanted here.
 let bakePointers = []
-try { bakePointers = execSync('git grep -n -F BAKE.md -- *.md', { cwd: ROOT, encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n').filter((l) => /(^|[^A-Za-z])BAKE\.md/.test(l.replace(/^[^:]+:\d+:/, ''))) } catch (e) { if (e.status !== 1) throw e }
+// Every tracked file, but this check and the tier records, which quote the command (Zob, 2026-11-01).
+const QUOTES_IT = new Set(['checks/claims-the-chain-has-one-set-of-names.mjs', 'checks/TIERS.json', 'checks/README.md'])
+try { bakePointers = execSync('git grep -n -F BAKE.md', { cwd: ROOT, encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n').filter((l) => !QUOTES_IT.has(l.split(':')[0]) && /(^|[^A-Za-z])BAKE\.md/.test(l.replace(/^[^:]+:\d+:/, ''))) } catch (e) { if (e.status !== 1) throw e }
 
 const JUDGES = [
   [1, 'the screens say no retired word', () => judgeScreens(uiFiles)],

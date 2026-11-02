@@ -31,7 +31,7 @@ Two load-bearing facts:
 | **Input (per Look)** | `public/looks/<id>/design.json` — the operator's authored styling/shape intent (live autosave; see `STAGE.md §4`) |
 | **Who builds it** | the `/looks/:id/bake` route (`serve.js`), every step through `runStep` (`runIfDirty` when it can be dirty-skipped) |
 | **Outputs (the Slab)** | everything under `public/baked/<id>/` — see §2 for what each step writes, and **`SLAB-CONTRACT.md`** for the byte format. ⛔ **Written there, but PUBLISHED to R2** — the tree is gitignored and Publish uploads it (§0) |
-| **Who consumes it** | the **runtime** (LS app) and the cartograph **Look** / **Preview** players — read-only, cache-busted by `?t=<bakedAt>` (Preview is the inspection surface — `PREVIEW.md`) |
+| **Who consumes it** | the **runtime** (LS app) and the cartograph **Look** / **Preview** players — read-only; a published town serves the Slab under content names that cannot go stale, and on disk the server revalidates every read (`src/lib/slabUrl.js`; Preview is the inspection surface — `PREVIEW.md`) |
 
 ⚠️ **The Foundry re-derives first.** For every scene with a `raw/osm.json`, `pipeline.js` + `promote-ribbons.js` run inside the Foundry, so an authoring edit (`overlay.json`, `skeleton.json`) re-derives `map.json` → ribbons before the geometry is made. A scene without OSM skips both, said by name. `POST /:scene/pour` runs the same two steps and then the rest of the Foundry.
 
@@ -59,7 +59,7 @@ The steps, in execution order:
 | 7 | **trees** | `arborist/bake-trees.js` | the SCENE's census + species map + `map.json` (resolved by `cartograph/tree-bake-inputs.mjs`) | `public/baked/<scene>/trees.json` | Per **neighborhood**, never shared (`SLAB-CONTRACT.md §8`). Two axes: `--scene` = whose census; `--heroLook` = whose camera tracks drive `heroTier`. No census on disk → **honest zero**, skip (a blank grove, never another hood's trees). Gated on `layerVis.tree`. *(Was LS-only, writing the fossil `baked/default.json`; retired 2026-07-15.)* |
 | 8 | **ground-ao** | `bake-ground-ao.js` | `map.json`, `design.json`, `ground.json` | `ground.lightmap.png` **+ `ground.poolmap.png` + `ground.colormap.png`** | **last** — slowest (~50 s); depends on `ground.json` mtime, runs after the geometry settles. Emits three "ground-contact" textures (2026-06-22): the **AO lightmap** (building AO), the **ground FX map** (R = lamp light pool, G = tree+lamp contact shadow), and the **ground-color map** (albedo raster for the tree trunk-base blend). See `SLAB-CONTRACT.md §3/§3.1/§3.2`. ⚠️ reads tree positions from the look's own `trees.json` + lamp positions from the per-Look `lamps.json` (or `street_lamps.json`). |
 
-On success the handler stamps the Look's `bakedAt = Date.now()` into the Looks index (`serve.js`, at the end of the Foundry handler) — the canonical `?t=` cache-bust seed (`SLAB-CONTRACT.md §4`).
+On success the handler stamps the Look's `bakedAt = Date.now()` into the Looks index (`serve.js`, at the end of the Foundry handler): the Slab's age, which Look's banner and Publish read. It is not a cache-bust: a published Slab's names are its content (`src/lib/slabUrl.js`).
 
 >
 > **`bake-terrain.js` IS now in the per-Look Foundry run** (2026-07-02, the HiPointe 3D phase). Terrain is a **per-installation** artifact: `bake-terrain.js --scene=<id>` writes the scene's own heightfield to the portable folder `cartograph/data/<scene>/clean/terrain.{json,bin}`, and the Foundry **copies it into the Slab** (`public/baked/<look>/terrain.{json,bin}`) so the runtime fetches it BY lookId like `ground.bin`. `src/utils/terrainShader.js` loads the active Look's Slab terrain and re-points live on a Stage scene-switch (`reloadTerrain`). Runs before `ground` (its adaptive refine samples the relief). *(Rationale: `feedback_installations_are_independent` — a poured neighborhood must lift on its OWN relief.)*
@@ -195,7 +195,7 @@ means the canopy data decides. **A swamp is a forest:** OSM's `wetland=*` subtyp
 
 **OPEN (the gates + the debt):**
 - 🚧 **Curb-freeze gate (D6b/c, PARKED).** §4 above — the Foundry **snapshots a curb that was traced from chains** rather than derived from the frozen frame (⚠️ *rescoped 2026-07-31: not "the curb is unfrozen" — the frozen artifact exists and every non-Survey view consumes it; what's red is **Check C**, the producer — `ORIENTATION §3 (the Wall)` ⚠️ *(was cited as `WALL.md §31` — a section that never existed)**). The blocker to a provably-correct geometry freeze. *(`POLYGON-FIRST.md`, `HANDOFF-freeze-the-curb-in-the-first-bake.md`.)*
-- 🚧 **SC.4 / SC.5 partial capture** — time-of-day defaults (SC.4) persist nothing; per-shot camera (SC.5) freezes only Browse heading, not Hero keyframes / Browse altitude (those stay live). See `STAGE.md §5`.
+- 🚧 **SC.4 / SC.5 partial capture** — time-of-day defaults (SC.4) persist nothing; per-shot camera (SC.5) freezes Browse heading and the Hero keyframes and motion whole (`bake-scene.js`); Browse altitude, Hero target and Street position stay live by design. See `STAGE.md §5`.
 - 🩹 **Corpse-lie C3/C4** — `bake-ground.js:28` still `import`s `buildBlockGeometryV2` (the dead figure-ground) alongside the live `buildTileGround`. Dead weight pending the T4 excision (`DOC-CODE-COHERENCE.md`).
 
 **ASPIRATIONAL (sketched, did not ship — do not wait for it):**
@@ -209,7 +209,7 @@ means the canopy data decides. **A swamp is a forest:** OSM's `wetland=*` subtyp
 - **The Foundry is the second freeze.** Past it, no store, no chains, no live re-derivation — only frozen files. The runtime trusts the Slab absolutely (`SLAB-CONTRACT.md §10`).
 - **One button, one coherent snapshot.** Every sub-step of one Foundry run must agree (`SLAB-CONTRACT.md §9` rule 1). The operator never hand-sequences steps.
 - **The Foundry captures; it does not fix.** A wrong Slab is a wrong *input*. Diagnose upstream (the live construction), never patch the Foundry's output.
-- **Incremental by mtime.** Every output goes through `writeIfChanged`; every step declares its inputs (including its own source); `?force=1` is the override. Never add a step that writes outside this discipline (`ARCHITECTURE.md §7`).
+- **Incremental by content.** A step re-runs when its code or a declared data input differs by content from what it last read (§2); only authoring inputs are judged by mtime (`judge: 'mtime'`). Every output goes through `writeIfChanged`; `?force=1` is the override. Never add a step that writes outside this discipline (`ARCHITECTURE.md §7`).
 - **Format lives in the contract, not here.** `SLAB-CONTRACT.md` is the SSOT for the Slab's bytes; this doc owns the *chain*. Keep them non-overlapping.
 - **`scene.json` is geometry-independent.** A Look-only Foundry run never forces a geometry re-run, and vice-versa — the two axes (geometry / look) are separable by construction.
 

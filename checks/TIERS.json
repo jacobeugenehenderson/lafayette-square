@@ -3181,7 +3181,7 @@
       "file": "checks/claims-the-chain-has-one-set-of-names.mjs",
       "tier": "safe",
       "why": [
-        "runs `git grep -n -F BAKE.md -- *.md` — local, read-only"
+        "runs `git grep -n -F BAKE.md` — local, read-only"
       ]
     },
     {

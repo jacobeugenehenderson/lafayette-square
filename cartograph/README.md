@@ -29,9 +29,9 @@ Cartograph is a single-canvas app with two modes:
 | Mode | Owns | Tools |
 |---|---|---|
 | **Designer** | Geometry: centerlines, measures, caps, couplers, anchors, boundary, eventually tree positions | Survey, Section, Marker; ephemeral per-layer visibility for working clarity |
-| **Look**     | Per-Look styling: colors, visibility, materials, future shaders | Surfaces (color + visibility per material), camera shots, time-of-day, environment |
+| **Look**     | Styling per look preset: colors, visibility, materials, future shaders | Surfaces (color + visibility per material), camera shots, time-of-day, environment |
 
-Designer's "Look →" button only opens Look; if the Slab is older than what the Foundry reads, Look says so and offers the **Foundry** run. Look's "＋ Save as new Look…" is the only deliberate save-as action — it forks the working draft into a new named Look (`valentines`, `cardinals-win`, etc.).
+Designer's "Look →" button only opens Look; if the Slab is older than what the Foundry reads, Look says so and offers the **Foundry** run. Look's "＋ Save as new look preset…" is the only deliberate save-as action — it forks the working draft into a new named look preset (`valentines`, `cardinals-win`, etc.).
 
 ---
 
@@ -137,7 +137,7 @@ Look and Preview mount the **same component** with the same artifact. The bundle
 2. Edit geometry with Survey / Section. Edits autosave to `overlay.json`.
 3. Click **Look →** to open Look on Hero. If the Slab is older than what the Foundry reads, Look says so and offers the **Foundry** run.
 4. Edit colors / visibility in Look's Surfaces. Edits autosave to `looks/<active>/design.json` and show *live* in the rendered scene.
-5. **＋ Save as new Look…** to fork the current state into a named Look.
+5. **＋ Save as new look preset…** to fork the current state into a named look preset.
 6. Switch Looks via the toolbar dropdown. The runtime swaps geometry + style atomically.
 
 ---

@@ -53,3 +53,27 @@ canon is not swept; README §START HERE carries one glossary line for it. ▶ `n
 - tools list: `- **Stage** — the **LOOK / slab**: … **bakes the slab (wall #2, store dies).** … *(… Stage is the 3D look environment + the slab pour.)*`
 - §Section: `perf/D6d + Measure→Section rename remain` (in the docs it is done; only code names remain)
 - `**Pipeline order (Jacob's):** `intake → skeleton → prebake → survey → ⟦WALL⟧ → section → bake → stage`` (now the twelve steps)
+
+## Five more contradictions, fixed in the same branch (Boz's ruling (c); each checked against the code)
+
+- **`cartograph/FOUNDRY.md`** (rot: the Foundry judges code and data by content (serve.js#runIfDirty), mtime only for authoring inputs):
+  - was: - **Incremental by mtime.** Every output goes through `writeIfChanged`; every step declares its inputs (including its own source); `?force=1` is the override.
+
+- **`cartograph/FOUNDRY.md`** (rot: no `?t=` token; a published Slab is served under content names (src/lib/slabUrl.js)):
+  - was: read-only, cache-busted by `?t=<bakedAt>` (Preview is the inspection surface — `PREVIEW.md`)
+
+- **`cartograph/FOUNDRY.md`** (rot: as above; bakedAt is the Slab's age, not a cache-bust seed):
+  - was: into the Looks index (`serve.js`, at the end of the Foundry handler) — the canonical `?t=` cache-bust seed (`SLAB-CONTRACT.md §4`).
+
+- **`cartograph/FOUNDRY.md`** (rot: bake-scene.js freezes heroKeyframes and heroMotion whole):
+  - was: per-shot camera (SC.5) freezes only Browse heading, not Hero keyframes / Browse altitude (those stay live).
+
+- **`cartograph/PREVIEW.md`** (rot: Publish uploads to R2; git is not involved):
+  - was: one click commits the scoped slab pathspecs + pushes.
+
+- **`cartograph/ARCHITECTURE.md`** (rot: "Stage →" (now "Look →") only navigates since 2026-10-04):
+  - was: **The implicit bake.** Designer's "Stage →" navigates immediately and bakes async in the background, so the Stage view's slab re-reads (its `bakeLastMs` re-read key) when the bake finishes. Stage's "↻" re-bakes in place. The user never explicitly "saves the bake" — that language is misleading.
+
+## Look and the look preset (Boz's ruling (a))
+
+"Look" is the step; "the look" is what is authored; a stored, named one is a **look preset**. The button "＋ Save as new Look…" is now "＋ Save as new look preset…" (Toolbar.jsx, and its quotes in OPERATIONS, cartograph/README ×2, ARCHITECTURE, STAGE); "If a Look looks right in Look" is now "If the look looks right in Look" (OPERATIONS, PREVIEW); README's "Per-Look styling" is now "Styling per look preset".

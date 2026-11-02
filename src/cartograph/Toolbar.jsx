@@ -292,7 +292,7 @@ function LooksMenu() {
           ))}
           <div className="carto-looks-sep" />
           <button type="button" className="carto-looks-option" onClick={onNew}>
-            ＋ Save as new Look…
+            ＋ Save as new look preset…
           </button>
           {activeLookId && defaultLookId && activeLookId !== defaultLookId && (
             <button type="button" className="carto-looks-option carto-looks-danger" onClick={onDelete}>

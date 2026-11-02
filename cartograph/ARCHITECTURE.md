@@ -96,7 +96,7 @@ A **Look** is a styling snapshot. Each Look is `{ design.json, public/baked/<id>
 Three layers, in order:
 
 1. **Working draft (autosave, always on).** Every panel tweak hits the active Look's `design.json` within ~300ms. Survives reloads. No prompts.
-2. **Looks (named saved configurations).** First-class names: `kit-default` (the project's 0-state, can't be deleted), `lafayette-square`, `valentines`, `winter`. User explicitly forks via "＋ Save as new Look…". Each carries its own autosaved working state.
+2. **Looks (named saved configurations).** First-class names: `kit-default` (the project's 0-state, can't be deleted), `lafayette-square`, `valentines`, `winter`. User explicitly forks via "＋ Save as new look preset…". Each carries its own autosaved working state.
 
 > ### ⭐⭐ THE 0-STATE IS THE KIT, NOT A TOWN *(ruled 2026-09-19)*
 > `index.json`'s **`default`** is two things at once: the Look every new pour **seeds from**, and the id
@@ -129,7 +129,7 @@ Three layers, in order:
 > state. ▶ `node checks/claims-look-default-has-no-town.mjs`
 3. **Stage channels.** Every Stage channel (materials, color, visibility, sky, post-FX, neon, camera) folds **field-by-field into the Look's `scene.json`** at bake. The once-planned separate `stage-config.json` shader layer never materialized (`DOC-CODE-COHERENCE.md` B1).
 
-**The implicit bake.** Designer's "Stage →" navigates immediately and bakes async in the background, so the Stage view's slab re-reads (its `bakeLastMs` re-read key) when the bake finishes. Stage's "↻" re-bakes in place. The user never explicitly "saves the bake" — that language is misleading. The deliberate save action is *forking* into a new named Look.
+**The Foundry is explicit.** The Designer's "Look →" only navigates (since 2026-10-04); Look measures the Slab's age on entry and offers a Foundry run when it is older than what the Foundry reads. Look's **Foundry** button runs it in place, and the view re-reads the Slab (its `bakeLastMs` re-read key) when it finishes. Nobody "saves the Foundry run". The deliberate save action is *forking* into a new named Look.
 
 **Looks are material-keyed, never feature-keyed.** A Look's `design.json` says *"asphalt is pink"*, not *"the asphalt of street id chain-43A12 is pink"*. So adding geometry in Designer never invalidates a Look — new streets inherit the active Look's rules, re-bake just enlarges the slab with consistent styling. **Designer → maintain → Stage is purely additive.**
 
