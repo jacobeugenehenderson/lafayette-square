@@ -1,5 +1,11 @@
 /**
- * One look frame as RGBA at the drawer's frame size, safe across origins (staging, 2026-11-01: the frames come from the
+ * THE LIGHT SHOW DRAWER'S TWO READS OVER THE NETWORK, each failure built as the kind it is (src/lib/refusal.js):
+ * readDrawerJson, the drawer (looks.json), and rasterFrame, each look frame. For both: no answer, or a body that breaks
+ * off → Transient; a status → httpFailure (404 → Refusal; 5xx, 408, 429 → Transient); bytes that are not what they
+ * claim (not JSON; not an image) → Refusal, since the same bytes give the same answer (LightShow's two Stage
+ * mislabels, 2026-11-01: a malformed drawer and a missing frame both said "failed").
+ *
+ * rasterFrame: one look frame as RGBA at the drawer's frame size, safe across origins (staging, 2026-11-01: the frames come from the
  * asset host, and an <img> given their URL loads them in no-CORS mode and TAINTS the canvas, so getImageData threw
  * SecurityError inside onload, the promise never settled, and the show was silently absent).
  *   · the bytes are FETCHED (CORS mode: the host's Access-Control-Allow-Origin is what admits them), so the status is
@@ -22,14 +28,29 @@
  */
 import { Refusal, Transient, httpFailure } from '../../lib/refusal.js'
 
-export async function rasterFrame(src, w, h, ctx, env) {
-  if (typeof env?.get !== 'function' || !env.Image || !env.URL) throw new Refusal(`the look frame ${src}: rasterFrame was handed no { get, Image, URL } to read it with`)
+const handed = (env, what) => { if (typeof env?.get !== 'function') throw new Refusal(`${what}: the read was handed no { get } to read it with`) }
+async function answer(env, url, what) {
   let res
-  try { res = await env.get(src) } catch (e) { throw new Transient(`the look frame ${src} did not answer: ${e?.message || e}`) }
-  if (!res.ok) throw httpFailure(res, `the look frame ${src} answered ${res.status}`)
+  try { res = await env.get(url) } catch (e) { throw new Transient(`${what} ${url} did not answer: ${e?.message || e}`) }
+  if (!res.ok) throw httpFailure(res, `${what} ${url} answered ${res.status}`)
+  return res
+}
+async function body(res, read, url, what) {
+  try { return await res[read]() } catch (e) { throw new Transient(`${what} ${url} broke off: ${e?.message || e}`) }
+}
+
+/** The drawer's looks.json, parsed. Validating it is the caller's (engine.js#validateDrawer, a Refusal by name). */
+export async function readDrawerJson(url, env) {
+  handed(env, `the drawer ${url}`)
+  const text = await body(await answer(env, url, 'the drawer'), 'text', url, 'the drawer')
+  try { return JSON.parse(text) } catch (e) { throw new Refusal(`the drawer ${url} is not JSON: ${e.message}`) }
+}
+
+export async function rasterFrame(src, w, h, ctx, env) {
+  handed(env, `the look frame ${src}`)
+  if (!env.Image || !env.URL) throw new Refusal(`the look frame ${src}: rasterFrame was handed no Image and URL to decode it with`)
+  const blob = await body(await answer(env, src, 'the look frame'), 'blob', src, 'the look frame')
   const im = new env.Image()
-  let blob
-  try { blob = await res.blob() } catch (e) { throw new Transient(`the look frame ${src} broke off: ${e?.message || e}`) }
   im.src = env.URL.createObjectURL(blob)
   try {
     await im.decode()

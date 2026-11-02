@@ -32,8 +32,8 @@ import { getTodSlotMinutes } from '../../cartograph/animatedParam.js'
 import { checkFaces, strandEnds, pinnacleFace, pinnacleWash, bulbRadius, cordRadius, SOCKET_OF_BULB, avgGlow } from './geometry.js'
 import useDisplayPreview from '../preview.js'
 import { drawerUrls } from '../drawerUrl.js'
-import { rasterFrame } from './rasterFrame.js'
-import { Refusal, Transient, httpFailure } from '../../lib/refusal.js'
+import { readDrawerJson, rasterFrame } from './drawerRead.js'
+import { Refusal, Transient } from '../../lib/refusal.js'
 
 const CORD = '#3a3a3c'                                          // the cords: dark gray (Jacob, 2026-10-31)
 const CORE_OF_BULB = 0.7                                        // the light inside each clear glass bulb, as a fraction of it
@@ -50,22 +50,20 @@ function useDrawer(on, source, { lookId, display, contentRoot, where }) {
     let dead = false
     ;(async () => {
       const { drawer: url, frame } = await drawerUrls(source, { lookId, display, contentRoot, where })
-      const res = await fetch(url)
-      if (!res.ok) throw httpFailure(res, `the drawer ${url} answered ${res.status}`)
-      const d = await res.json()
+      const env = { get: (u) => fetch(u), Image, URL }
+      const d = await readDrawerJson(url, env)
       validateDrawer(d, where)
       const { w, h } = d.frame
       const canvas = document.createElement('canvas'); canvas.width = w; canvas.height = h
       const ctx = canvas.getContext('2d', { willReadFrequently: true })
-      const env = { get: (u) => fetch(u), Image, URL }
       const raster = (rel) => rasterFrame(frame(rel), w, h, ctx, env)
       for (const L of d.looks) for (const layer of L.layers) layer.px = await Promise.all(layer.frames.map(raster))
       if (!dead) setDrawer({ ...d, byId: Object.fromEntries(d.looks.map(L => [L.id, L])) })
     })().catch(e => { if (!dead) setErr(e) })
     return () => { dead = true }
   }, [on, source, lookId, display.id, display.drawer, contentRoot, where])
-  // The cause keeps its class (src/lib/refusal.js): a Refusal stays one; anything else (no answer, a 5xx, a frame that
-  // did not load) may load on a second ask, so it is a Transient. A display is never retried either way; Stage names it.
+  // The cause keeps its class: ./drawerRead.js builds each read's failure as the kind it is, and an untyped throw is a
+  // Transient (src/lib/refusal.js). A display is never retried either way; Stage names it.
   if (err instanceof Refusal) throw new Refusal(`[LightShow] ⛔ ${where}: ${err.message}`)
   if (err) throw new Transient(`[LightShow] ⛔ ${where}: ${err.message}`)
   return drawer

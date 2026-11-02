@@ -403,7 +403,7 @@
       "tier": "safe",
       "why": [
         "importSource of src/displays/DisplayBoundary.js — read, safe",
-        "importSource of src/displays/lightShow/rasterFrame.js — read, safe",
+        "importSource of src/displays/lightShow/drawerRead.js — read, safe",
         "importSource of src/lib/refusal.js — read, safe",
         "importSource of src/lib/refusal.js — read, safe",
         "importSource of src/lib/refusal.js — read, safe",
