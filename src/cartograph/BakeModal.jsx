@@ -54,6 +54,14 @@ function BakeSteps({ progress }) {
 
 // Every state of the modal is this one card: fixed width, the project's tokens (cartograph.css `.carto-bake-modal*`),
 // a dialog to assistive tech, and its buttons in one right-aligned row.
+/** The street-layout outcome in words: changed (each count before → after) · unchanged · not owed · not said. */
+export function streetLayoutWords(o) {
+  if (o?.changed) return `The street layout changed: ${Object.entries(o.changed).map(([k, [a, b]]) => `${k} ${a}→${b}`).join(' · ')}.`
+  if (o?.unchanged) return 'The street layout is unchanged.'
+  if (o?.skipped) return 'The street layout was not re-made: nothing it reads had changed.'
+  return '⛔ The Foundry did not say what it did to the street layout.'
+}
+
 function Card({ title, busy = false, actions = null, docked = false, children }) {
   return (
     <div className={`carto-bake-modal${docked ? ' is-docked' : ''}`}>
@@ -136,10 +144,12 @@ export default function BakeModal() {
   const repourConfirm = useCartographStore(s => s.repourConfirm)
   const bakeProgress = useCartographStore(s => s.bakeProgress)
   const coastResidual = useCartographStore(s => s.coastResidual)
-  if (!bakeRunning && !bakeError && !ribbonsStale && !repourConfirm && !mapRefreshing && !coastResidual) return null
+  const streetLayout = useCartographStore(s => s.bakeStreetLayout)
+  if (!bakeRunning && !bakeError && !ribbonsStale && !repourConfirm && !mapRefreshing && !coastResidual && !streetLayout) return null
   // ⭐ THE COAST STOPPED ON ITS OPEN/CLOSE RESIDUAL (Boz's GO, 2026-10-29): CoastResidualCard. Cancel leaves the town unsigned and unbaked
   if (!bakeRunning && coastResidual) return <CoastResidualCard cr={coastResidual} />
-  // ⛔ A CODE change would re-pour the town (the server stopped first and named the files). Say it; run on confirm.
+  // ⛔ THE HELD POUR (Boz's ruling Q3): the Foundry would rewrite a file a held scene keeps committed, so the server stopped
+  // first and named it. Say it; run on confirm. (A re-run because the code changed is not asked: the press is the consent.)
   if (!bakeRunning && repourConfirm) {
     const { scene, files = [], resume = {} } = repourConfirm
     return (
@@ -148,13 +158,19 @@ export default function BakeModal() {
         <button className="carto-bake-modal-dismiss is-primary" onClick={() => { useCartographStore.setState({ repourConfirm: null }); useCartographStore.getState().runBake({ ...resume, repour: true }) }}>Run every step</button>
       </>}>
         <div className="carto-bake-modal-msg">
-          What {scene}'s last Foundry run read has changed — its code, a data file it reads, its geography or a registry
-          value — or the Foundry would rewrite a file the scene is holding. Running it now re-derives it first:
+          The Foundry would rewrite a file {scene} is holding (its pour is held). Running it now rewrites:
           <ul>{files.map(f => <li key={f}><code>{f}</code></li>)}</ul>
         </div>
       </Card>
     )
   }
+  // ⭐ WHAT THE FOUNDRY DID TO THE STREET LAYOUT (Zob, 2026-11-01): three outcomes, never "no report". Extent's own pour reported
+  // it until Extent stopped pouring; the Foundry reports it now (serve.js, promote-ribbons' PROMOTE-DIFF line).
+  if (!bakeRunning && !bakeError && !mapRefreshing && streetLayout) return (
+    <Card title="The Foundry ran" actions={<button className="carto-bake-modal-dismiss" onClick={() => useCartographStore.setState({ bakeStreetLayout: null })}>OK</button>}>
+      <div className="carto-bake-modal-msg">{streetLayoutWords(streetLayout)}</div>
+    </Card>
+  )
   // ⭐ After a re-pour the 2D map rebuilds itself (useCartographStore `_refreshPouredMap`). This card appears only
   // while that runs, and — ⛔ never a silent stale map — when it FAILS, saying why.
   if (!bakeRunning && !bakeError && mapRefreshing) return (

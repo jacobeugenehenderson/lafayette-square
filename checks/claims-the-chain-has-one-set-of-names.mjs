@@ -16,13 +16,14 @@
 //       through stepWords/stepList, and a list mapped from `.step` may not be joined into text.
 //   4 · THE REQUESTS ARE UNCHANGED — the relabel kept every button's request: the Foundry button's
 //       `runBake({ force: e.altKey })`, the banner's `runBake()`, BakeModal's `runBake({ ...resume, repour: true })`,
-//       Extent's `repourAsk.resolve(true)`, Preview's `${API}/bake${confirmRepour ? '?repour=1' : ''}` and
-//       `publishStaging(true)`, and api.js's `force=1`/`repour=1` query. A later relabel cannot quietly drop the consent.
+//       Preview's publish request (`${API}/publish`, POST: Publish only publishes, 2026-11-01), and api.js's `force=1`/`repour=1`
+//       query. A later relabel cannot quietly drop the consent. (Extent's and Preview's own run-every-step consents were retired
+//       with their Foundry runs: Extent ends at its own work, and Publish runs nothing; checks/claims-publish-only-publishes.mjs.)
 //   5 · THE REGISTERS — the operator and marketer registers (prose: code spans, fences and link targets stripped) carry no
 //       retired word, and no tracked file (live or Diary) points at the retired BAKE doc, now cartograph/FOUNDRY.md.
 // ⭐ MUTANTS (--mutants), each must go RED: (a) a "Bake" button label → 1 · (b) a "re-pour" banner → 1 · (c) "the Wall" in
 // OPERATIONS → 5 · (d) a raw step id rendered in a banner → 3 · (e) a new server step with no words → 3 · (f) "Measure"
-// back as a tab label → 1 · (g) a converted "Choose a town" back → 2 · (h) the re-pour consent dropped from Preview → 4 ·
+// back as a tab label → 1 · (g) a converted "Choose a town" back → 2 · (h) Preview's publish request changed → 4 ·
 // (i) "← Designer" back as the Plan button → 1.
 //   node checks/claims-the-chain-has-one-set-of-names.mjs [--mutants]
 // Read-only. Exits 1 on any failing judge or any mutant left GREEN.
@@ -118,9 +119,7 @@ const REQUESTS = [
   ['src/cartograph/Toolbar.jsx', 'onClick={(e) => runBake({ force: e.altKey })}', "the Foundry button's request (Option-click = force)"],
   ['src/cartograph/StatusBar.jsx', 'onClick={() => runBake()}', "the banner's Foundry request"],
   ['src/cartograph/BakeModal.jsx', 'runBake({ ...resume, repour: true })', "BakeModal's run-every-step consent"],
-  ['src/cartograph/ExtentApp.jsx', 'onClick={() => repourAsk.resolve(true)}', "Extent's run-every-step consent"],
-  ['src/preview/PreviewApp.jsx', "`${API}/bake${confirmRepour ? '?repour=1' : ''}`", "Preview's Foundry request and its consent"],
-  ['src/preview/PreviewApp.jsx', 'onClick={() => publishStaging(true)}', "Preview's run-every-step-and-publish consent"],
+  ['src/preview/PreviewApp.jsx', "fetch(`${API}/publish`, { method: 'POST' })", "Preview's publish request"],
   ['src/cartograph/api.js', "[force && 'force=1', repour && 'repour=1']", "api.js's force/repour query"],
 ]
 function judgeRequests(texts) {
@@ -195,7 +194,7 @@ if (process.argv.includes('--mutants')) {
     ['f · "Measure" back as a tab label', 1, () => judgeScreens(swap('src/cartograph/Panel.jsx', "label: 'Section' }", "label: 'Measure' }"))],
     ['g · a converted "Choose a town" back', 2, () => judgeConverted(swap('src/cartograph/Toolbar.jsx', 'Choose a scene', 'Choose a town'))],
     ['i · "← Designer" back as the Plan button', 1, () => judgeScreens(swap('src/cartograph/Toolbar.jsx', '>← Plan</button>', '>← Designer</button>'))],
-    ['h · the re-pour consent dropped from Preview', 4, () => judgeRequests({ ...texts, 'src/preview/PreviewApp.jsx': texts['src/preview/PreviewApp.jsx'].replace("${confirmRepour ? '?repour=1' : ''}", '') })],
+    ['h · Preview\'s publish request changed', 4, () => judgeRequests({ ...texts, 'src/preview/PreviewApp.jsx': texts['src/preview/PreviewApp.jsx'].replace("fetch(`${API}/publish`, { method: 'POST' })", "fetch(`${API}/publish?bake=1`, { method: 'POST' })") })],
   ]
   console.log('\n  mutants:')
   for (const [name, judge, run] of MUTANTS) {

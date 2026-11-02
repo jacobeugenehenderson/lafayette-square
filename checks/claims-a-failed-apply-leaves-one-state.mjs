@@ -16,7 +16,7 @@
  *   apply/commit-rollback-rescope   serve.js snapshots on commit + rescope and restores on both.
  *   promote/gesture-not-silent      the pour's ONE promote-ribbons step (cartograph/pourSteps.mjs, which every route runs)
  *                                   passes --yes, serve.js declares none of its own, and --yes prints PROMOTE-DIFF.
- *   extent/error-beside-bake        onBuild's failure goes to bakeResult (rendered by the Foundry
+ *   extent/error-beside-bake        onBuild's failure goes to bakeResult (rendered by Extent's save
  *                                   button, naming the step), not seedError.
  *   extent/camera-unchanged-by-failure   no −discCenter translate; a failure restores the prior camera.
  *
@@ -74,8 +74,8 @@ function run(S) {
     `the pour's promote-ribbons step is not declared once with --yes (${promoteCalls.join(' | ') || 'none'}; serve.js declares ${ownCalls} of its own), or --yes no longer prints PROMOTE-DIFF`)
   const onBuild = S.extent.slice(S.extent.indexOf('const onBuild = async'), S.extent.indexOf('(Re-scope folded into onBuild'))
   assert('extent/error-beside-bake',
-    /setBakeResult\([^\n]*\{ error: \{ at: step/.test(onBuild) && !/setSeedError\(`Pour failed/.test(onBuild) && /The Foundry stopped at “\{bakeResult\.error\.at\}”/.test(S.extent),
-    'a failed Bake no longer reports beside the Bake button with the step name')
+    /setBakeResult\([^\n]*\{ error: \{ at: step/.test(onBuild) && !/setSeedError\(`Pour failed/.test(onBuild) && /Saving stopped at “\{bakeResult\.error\.at\}”/.test(S.extent),
+    'a failed save no longer reports beside its button with the step name')
   assert('extent/camera-unchanged-by-failure',
     !/authoredCam\.x - discCenter\.x/.test(onBuild) && /localStorage\.setItem\('cartograph-camera', priorCam\)/.test(onBuild),
     'onBuild translates the camera by −discCenter again, or no longer restores the prior camera on failure')

@@ -2069,7 +2069,7 @@ const useCartographStore = create((set, get) => ({
         return
       }
     }
-    set({ bakeRunning: true, bakeError: null, bakeProgress: null })
+    set({ bakeRunning: true, bakeError: null, bakeProgress: null, bakeStreetLayout: null })
     try {
       // (b) SETTLE pending writes before the bake reads disk — WITHOUT bumping
       // input mtimes (that defeats the bake's incremental dirty-skip → an
@@ -2096,7 +2096,8 @@ const useCartographStore = create((set, get) => ({
       // browser will hit cache and show stale geometry. r.ms (duration) is
       // not unique — incremental bakes can return identical small durations.
       // Use Date.now() to guarantee uniqueness.
-      set({ bakeRunning: false, bakeStale: false, bakeLastMs: Date.now(), bakeDurationMs: r.ms })
+      // ⭐ the Foundry's report of the street layout (serve.js: changed · unchanged · not owed), shown by BakeModal until dismissed
+      set({ bakeRunning: false, bakeStale: false, bakeLastMs: Date.now(), bakeDurationMs: r.ms, bakeStreetLayout: r.streetLayout ?? { unknown: true } })
       // ⭐ THE 2D MAP REFRESHES ITSELF (Jacob, 2026-09-26: "it should always update"). It is built from the ribbons +
       // map.json this page fetched at scene load, and a bake can re-pour both (pipeline + promote), as can a CLI
       // pour — measured 2026-09-24: huron's verges drawn as curbed blocks from pre-re-pour ribbons. So after a bake,
@@ -2157,6 +2158,8 @@ const useCartographStore = create((set, get) => ({
   bakeProgress: null,
   // { scene, files, resume } — a Bake refused because the pour's code changed; BakeModal asks before re-pouring
   repourConfirm: null,
+  // The last Foundry run's street-layout outcome ({ changed } · { unchanged } · { skipped }; { unknown } when it said none).
+  bakeStreetLayout: null,
   // ⭐ a stopped coast step's pieces (serve.js#coastResidualAsk), while the operator looks at them: { scene, identity, n, m2, pieces,
   // viewing (the piece framed, or null for the list), accepting, error, resume }
   coastResidual: null,
