@@ -16,6 +16,10 @@
  * read as inside, and the rethrow would take the whole canvas down (Zob, 2026-11-01). So <Town> resets it to false at its
  * root, and no boundary that provides it encloses a <Canvas> (▶ §9 reads both).
  * The error is passed as it was thrown: a Transient stays a Transient (the boundary retries it), a Refusal a Refusal.
+ * ⚠️ THE ONE SHAPE IT DOES NOT PROTECT: a POSITIVE priority. Such a callback takes over rendering from R3F (gl.render is
+ * then its job), so stopping it stops the frame being drawn: the canvas still freezes, now named. One site in src passes
+ * one: src/components/DofDebug.jsx (`after + 1`, the DoF debug overlay). The postprocessing composer's own loop lives
+ * in node_modules, outside this wrapper. (Zob's note, 2026-11-01; the site found by a census of every call's arguments.)
  * ▶ node checks/claims-a-refusal-is-never-swallowed.mjs (§9: the only import of R3F's useFrame in src is this file's)
  */
 import { useContext, useEffect, useRef, useState } from 'react'
