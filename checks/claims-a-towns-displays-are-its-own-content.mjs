@@ -3,16 +3,22 @@
  * "DOES ONE TOWN'S DISPLAY SHIP IN EVERY TOWN'S PLAYER?" (Boz's ruling, 2026-10-31: a town's looks are TOWN CONTENT.)
  *
  * The kit's public/ is copied into the one kit-player build every town gets, so a town's drawer of looks under public/
- * would ride into every other town's player (Zob measured 355 files, 636 KB). A town's displays live under its own
+ * would ride into every other town's player (Zob measured 355 files, 636 KB). ⭐ WHAT SHIPS IS WHAT GIT TRACKS under
+ * public/: both publishers say so (scripts/publish-player-to-staging.mjs: "a dist file that came from public/ ships only
+ * if its source is tracked"; scripts/publish-kit-bundle.mjs: "every file git tracks under public/"). So this reads
+ * `git ls-files public`, never the disk: the slab under public/baked (gitignored, published per town by
+ * upload-baked-to-r2.mjs) carries the town's OWN displays, and walking it read as a false red (Zob, 2026-11-01). A town's displays live under its own
  * content root (cartograph/data/<town>/content/, served at /content/<town>/, its contentRoot) and nowhere else. So:
  *   1. public/ holds no display files: no path with a `displays` segment, and none naming a town (read from
  *      src/instances, never listed here);
  *   2. every display a town declares has its drawer under that town's own content directory, and the file is there.
  *
  * Usage: node checks/claims-a-towns-displays-are-its-own-content.mjs [--mutants]
- *   --mutants: a drawer planted under public/displays/<town>/ → (1) red; a declared drawer that is not there → (2) red.
+ *   --mutants: a drawer planted under public/displays/<town>/ → (1) red; a declared drawer that is not there → (2) red;
+ *   and the walk put back on the disk, with an untracked slab display file planted → red (the false red, seen).
  */
 import { readdirSync, statSync, existsSync, readFileSync } from 'node:fs'
+import { execFileSync } from 'node:child_process'
 import { join, relative, basename } from 'node:path'
 import { ROOT } from './_scenes.mjs'
 
@@ -25,9 +31,13 @@ const towns = readdirSync(join(ROOT, 'src/instances')).filter(f => f.endsWith('.
   return { file: f, lookId, drawers }
 })
 
-function verdict({ extraPublic = [], extraDrawer } = {}) {
+// What ships under public/: the files git tracks there (both publishers' rule), as paths relative to public/.
+const tracked = execFileSync('git', ['ls-files', '-z', '--', 'public'], { cwd: ROOT, encoding: 'utf8' }).split('\0').filter(Boolean).map(p => p.replace(/^public\//, ''))
+
+// `extraPublic`: planted TRACKED paths · `extraUntracked`: planted paths on disk only (the slab) · `disk`: the mutant, the walk back on the disk.
+function verdict({ extraPublic = [], extraUntracked = [], extraDrawer, disk = false } = {}) {
   const fails = []
-  const pub = walk(join(ROOT, 'public')).map(p => relative(join(ROOT, 'public'), p)).concat(extraPublic)
+  const pub = (disk ? walk(join(ROOT, 'public')).map(p => relative(join(ROOT, 'public'), p)).concat(extraUntracked) : tracked).concat(extraPublic)
   for (const rel of pub) {
     const segs = rel.split('/')
     if (segs.includes('displays')) fails.push(`public/${rel}: a display file in the kit's public/, so every town's player ships it`)
@@ -52,5 +62,11 @@ if (process.argv.includes('--mutants')) {
   ]
   let bad = 0
   for (const [name, m] of mutants) { const f = verdict(m); console.log(`${f.length ? '🔴' : '⚪ SURVIVED'} mutant: ${name}`); if (!f.length) bad++ }
+  // The slab is not public/'s shipped content: an untracked display file under public/baked is no finding, and the walk
+  // put back on the disk would call it one.
+  const slab = { extraUntracked: [`baked/${T.lookId}/content/displays/x/looks.json`] }
+  if (verdict(slab).length) { bad++; console.log('⛔ an untracked slab display file reads as shipped: the check is reading the disk, not git') }
+  const onDisk = verdict({ ...slab, disk: true })
+  console.log(`${onDisk.length ? '🔴' : '⚪ SURVIVED'} mutant: the walk back on the disk (an untracked slab display file read as shipped)`); if (!onDisk.length) bad++
   if (bad) process.exitCode = 1
 }

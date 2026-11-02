@@ -34,7 +34,7 @@
 // The TOD slots — eight sun moments, their order and their minutes — are src/lib/todSlots.js's (one home, shared
 // with the site Workers' share card). Per-Look serialization stores slot ids; minutes are computed live each frame
 // so the envelope shifts seasonally with the real sun.
-import { TOD_SLOT_IDS, todSlotMinutesAt, todSlotReachedAt, todSlotNearest } from '../lib/todSlots.js'
+import { TOD_SLOT_IDS, todSlotMinutesAt, todSlotYear, todSlotReachedAt, todSlotNearest } from '../lib/todSlots.js'
 import { townPlace } from '../lib/townPlace.js'
 import { Refusal } from '../lib/refusal.js'
 import { LAMPGLOW_FLAT_DEFAULTS, LAMPGLOW_RADIUS_V } from './skyLightChannels.js'
@@ -52,6 +52,11 @@ export function getTodSlotColor(id) { return NAMED_TOD_SLOTS_BY_ID[id]?.color }
 
 // Each named slot's minute-of-day on the placed town's clock for the given Date (src/lib/todSlots.js). Never null: a
 // moment the sun does not reach that day sits at its closest approach (solar noon or the nadir), so every key occurs.
+/** The town's cached year of slot minutes (todSlots.js#todSlotYear), at the same place as getTodSlotMinutes. */
+export function getTodSlotYear(year) {
+  const { lat, lon, timezone } = townPlace()
+  return todSlotYear({ lat, lon, tz: timezone }, year)
+}
 export function getTodSlotMinutes(date) {
   const { lat, lon, timezone } = townPlace()
   return todSlotMinutesAt(date || new Date(), { lat, lon, tz: timezone })

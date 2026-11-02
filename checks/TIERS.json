@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 557,
+  "total": 558,
   "counts": {
-    "safe": 382,
+    "safe": 383,
     "local-effect": 32,
     "live": 143
   },
@@ -403,6 +403,11 @@
       "tier": "safe",
       "why": [
         "importSource of src/displays/DisplayBoundary.js — read, safe",
+        "importSource of src/displays/lightShow/drawerRead.js — read, safe",
+        "importSource of src/lib/refusal.js — read, safe",
+        "importSource of src/lib/refusal.js — read, safe",
+        "importSource of src/lib/refusal.js — read, safe",
+        "importSource of src/lib/refusal.js — read, safe",
         "computed import of src/lib/failures.js — read, safe"
       ]
     },
@@ -890,6 +895,16 @@
       ]
     },
     {
+      "file": "checks/claims-a-show-plays-only-inside-its-windows.mjs",
+      "tier": "safe",
+      "why": [
+        "importSource of src/lib/todSlots.js — read, safe",
+        "importSource of src/displays/showChannel.js — read, safe",
+        "importSource of src/displays/lightShow/engine.js — read, safe",
+        "importSource of src/instances/registry.js — read, safe"
+      ]
+    },
+    {
       "file": "checks/claims-a-slab-name-is-its-content.mjs",
       "tier": "live",
       "reasonClass": "outbound",
@@ -1165,7 +1180,7 @@
       "file": "checks/claims-a-towns-displays-are-its-own-content.mjs",
       "tier": "safe",
       "why": [
-        "reads repo files only"
+        "runs `git ls-files -z -- public` — local, read-only"
       ]
     },
     {
@@ -1343,7 +1358,9 @@
       "file": "checks/claims-an-inland-town-asks-no-water-level.mjs",
       "tier": "safe",
       "why": [
-        "importSource of cartograph/waterLevel.mjs — read, safe"
+        "importSource of cartograph/waterLevel.mjs — read, safe",
+        "importSource of checks/claims-an-inland-town-asks-no-water-level.mjs (its span: verdictOf) — read, safe",
+        "importSource of checks/claims-an-inland-town-asks-no-water-level.mjs (its span: verdictOf) — read, safe"
       ]
     },
     {
@@ -1384,6 +1401,7 @@
       "file": "checks/claims-atlas-uv-rect-survives-the-bake.mjs",
       "tier": "safe",
       "why": [
+        "importSource of checks/claims-atlas-uv-rect-survives-the-bake.mjs (its span: verdictOf) — read, safe",
         "imports package(s) @gltf-transform/core, @gltf-transform/extensions — not read from source"
       ]
     },

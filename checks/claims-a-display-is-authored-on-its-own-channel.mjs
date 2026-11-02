@@ -190,7 +190,7 @@ async function verdict({ chan, param, view, bake, eng, mount, pin, hook, manifes
   F(refuses(() => E.refuseCrowdedShows([['day', (m) => S.displayAt(crowd, m, SMc)]], 40 * 60, 'check'), /on day the shows at 01:00 and 01:30 are 30 minutes apart, and a show runs 40\.0/), 'a step in showEvery that crowds the show is not refused by name')
   F(!refuses(() => E.refuseCrowdedShows([['day', atOf(d)]], 300, 'check'), /./), 'the default schedule is refused as crowded')
   const bm = manifest ? manifest(sourceOf('cartograph/bake-manifest.mjs')) : sourceOf('cartograph/bake-manifest.mjs')
-  F(/refuseCrowdedShows\(days, secs, `\$\{where\}, the year \$\{days\[0\]\[0\]\} … \$\{days\.at\(-1\)\[0\]\}`\)/.test(bm) && /const days = yearOfDays\(channel, place\)/.test(bm), 'bake-manifest does not refuse a crowded schedule over a year at the town\'s position, naming the window')
+  F(/refuseCrowdedShows\(year\.map\(r => \[r\.date, \(m\) => displayAt\(channel, m, r\.minutes\)\]\), secs, `\$\{where\}, \$\{span\}`\)/.test(bm) && /const year = yearAhead\(place\), span = `the year \$\{year\[0\]\.date\} … \$\{year\.at\(-1\)\.date\}`/.test(bm) && /const yearAhead = \(place\) => todSlotDays\(place, new Date\(\), 366\)/.test(bm), 'bake-manifest does not refuse a crowded schedule over a year at the town\'s position, naming the window')
   // live
   const { townClockOf } = await importSource('src/lib/townClock.js')
   const DISP = { season: 'lights' }, CAL = [{ id: 'lights', start_date: '2026-10-31', end_date: '2027-01-01' }], C = { segs: [], seconds: 300 - 2 * 3.8 }
@@ -290,12 +290,12 @@ if (process.argv.includes('--mutants')) {
     ['the shimmer not centred on 1', { eng: (s) => s.replace('w = level * (1 + GLOW_SHIMMER * Math.sin(', 'w = level * (0.8 + 0.2 * Math.sin(') }],
     ['the shimmer swing changed', { eng: (s) => s.replace('export const GLOW_SHIMMER = 0.25', 'export const GLOW_SHIMMER = 0.2') }],
     ['<Displays> passing no channel', { mount: (s) => s.replace(' channel={lit[d.id]}', '') }],
-    ['a run clipped (the whole-run test dropped)', { eng: (s) => s.replace('for (let k = 1; k < len && whole; k++) if (!(at((m + k) % DAY_MIN).show > 0)) whole = false\n    if (whole && !(at((m + len - 1e-6) % DAY_MIN).show > 0)) whole = false\n', '') }],
-    ['a run allowed to end where show is 0', { eng: (s) => s.replace('if (whole && !(at((m + len - 1e-6) % DAY_MIN).show > 0)) whole = false', 'if (whole && !(at((m + len) % DAY_MIN).show > 0)) whole = false') }],
-    ['showtimes on a fixed hour, not the channel\'s step', { eng: (s) => s.replace('if (m % showEvery || !(show > 0)) continue', 'if (m % 60 || !(show > 0)) continue') }],
-    ['shows where show is 0', { eng: (s) => s.replace('if (m % showEvery || !(show > 0)) continue', 'if (m % showEvery) continue') }],
+    ['a run clipped (the whole-run test dropped)', { eng: (s) => s.replace('for (let k = 1; k < len && whole; k++) if (!plays((m + k) % DAY_MIN)) whole = false\n    if (whole && !plays((m + len - 1e-6) % DAY_MIN)) whole = false\n', '') }],
+    ['a run allowed to end where show is 0', { eng: (s) => s.replace('if (whole && !plays((m + len - 1e-6) % DAY_MIN)) whole = false', 'if (whole && !plays((m + len) % DAY_MIN)) whole = false') }],
+    ['showtimes on a fixed hour, not the channel\'s step', { eng: (s) => s.replace('if (m % at(m).showEvery || !plays(m)) continue', 'if (m % 60 || !plays(m)) continue') }],
+    ['shows where show is 0', { eng: (s) => s.replace('const plays = (m) => { const a = at(m); return a.show > 0 && a.open }', 'const plays = (m) => { const a = at(m); return a.open }') }],
     ['a crowded schedule accepted', { eng: (s) => s.replace('if (t.length > 1 && next - t[i] < len) throw', 'if (false) throw') }],
-    ['bake-manifest not refusing a crowded year', { manifest: (s) => s.replace('refuseCrowdedShows(days, secs,', 'void (days, secs,') }],
+    ['bake-manifest not refusing a crowded year', { manifest: (s) => s.replace('refuseCrowdedShows(year.map(', 'void (year.map(') }],
     ['live never showing', { eng: (s) => s.replace("if (since < seconds) return { mode: 'show', t: since, up }", '') }],
     ['live glowing regardless of the channel', { eng: (s) => s.replace("return at(minute).glow > 0 ? { mode: 'glow', t: 0, up } : { mode: 'off', t: 0, up }", "return { mode: 'glow', t: 0, up }") }],
     ['the live path on the sun\'s altitude', { view: (s) => s.replace('day.current.at, day.current.times, where)', 'day.current.at, useTimeOfDay.getState().getLightingPhase().sunAltitude < 0 ? day.current.times : [], where)') }],

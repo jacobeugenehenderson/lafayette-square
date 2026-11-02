@@ -17,7 +17,7 @@
  * ▶ node checks/claims-a-town-shares-its-own-picture.mjs · node checks/claims-a-town-keeps-its-own-clock.mjs
  */
 import SunCalc from 'suncalc'
-import { townMinuteOf } from './townClock.js'
+import { townMinuteOf, townDateAt, townClockOf } from './townClock.js'
 import { Refusal } from './refusal.js'
 
 /** The slot ids, in the day's order. Labels and colours are the editor's (`animatedParam.js#NAMED_TOD_SLOTS`). */
@@ -46,6 +46,40 @@ function slotsAt(when, { lat, lon, tz }) {
 export function todSlotMinutesAt(when, place) { return slotsAt(when, place).minutes }
 /** Which slots the sun really reached on `when`'s day: { <slot>: boolean }. Internal: never shown to anyone. */
 export function todSlotReachedAt(when, place) { return slotsAt(when, place).reached }
+
+/**
+ * THE YEAR OF SLOT MINUTES at a place: every town day of `year` as { date: 'YYYY-MM-DD', minutes }, each day read at the
+ * town's noon. A pure function of the place and the year, so it is CACHED, keyed by the place's own values
+ * (lat, lon, tz) and the year, never by a town's id: Stage can edit a town's geography, and the key follows it (Boz's
+ * ruling and Zob's condition, 2026-11-01: one year costs ~146 ms, and a display's windows are judged over it on every
+ * edit). Frozen: a reader cannot change what the next reader gets. ▶ node checks/claims-a-show-plays-only-inside-its-windows.mjs
+ */
+const YEARS = new Map()
+export function todSlotYear(place, year) {
+  const { lat, lon, tz } = place || {}
+  if (![lat, lon].every(Number.isFinite) || !tz || !Number.isInteger(year)) throw new Refusal(`[todSlots] ⛔ a year of slots needs a place { lat, lon, tz } and a whole year (got ${JSON.stringify(place)}, ${year})`)
+  const key = `${lat},${lon},${tz},${year}`
+  let rows = YEARS.get(key)
+  if (!rows) {
+    rows = []
+    for (let day = 1; ; day++) {
+      const when = townDateAt({ year, month: 1, day, minute: 720 }, tz), c = townClockOf(when, tz)
+      if (c.year !== year) break
+      rows.push(Object.freeze({ date: c.date, minutes: Object.freeze(slotsAt(when, place).minutes) }))
+    }
+    YEARS.set(key, rows = Object.freeze(rows))
+  }
+  return rows
+}
+/** `n` town days from the town date of `from` on, out of the cached years (the bake's year ahead of today). */
+export function todSlotDays(place, from, n) {
+  const c = townClockOf(from, place.tz), out = []
+  for (let year = c.year; out.length < n; year++) for (const r of todSlotYear(place, year)) if (r.date >= c.date && out.length < n) out.push(r)
+  return out
+}
+/** The most a slot moves from one day to the next, in minutes (the clock change moves every slot 60 at once).
+ *  claims-every-slot-has-a-time-every-day asserts it at every latitude; refuseWindowSense rests on it. */
+export const SLOT_DAY_MOVE_MAX_MIN = 90
 
 /**
  * The slot whose minute is nearest `minute` (round the clock), if within `toleranceMin`; otherwise null.
