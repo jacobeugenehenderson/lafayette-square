@@ -169,7 +169,7 @@ export function kitCurbCut(registry, read = null) {
 // The recorded entries (`{ id: value | true }`) that differ in `registry` now → their ids. ⛔ A missing record
 // (a map.json poured before the record existed, or unreadable) is NOT clean: it returns ['(no record)'].
 export function registryReadChanged(record, registry) {
-  if (!record || typeof record !== 'object') return ['(no record of what the last pour read)']
+  if (!record || typeof record !== 'object') return ['(no record of what the last Foundry run read)']
   const byId = registryIndex(registry)
   return Object.entries(record).filter(([id, was]) => JSON.stringify(was === true ? byId.has(id) : (byId.get(id)?.value ?? null)) !== JSON.stringify(was)).map(([id]) => id)
 }
@@ -343,7 +343,7 @@ export function pourMeasureOf(chain, overlay, std) {
     return { measure: { left: m.left, right: m.right, symmetric: m.symmetric, source: 'highway-section' }, authored: false, refusedOnHighway: ovm, hwy: { id: chain.id, ...hs.report, sources: hs.right.section.sources } }
   }
   // ⛔ Every skeleton chain is seeded from its class (`classSection`); a chain without a seed is a skeleton that predates it.
-  if (!chain.seed) throw new Refusal(`⛔ pourMeasureOf: "${chain.name}" (${chain.id}) has no seed — re-pour the skeleton`)
+  if (!chain.seed) throw new Refusal(`⛔ pourMeasureOf: "${chain.name}" (${chain.id}) has no seed — re-run the Skeleton`)
   const m = measureFromSeed(chain.seed, chain.class)
   return { measure: { left: m.left, right: m.right, symmetric: m.symmetric, source: chain.seed.widthSource === 'survey' ? 'seed-survey' : 'seed' }, authored: false, refusedOnHighway: false, hwy: null }
 }

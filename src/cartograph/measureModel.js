@@ -71,7 +71,7 @@ export function chainMeasure(st) {
         && Math.abs(fromPipeline.left.sidewalk - fromPipeline.right.sidewalk) < 0.01,
     }
   }
-  if (!st.class) throw new Refusal(`⛔ chainMeasure: street ${st.skelId || st.name} carries no class — re-pour (streetClass.js)`)
+  if (!st.class) throw new Refusal(`⛔ chainMeasure: street ${st.skelId || st.name} carries no class — run every step of the Foundry (streetClass.js)`)
   return defaultMeasure(st.class, null, { lanes: Number.isInteger(st.lanes) ? st.lanes : null, oneway: !!st.oneway })
 }
 

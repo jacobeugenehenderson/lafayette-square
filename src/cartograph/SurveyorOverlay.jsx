@@ -517,7 +517,7 @@ export default function SurveyorOverlay() {
     if (!active) return
     if (!protopolygon?.rings?.length) {
       console.error('[Survey] ⛔ this scene carries NO protopolygon — the navy below is the CHAINS, not ①. '
-        + 'Re-pour the scene (node cartograph/skeleton.js --scene=<id> && node cartograph/pipeline.js --scene=<id> '
+        + 'Run the Foundry on the scene (node cartograph/skeleton.js --scene=<id> && node cartograph/pipeline.js --scene=<id> '
         + '&& node cartograph/promote-ribbons.js --scene=<id> --yes) to see ①.')
     }
   }, [active, protopolygon])

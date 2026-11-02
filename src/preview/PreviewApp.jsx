@@ -44,6 +44,7 @@ import {
   getLayerCost, layerCostSubscribe,
 } from './GpuMonitor'
 import useTownCalendar from '../hooks/useTownCalendar.js'
+import { stepList } from '../lib/stepWords.js'
 
 function BasicLights() {
   return (
@@ -153,7 +154,7 @@ function TopAppBar({ shot, setShot, mode, setMode }) {
         : <span className="rounded-lg px-3 py-1 glass-text-dim" style={{ fontSize: 13 }} title="No town open">← Stage</span>}
       {divider('d1')}
       <span className="rounded-lg px-3 py-1 glass-text-dim"
-        style={{ fontSize: 13, background: 'rgba(255,255,255,0.04)' }}>{INSTANCE?.name ?? 'Choose a town'} ▼</span>
+        style={{ fontSize: 13, background: 'rgba(255,255,255,0.04)' }}>{INSTANCE?.name ?? 'Choose a scene'} ▼</span>
       <div style={{ flex: 1 }} />
       {btn('desktop',  'Desktop',  mode === 'desktop',  () => { setMode('desktop');  noteEvent('mode→desktop') })}
       {btn('phone-hi', 'Phone hi', mode === 'phone-hi', () => { setMode('phone-hi'); noteEvent('mode→phone-hi') })}
@@ -337,7 +338,7 @@ function LayerRow({ layerKey, label, on, onToggle, disabled, metric, groupMax })
         </span>
       </div>
       {mem && (
-        <div className="profiler-note" style={{ paddingLeft: 22 }} title="held = geometry + this piece's slab textures on the GPU · in view = shown and in frustum (per mesh) · slab = the baked files">
+        <div className="profiler-note" style={{ paddingLeft: 22 }} title="held = geometry + this piece's slab textures on the GPU · in view = shown and in frustum (per mesh) · Slab = the files the Foundry made">
           {fmtMB(mem.held)} MB held · {fmtMB(mem.visible)} in view{mem.baked != null ? ` · slab ${fmtMB(mem.baked)}` : ''}
         </div>
       )}
@@ -744,7 +745,7 @@ function PublishPanel({ lookId }) {
     try {
       const stale = await readOwed(), blocker = stale.filter(x => x.blocker)
       // ⛔ a required input missing: the Bake would refuse, so Publish says what must happen first instead of baking into a failure
-      if (blocker.length) { setMsg({ kind: 'err', text: `Can't bake until: ${blocker.flatMap(x => x.why).join(' · ')}` }); setBusy(null); return }
+      if (blocker.length) { setMsg({ kind: 'err', text: `The Foundry can't run until: ${blocker.flatMap(x => x.why).join(' · ')}` }); setBusy(null); return }
       const steps = stale.map(x => x.step)
       if (status.unbaked || steps.length || confirmRepour) {
         const bake = await fetch(`${API}/bake${confirmRepour ? '?repour=1' : ''}`, { method: 'POST' })
@@ -753,7 +754,7 @@ function PublishPanel({ lookId }) {
           const body = await bake.json().catch(() => ({}))
           // …or the coast step stopped on its open/close residual: its pieces are signed in Stage, where they can be seen and framed
           if (body.coastResidual) { const c = body.coastResidual
-            setMsg({ kind: 'err', text: `Not published: ${c.scene}'s coast differs from its definition in ${c.n} place${c.n === 1 ? '' : 's'}. Bake in Stage to look at them and accept them, then publish.` })
+            setMsg({ kind: 'err', text: `Not published: ${c.scene}'s coast differs from its definition in ${c.n} place${c.n === 1 ? '' : 's'}. Run the Foundry in the Look step to see them and accept them, then publish.` })
             setBusy(null)
             return
           }
@@ -761,7 +762,7 @@ function PublishPanel({ lookId }) {
           setBusy(null)
           return
         }
-        if (!bake.ok) throw new Error(`bake failed: ${(await bake.text()).slice(0, 160)}`)
+        if (!bake.ok) throw new Error(`the Foundry stopped: ${(await bake.text()).slice(0, 160)}`)
       }
       const pub = await fetch(`${API}/publish`, { method: 'POST' })
       const data = await pub.json()
@@ -909,9 +910,9 @@ function PublishPanel({ lookId }) {
           {drawer ? '⟨' : '⟩'}
         </button>
       </div>
-      {owed?.some(x => x.blocker) && <div style={{ color: '#f87171', marginBottom: 6 }}>⛔ Can't bake until: {owed.filter(x => x.blocker).flatMap(x => x.why).join(' · ')}</div>}
-      {(status.unbaked || owed?.length > 0) && !owed?.some(x => x.blocker) && <div style={{ color: '#fbbf24', marginBottom: 6 }}>⚠ Publish bakes first{owed?.length ? `: ${owed.map(x => x.step).join(', ')}` : ' (unbaked edits)'}.</div>}
-      {owed === null && <div style={{ color: '#fbbf24', marginBottom: 6 }}>⚠ The bake check could not be read (a bake may be running): Publish asks it again.</div>}
+      {owed?.some(x => x.blocker) && <div style={{ color: '#f87171', marginBottom: 6 }}>⛔ The Foundry can't run until: {owed.filter(x => x.blocker).flatMap(x => x.why).join(' · ')}</div>}
+      {(status.unbaked || owed?.length > 0) && !owed?.some(x => x.blocker) && <div style={{ color: '#fbbf24', marginBottom: 6 }}>⚠ Publish runs the Foundry first{owed?.length ? `: ${owed.length} step${owed.length === 1 ? '' : 's'} (${stepList(owed.map(x => x.step))})` : ' (edits it has not run on)'}.</div>}
+      {owed === null && <div style={{ color: '#fbbf24', marginBottom: 6 }}>⚠ What the Foundry owes could not be read (it may be running): Publish asks again.</div>}
 
       {targetRow('staging', <button disabled={!!busy || stagingDone || !!repour} onClick={() => publishStaging()}
         style={btn({ background: busy === 'staging' ? 'rgba(96,165,250,0.25)' : 'rgba(96,165,250,0.18)', color: '#bfdbfe', opacity: (busy || stagingDone) ? 0.45 : 1, cursor: stagingDone ? 'default' : 'pointer' })}>
@@ -930,9 +931,9 @@ function PublishPanel({ lookId }) {
       {msg && msg.kind === 'err' && <div style={{ marginTop: 8, color: '#f87171', wordBreak: 'break-word' }}>{msg.text}</div>}
       {repour && (
         <div style={{ marginTop: 8, color: '#fde68a', wordBreak: 'break-word' }}>
-          This re-pours {lookId} because the pour's code changed{repour.files.length ? `: ${repour.files.join(', ')}` : ''}.
+          This runs every step for {lookId} because the Foundry's code changed{repour.files.length ? `: ${repour.files.join(', ')}` : ''}.
           <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
-            <button onClick={() => publishStaging(true)} style={btn({ background: 'rgba(250,204,21,0.18)', color: '#fde68a' })}>Re-pour and publish</button>
+            <button onClick={() => publishStaging(true)} style={btn({ background: 'rgba(250,204,21,0.18)', color: '#fde68a' })}>Run every step and publish</button>
             <button onClick={() => setRepour(null)} style={btn({ background: 'rgba(255,255,255,0.06)', color: '#e5e7eb' })}>Cancel</button>
           </div>
         </div>
@@ -952,7 +953,7 @@ function PublishPanel({ lookId }) {
         <div style={{ fontWeight: 700, marginBottom: 6, fontFamily: 'inherit', color: '#bfdbfe' }}>dev · what would ship</div>
         <Row k="branch" v={status.branch} />
         <Row k="slab built" v={status.bakedAt ? new Date(status.bakedAt).toLocaleTimeString() : '—'} />
-        <Row k="unbaked edits" v={status.unbaked ? 'YES — bake first' : 'no'} warn={status.unbaked} />
+        <Row k="edits not run" v={status.unbaked ? 'YES — run the Foundry first' : 'no'} warn={status.unbaked} />
         <Row k="dirty slab files" v={status.dirty?.length || 0} warn={!!status.dirty?.length} />
         {['staging', 'prod'].map((key) => {
           const d = deploys[key]
@@ -1016,7 +1017,7 @@ function TownChooser() {
   return (
     <div className="fixed inset-0 flex items-center justify-center" style={{ background: '#141416', color: '#ddd' }}>
       <div className="town-chooser" style={{ minWidth: 320 }}>
-        <div style={{ fontSize: 13, opacity: 0.7, marginBottom: 12 }}>Preview · Choose a town</div>
+        <div style={{ fontSize: 13, opacity: 0.7, marginBottom: 12 }}>Preview · Choose a scene</div>
         {(towns || []).map(t => (
           <a key={t.id} className="carto-looks-option" href={`?look=${encodeURIComponent(t.id)}`}
             style={{ display: 'block', padding: '8px 12px', color: '#eee', textDecoration: 'none' }}>{t.name || t.id}</a>
@@ -1029,7 +1030,7 @@ function TownChooser() {
 export default function PreviewApp() {
   const lookId = resolvePreviewLookId()
   // The tab names the town the address resolved; preview.html's own <title> names none.
-  useEffect(() => { document.title = INSTANCE?.name ? `Preview — ${INSTANCE.name}` : 'Preview — choose a town' }, [])
+  useEffect(() => { document.title = INSTANCE?.name ? `Preview — ${INSTANCE.name}` : 'Preview — choose a scene' }, [])
   return lookId ? <FrozenTown lookId={lookId} /> : <TownChooser />
 }
 
@@ -1041,8 +1042,8 @@ function FrozenTown({ lookId }) {
   useEffect(() => {
     let live = true
     slabManifest(lookId).then((m) => {
-      if (!m) throw new Error(`"${lookId}" has no baked manifest.json. Preview draws what a bake froze: bake it in Stage first.`)
-      if (!m.identity || typeof m.identity !== 'object') throw new Error(`"${lookId}"'s manifest.json carries no identity. Re-bake it.`)
+      if (!m) throw new Error(`"${lookId}" has no Slab manifest. Preview draws what the Foundry made: run the Foundry in the Look step first.`)
+      if (!m.identity || typeof m.identity !== 'object') throw new Error(`"${lookId}"'s Slab manifest carries no identity. Run the Foundry on it again.`)
       if (live) setState({ town: { ...m.identity, lookId, mapId: m.town }, error: null })
     }).catch((e) => { if (live) setState({ town: null, error: e.message }) })
     return () => { live = false }

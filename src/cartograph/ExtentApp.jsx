@@ -1079,7 +1079,7 @@ export default function ExtentApp() {
   const [query, setQuery] = useState('')
   const [seeding, setSeeding] = useState(false)
   const [seedError, setSeedError] = useState(null)
-  // The last Bake's outcome, shown beside the Bake button: { error:{step,message,rolledBack} } or { promoteDiff }.
+  // The last Foundry run's outcome, shown beside its button: { error:{at,message,rolledBack} } or { promoteDiff }; `at` is the progress label it stopped on.
   const [bakeResult, setBakeResult] = useState(null)
   // ⭐ A RE-POUR IS A QUESTION, NEVER A FAILURE (2026-10-28, Jacob: LS's Bake read "Bake failed at 'Baking slab': The pour code
   // changed" after its own pour). The server stops a Bake that would re-pour and names the files (428); the Extent Bake asks,
@@ -1888,7 +1888,7 @@ export default function ExtentApp() {
         if (e.code !== 'REPOUR_CONFIRM') throw e
         const yes = await new Promise(resolve => setRepourAsk({ scene: e.repour?.scene || scene, files: e.repour?.files || [], resolve }))
         setRepourAsk(null)
-        if (!yes) throw Object.assign(new Error('not baked: the re-pour was cancelled'), { cancelled: true })
+        if (!yes) throw Object.assign(new Error('the Foundry did not run: running every step was cancelled'), { cancelled: true })
         return bakeLook(lookId, { force: true, repour: true })
       }
     }
@@ -1911,7 +1911,7 @@ export default function ExtentApp() {
         const b = await fetchBoundary(scene)
         if (!b) throw new Error(`'${scene}' is committed, but its boundary is missing after the re-apply.`)
         useCartographStore.setState({ sceneBoundary: b })
-        stageTo({ label: 'Baking slab', i: 2, n: 2 })
+        stageTo({ label: 'Foundry: making the Slab', i: 2, n: 2 })
         const idx = await fetchLooks().catch(() => null)
         let lookId = idx?.looks?.find(l => l.scene === scene)?.id
         // A committed hood may still have NO Look of its own — poured before Looks
@@ -1977,14 +1977,14 @@ export default function ExtentApp() {
       } catch { /* ignore */ }
       // ── Build the slab (was "Pour") — pipeline (clipped to the boundary) →
       //    ribbons → ensure a Look for this scene → bake → open the Designer.
-      stageTo({ label: 'Pouring map', i: 2, n: 3 })
+      stageTo({ label: 'Foundry: the street plan', i: 2, n: 3 })
       const pr = await pourMap(scene)
       const idx = await fetchLooks().catch(() => null)
       let lookId = idx?.looks?.find(l => l.scene === scene)?.id
       if (!lookId) { const r = await createLook({ name: name.trim() || scene, scene, id: scene }); lookId = r.id }
       const store = useCartographStore.getState()
       if (store.setActiveLook && store.activeLookId !== lookId) store.setActiveLook(lookId)
-      stageTo({ label: 'Baking slab', i: 3, n: 3 })
+      stageTo({ label: 'Foundry: making the Slab', i: 3, n: 3 })
       await bakeOrAsk(lookId)
       const rb = await fetchRibbons(scene).catch(() => null)
       if (rb) useCartographStore.setState({ sceneRibbons: rb })
@@ -2015,7 +2015,7 @@ export default function ExtentApp() {
       // renders only in the Setup section — hidden for every town that has data, so a failed
       // Bake on an existing town was silent (provincetown, 2026-09-25).
       const rolledBack = committedThisRun && !rollbackError
-      setBakeResult(e.cancelled ? { cancelled: { step, rolledBack, rollbackError } } : { error: { step, message: e.message || 'failed', rolledBack, rollbackError } })
+      setBakeResult(e.cancelled ? { cancelled: { at: step, rolledBack, rollbackError } } : { error: { at: step, message: e.message || 'failed', rolledBack, rollbackError } })
     } finally {
       setBuilding(false); setBuildStage(null); setBuildStartedAt(0)
     }
@@ -2506,7 +2506,7 @@ export default function ExtentApp() {
                   {/* Draft vs applied, said out loud. The map draws the APPLIED disc. */}
                   {appliedRadius > 0 && Math.round(radiusM) !== appliedRadius && (
                     <span className="carto-extent-status" style={{ flexBasis: '100%', marginTop: 4 }}>
-                      draft {Math.round(radiusM)} m · applied {appliedRadius} m → Bake to apply it
+                      draft {Math.round(radiusM)} m · applied {appliedRadius} m → run the Foundry to apply it
                     </span>
                   )}
                 </div>
@@ -2563,38 +2563,38 @@ export default function ExtentApp() {
                   disabled={building || !(radiusM > 0) || !bakeDirty}
                   onClick={onBuild}
                   style={!building && !bakeDirty ? { opacity: 0.45, cursor: 'default' } : undefined}
-                  title={bakeDirty ? 'Bake the neighborhood and open the Designer' : 'Already baked — change the boundary, radius, overrides or details to re-bake'}>
+                  title={bakeDirty ? 'Run the Foundry on this scene and open the Designer' : 'The Foundry has run — change the boundary, radius, overrides or details to run it again'}>
                   {building
                     ? (buildStage?.n
                         ? `${buildStage.label}…  ${buildStage.i}/${buildStage.n}`
-                        : `${buildStage?.label || 'Baking'}…`)
-                    : (bakeDirty ? 'Bake' : 'Baked')}
+                        : `${buildStage?.label || 'The Foundry is running'}…`)
+                    : (bakeDirty ? 'Run the Foundry' : 'Foundry ran')}
                 </button>
                 {repourAsk && (
                   <div className="carto-extent-status warn" role="alertdialog" style={{ flexBasis: '100%', marginTop: 6 }}>
-                    <b>This Bake will re-pour {repourAsk.scene}.</b> What its last pour read has changed (its code, a data file it
-                    reads, its geography or a registry value), or baking would rewrite a file the town is holding:
+                    <b>The Foundry will run every step for {repourAsk.scene}.</b> What its last run read has changed (its code, a data file it
+                    reads, its geography or a registry value), or the Foundry would rewrite a file the scene is holding:
                     <ul style={{ margin: '4px 0 6px 16px' }}>{repourAsk.files.map(f => <li key={f}><code>{f}</code></li>)}</ul>
                     <button className="carto-btn" onClick={() => repourAsk.resolve(false)}>Cancel</button>{' '}
-                    <button className="carto-btn carto-stage-btn" onClick={() => repourAsk.resolve(true)}>Re-pour and bake</button>
+                    <button className="carto-btn carto-stage-btn" onClick={() => repourAsk.resolve(true)}>Run every step</button>
                   </div>
                 )}
                 {bakeResult?.cancelled && (
                   <div className="carto-extent-status" style={{ flexBasis: '100%', marginTop: 6 }}>
-                    Not baked: you cancelled the re-pour at “{bakeResult.cancelled.step}”{bakeResult.cancelled.rolledBack ? ' — rolled back to how it was before this Bake.' : '.'}
+                    The Foundry did not finish: you cancelled it at “{bakeResult.cancelled.at}”{bakeResult.cancelled.rolledBack ? ' — rolled back to how it was before this run.' : '.'}
                     {bakeResult.cancelled.rollbackError ? ` ⛔ The rollback did NOT complete: ${bakeResult.cancelled.rollbackError}` : ''}
                   </div>
                 )}
                 {bakeResult?.error && (
                   <div className="carto-extent-status warn" style={{ flexBasis: '100%', marginTop: 6 }}>
-                    Bake failed at “{bakeResult.error.step}”: {bakeResult.error.message}
-                    {bakeResult.error.rolledBack ? ' — rolled back to how it was before this Bake.' : ''}
+                    The Foundry stopped at “{bakeResult.error.at}”: {bakeResult.error.message}
+                    {bakeResult.error.rolledBack ? ' — rolled back to how it was before this run.' : ''}
                     {bakeResult.error.rollbackError ? ` ⛔ The rollback did NOT complete: ${bakeResult.error.rollbackError}` : ''}
                   </div>
                 )}
                 {bakeResult?.promoteDiff && (
                   <div className="carto-extent-status" style={{ flexBasis: '100%', marginTop: 6 }}>
-                    This Bake changed the street layout: {Object.entries(bakeResult.promoteDiff).map(([k, [a, b]]) => `${k} ${a}→${b}`).join(' · ')}
+                    This Foundry run changed the street layout: {Object.entries(bakeResult.promoteDiff).map(([k, [a, b]]) => `${k} ${a}→${b}`).join(' · ')}
                   </div>
                 )}
               </div>

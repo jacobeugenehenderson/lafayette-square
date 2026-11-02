@@ -1884,7 +1884,7 @@ const useCartographStore = create((set, get) => ({
     // town's state into the kit's 0-state. It is edited with no town open.
     if (entry && !entry.scene && isValidMapId(get().scene)) {
       console.error(`[looks] "${id}" has no town; close the town to edit the kit default`)
-      set({ status: `"${entry.name || id}" has no town — close the town to edit the kit default` })
+      set({ status: `"${entry.name || id}" has no scene — close the scene to edit the kit default` })
       return
     }
     try { localStorage.setItem(ACTIVE_LOOK_KEY, id) } catch { /* ignore */ }
@@ -1965,7 +1965,7 @@ const useCartographStore = create((set, get) => ({
     try { slabAge = await fetchBakePlan(lookId) } catch (e) { slabAge = { error: e.message || String(e) } }
     if (get().activeLookId !== lookId) return   // the Look moved on while we asked
     if (slabAge.error) console.error(`[stage] ⛔ could not measure the age of "${lookId}"'s slab: ${slabAge.error}`)
-    else if (slabAge.stale.length) console.warn(`[stage] "${lookId}"'s slab is older than what the bake reads:`, slabAge.stale)
+    else if (slabAge.stale.length) console.warn(`[stage] "${lookId}"'s Slab is older than what the Foundry reads:`, slabAge.stale)
     set({ slabAge, bakeStale: !!slabAge.error || slabAge.stale.length > 0 })
   },
   bakeLastMs: null,
@@ -2021,7 +2021,7 @@ const useCartographStore = create((set, get) => ({
     const scene = get().scene
     const p = saveShapeFreeze(artifact, scene)
       .then(() => set({ shapeFrozenMs: Date.now() }))
-      .catch((err) => console.warn('[freeze] shape freeze failed:', err))
+      .catch((err) => console.warn('[freeze] sealing the shape failed:', err))
     set({ shapeFreezePending: p })
     await p
     // Clear only if no newer freeze superseded this one.
@@ -2041,9 +2041,9 @@ const useCartographStore = create((set, get) => ({
       set({ sceneRibbons: fresh, sceneMap: { scene: sc, map }, mapRefreshing: true })
       try { await get()._loadCenterlines({ design: false }) } finally { set({ mapRefreshing: false }) }
       // the loader swallows its own errors (it logs them) — so ask whether it actually rebuilt from the fresh copy
-      if (get().scene === sc && (get().centerlineData === before || !get()._designHydrated)) why = 'the scene loader did not rebuild from them (see the console)'
+      if (get().scene === sc && (get().centerlineData === before || !get()._designHydrated)) why = 'the scene loader did not redraw from them (see the console)'
     } catch (e) { why = e.message || String(e) }
-    if (why) set({ ribbonsStale: `the 2D map could not be refreshed after the bake: ${why}` })
+    if (why) set({ ribbonsStale: `the 2D map could not be refreshed after the Foundry run: ${why}` })
   },
   runBake: async ({ force = false, repour = false } = {}) => {
     if (get().bakeRunning) return
@@ -2062,7 +2062,7 @@ const useCartographStore = create((set, get) => ({
       // pour a stale slab, but a normal dev bake after an HMR just works.
       try { await get()._loadCenterlines() } catch { /* surfaced below */ }
       if (!get()._designHydrated) {
-        set({ overlaySaveBlocked: true, bakeError: 'Bake blocked: could not re-sync the store — hard-refresh (Cmd-R) and retry.' })
+        set({ overlaySaveBlocked: true, bakeError: 'The Foundry did not run: could not re-sync the store — hard-refresh (Cmd-R) and retry.' })
         return
       }
     }
@@ -2417,7 +2417,7 @@ const useCartographStore = create((set, get) => ({
         if (stale()) return
         // ⛔ NO EMPTY TOWN: ribbons that cannot be read are SAID, in place of the map (Boz, 2026-10-28) — never a street list
         // with no widths, which is what crashed LS's Survey (chainMeasure: "carries no class") when the server served [] for them
-        if (!fetchedRibbons) { const refused = `${scene}: its ribbons could not be read (${why}). Pour the town, or check its declared pour.ribbons.`
+        if (!fetchedRibbons) { const refused = `${scene}: its ribbons could not be read (${why}). Run the Foundry on the scene, or check its declared pour.ribbons.`
           console.error(`[ribbons] ⛔ ${refused}`); set({ ribbonsRefused: refused }); return }
         set({ sceneRibbons: fetchedRibbons, ribbonsRefused: null })
       }
@@ -2548,7 +2548,7 @@ const useCartographStore = create((set, get) => ({
       // ⛔ LOUD: a failed skeleton load leaves the Designer with no centerlines — edits would save over a town that did
       // not load. Block them and say so (it was a console.warn that the Designer never showed).
       console.error('[skeleton] ⛔ the town\'s authoring data failed to load — edits are blocked:', e)
-      set({ overlaySaveBlocked: true, status: `The town's authoring data failed to load (${e?.message || e}) — edits are blocked until it loads` })
+      set({ overlaySaveBlocked: true, status: `The scene's authoring data failed to load (${e?.message || e}) — edits are blocked until it loads` })
     }
   },
 

@@ -203,7 +203,7 @@ export async function saveNeighborhood(scene, data) {
 export async function pourMap(scene) {
   const res = await fetch(sceneUrl(scene, 'pour'), { method: 'POST' })
   const j = await res.json().catch(() => ({}))
-  if (!res.ok) throw new Error(j.error || `pour ${res.status}`)
+  if (!res.ok) throw new Error(j.error || `the Foundry (Extent): ${res.status}`)
   return j
 }
 
@@ -372,7 +372,7 @@ export async function saveShapeFreeze(artifact, scene) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(artifact),
   })
-  if (!res.ok) throw new Error(`freeze shape failed: ${res.status}`)
+  if (!res.ok) throw new Error(`sealing the shape failed: ${res.status}`)
   return res.json()
 }
 
@@ -405,7 +405,7 @@ export async function bakeLook(lookId, { force = false, repour = false } = {}) {
       err.coastResidual = body.coastResidual
       throw err
     }
-    const err = new Error('The pour code changed — this Bake would re-pour the town.')
+    const err = new Error('The Foundry\'s code changed — this run would run every step for the scene.')
     err.code = 'REPOUR_CONFIRM'
     err.repour = body.repour || null
     throw err
@@ -415,7 +415,7 @@ export async function bakeLook(lookId, { force = false, repour = false } = {}) {
   // running bake will finish — so surface a friendly, tagged error instead of
   // the scary "bake look failed: 409". runBake treats BAKE_IN_PROGRESS gently.
   if (res.status === 409) {
-    const err = new Error('A bake is already running for this Look — give it a moment.')
+    const err = new Error('The Foundry is already running for this Look — give it a moment.')
     err.code = 'BAKE_IN_PROGRESS'
     throw err
   }
@@ -423,7 +423,7 @@ export async function bakeLook(lookId, { force = false, repour = false } = {}) {
   // operator only "500" (provincetown, 2026-09-24: a 5-minute kill of the ground step read as "bake look failed: 500").
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
-    const err = new Error(body.error || `bake look failed: ${res.status}`)
+    const err = new Error(body.error || `the Foundry run failed: ${res.status}`)
     if (body.cancelled) err.code = 'BAKE_CANCELLED'
     throw err
   }
@@ -436,20 +436,20 @@ export async function fetchBakePlan(lookId) {
   const res = await fetch(`${BASE}/looks/${encodeURIComponent(lookId)}/bake`)
   if (res.status === 409) return { baking: true, stale: [] }
   const body = await res.json().catch(() => ({}))
-  if (!res.ok) throw new Error(body.error || `bake plan failed: ${res.status}`)
+  if (!res.ok) throw new Error(body.error || `what the Foundry owes could not be read: ${res.status}`)
   return body
 }
 
 // The running bake's steps (serve.js GET /looks/<id>/bake/status) — BakeModal polls it.
 export async function fetchBakeStatus(lookId) {
   const res = await fetch(`${BASE}/looks/${encodeURIComponent(lookId)}/bake/status`)
-  if (!res.ok) throw new Error(`bake status failed: ${res.status}`)
+  if (!res.ok) throw new Error(`the Foundry's progress could not be read: ${res.status}`)
   return res.json()
 }
 // Stop the running bake at its current step (the server names the step in the bake's own answer).
 export async function cancelBake(lookId) {
   const res = await fetch(`${BASE}/looks/${encodeURIComponent(lookId)}/bake/cancel`, { method: 'POST' })
-  if (!res.ok) { const b = await res.json().catch(() => ({})); throw new Error(b.error || `bake cancel failed: ${res.status}`) }
+  if (!res.ok) { const b = await res.json().catch(() => ({})); throw new Error(b.error || `the Foundry could not be stopped: ${res.status}`) }
   return res.json()
 }
 

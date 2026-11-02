@@ -14,7 +14,7 @@
 //   2 · THE RECORD — buildTownsRecord, RUN: every registered town's icon is a data:image/svg+xml URI (never a URL) equal
 //       to the icon of ITS OWN baked manifest's look.mark (read here from the manifest), or of its own initial when its
 //       baked Look has none, said in `iconFrom`; a town with NO baked manifest has `icon: null` (never an initial); a
-//       manifest with no `look` block REFUSES (lookFromManifest throws, "re-bake"); no entry carries
+//       manifest with no `look` block REFUSES (lookFromManifest throws, "run the Foundry on <map>"); no entry carries
 //       faviconUrl/mark/markSvg. ⛔ Nothing baked here = nothing judged = a failure, never a pass.
 //   3 · THE CARD — cardFor takes `town.icon` and nothing else: an entry with only the old fields gets no icon, and an
 //       unbaked town's card names why it has none (iconWhy → the ward-share-card header).
@@ -65,7 +65,7 @@ function judgeRecord(towns, bakedMark, fromManifest) {
   const why = [], seen = []
   let judged = 0
   let stale
-  try { stale = fromManifest('x', { files: {} }) } catch (e) { stale = /re-bake/.test(e.message) ? 'refused' : e.message }
+  try { stale = fromManifest('x', { files: {} }) } catch (e) { stale = /run the Foundry on/.test(e.message) ? 'refused' : e.message }
   if (stale !== 'refused') why.push(`a manifest with no look block is not refused by name (lookFromManifest gave ${JSON.stringify(stale)}) — a stale bake would wear the neutral initial`)
   if (fromManifest('x', null)?.baked !== false) why.push('a town with no manifest is not reported as unbaked by lookFromManifest')
   for (const m of registeredMaps()) {

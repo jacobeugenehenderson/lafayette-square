@@ -27,7 +27,7 @@ import { titleOf } from '../src/lib/townRecord.js'
  */
 export function lookFromManifest(map, manifest) {
   if (manifest == null) return { baked: false }
-  if (!manifest.look) throw new Error(`towns.json: public/baked/${map}/manifest.json predates the identity block — re-bake ${map}, then publish`)
+  if (!manifest.look) throw new Error(`towns.json: public/baked/${map}/manifest.json predates the identity block — run the Foundry on ${map}, then publish`)
   return { baked: true, look: manifest.look }
 }
 

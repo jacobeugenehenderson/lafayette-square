@@ -963,7 +963,7 @@ export default function CartographApp() {
           <div role="alert" style={{ position: 'absolute', inset: 0, zIndex: 5, display: 'flex', alignItems: 'center',
             justifyContent: 'center', padding: 32, background: '#1a1a18', color: '#f3d9a4', font: '14px/1.5 system-ui',
             textAlign: 'center' }}>
-            <div style={{ maxWidth: 640 }}><strong>No map: the town's disc was refused.</strong><br />{boundaryRefused}</div>
+            <div style={{ maxWidth: 640 }}><strong>No map: the scene's disc was refused.</strong><br />{boundaryRefused}</div>
           </div>
         )}
         {inDesigner && !boundaryRefused && ribbonsRefused && (
@@ -971,7 +971,7 @@ export default function CartographApp() {
           <div role="alert" style={{ position: 'absolute', inset: 0, zIndex: 5, display: 'flex', alignItems: 'center',
             justifyContent: 'center', padding: 32, background: '#1a1a18', color: '#f3d9a4', font: '14px/1.5 system-ui',
             textAlign: 'center' }}>
-            <div style={{ maxWidth: 640 }}><strong>No map: the town's ribbons could not be read.</strong><br />{ribbonsRefused}</div>
+            <div style={{ maxWidth: 640 }}><strong>No map: the scene's ribbons could not be read.</strong><br />{ribbonsRefused}</div>
           </div>
         )}
         <Canvas

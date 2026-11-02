@@ -366,7 +366,7 @@ function ToolPill() {
   const setTool = useCartographStore(s => s.setTool)
   const items = [
     { id: 'surveyor', label: 'Survey' },
-    { id: 'measure',  label: 'Measure' },
+    { id: 'measure',  label: 'Section' },
     { id: 'design',   label: 'Design' },
   ]
   const activeId = tool === 'surveyor' ? 'surveyor'
