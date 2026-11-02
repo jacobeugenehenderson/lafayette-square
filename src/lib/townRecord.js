@@ -26,7 +26,7 @@ export function tenantOf(identity, who) {
 /**
  * The town's tab / share title: `branding.title` where the town authored one (Huron: "Huron Online"), else its `name` —
  * the one name authority. ⛔ Never another town's: a record with neither is "The Ward", the player's own name.
- * Read by the kit's tab, the Ward's tab and the share card (scripts/publish-player-to-staging.mjs).
+ * Read by the kit's tab, the Ward's tab and the share card (scripts/towns-record.mjs).
  */
 export function titleOf(identity) {
   return identity?.branding?.title || identity?.name || 'The Ward'

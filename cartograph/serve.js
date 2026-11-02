@@ -43,6 +43,7 @@ import { HASHED, manifestPath, servedRel } from '../src/lib/slabNames.js'
 import { TOD_SLOT_IDS } from '../src/lib/todSlots.js'
 import { parcelParts } from './parcelParts.js'
 import { stagedSlabStep, publishSlab, refuseTornCommit } from './slabStage.mjs'
+import { stagingPlayerOf } from '../src/lib/stagingPlayer.js'
 import { slabAnchorRefusals } from './anchorGate.mjs'
 
 // Promise wrapper around spawn with shell: true. Matches execSync's
@@ -408,31 +409,18 @@ function newestMtime(p) {
 }
 
 /**
- * ⛔ THE PLAYER'S SOURCES — ONE LIST, and `scripts/publish-player-to-staging.mjs` carries
- * the same one. The status read asks "is the published player behind these?"; the publish
- * step asks "must I rebuild from these?" Two lists would make the button lie.
+ * The asset host, read the way the staging Worker reads its bucket (src/lib/stagingPlayer.js's `io`): a 404 is "none",
+ * any other answer is thrown, so an unreachable bucket is never read as an absent record.
  */
-const PLAYER_SRC = ['src', 'index.html', 'vite.config.js', 'package.json']
-const playerSrcPaths = (root) => PLAYER_SRC.map((p) => join(root, p))
-
-/**
- * ⭐ IS STAGING'S PLAYER BEHIND THE SOURCE? — ONE ANSWER, read by the status (the button's label) and by Publish (whether
- * it rebuilds). Read off the published artifact: its build marker records the newest source mtime that build was made
- * from. It replaced a local `.player-published` stamp Publish kept for itself, so the label and the act can no longer
- * disagree (2026-10-05, BRIEF-publish-is-the-upload).
- * ⛔ NO MARKER ⇒ STALE. An unstamped player was published before this existed, or there is none, or the bucket is
- * unreachable; the honest answer to each is "not known to be current".
- */
-async function stagingPlayerState(root) {
-  try {
-    const r = await fetch(freshUrl(`${ASSET_BASE_URL}staging/player/build.json`))
-    if (!r.ok) return { published: false, stale: true, why: `no build marker at staging/player/build.json (HTTP ${r.status})` }
-    const m = await r.json()
-    const localSrc = Math.max(...playerSrcPaths(root).map(newestMtime))
-    const stale = !(m.srcMtimeMs > 0) || localSrc > m.srcMtimeMs
-    return { published: true, stale, builtAt: m.builtAt ?? null,
-      why: stale ? 'the player on staging was built before your latest source change' : null }
-  } catch (e) { return { published: false, stale: true, why: `staging's player could not be read: ${e.message}` } }
+const assetIO = {
+  json: async (key) => { const r = await fetch(freshUrl(`${ASSET_BASE_URL}${key}`))
+    if (r.status === 404) return null
+    if (!r.ok) throw new Error(`${key} answered ${r.status}`)
+    try { return await r.json() } catch { return {} } },
+  exists: async (key) => { const r = await fetch(freshUrl(`${ASSET_BASE_URL}${key}`), { method: 'HEAD' })
+    if (r.status === 404) return false
+    if (!r.ok) throw new Error(`${key} answered ${r.status}`)
+    return true },
 }
 
 /**
@@ -3330,13 +3318,6 @@ createServer(async (req, res) => {
       let bakedAt = null
       try { bakedAt = JSON.parse(readFileSync(join(REPO_ROOT, `public/baked/${id}/scene.json`), 'utf-8')).bakedAt ?? null } catch { /* leave null */ }
 
-      // ⛔⛔ THE SLAB IS ONLY HALF THE ANSWER. `bakedAt` measures the MAP DATA; since the
-      // Publish button also ships the shared player, a code-only change leaves `bakedAt`
-      // untouched and the panel could not tell whether staging carried the operator's fix
-      // (Jacob, 2026-09-21: "it's hard to tell"). This is the other half, read off the
-      // published artifact rather than remembered here: the build marker records the
-      // newest source mtime that build was made from (stagingPlayerState).
-      const player = await stagingPlayerState(REPO_ROOT)
       // ⭐ AND THE DEPLOYMENT, which ships in the slab's manifest: a toggle edit makes the slab stale on staging even when
       // no bake is owed (the bake check reads none of it).
       const scene = readLooksIndex().looks.find(l => l.id === id)?.scene
@@ -3344,30 +3325,20 @@ createServer(async (req, res) => {
         ? await Promise.all(['staging', 'prod'].map((env) => deploymentShipped(scene, id, env)))
         : [{ shipped: null }, { shipped: null }]
 
-      // ⭐ PRODUCTION'S PLAYER, the same question one step on: is the build this town has PINNED
-      // the one staging now serves? Read off both stamps in the bucket. ⛔ No git here: production
-      // no longer ships through a branch, so a commit count cannot answer for it.
+      // ⭐ THE TOWN'S PLAYER ON STAGING: its own record, the Ward build that record's pointer names, and that build's kit
+      // bundle (src/lib/stagingPlayer.js, the Worker's own answer). Publish does not ship it (the Ward publishes itself);
+      // Promote pins it, so Promote waits on THIS, never on a build no visitor runs.
       const sites = await siteUrlsForLook(id)
-      // ⭐ Which player is the town's staging record's; a Ward town is current when its host record
-      // pins the Ward build staging serves now.
+      let player = { current: false, why: 'this Look names no town' }
+      if (sites.mapId) player = await stagingPlayerOf(sites.mapId, assetIO).catch((e) => ({ current: false, why: `staging's player could not be read: ${e.message}` }))
+      // ⭐ PRODUCTION'S PLAYER, the same question one step on: does the town's host record pin the Ward build and kit
+      // staging serves now? ⛔ No git: production does not ship through a branch.
       let prodPlayer = { current: false, why: 'no production player pinned for this town yet' }
-      if (sites.mapId) {
-        try {
-          const get = (k) => fetch(freshUrl(`${ASSET_BASE_URL}${k}`)).then(r => r.ok ? r.json() : null)
-          const rec = await get(`staging/sites/${sites.mapId}/player.json`)
-          // ⛔ BLOCKED, not merely behind: Promote's dry run refuses a town with no record, so the panel says so up front.
-          if (!rec) prodPlayer = { current: false, blocked: true, why: 'this town names no player on staging — set it before promoting' }
-          else if (rec.player === 'ward') {
-            const [host, cur] = await Promise.all([sites.prod?.domain ? get(`hosts/${sites.prod.domain}.json`) : null, get('staging/ward/current.json')])
-            const current = !!host && !!cur && host.app === 'ward' && host.ward === cur.sha && host.kit === cur.kit
-            prodPlayer = { current, app: 'ward', ward: host?.ward ?? null,
-              why: current ? null : 'production does not yet carry the Ward build staging serves' }
-          } else {
-            const [p, st] = await Promise.all([`player/${sites.mapId}/build.json`, 'staging/player/build.json'].map(get))
-            if (p) prodPlayer = { current: !!st && p.builtAt === st.builtAt, app: 'legacy', builtAt: p.builtAt,
-              why: st && p.builtAt === st.builtAt ? null : 'production carries an older player than staging' }
-          }
-        } catch { /* unreachable ⇒ not known to be current */ }
+      if (!player.current) prodPlayer = { current: false, blocked: true, why: player.why }
+      else if (sites.prod?.domain) {
+        const host = await assetIO.json(`hosts/${sites.prod.domain}.json`).catch(() => null)
+        const current = !!host && host.app === 'ward' && host.ward === player.ward && host.kit === player.kit
+        prodPlayer = { current, app: 'ward', ward: host?.ward ?? null, why: current ? null : 'production does not yet carry the Ward build staging serves' }
       }
 
       res.writeHead(200, { 'Content-Type': 'application/json' })
@@ -3482,14 +3453,9 @@ createServer(async (req, res) => {
   // deployment panel: which effects each surface ships) is ACCEPTED here, because the manifest step runs again before the
   // upload and freezes deployment.json into what ships. The panel bakes first only when the bake check says a step is owed.
   //
-  // THE TWO ARTIFACTS, AND THEY HAVE DIFFERENT LIFECYCLES:
-  //   · the SLAB — this town's, `public/baked/<look>/` → `staging/baked/<look>/`. Uploaded here, then proven in the
-  //     bucket, never assumed.
-  //   · the PLAYER — the universal build, `staging/player/`, ONE for every town. Rebuilt
-  //     only when staging's build is behind the source (stagingPlayerState, the same read the
-  //     button's label comes from), because it costs a full vite build. ⚠️ AND IT IS SHARED:
-  //     republishing it reaches every town at once. That is correct — it is one product — but
-  //     it means a code change is never "just this town".
+  // IT SHIPS THE SLAB — this town's, `public/baked/<look>/` → `staging/baked/<look>/`. Uploaded here, then proven in the
+  // bucket, never assumed. The player is the Ward's, which publishes itself (staging/ward/current.json); the kit's own
+  // legacy player, rebuilt here when its source moved, was retired (2026-11-01).
   //
   // ⛔ The git commit stays. It is the AUTHORING state (design.json, the looks index),
   // which must survive a machine, and it is not what gets served.
@@ -3575,16 +3541,16 @@ createServer(async (req, res) => {
           || `it serves the pour of ${landed.bakedAt}, not ${bakedAt}`} (${ASSET_ENV_PREFIX.staging}${manifestPath(id)}).`)
       }
 
-      // ── 2. THE PLAYER, rebuilt only when staging's build is behind the source.
-      let playerPublished = false
-      if ((await stagingPlayerState(REPO_ROOT)).stale) {
-        await runShell('node scripts/publish-player-to-staging.mjs', { cwd: REPO_ROOT, timeout: 1800000 })
-        playerPublished = true
-      }
+      // ── 2. THE TOWN'S SHARE CARD, only now that its slab is proven in the bucket (Zob: a card never describes a slab that
+      // is not there): its own record, from its own baked Look (scripts/publish-towns-record.mjs). ⛔ One town's: another
+      // town's bake is never read, so it can never refuse this Publish (Boz's ruling C, 2026-11-01).
+      if (!site.mapId) throw new Error(`the slab is on staging, but "${id}" names no town, so its share card was not written`)
+      const card = await runCapture(`node scripts/publish-towns-record.mjs --map=${site.mapId}`, { cwd: REPO_ROOT, timeout: 120000 })
+      if (card.code !== 0) throw new Error(`the slab is on staging, but its share card was not written: ${(card.stderr || card.stdout).trim().split('\n').pop()}`)
 
       // `bakedAt` (above) is the just-shipped pour's: the UI polls the live artifact for this exact value
       res.writeHead(200, { 'Content-Type': 'application/json' })
-      res.end(JSON.stringify({ ok: true, committed, changed, branch, bakedAt, r2, playerPublished,
+      res.end(JSON.stringify({ ok: true, committed, changed, branch, bakedAt, r2,
         stagingUrl: site.staging.url, staging: site.staging }))
     } catch (err) {
       res.writeHead(500, { 'Content-Type': 'application/json' })
@@ -3603,9 +3569,9 @@ createServer(async (req, res) => {
   // THE ORDER IS THE SAFETY — nothing a visitor can reach changes until step 5:
   //   1. WHERE: the town's domain, asked of Operations (owned, zone active LIVE) — or a refusal.
   //   2. THE SLAB → the prod keys (`baked/<look>/`). ⛔ SLAB BEFORE CODE (`plans/r2-asset-offload.md §5`).
-  //   3. THE PLAYER the town's STAGING RECORD names (`staging/sites/<map>/player.json`) — the exact
-  //      build that was checked there, byte-verified: `legacy` → `player/<map>/`; `ward` → the Ward
-  //      build + its kit bundle, write-once at `ward/<sha>/` + `kit/<sha>/`. ⛔ No record refuses,
+  //   3. THE PLAYER the town's STAGING RECORD names (`staging/sites/<map>/player.json`, `ward`) — the
+  //      exact build that was checked there, byte-verified: the Ward build + its kit bundle, write-once at
+  //      `ward/<sha>/` + `kit/<sha>/`. A record naming the retired `legacy` player refuses. ⛔ No record refuses,
   //      and is asked BEFORE step 2, so a refused promote ships nothing.
   //   4. THE ADDRESS → `<domain>` and `www.<domain>` bound to the production Worker
   //      (`scripts/bind-production-domain.mjs`): the first promote of a town binds them, every later
@@ -3641,9 +3607,8 @@ createServer(async (req, res) => {
       let bakedAt = null
       try { bakedAt = JSON.parse(readFileSync(join(REPO_ROOT, `public/baked/${id}/scene.json`), 'utf-8')).bakedAt ?? null } catch { /* leave null */ }
       // ⭐ v2: the record names the player (`workers/production-sites/src/route.js#appOf`).
-      const record = pinned.player === 'ward'
-        ? { v: 2, app: 'ward', map, look: id, domain, ward: pinned.ward, kit: pinned.kit, builtAt: pinned.builtAt, bakedAt, promotedAt: new Date().toISOString() }
-        : { v: 2, app: 'legacy', map, look: id, domain, player: pinned.builtAt, bakedAt, promotedAt: new Date().toISOString() }
+      if (pinned.player !== 'ward') throw new Error(`promote-player pinned ${JSON.stringify(pinned.player)}; every town plays the Ward — nothing was switched`)
+      const record = { v: 2, app: 'ward', map, look: id, domain, ward: pinned.ward, kit: pinned.kit, builtAt: pinned.builtAt, bakedAt, promotedAt: new Date().toISOString() }
       const recPath = join(REPO_ROOT, '.promote-host.json')
       writeFileSync(recPath, JSON.stringify(record, null, 2))
       const sw = await runCapture(`npx wrangler r2 object put theward-assets/hosts/${domain}.json --file ${recPath} --remote `

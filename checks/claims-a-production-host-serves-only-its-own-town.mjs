@@ -11,7 +11,8 @@
 import { route, wwwRedirect } from '../workers/production-sites/src/route.js'
 import { decideProductionDomain } from '../src/lib/productionDomain.js'
 
-const rec = { v: 2, app: 'legacy', map: 'provincetown', look: 'provincetown' } /* fixture */
+const W = 'a'.repeat(40), K = 'b'.repeat(40)
+const rec = { v: 2, app: 'ward', map: 'provincetown', look: 'provincetown', ward: W, kit: K } /* fixture */
 let failed = 0
 const expect = (what, ok, got) => {
   if (ok) console.log(`  ✅ ${what}`)
@@ -20,11 +21,15 @@ const expect = (what, ok, got) => {
 console.log('A production host serves only its own town\n')
 
 let r = route('/', rec)
-expect('the bare domain is this town\'s pinned player', r.kind === 'document' && r.key === 'player/provincetown/index.html', r)
+expect('the bare domain is this town\'s pinned Ward build', r.kind === 'document' && r.key === `ward/${W}/index.html`, r)
 r = route('/place/ptwn-lst-0001', rec)
-expect('an SPA route is this town\'s pinned player', r.kind === 'document' && r.key === 'player/provincetown/index.html', r)
+expect('an SPA route is this town\'s pinned Ward build', r.kind === 'document' && r.key === `ward/${W}/index.html`, r)
 r = route('/_player/assets/index-abc12345.js', rec)
-expect('/_player/ is this town\'s PINNED copy, not the shared staging player', r.kind === 'player' && r.key === 'player/provincetown/assets/index-abc12345.js', r)
+expect('/_player/ (the retired legacy player) is refused by name, never read from the bucket', r.kind === 'refuse' && r.status === 404 && /retired/.test(r.why), r)
+for (const legacy of [{ v: 2, app: 'legacy', map: 'provincetown', look: 'provincetown' }, { map: 'provincetown', look: 'provincetown', player: '2026-09-28T08:20:15.084Z' }]) {
+  r = route('/', legacy)
+  expect(`a record naming the retired legacy player (${legacy.v ? 'v2' : 'pre-v2'}) refuses by name, never served the Ward`, r.kind === 'refuse' && r.status === 500 && /retired player \(legacy\)/.test(r.why), r)
+}
 for (const p of ['/baked/provincetown/scene.json', '/live/provincetown/listings.json', '/setpieces/provincetown/pilgrim-monument.glb']) {
   r = route(p, rec)
   expect(`${p} is this town's prod key`, r.kind === 'slab' && r.key === p.slice(1), r)

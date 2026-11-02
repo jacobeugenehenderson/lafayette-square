@@ -4,8 +4,8 @@
  *
  * The kit's public/ is copied into the one kit-player build every town gets, so a town's drawer of looks under public/
  * would ride into every other town's player (Zob measured 355 files, 636 KB). ⭐ WHAT SHIPS IS WHAT GIT TRACKS under
- * public/: both publishers say so (scripts/publish-player-to-staging.mjs: "a dist file that came from public/ ships only
- * if its source is tracked"; scripts/publish-kit-bundle.mjs: "every file git tracks under public/"). So this reads
+ * public/: the publisher says so (scripts/publish-kit-bundle.mjs: "every file git tracks under public/"; the retired
+ * legacy player's publisher shipped by the same rule). So this reads
  * `git ls-files public`, never the disk: the slab under public/baked (gitignored, published per town by
  * upload-baked-to-r2.mjs) carries the town's OWN displays, and walking it read as a false red (Zob, 2026-11-01). A town's displays live under its own
  * content root (cartograph/data/<town>/content/, served at /content/<town>/, its contentRoot) and nowhere else. So:

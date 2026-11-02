@@ -7,37 +7,25 @@
  *   node scripts/promote-player-to-prod.mjs --map=<map> --card-only [--dry-run]   (the share card alone: sites/<map>/towns.json)
  *
  * ⭐⭐ WHICH PLAYER IS THE TOWN'S STAGING RECORD (BRIEF-ls-onto-the-ward Phase 2): the one the
- * staging Worker serves it by, `staging/sites/<map>/player.json` (`scripts/set-staging-player.mjs`).
- * ⛔ No record, or anything but "ward" | "legacy", refuses by name before a byte moves — never a
- * default player. The last line of stdout is the JSON Promote writes the host record from.
+ * staging Worker serves it by, `staging/sites/<map>/player.json` (`scripts/set-staging-player.mjs`), read through
+ * src/lib/stagingPlayer.js. ⛔ No record, or anything but "ward" (the retired "legacy" player included), refuses by name
+ * before a byte moves — never a default player. The last line of stdout is the JSON Promote writes the host record from.
  *
- *   legacy → the kit's player, below: `staging/player/` → `player/<map>/`.
- *   ward   → the Ward build `staging/ward/current.json` names → `ward/<sha>/`, and the kit bundle
- *            that build pins → `kit/<kit>/` — each verified against its own sha256 list (the Ward's
- *            `build.json`, the bundle's `manifest.json`), the list written LAST.
- *            ⛔⛔ WRITE-ONCE. These keys are per COMMIT, shared by every town that pins that commit.
- *            A key already in production is verified against the list and skipped, NEVER
- *            overwritten; a mismatch refuses by name. That is what makes "promoting one town changes
- *            no other town's bytes" true rather than probable. ⛔ And nothing may delete a
- *            `ward/<sha>/` or `kit/<sha>/` that any `hosts/*.json` still names (the old player's
- *            removal, Phase 4, must honour it).
- *            The town's share card (the towns record, `staging/towns.json`, checked against its list) is pinned at
- *            `sites/<map>/towns.json` (src/lib/townsRecordKeys.js).
+ *   ward → the Ward build `staging/ward/current.json` names → `ward/<sha>/`, and the kit bundle
+ *          that build pins → `kit/<kit>/` — each verified against its own sha256 list (the Ward's
+ *          `build.json`, the bundle's `manifest.json`), the list written LAST.
+ *          ⛔⛔ WRITE-ONCE. These keys are per COMMIT, shared by every town that pins that commit.
+ *          A key already in production is verified against the list and skipped, NEVER
+ *          overwritten; a mismatch refuses by name. That is what makes "promoting one town changes
+ *          no other town's bytes" true rather than probable. ⛔ And nothing may delete a
+ *          `ward/<sha>/` or `kit/<sha>/` that any `hosts/*.json` still names.
+ *          The town's share card (its own record, `staging/sites/<map>/towns.json`, written by its Publish) is pinned at
+ *          `sites/<map>/towns.json` (src/lib/townsRecordKeys.js).
  *
- * ⭐⭐ COPY, NOT REBUILD (Jacob, 2026-09-26). Production gets the exact bytes that staging served:
- * the build named by `staging/player/build.json`, file by file from its `manifest.json`, each one
- * checked against the manifest's MD5 before it is written. ⛔ A rebuild here would ship a player
- * nobody had looked at.
+ * ⭐⭐ COPY, NOT REBUILD (Jacob, 2026-09-26). Production gets the exact bytes that staging served, each checked before
+ * it is written. ⛔ A rebuild here would ship a player nobody had looked at.
  *
- * ⭐ EACH TOWN PINS ITS OWN COPY, at `player/<map>/`, so promoting Provincetown changes no byte any
- * other town serves. The player is still ONE product — the copies are the same build, pinned at
- * different moments.
- *
- * ⛔ REFUSES, BY NAME: a staged player not built for a runtime slab base (it would read STAGING's
- * slab on a town's domain) · a manifest that does not match its stamp · a build that does not
- * carry this look · any byte that does not match the manifest.
- *
- * Sibling: `publish-player-to-staging.mjs` writes what this reads. Caller: `cartograph/serve.js`
+ * The legacy kit player (`staging/player/` → `player/<map>/`) was retired 2026-11-01. Caller: `cartograph/serve.js`
  * POST /looks/<id>/promote. ⛔ Like its siblings, it holds no list of towns.
  */
 import { spawn } from 'node:child_process'
@@ -45,12 +33,12 @@ import { createHash } from 'node:crypto'
 import { fileURLToPath } from 'node:url'
 import { typeFor } from '../src/lib/slabWire.js'
 import { freshUrl } from '../src/lib/freshUrl.js'
-import { STAGING_TOWNS, STAGING_TOWNS_LIST, townsKey } from '../src/lib/townsRecordKeys.js'
+import { stagingTownsKey, townsKey } from '../src/lib/townsRecordKeys.js'
+import { stagingPlayerOf } from '../src/lib/stagingPlayer.js'
 
 const REPO_ROOT = fileURLToPath(new URL('..', import.meta.url))
 const BUCKET = process.env.R2_BUCKET || 'theward-assets'
 const PUBLIC_BASE = (process.env.ASSET_BASE || 'https://assets.theward.online/').replace(/\/?$/, '/')
-const STAGED = 'staging/player/'
 const CONC = Number(process.env.SITE_UPLOAD_CONC) || 8
 const arg = (k) => (process.argv.find((a) => a.startsWith(`--${k}=`)) || '').split('=')[1] || null
 const map = arg('map'), look = arg('look')
@@ -60,8 +48,6 @@ const dryRun = process.argv.includes('--dry-run')
 const cardOnly = process.argv.includes('--card-only')
 const MAP_ID = /^[a-z0-9][a-z0-9-]{0,63}$/
 const SHA = /^[0-9a-f]{40}$/
-const SHA256 = /^[0-9a-f]{64}$/
-const md5 = (buf) => createHash('md5').update(buf).digest('hex')
 const sha256 = (buf) => createHash('sha256').update(buf).digest('hex')
 
 // The content type: src/lib/slabWire.js. ⛔ A player file is copied as its bytes, never encoded — it is not slab.
@@ -113,18 +99,17 @@ async function put(key, buf, rel, cache) {
 
 /**
  * ⭐ THE TOWN'S SHARE CARD, verified and pinned: the ONE path both a full Ward promote and `--card-only` take (Boz,
- * 2026-11-01). The towns record's own list (src/lib/townsRecordKeys.js) → its bytes, checked by sha256, with an entry for
- * this town. ⛔ No list, no promote; never the legacy player's copy (Zob, 2026-11-01).
+ * 2026-11-01). The town's own staging record (src/lib/townsRecordKeys.js#stagingTownsKey, written by its Publish), which
+ * must parse and carry this town. ⛔ No record, no promote. A single object put is whole or absent, so no list guards it
+ * (Zob, 2026-11-01); the all-towns record and its list were retired with the legacy player.
  */
 async function verifiedTownsRecord() {
-  const listBuf = await getBytes(STAGING_TOWNS_LIST, { missingOk: true })
-  if (!listBuf) throw new Error(`no ${STAGING_TOWNS_LIST} — the towns record has not been published. ▶ node scripts/publish-towns-record.mjs`)
-  const townsList = JSON.parse(listBuf)
-  if (!SHA256.test(townsList.sha256 || '')) throw new Error(`${STAGING_TOWNS_LIST} names no sha256 — publish the towns record again`)
-  const townsBuf = await getBytes(STAGING_TOWNS, { missingOk: true })
-  if (!townsBuf) throw new Error(`${STAGING_TOWNS_LIST} names a record ${STAGING_TOWNS} does not hold — publish the towns record again`)
-  if (sha256(townsBuf) !== townsList.sha256) throw new Error(`${STAGING_TOWNS} does not match ${STAGING_TOWNS_LIST} — publish the towns record again, then promote.`)
-  if (!JSON.parse(townsBuf)[map]) throw new Error(`${STAGING_TOWNS} has no entry for "${map}" — its card would be absent. Publish the towns record again.`)
+  const key = stagingTownsKey(map)
+  const townsBuf = await getBytes(key, { missingOk: true })
+  if (!townsBuf) throw new Error(`no ${key} — "${map}"'s share card has not been published. Publish the town to staging, then promote.`)
+  let rec
+  try { rec = JSON.parse(townsBuf) } catch { throw new Error(`${key} is not JSON — Publish the town to staging again, then promote.`) }
+  if (!rec?.[map]) throw new Error(`${key} has no entry for "${map}" — its card would be absent. Publish the town to staging again.`)
   return townsBuf
 }
 const pinTownsRecord = (townsBuf) => put(townsKey(map), townsBuf, 'towns.json', 'no-cache')
@@ -199,7 +184,7 @@ async function promoteWard() {
   if (cardOnly) {
     if (!MAP_ID.test(map || '')) throw new Error('--card-only needs --map=<map>')
     const townsBuf = await verifiedTownsRecord()
-    console.log(`card     ${STAGING_TOWNS} verified for "${map}" → ${BUCKET}/${townsKey(map)}`)
+    console.log(`card     ${stagingTownsKey(map)} verified for "${map}" → ${BUCKET}/${townsKey(map)}`)
     if (dryRun) { console.log('\n--dry-run: nothing copied.'); console.log(JSON.stringify({ ok: true, dryRun: true, map, cardOnly: true, copied: 0 })); return }
     await pinTownsRecord(townsBuf)
     console.log(JSON.stringify({ ok: true, map, cardOnly: true, copied: 1 }))
@@ -207,70 +192,14 @@ async function promoteWard() {
   }
   if (!MAP_ID.test(map || '') || !MAP_ID.test(look || '')) throw new Error('--map=<map> and --look=<look> are both required')
 
-  // ── 0. WHICH player — the town's staging record, and nothing else.
-  const recKey = `staging/sites/${map}/player.json`
-  const recBuf = await getBytes(recKey, { missingOk: true })
-  if (!recBuf) throw new Error(`"${map}" names no player on staging — nothing at ${recKey}. There is no default player. `
-    + `▶ node scripts/set-staging-player.mjs --map=${map} --player=ward|legacy, check it on staging, then promote.`)
-  let app
-  try { app = JSON.parse(recBuf).player } catch { app = undefined }
-  if (app === 'ward') return promoteWard()
-  if (app !== 'legacy') throw new Error(`${recKey} names player ${JSON.stringify(app)}; a town plays "ward" or "legacy".`)
-
-  const dest = `player/${map}/`
-
-  // ── 1. WHICH build. The stamp names it; the manifest must be the stamp's.
-  const stampBuf = await getBytes(`${STAGED}build.json`)
-  const stamp = JSON.parse(stampBuf)
-  if (stamp.assetBase !== 'runtime') {
-    throw new Error(`the staged player (built ${stamp.builtAt ?? '?'}) has its slab address compiled in — it would read `
-      + 'STAGING\'s slab on a town\'s domain. Publish to Staging again so it is rebuilt for a runtime base.')
+  // ── 0. WHICH player — the town's staging record, and nothing else: src/lib/stagingPlayer.js, the same answer Preview's
+  // status and the staging Worker give. ⛔ No record, a record naming the retired `legacy` player, no Ward, no bundle:
+  // each refuses by name before a byte moves.
+  const io = {
+    json: async (key) => { const b = await getBytes(key, { missingOk: true }); if (!b) return null; try { return JSON.parse(b) } catch { return {} } },
+    exists: async (key) => !!(await getBytes(key, { missingOk: true })),
   }
-  const manBuf = await getBytes(`${STAGED}manifest.json`)
-  if (md5(manBuf) !== stamp.manifestMd5) {
-    throw new Error('staging/player/manifest.json is not the one build.json names — a publish is mid-flight or '
-      + 'failed. Publish to Staging again, then promote.')
-  }
-  const manifest = JSON.parse(manBuf)
-  const rels = new Set(manifest.files.map((f) => f.rel))
-  for (const need of ['index.html', `looks/${look}/design.json`]) {
-    if (!rels.has(need)) throw new Error(`the staged player has no "${need}" — it cannot serve look "${look}". Publish it to staging first.`)
-  }
-  console.log(`build    ${stamp.builtAt} · ${manifest.files.length} files → ${BUCKET}/${dest}`)
-
-  // ── 2. WHAT is already pinned. ⛔ Every uncertain answer copies (same rule as the uploaders).
-  const pending = []
-  const queue = [...manifest.files]
-  await Promise.all(Array.from({ length: 16 }, async () => {
-    for (let f = queue.pop(); f; f = queue.pop()) {
-      try {
-        const r = await fetch(freshUrl(PUBLIC_BASE + dest + f.rel), { method: 'HEAD' })
-        if (r.ok && (r.headers.get('etag') || '').replace(/"/g, '') === f.md5) continue
-      } catch { /* copy it */ }
-      pending.push(f)
-    }
-  }))
-  console.log(`copy     ${pending.length} files (${manifest.files.length - pending.length} already pinned)`)
-  if (dryRun) { console.log('\n--dry-run: nothing copied.'); return }
-
-  // ── 3. COPY, each byte checked against the manifest before it is written.
-  let done = 0
-  const work = [...pending]
-  await Promise.all(Array.from({ length: CONC }, async () => {
-    for (let f = work.pop(); f; f = work.pop()) {
-      const buf = await getBytes(STAGED + f.rel)
-      if (md5(buf) !== f.md5) {
-        throw new Error(`staging/player/${f.rel} does not match the manifest — the staged build changed under this `
-          + 'promote. Nothing is switched; promote again.')
-      }
-      await put(dest + f.rel, buf, f.rel)
-      if (++done % 25 === 0) console.log(`         ${done}/${pending.length}`)
-    }
-  }))
-
-  // ── 4. The pinned copy's own manifest and stamp, LAST: they say "this copy is complete".
-  await put(`${dest}manifest.json`, manBuf, 'manifest.json')
-  await put(`${dest}build.json`, stampBuf, 'build.json')
-  console.log(`\n✅ player ${stamp.builtAt} pinned for ${map}`)
-  console.log(JSON.stringify({ ok: true, map, look, player: 'legacy', builtAt: stamp.builtAt, copied: pending.length }))
+  const p = await stagingPlayerOf(map, io)
+  if (!p.current) throw new Error(`${p.why} Check it on staging, then promote.`)
+  return promoteWard()
 })().catch((e) => { console.error('\n⛔ promote-player FAILED:', e.message, e.cause?.code ? `(${e.cause.code})` : ''); process.exit(1) })

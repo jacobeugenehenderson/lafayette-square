@@ -15,7 +15,7 @@ gated without anyone remembering to gate it, which is what makes this work on to
 
 A non-zero exit is a **finding for the board**, not a runner fault. The suite reports; it does not fix.
 
-## ⛔ live — 143. Never in a default run.
+## ⛔ live — 141. Never in a default run.
 
 Two reason classes, and they are not the same thing. **outbound** — a demonstrated call out.
 **unreadable** — runs code the parser cannot read, so it *may* contact nothing but cannot be shown
@@ -43,7 +43,6 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `checks/claims-a-dike-is-one-line-with-the-coast.mjs` | unreadable | writeFileSync · computed import() with no readable target — runs arbitrary modules |
 | `checks/claims-a-display-is-authored-on-its-own-channel.mjs` | unreadable | importSource of src/displays/showChannel.js — read, safe · importSource of src/displays/lightShow/engine.js — read, safe · importSource of src/lib/todSlots.js — read, safe · importSource of src/lib/useSceneJson.js (its span: fetchSceneOnce) — read, safe · importSource of src/lib/townClock.js — read, safe · importSource of src/cartograph/stores/useCartographStore.js (its span: displayChannelActions) — read, safe · importSource of cartograph/bake-scene.js (its span: displayRecordsOf) — read, safe · importSource of src/instances/registry.js — read, safe · import of a data: module built at run time — its body cannot be read (use checks/_importSource.mjs) · runs `git show 1b833418b98ce845c53ec22f0618d17` — a pinned blob, read-only |
 | `checks/claims-a-failed-read-names-its-cause.mjs` | outbound | imports a network module · importSource of cartograph/elevationSources.mjs, which can: calls fetch() · imports package(s) geotiff — not read from source |
-| `checks/claims-a-hashed-town-loads-end-to-end.mjs` | outbound | calls fetch() · opens a WebSocket · writeFileSync · deletes files · runs `npx` — reaches out · runs `/Applications/Google Chrome.app/Contents` — not a known-local command |
 | `checks/claims-a-label-change-ends-no-leg.mjs` | unreadable | writeFileSync · computed import() with no readable target — runs arbitrary modules |
 | `checks/claims-a-lake-level-converts-at-its-own-height.mjs` | outbound | writeFileSync — only under its own temp dir · mkdirSync — only under its own temp dir · deletes files — only under its own temp dir · imports cartograph/fetch-water-datums.mjs, which can: calls fetch(), mkdirSync, imports cartograph/io.js, which can: writeFileSync |
 | `checks/claims-a-land-use-boundary-is-one-line.mjs` | outbound | writeFileSync · computed import() with no readable target — runs arbitrary modules · computed import() with no readable target — runs arbitrary modules · imports cartograph/cdl.mjs, which can: calls fetch(), writeFileSync |
@@ -131,7 +130,6 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `checks/claims-the-overhead-camera-resolves-its-ground.mjs` | outbound | calls fetch() · opens a WebSocket · writeFileSync · mkdirSync · deletes files · runs `/Applications/Google Chrome.app/Contents` — not a known-local command · imports package(s) three — not read from source |
 | `checks/claims-the-paint-stack-flattens.mjs` | unreadable | writeFileSync — only under its own temp dir · computed import of a temp-dir module whose source cannot be read · re-runs its own file (process.execPath + its own path) — the same tier as itself · imports cartograph/bake-ground.js, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/terrainLoad.js, which can: imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync |
 | `checks/claims-the-paint-takes-the-rim-crossings.mjs` | unreadable | writeFileSync · child_process with a non-literal command — cannot be read · imports cartograph/bake-ground.js, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/terrainLoad.js, which can: imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync |
-| `checks/claims-the-player-publish-ships-only-the-player.mjs` | unreadable | imports vite — its server resolves localhost over DNS (caught by the no-network guard) · importSource of scripts/player-graph.mjs — read, safe · importSource of vite.config.js, which can: imports vite — its server resolves localhost over DNS (caught by the no-network guard), mkdirSync, copies/renames files · computed import() with no readable target — runs arbitrary modules · imports checks/_sourceFile.mjs, which can: writeFileSync, deletes files |
 | `checks/claims-the-pour-reads-the-towns-norm.mjs` | unreadable | child_process with a non-literal command — cannot be read |
 | `checks/claims-the-pour-records-itself-once.mjs` | unreadable | writeFileSync · mkdirSync · deletes files · computed import of a temp-dir module, and not every write is shown to stay in its temp dir · imports cartograph/pour-code.mjs, which can: runs `git` — not a known read-only git subcommand, runs `git` — not a known read-only git subcommand · imports cartograph/pourSteps.mjs, which can: writeFileSync |
 | `checks/claims-the-publish-can-stage-what-it-promises.mjs` | unreadable | runs `git` — not a known read-only git subcommand |
@@ -210,7 +208,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-deadend-look.mjs` | RENDER THE NINE. Read-only. |
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 
-## safe — 385. This is `npm test`.
+## safe — 386. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -450,6 +448,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-parcels-vote-by-area.mjs` | ⭐⭐ THE INVARIANT (Jacob, 2026-10-05 — "yes to underived grass and the rest"): a face no OSM land use |
 | `checks/claims-ped-does-not-follow-the-rim.mjs` | rim runs ALONG the arc for tens of metres; a band that is CUT by the stamp meets it in chords |
 | `checks/claims-price-of-record.mjs` | Can a DISPLAY FIGURE ever be charged? |
+| `checks/claims-promote-waits-on-the-towns-own-player.mjs` | "DOES PROMOTE WAIT ON THE TOWN'S OWN PLAYER, AND ONLY ON IT?" (Boz, 2026-11-01: Preview gated Promote on the legacy |
 | `checks/claims-proto-band-flood-mechanism.mjs` | ⭐ WHICH DISEASE IS THE FAT BAND? — the discriminating measurement, not a thickness histogram. |
 | `checks/claims-proto-blocks-are-faces.mjs` | + the raw neighborhood boundary) with the WORKING-TREE `mintProtopolygon`, so the frozen |
 | `checks/claims-proto-corner-is-authored-radius.mjs` | the gate is: does ②'s eased contour actually turn at the radius the operator asked for? |

@@ -14,13 +14,10 @@
  * (Jacob: "it's hard to tell.") ⭐ The condition had not been re-derived when the thing it
  * measured was removed, which is the ordinary way a gate rots.
  *
- * TWO THINGS ARE PINNED HERE, both from source:
- *  1. The staging condition does not depend on a branch commit count, and does depend on
- *     BOTH artifacts a staging publish ships — the slab and the shared player.
- *  2. `serve.js` and `scripts/publish-player-to-staging.mjs` agree about what the player's
- *     sources ARE. They answer the same question from two ends — "is the published player
- *     behind?" and "must I rebuild?" — and a drift between the lists is a button that
- *     lies in whichever direction the shorter list is short.
+ * PINNED HERE, from source: the staging condition does not depend on a branch commit count, and measures what a
+ * staging Publish ships — THE SLAB and the deployment it carries. ⭐ Not the player: the player is the Ward's, which
+ * publishes itself; Promote waits on it (checks/claims-promote-waits-on-the-towns-own-player.mjs). ⛔ It used to measure
+ * the retired legacy player's build marker too, so the button stayed undone until that player was rebuilt (2026-11-01).
  */
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
@@ -39,40 +36,21 @@ const m = panel.match(/const stagingDone\s*=\s*([^\n]+)/)
 if (!m) {
   bad('src/preview/PreviewApp.jsx no longer declares `stagingDone` — update this check.')
 } else {
-  // ⭐ Since 2026-10-05 the condition is built from two named halves (`stagingSlab`, `stagingPlayer`), because the
-  // button's LABEL names whichever is stale; the halves are read and checked in place of the one line.
+  // ⭐ The condition names its half (`stagingSlab`), because the button's LABEL says what it will ship.
   const half = (name) => (panel.match(new RegExp(`const ${name}\\s*=\\s*([^\\n]+)`)) || [])[1] || ''
-  const cond = `${m[1]} ${half('stagingSlab')} ${half('stagingPlayer')}`
+  const cond = `${m[1]} ${half('stagingSlab')}`
   if (/ahead\w*\s*===\s*0/.test(cond)) {
     bad(`\`stagingDone\` depends on a branch commit count — ${cond.trim()}\n`
       + '       Staging does not ship by branch any more, so that count never reaches 0 and the\n'
       + '       button can never say "Published to Staging".')
   } else ok('`stagingDone` does not depend on a branch commit count')
-  if (!/stagingSlab/.test(m[1]) || !/stagingPlayer/.test(m[1])) bad(`\`stagingDone\` is not built from both halves — ${m[1].trim()}`)
-  for (const [what, re] of [['the slab', /slabCurrent\(\s*'staging'\s*\)/], ['the deployment the slab carries', /status\.deployment\?\.shipped/], ['the player', /playerCurrent/]]) {
+  for (const [what, re] of [['the slab', /slabCurrent\(\s*'staging'\s*\)/], ['the deployment the slab carries', /status\.deployment\?\.shipped/]]) {
     if (re.test(cond)) ok(`it measures ${what}`)
     else bad(`\`stagingDone\` does not measure ${what} — a staging publish ships it, so the button `
       + 'would report done while that half is behind.')
   }
-}
-
-// ── 2. The two source lists must agree.
-const grabList = (src, file) => {
-  const g = src.match(/const PLAYER_SRC = \[([^\]]*)\]/)
-  if (!g) { bad(`${file} no longer declares PLAYER_SRC — the two ends cannot be compared.`); return null }
-  return g[1].split(',').map((s) => s.trim().replace(/^'|'$/g, '')).filter(Boolean)
-}
-const a = grabList(read('cartograph/serve.js'), 'cartograph/serve.js')
-const b = grabList(read('scripts/publish-player-to-staging.mjs'), 'scripts/publish-player-to-staging.mjs')
-if (a && b) {
-  const onlyA = a.filter((x) => !b.includes(x))
-  const onlyB = b.filter((x) => !a.includes(x))
-  if (onlyA.length || onlyB.length) {
-    bad('the player-source lists have drifted, so the freshness gate and the rebuild gate '
-      + 'disagree about what a change IS:')
-    if (onlyA.length) console.log(`       serve.js only: ${onlyA.join(', ')}`)
-    if (onlyB.length) console.log(`       publisher only: ${onlyB.join(', ')}`)
-  } else ok(`both ends agree on the player's sources (${a.join(', ')})`)
+  if (/playerCurrent|stagingPlayer\b/.test(cond)) bad('`stagingDone` waits on a player — Publish ships no player (the Ward publishes itself), so the button would wait on something it never ships')
+  else ok('it waits on nothing Publish does not ship')
 }
 
 console.log(failed ? `\n⛔ ${failed} failure(s)\n` : '\n✅ the publish button can say it is done\n')

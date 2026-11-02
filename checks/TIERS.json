@@ -1,10 +1,10 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 560,
+  "total": 559,
   "counts": {
-    "safe": 385,
+    "safe": 386,
     "local-effect": 32,
-    "live": 143
+    "live": 141
   },
   "checks": [
     {
@@ -454,19 +454,6 @@
         "mkdirSync",
         "deletes files",
         "imports cartograph/bake-content.js, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync"
-      ]
-    },
-    {
-      "file": "checks/claims-a-hashed-town-loads-end-to-end.mjs",
-      "tier": "live",
-      "reasonClass": "outbound",
-      "why": [
-        "calls fetch()",
-        "opens a WebSocket",
-        "writeFileSync",
-        "deletes files",
-        "runs `npx` — reaches out",
-        "runs `/Applications/Google Chrome.app/Contents` — not a known-local command"
       ]
     },
     {
@@ -1084,7 +1071,7 @@
       "file": "checks/claims-a-town-has-one-icon.mjs",
       "tier": "safe",
       "why": [
-        "reads repo files only"
+        "importSource of scripts/towns-record.mjs — read, safe"
       ]
     },
     {
@@ -2669,6 +2656,13 @@
       ]
     },
     {
+      "file": "checks/claims-promote-waits-on-the-towns-own-player.mjs",
+      "tier": "safe",
+      "why": [
+        "importSource of src/lib/stagingPlayer.js — read, safe"
+      ]
+    },
+    {
       "file": "checks/claims-proto-band-flood-mechanism.mjs",
       "tier": "safe",
       "why": [
@@ -3744,18 +3738,6 @@
       "tier": "safe",
       "why": [
         "reads repo files only"
-      ]
-    },
-    {
-      "file": "checks/claims-the-player-publish-ships-only-the-player.mjs",
-      "tier": "live",
-      "reasonClass": "unreadable",
-      "why": [
-        "imports vite — its server resolves localhost over DNS (caught by the no-network guard)",
-        "importSource of scripts/player-graph.mjs — read, safe",
-        "importSource of vite.config.js, which can: imports vite — its server resolves localhost over DNS (caught by the no-network guard), mkdirSync, copies/renames files",
-        "computed import() with no readable target — runs arbitrary modules",
-        "imports checks/_sourceFile.mjs, which can: writeFileSync, deletes files"
       ]
     },
     {

@@ -22,7 +22,7 @@
  * on its plain path; (f) staging hands cardFor its whole path (`/<town>/place/…`).
  *   node checks/claims-a-place-link-sends-its-own-card.mjs
  */
-import { STAGING_TOWNS, townsKey } from '../src/lib/townsRecordKeys.js'
+import { stagingTownsKey, townsKey } from '../src/lib/townsRecordKeys.js'
 import { join } from 'node:path'
 import { workerInMiniflare, mint, hex } from './_miniflare.mjs'
 import { CARD_HEADER, SHARE_IMAGE_RELS, PREVIEW_LICENCES } from '../src/lib/shareCard.js'
@@ -56,14 +56,16 @@ async function run(site, mutate) {
   const fails = []
   const W = hex(), K = hex()
   const [town, bare] = ['place', 'nolist'].map(mint)
-  const towns = { [town]: { title: 'Card Town', description: 'A town.', mark: '🦞' }, [bare]: { title: 'Bare Town', mark: '🦞' } }
+  // the record's shape since the icon came from the Look (scripts/towns-record.mjs): `icon` drawn, never a `mark` field
+  const ICON = 'data:image/svg+xml,%3Csvg%3E%3C/svg%3E'
+  const towns = { [town]: { title: 'Card Town', description: 'A town.', icon: ICON, iconFrom: 'look.mark' }, [bare]: { title: 'Bare Town', icon: ICON, iconFrom: 'look.mark' } }
   const mans = { [town]: manifest(town, true), [bare]: manifest(bare, false) }
   const SLAB_BASE = 'https://assets.example/staging/'
   const bindings = site === 'staging' ? { SITE_PREFIX: 'staging/sites/', PLAYER_PREFIX: 'staging/player/', WARD_PREFIX: 'staging/ward/', SLAB_BASE, OPERATIONS_URL: 'http://ops.invalid' } : {}
   const { mf, r2, get } = await workerInMiniflare(WORKERS[site], bindings, { mutate })
   const at = {}
   if (site === 'staging') {
-    await r2.put(STAGING_TOWNS, JSON.stringify(towns))
+    for (const t of Object.keys(towns)) await r2.put(stagingTownsKey(t), JSON.stringify({ [t]: towns[t] }))
     await r2.put('staging/ward/current.json', JSON.stringify({ sha: W, kit: K }))
     await r2.put(`staging/ward/${W}/index.html`, WARD_DOC(W))
     await r2.put(`staging/kit/${K}/manifest.json`, '{}')
