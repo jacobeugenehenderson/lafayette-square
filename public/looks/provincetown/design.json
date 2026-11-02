@@ -536,7 +536,7 @@
             "fadeOut": 0
           },
           "shows": {
-            "first": "golden",
+            "first": "16:00",
             "last": "00:00",
             "every": 60
           }
