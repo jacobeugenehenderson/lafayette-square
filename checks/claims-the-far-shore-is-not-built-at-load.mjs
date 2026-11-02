@@ -26,12 +26,18 @@
 // ⚠️ LIMIT, SAID: the flow is followed within ONE hook callback. A value computed in one hook (a useMemo returning an
 //   array) and written in another (a useEffect, or a child component's prop) is not connected: InstancedTrees' and
 //   StreetLights' anchor arrays were invisible to it for that reason (Groyne, 2026-10-29). Their resolvers no longer sample.
+// ⭐ ONE NAMED INDIRECTION IS FOLLOWED (Zob, 2026-11-02): a hook that hands its work to a GENERATOR (a named function* in the
+//   same file, run between frames by frameSlices.js#runSliced) is gated only if that generator's own generating sites are
+//   gated by the parameters the hook handed camera values to (followed through destructuring and for…of). One level, by name:
+//   a generator that calls another generator is not followed.
 // ⭐ AND THE FAR LAYER'S HIDE IS PER CHUNK (C7): SlabRevetment's near chunks are keyed face AND chunk, and the far meshes
 //   hide by the same key, so one near chunk on a long face leaves that face's other far chunks drawn at distance.
 // ▶ node checks/claims-the-far-shore-is-not-built-at-load.mjs [--mutants] [-v]
 //   Planted pairs (always run): a sample used only as a test → GREEN; the same sample written into a position → RED.
 //   --mutants: the far useFrame restored → RED · the same gated by a timer → RED · the far build moved INTO the near
-//   useFrame (a hook that reads the camera, but not to select it) → RED · the whole-face hide → RED; the near layer's
+//   useFrame (a hook that reads the camera, but not to select it) → RED · the first-use generator the near useFrame runs
+//   (a named function* in the same file, followed ONE level) building what the camera did not choose → RED · the whole-face
+//   hide → RED; the near layer's
 //   camera useFrame stays GREEN in the others (the control).
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { join, relative, dirname } from 'node:path'
@@ -210,28 +216,49 @@ function analyse(files, SAMPLERS) {
     const cb = p.get('arguments.0'); if (!cb?.isFunction?.()) return
     const r = flow(cb, new Set())
     if (!r.generates) return
-    const camT = new Set(['camera', 'cam', 'frustum'])
-    const hasCam = (node) => { let hit = false; traverse(node, { noScope: true, Identifier(q) { if (camT.has(q.node.name)) hit = true },
-      MemberExpression(q) { if (!q.node.computed && q.node.property.name === 'camera') hit = true } }); return hit }
+    // the camera's names in a body: seeded, then grown through declarations (destructuring included) and for…of loops
     const wrap = (n) => ({ type: 'File', program: { type: 'Program', body: [{ type: 'ExpressionStatement', expression: n }] } })
-    for (let pass = 0; pass < 6; pass++) { const before = camT.size
-      cb.traverse({ VariableDeclarator(q) { const id = q.node.id; if (id.type !== 'Identifier' || !q.node.init) return
-        if (hasCam(wrap(q.node.init))) camT.add(id.name) } })
-      if (camT.size === before) break }
-    const gated = (g) => {
-      if (g.path.node.arguments?.some(a => hasCam(wrap(a)))) return true
+    const namesOf = (q, out = []) => { if (!q) return out; if (q.type === 'Identifier') out.push(q.name); else if (q.type === 'ObjectPattern') q.properties.forEach(r => namesOf(r.value || r.argument, out)); else if (q.type === 'ArrayPattern') q.elements.forEach(e => namesOf(e, out)); else if (q.type === 'AssignmentPattern') namesOf(q.left, out); else if (q.type === 'RestElement') namesOf(q.argument, out); return out }
+    const camIn = (root, seed) => {
+      const T = new Set(seed)
+      const has = (node) => { let hit = false; traverse(node, { noScope: true, Identifier(q) { if (T.has(q.node.name)) hit = true },
+        MemberExpression(q) { if (!q.node.computed && q.node.property.name === 'camera') hit = true } }); return hit }
+      for (let pass = 0; pass < 6; pass++) { const before = T.size
+        root.traverse({
+          VariableDeclarator(q) { if (q.node.init && has(wrap(q.node.init))) namesOf(q.node.id).forEach(n => T.add(n)) },
+          ForOfStatement(q) { if (has(wrap(q.node.right))) (q.node.left.declarations || [{ id: q.node.left }]).forEach(d => namesOf(d.id).forEach(n => T.add(n))) },
+        })
+        if (T.size === before) break }
+      return has
+    }
+    const gatedIn = (g, root, has) => {
+      if (g.path.node.arguments?.some(a => has(wrap(a)))) return true
       let q = g.path, loop = null
-      while (q && q !== cb) { if (isLoop(q)) { loop = q; break } q = q.parentPath }
+      while (q && q !== root) { if (isLoop(q)) { loop = q; break } q = q.parentPath }
       q = g.path
-      while (q && q !== (loop ?? cb)) {
+      while (q && q !== (loop ?? root)) {
         const par = q.parentPath
-        if (par?.isIfStatement() && q.key !== 'test' && hasCam(wrap(par.node.test))) return true
+        if (par?.isIfStatement() && q.key !== 'test' && has(wrap(par.node.test))) return true
         if (loop && par && (par.isBlockStatement() || par.isProgram()) && Array.isArray(par.node.body)) {
-          for (const st of par.node.body.slice(0, q.key)) if (st.type === 'IfStatement' && exits(st.consequent) && hasCam(wrap(st.test))) return true
+          for (const st of par.node.body.slice(0, q.key)) if (st.type === 'IfStatement' && exits(st.consequent) && has(wrap(st.test))) return true
         }
         q = par
       }
       return false
+    }
+    const hasCam = camIn(cb, ['camera', 'cam', 'frustum'])
+    // ⭐ ONE NAMED INDIRECTION (Zob, 2026-11-02): a hook that hands its first-use work to a GENERATOR (a named function* in the
+    // same file, run by frameSlices.js#runSliced between frames) is gated only if that generator builds what the camera chose.
+    // Its own generating sites are judged by the same rule, its camera being the parameters the hook handed camera values to.
+    // One level, by name: a generator called from a generator is not followed (said, as a limit).
+    const gated = (g) => {
+      if (!gatedIn(g, cb, hasCam)) return false
+      const name = g.path.node.callee?.type === 'Identifier' ? g.path.node.callee.name : null, F = name && fns.get(name)
+      if (!F || !F.path.node.generator || F.file !== file) return true
+      const seed = F.path.node.params.map((prm, i) => (g.path.node.arguments[i] && hasCam(wrap(g.path.node.arguments[i])) ? namesOf(prm) : [])).flat()
+      const has = camIn(F.path, seed), inner = flow(F.path, samplerParams.get(name)).gens.filter(ig => !gatedIn(ig, F.path, has))
+      if (inner.length) { g.why = `${name} (the generator the hook runs) builds what the camera did not choose: ${inner[0].why}`; return false }
+      return true
     }
     const open = r.gens.filter(g => !gated(g))
     hooks.push({ file: relative(ROOT, file), line: p.node.loc?.start.line, hook, camera: open.length === 0, why: (open[0] ?? r.gens[0]).why })
@@ -303,7 +330,7 @@ if (process.argv.includes('--mutants')) {
   let alive = 0
   // ⭐ Zob: the far build moved INTO the near useFrame — a hook that reads the camera, where the build used to live. The camera
   // must select what is built there, so this is RED too.
-  const nearAnchor = '    const drape = [], nearKeys = new Set(), stoneAt = []\n'
+  const nearAnchor = '    const drape = [], nearKeys = new Set(), stoneAt = [], drapeWanted = []\n'
   if (!src.includes(nearAnchor)) throw new Error('⛔ near-useFrame mutant anchor gone from SlabRevetment.jsx')
   const INTO = nearAnchor + `    for (const f of faces) groundRelative(revetmentDrape({ poly: f.poly, crestAt: f.crestAt, toeAt: f.toeAt, berm: f.berm, groundAt: f.groundAt, waterY: f.waterY, globals: f.G1 }))\n`
   for (const [name, s2] of [['the far useFrame restored', src.replace(anchor, FAR + anchor)], ['the far build gated by a timer', src.replace(anchor, TIMER + anchor)],
@@ -311,6 +338,10 @@ if (process.argv.includes('--mutants')) {
     const r = analyse(swap(s2), SAMPLERS), n = r.hooks.find(h => h.file.endsWith('SlabRevetment.jsx') && h.hook === 'useTownFrame' && h.camera)
     const into = name.includes('into the near'), caught = red(r).length > allReds.length
     console.log(`  mutant: ${name} → ${caught ? 'RED ✓' : 'GREEN ✗'}${n || into ? '' : ' (and the near control vanished)'}`); if (!caught || (!n && !into)) alive++ }
+  // ⭐ Zob (2026-11-02): the generator the near useTownFrame hands its first use to builds what the camera did NOT choose
+  { const a = '  for (const job of jobs) {\n'; if (!src.includes(a)) throw new Error('⛔ generator mutant target gone from SlabRevetment.jsx')
+    const caught = red(analyse(swap(src.replace(a, '  for (const job of EVERY_CHUNK) {\n')), SAMPLERS)).length > allReds.length
+    console.log(`  mutant: the first-use generator builds what the camera did not choose → ${caught ? 'RED ✓' : 'GREEN ✗'}`); if (!caught) alive++ }
   { const a = 'nearKeys.add(`${f.key}#${k}`)'; if (!src.includes(a)) throw new Error('⛔ hide mutant target gone')
     const caught = !hideIsPerChunk(src.replace(a, 'nearKeys.add(f.key)')).ok
     console.log(`  mutant: the whole-face hide → ${caught ? 'RED ✓' : 'GREEN ✗'}`); if (!caught) alive++ }

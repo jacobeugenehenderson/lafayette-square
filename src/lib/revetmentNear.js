@@ -20,7 +20,8 @@
  * (shoreChunks.js, ~168 KB a chunk on Huron, unbounded before) is kept to the same window (shoreChunks.js#retainCandidates).
  * ▶ node checks/claims-a-reselect-reuses-what-it-built.mjs [--mutants]
  */
-import { chunkStones, shoreContext, retainCandidates } from './shoreChunks.js'
+import { chunkStones, shoreContext, retainCandidates, CHUNK_M } from './shoreChunks.js'
+import { Refusal } from './refusal.js'
 
 /** The context a stone chunk is settled in, chunks on each side (shoreChunks.js#chunkStones). ⭐ MEASURED, not chosen: at 1
  *  four stones go missing at a seam, at 2 the two windows resolve identically (SlabRevetment, 2026-10-29). */
@@ -36,7 +37,7 @@ export const stoneContext = (f, { paletteSize, seed }) => shoreContext({ poly: f
  *  ground's parts (elevation.js#drawnGroundParts in the player). ⛔ A face without its `stones` map is a face built by
  *  another path: said, never a fresh map that would silently cache nothing across reselects. */
 export function stonesOf(f, ci, partsAt) {
-  if (!(f.stones instanceof Map)) throw new Error(`[revetment] ⛔ face ${f.key} carries no stones cache — it was not built by SlabRevetment's faces`)
+  if (!(f.stones instanceof Map)) throw new Refusal(`[revetment] ⛔ face ${f.key} carries no stones cache — it was not built by SlabRevetment's faces`)
   const hit = f.stones.get(ci)
   if (hit) return hit
   const out = []
@@ -58,6 +59,21 @@ export function retainStones(faces, now, before = []) {
   }
 }
 
-/** The near set's identity: the drawn drape chunks and the stone chunks, in the order they are built. Two reselects with
- *  the same signature draw the same thing, so the second hands React nothing. */
-export const nearSignature = (drapeKeys, stoneKeys) => `${drapeKeys.join(',')}|${stoneKeys.join(',')}`
+/** ⭐ THE FIRST USE, QUEUED (Usher, 2026-11-02; the plan's step 3, Zob PASS). Profiled on paired first flights at 4×, the
+ *  worst frame is the FIRST build of chunks the flight newly reaches: Huron 4.3 s, 91% of it the revetment (the stones'
+ *  resolve, the drawn-ground reads, the drape's first build). No cache removes a first use, so it leaves the frame: the
+ *  near set's missing chunks are built between frames (frameSlices.js#runSliced, within the frame's own measured time) while
+ *  each one's FAR chunk stays drawn, so the shore is never bare.
+ *  The missing work of a near set, NEAREST FIRST (the chunk the eye is on arrives first): `drapeWanted` and `stoneWanted` are
+ *  [face, k] / [face, ci] chosen but not built, `at` the camera position. Each job carries its distance `d` and its `key`. */
+export function missingWork(drapeWanted, stoneWanted, at) {
+  const dist = (p) => Math.hypot(p.x - at.x, p.z - at.z)
+  const jobs = []
+  for (const [f, k] of drapeWanted) jobs.push({ kind: 'drape', f, k, key: `${f.key}#${k}`, d: dist(f.at[k]) })
+  for (const [f, ci] of stoneWanted) jobs.push({ kind: 'stones', f, ci, key: `${f.key}@${ci}`, d: dist(f.ctx.at(Math.min(f.ctx.total, (ci + 0.5) * CHUNK_M))) })
+  return jobs.sort((a, b) => (a.d - b.d) || (a.key < b.key ? -1 : a.key > b.key ? 1 : 0))
+}
+
+/** The near set's identity: the drawn drape chunks, the drawn stone chunks and the chunks still pending, in order. Two
+ *  reselects with the same signature draw the same thing and queue the same work, so the second hands React nothing. */
+export const nearSignature = (drapeKeys, stoneKeys, pendingKeys = []) => `${drapeKeys.join(',')}|${stoneKeys.join(',')}|${pendingKeys.join(',')}`

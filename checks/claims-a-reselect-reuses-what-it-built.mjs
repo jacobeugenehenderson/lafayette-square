@@ -21,13 +21,18 @@
 //     6 · no component calls chunkStones: stones reach the map only through stonesOf;
 //     7 · (planted, no slab) retainStones keeps exactly the chunks of the current near set and the one before, and the
 //         shore's candidate memo exactly the windows those chunks read (each ± STONE_MARGIN);
-//     8 · the near useTownFrame calls retainStones, so the cache is bounded by the window, never a session's whole shore.
+//     8 · the near useTownFrame calls retainStones, so the cache is bounded by the window, never a session's whole shore;
+//     9 · the near useTownFrame builds nothing itself (no revetmentDrape / groundRelative / stonesOf): its missing work goes
+//         to runSliced(buildPending(…)), between frames;
+//     10 · a near key is added only for a built drape chunk, so a pending chunk's far stays drawn (the shore is never bare);
+//     11 · (planted) missingWork queues the missing chunks nearest the camera first.
 // ▶ node checks/claims-a-reselect-reuses-what-it-built.mjs [--slab=<dir holding <town>/>] [--town=<id>] [--mutants]
 //   --mutants: the cache bypassed → 2 · a stone's drawn-ground y, or its raw ground, not subtracted → 1 · the early return removed → 4 · the drape
 //   keyed by index → 5 · groundGen dropped from the faces' deps → 3 · the cache hoisted out of the faces → 3 · a component
 //   resolving its own stones → 6 · retention keeps everything → 7 · the candidate memo unbounded, or kept without the window → 7 · retention forgets the
 //   previous set → 7 · the retention
-//   call removed → 8. Each must turn it RED.
+//   call removed → 8 · the first use built in the frame again → 9 · the far hidden while its near is pending → 10 · the queue
+//   farthest first → 11. Each must turn it RED.
 import { readFileSync, readdirSync, existsSync, writeFileSync, mkdtempSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { tmpdir } from 'node:os'
@@ -51,11 +56,12 @@ const { chunkStones } = await import(pathToFileURL(join(ROOT, 'src/lib/shoreChun
 const { boulderPalette } = await import(pathToFileURL(join(ROOT, 'src/lib/boulderGeometry.js')).href)
 const bad = [], say = (ok, line) => { console.log(`  ${ok ? '✅' : '⛔'} ${line}`); if (!ok) bad.push(line) }
 
-// a copy of revetmentNear.js with one edit, its import made absolute so it loads from the OS temp dir
+// a copy of revetmentNear.js with one edit, its imports made absolute so it loads from the OS temp dir
 const nearWith = (a, b) => { const src = readFileSync(NEAR, 'utf8')
   if (a && !src.includes(a)) throw new Error(`⛔ mutant target gone from revetmentNear.js: ${JSON.stringify(a)}`)
   const out = join(mkdtempSync(join(tmpdir(), 'near-')), 'revetmentNear.mjs')
-  writeFileSync(out, (a ? src.replace(a, b) : src).replace("from './shoreChunks.js'", `from '${pathToFileURL(join(ROOT, 'src/lib/shoreChunks.js')).href}'`))
+  writeFileSync(out, (a ? src.replace(a, b) : src).replace("from './shoreChunks.js'", `from '${pathToFileURL(join(ROOT, 'src/lib/shoreChunks.js')).href}'`)
+    .replace("from './refusal.js'", `from '${pathToFileURL(join(ROOT, 'src/lib/refusal.js')).href}'`))
   return import(pathToFileURL(out).href) }
 
 // ── BEHAVIOUR ────────────────────────────────────────────────────────────────
@@ -100,6 +106,15 @@ function behaviour(M, seated, { report = false } = {}) {
   }
   return fails
 }
+/** 11 · (planted) missingWork orders the missing chunks nearest the camera first, drape and stones together. */
+function nearestFirst(M) {
+  const ctx = { total: 100, at: (sv) => ({ x: sv, z: 0 }) }
+  const f = { key: 'p', at: [{ x: 90, z: 0 }, { x: 5, z: 0 }], ctx }
+  const jobs = M.missingWork([[f, 0], [f, 1]], [[f, 3], [f, 6]], { x: 40, z: 0 })   // stone 3 at s=42, stone 6 at s=78
+  const got = jobs.map(j => j.key).join(','), want = 'p@3,p#1,p@6,p#0'   // d: 2, 35, 38, 50
+  return got === want ? [] : [`11 · missingWork ordered [${got}], not nearest first [${want}]`]
+}
+
 /** 7 · retainStones keeps exactly the chunks of this near set and the one before, on a planted face (no slab needed). */
 function retention(M) {
   const cand = (n) => ({ _cand: new Map(Array.from({ length: n }, (_, c) => [c, [c]])) })
@@ -160,6 +175,18 @@ function source(src, components) {
     })
     let retains = false; near.traverse({ CallExpression(q) { if (q.node.callee.name === 'retainStones') retains = true } })
     if (!retains) fails.push('8 · the near useTownFrame never calls retainStones: the stones cache grows with every chunk a session visits')
+    // 9 · the first use leaves the frame: the hook itself builds nothing (it queues; buildPending, run by runSliced, builds)
+    let builds = []; near.traverse({ CallExpression(q) { const c = q.node.callee.name; if (['revetmentDrape', 'groundRelative', 'stonesOf'].includes(c)) builds.push(c) } })
+    if (builds.length) fails.push(`9 · the near useTownFrame builds in the frame (${[...new Set(builds)].join(', ')}): a first use lands in one frame again`)
+    let slices = false; near.traverse({ CallExpression(q) { if (q.node.callee.name === 'runSliced' && q.node.arguments[0]?.callee?.name === 'buildPending') slices = true } })
+    if (!slices) fails.push('9 · the near useTownFrame does not hand its missing work to runSliced(buildPending(…))')
+    // 10 · a pending chunk's FAR stays drawn: a near key is added only for a drape chunk that is built (inside an `if` on `built`)
+    let bare = 0; near.traverse({ CallExpression(q) {
+      if (q.node.callee.property?.name !== 'add' || q.node.callee.object?.name !== 'nearKeys') return
+      const guard = q.findParent(r => r.isIfStatement()); let onBuilt = false
+      if (guard) guard.get('test').traverse({ Identifier(r) { if (r.node.name === 'built') onBuilt = true } })
+      if (!onBuilt) bare++ } })
+    if (bare) fails.push(`10 · ${bare} near key(s) added for a chunk not yet built: its far chunk is hidden while the near is pending, and the shore is bare`)
     if (!sigFromNearSignature) fails.push('4 · the near set\'s `sig` is not revetmentNear.js#nearSignature')
     if (!guarded) fails.push('4 · the near useTownFrame reaches setBuilt without returning on an unchanged signature: every reselect hands React new arrays')
   }
@@ -191,6 +218,8 @@ const M = await nearWith(null)
 const bf = behaviour(M, seated, { report: true })
 say(!bf.length && seated.length > 0, `every stone chunk of ${seated.map(s => s.t).join(', ') || 'no town'}: cached = fresh, built once` + (bf.length ? `\n      ${bf.join('\n      ')}` : ''))
 const sf = source(REV_SRC, components)
+const nf = nearestFirst(M)
+say(!nf.length, 'missingWork queues the missing chunks nearest the camera first' + (nf.length ? `\n      ${nf.join('\n      ')}` : ''))
 const rf = retention(M)
 say(!rf.length, 'retainStones keeps this near set and the one before, and the candidates their windows read, nothing else' + (rf.length ? `\n      ${rf.join('\n      ')}` : ''))
 say(!sf.length, `SlabRevetment: the cache is made with the faces and bounded by the window, an unchanged near set returns before setBuilt, the drape is keyed by chunk, stones only through stonesOf` + (sf.length ? `\n      ${sf.join('\n      ')}` : ''))
@@ -198,16 +227,19 @@ say(!sf.length, `SlabRevetment: the cache is made with the faces and bounded by 
 if (process.argv.includes('--mutants')) {
   console.log('── mutants (each must turn it RED)')
   // the behaviour mutants run on the smallest seated town's first face only: a mutant needs one failing chunk, not a shore
-  // ⭐ on a face whose stones carry a non-zero ground part, or the ground mutant is invisible (Huron's first face has y = 0)
-  let one = []
-  for (const st of seated) { for (const f0 of st.faces) { const ctx = M.stoneContext(f0, st), a = chunkStones(ctx, 0, 2)
-    if (a.some(x => { const g = st.parts(x.p[0], x.p[2]); return g.raw !== 0 && g.y !== 0 })) { one = [{ ...st, faces: [f0] }]; break } } if (one.length) break }
-  if (seated.length && !one.length) bad.push('no face with a non-zero ground part under its first chunk: the ground mutant cannot be judged')
+  // ⭐ each behaviour mutant runs on a face whose stones make it visible: any face for the cache; for the ground mutants a face
+  // whose stones stand on a non-zero raw ground, or a non-zero drawn-ground y (searched chunk by chunk: a face's first chunk may
+  // stand off the drawn mesh, where y is 0). A slab with no such face cannot judge that mutant, and says so.
+  const faceWhere = (pred) => { for (const st of seated) for (const f0 of st.faces) { const ctx = M.stoneContext(f0, st)
+    for (let ci = 0; ci < ctx.nChunks; ci++) if (chunkStones(ctx, ci, 2).some(x => pred(st.parts(x.p[0], x.p[2])))) return [{ ...st, faces: [f0] }] } return [] }
+  const any = seated.length ? [{ ...[...seated].sort((a, b) => a.faces.length - b.faces.length)[0], faces: [[...seated].sort((a, b) => a.faces.length - b.faces.length)[0].faces[0]] }] : []
+  const onRaw = faceWhere(g => g.raw !== 0), onY = faceWhere(g => g.y !== 0)
+  if (seated.length && !onY.length) bad.push(`no face of ${seated.map(x => x.t).join(', ')} stands on a non-zero drawn-ground y: the y mutant cannot be judged on these slabs (run every town)`)
   let alive = 0
   const judge = (name, fails) => { const caught = fails.length > 0; console.log(`  mutant: ${name} → ${caught ? 'RED ✓' : 'GREEN ✗'}`); if (!caught) alive++ }
-  judge('the cache bypassed', behaviour(await nearWith('  if (hit) return hit\n', ''), one))
-  judge('a stone\'s drawn-ground y not subtracted', behaviour(await nearWith('st.p[1] - g.raw - g.y', 'st.p[1] - g.raw'), one))
-  judge('a stone\'s raw ground not subtracted', behaviour(await nearWith('st.p[1] - g.raw - g.y', 'st.p[1] - g.y'), one))
+  judge('the cache bypassed', behaviour(await nearWith('  if (hit) return hit\n', ''), any))
+  if (onY.length) judge('a stone\'s drawn-ground y not subtracted', behaviour(await nearWith('st.p[1] - g.raw - g.y', 'st.p[1] - g.raw'), onY))
+  if (onRaw.length) judge('a stone\'s raw ground not subtracted', behaviour(await nearWith('st.p[1] - g.raw - g.y', 'st.p[1] - g.y'), onRaw)); else bad.push('no face stands on a non-zero raw ground: the raw mutant cannot be judged')
   judge('retention keeps everything', retention(await nearWith('if (!keep.get(f).has(ci)) f.stones.delete(ci)', 'if (false) f.stones.delete(ci)')))
   judge('the candidate memo left unbounded', retention(await nearWith('    retainCandidates(f.ctx, keep.get(f), STONE_MARGIN)\n', '')))
   judge('the candidate memo kept to the chunks alone, no window', retention(await nearWith('retainCandidates(f.ctx, keep.get(f), STONE_MARGIN)', 'retainCandidates(f.ctx, keep.get(f), 0)')))
@@ -216,8 +248,11 @@ if (process.argv.includes('--mutants')) {
   judge('the early return removed', source(rev('lastSet.current.sig === sig) return', 'lastSet.current.sig === sig) {}'), components))
   judge('the drape keyed by index', source(rev('{built.drape.map(d => (\n        <mesh key={d.key}', '{built.drape.map((d, i) => (\n        <mesh key={i}'), components))
   judge('groundGen dropped from the faces\' deps', source(rev('}, [doc, palette, groundGen])\n\n  const [built', '}, [doc, palette])\n\n  const [built'), components))
-  judge('the cache hoisted out of the faces', source(rev('cache: new Map(), stones: new Map() }', 'cache: new Map(), stones: STONES }'), components))
+  judge('the cache hoisted out of the faces', source(rev('cache: new Map(), stones: new Map(), failed', 'cache: new Map(), stones: STONES, failed'), components))
   judge('the retention call removed', source(rev('    retainStones(faces, stoneAt, lastSet.current?.stoneAt)\n', ''), components))
+  judge('the first use built in the frame again', source(rev('    // the near set\'s missing chunks, nearest the camera first (revetmentNear.js#missingWork)\n', '    for (const [f, ci] of stoneAt) stonesOf(f, ci, drawnGroundParts)\n'), components))
+  judge('the far hidden while its near is pending', source(rev('if (!f.cache.has(k)) { if (!f.failed.has(k)) drapeWanted.push([f, k]); continue }', 'if (!f.cache.has(k)) { nearKeys.add(`${f.key}#${k}`); drapeWanted.push([f, k]); continue }'), components))
+  judge('the queue not nearest first', nearestFirst(await nearWith('return jobs.sort((a, b) => (a.d - b.d) ||', 'return jobs.sort((a, b) => (b.d - a.d) ||')))
   judge('a component resolving its own stones', source(REV_SRC, [...components, ['src/components/Planted.jsx', 'export const x = (ctx) => chunkStones(ctx, 0, 2)']]))
   if (alive) bad.push(`${alive} mutant(s) survived`)
 }
