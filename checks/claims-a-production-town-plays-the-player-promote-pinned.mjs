@@ -20,7 +20,8 @@
  *
  * ⭐ The share card (2026-11-01): the town's own record's three refusals (none, not JSON, no entry) and `--card-only`'s one-key write, each run as a mutant
  *    of the script (sourceFile) that must turn it red; writes are seen through a stand-in `npx` on PATH, never made.
- * ⛔ LOCAL ONLY. Usage: node checks/claims-a-production-town-plays-the-player-promote-pinned.mjs
+ * ⛔ LOCAL ONLY. Usage: node checks/claims-a-production-town-plays-the-player-promote-pinned.mjs [--mutants]
+ *   --mutants also re-runs part A with a legacy host record served as the Ward (route.js#appOf), which must turn it red.
  */
 import { mkdtempSync, writeFileSync, chmodSync, existsSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -40,7 +41,10 @@ const expect = (what, ok, got) => { if (!ok) fails.push(`${what} — got ${got.s
 const kitTags = (b) => b.match(/<meta name="ward-kit-base" content="([^"]*)"/g) || []
 
 // ── A. The production Worker ────────────────────────────────────────────────
-const { mf, r2, get } = await workerInMiniflare(join(ROOT, 'workers/production-sites/src/index.js'))
+const ROUTE = join(ROOT, 'workers/production-sites/src/route.js')
+// --mutants (2026-11-01): a legacy record served as the Ward must turn part A red.
+const LEGACY_AS_WARD = { [ROUTE]: (t) => t.replace("  if (rec.app === 'legacy') return { refuse: retired }", "  if (rec.app === 'legacy') return { app: 'ward' }") }
+const { mf, r2, get } = await workerInMiniflare(join(ROOT, 'workers/production-sites/src/index.js'), {}, process.argv.includes('--mutate-legacy') ? { mutate: LEGACY_AS_WARD } : {})
 const W = hex(), K = hex()
 const towns = ['ward', 'legacy', 'old', 'bare', 'odd', 'nokit', 'noapp'].map((t) => ({ t, map: mint(t) }))
 const T = Object.fromEntries(towns.map(({ t, map }) => [t, { map, look: map, domain: `${map}.example` }]))
@@ -79,12 +83,12 @@ r = await at('ward', '/_player/index.html')
 expect('a "ward" town has no /_player/', r.status === 404, r)
 r = await at('nokit')
 expect('a "ward" town whose kit bundle is missing refuses, naming the kit', r.status === 404 && r.body.includes('kit/'), r)
+// ⛔ A record still naming the retired legacy player is a town the census missed: it refuses BY NAME, serving neither its
+// pinned legacy copy nor the Ward (a silent player switch) — Zob, 2026-11-01.
 for (const t of ['legacy', 'old']) {
   r = await at(t, '/deep/route')
-  expect(`a ${t === 'old' ? 'pre-v2 (timestamped)' : 'v2 legacy'} town serves the kit's player, and no kit base from the Worker`, r.status === 200 && r.body.includes('LEGACY') && kitTags(r.body).length === 0, r)
+  expect(`a ${t === 'old' ? 'pre-v2 (timestamped)' : 'v2 legacy'} record refuses by name, serving neither player`, r.status === 500 && r.body.includes(T[t].map) && /retired player \(legacy\)/.test(r.body) && !r.body.includes('LEGACY') && !r.body.includes('WARD'), r)
 }
-r = await at('legacy', `/_ward/${W}/index.html`)
-expect('a "legacy" town has no /_ward/', r.status === 404, r)
 for (const t of ['bare', 'odd', 'noapp']) {
   r = await at(t)
   expect(`a host record that names no player (${t}) refuses by name`, r.status === 500 && (r.body.includes(T[t].map) || /player|app/.test(r.body)), r)
@@ -197,6 +201,12 @@ try {
   expect('Promote refuses a staging record naming the retired legacy player, by name', p.code !== 0 && p.out.includes('retired player (legacy)'), { status: p.code, body: p.out })
 } finally { server.close() }
 
+if (process.argv.includes('--mutants')) {
+  // part A again, in a child, with the mutant applied to the Worker: it must fail
+  const child = await run('node', [new URL(import.meta.url).pathname, '--mutate-legacy'], { cwd: ROOT }).then(() => 0, (e) => e.code ?? 1)
+  console.log(`${child ? '🔴' : '⚪ SURVIVED'} mutant: a legacy host record served as the Ward`)
+  if (!child) fails.push('mutant survived: a legacy host record served as the Ward')
+}
 if (fails.length) {
   console.error(`⛔ ${fails.length} failure(s):`)
   for (const f of fails) console.error('   ' + f)

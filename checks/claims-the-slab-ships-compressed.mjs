@@ -173,7 +173,7 @@ async function legWorkers(S, fails) {
   try {
     const enc = { key: 'baked/demo/ground.0123456789abcdef.bin', size: 7, httpEtag: '"e"', body: new Uint8Array(7), httpMetadata: { contentType: 'application/octet-stream', contentEncoding: 'br' } }
     const raw = { key: 'baked/demo/scene.0123456789abcdef.json', size: 5, httpEtag: '"r"', body: new Uint8Array(5), httpMetadata: { contentType: 'application/json; charset=utf-8' } }
-    const R2 = { 'hosts/demo.online.json': { json: async () => ({ v: 2, app: 'legacy', map: 'demo', look: 'demo' }) }, [enc.key]: enc, [raw.key]: raw }
+    const R2 = { 'hosts/demo.online.json': { json: async () => ({ v: 2, app: 'ward', map: 'demo', look: 'demo', ward: 'a'.repeat(40), kit: 'b'.repeat(40) }) }, [enc.key]: enc, [raw.key]: raw }
     const gets = []
     const env = { ASSETS: { get: async (k, o) => { gets.push({ k, range: !!o?.range }); return R2[k] ?? null }, head: async (k) => R2[k] ?? null } }
     const W = (await S.prod()).default
@@ -193,10 +193,12 @@ async function legWorkers(S, fails) {
     if (r.headers.get('accept-ranges') !== 'bytes') fails.push('③ production stopped offering ranges of a raw object')
 
     const St = (await S.staging()).default
-    const senv = { SLAB_BASE: 'https://assets.theward.online/staging/', PLAYER_PREFIX: 'staging/player/',
-      ASSETS: { get: async (k) => (k === 'staging/player/x.bin' ? { ...enc, key: k } : null), head: async () => null } }
+    // a stored-br object through staging's other served prefix, a Ward build's (`/_ward/<sha>/…`)
+    const SW = 'c'.repeat(40)
+    const senv = { SLAB_BASE: 'https://assets.theward.online/staging/', WARD_PREFIX: 'staging/ward/',
+      ASSETS: { get: async (k) => (k === `staging/ward/${SW}/x.bin` ? { ...enc, key: k } : null), head: async () => null } }
     inits.length = 0
-    const sr = await St.fetch(new Request('https://staging.theward.online/_player/x.bin'), senv)
+    const sr = await St.fetch(new Request(`https://staging.theward.online/_ward/${SW}/x.bin`), senv)
     if (sr.headers.get('content-encoding') !== 'br' || inits.at(-1)?.encodeBody !== 'manual') fails.push(`③ staging-sites sends a stored-br object with content-encoding ${sr.headers.get('content-encoding')}, encodeBody ${JSON.stringify(inits.at(-1)?.encodeBody)}`)
   } finally { globalThis.Response = NativeResponse }
 }

@@ -58,3 +58,15 @@ taken from `public/baked/<map>/manifest.json` when the player is published (`scr
 
 | `main` | `deploy.yml` | **lafayette-square.com (PROD)** |
 
+
+## from `cartograph/OPERATIONS.md` (commit 2, the Workers)
+
+- **Reading it:** `curl -s https://staging.theward.online/<map>/ | grep ward-kit-base` names the bundle; that base's `manifest.json` answers 200. `/_player/` and `legacy` are deleted at cutover (the Ward's README §9).
+
+## from `cartograph/OPERATIONS.md` (commit 2, the Workers)
+
+**Which player production plays is the host record's** (`v: 2`, `app: ward|legacy`; a Ward record also pins `ward` and `kit` shas — `workers/production-sites/src/route.js#appOf`). A Ward page is told `ward-kit-base` = `https://<domain>/kit/<sha>/`, same-origin like the slab. A record written before this field is legacy only because its `player` is the old build timestamp; anything else that names no player is a 500 that says so.
+
+## from `cartograph/OPERATIONS.md` (commit 2, the Workers)
+
+- ⚠️ **Switching a live town to the Ward is a production change:** set its staging record to `ward`, check it on staging, then Promote — e.g. re-promoting provincetown.online after its record says `ward` moves it off the old player. Until a town has a staging record, Promote refuses it.

@@ -13,14 +13,14 @@
  * `index.js`'s sequence: a rename table the Worker would throw on refuses; a former name in `staging/renamed.json` is
  * a 301 (skipped) when its new name's slab is there, else its old links 404 (dark); a slab with neither `manifest.json` nor `scene.json` is not published (skipped); otherwise
  * the `manifest.json`, the town's player record (BRIEF-ward-on-staging, 2026-09-28 — no record is a 404, ▶ node
- * scripts/set-staging-player.mjs --map=<t> --player=ward), and the player it names, which every town on it shares
- * (`wardBuild`: `current.json` → its kit bundle's manifest → its index.html; or the kit's legacy player). The
- * prefixes are read from the Worker's wrangler.jsonc vars.
+ * scripts/set-staging-player.mjs --map=<t> --player=ward) and the Ward build it serves, asked through
+ * src/lib/stagingPlayer.js#stagingPlayerOf: the Worker's own answer, so the gate and the Worker cannot disagree (a record
+ * naming the retired legacy player is dark here, as the Worker refuses it). The town prefix is read from wrangler.jsonc.
  *
  * PRODUCTION — the towns are what production-sites reads: every `hosts/<host>.json` record (Promote's), listed
  * from the bucket. Each is put through the Worker's own `route.js#route` for a page, and every key the Worker asks
  * for before it serves that page must be there: the slab's `manifest.json`, a Ward town's kit `manifest.json`, and
- * the page itself (`ward/<sha>/index.html`, or a legacy town's `player/<map>/index.html`) — `index.js`'s document
+ * the page itself (`ward/<sha>/index.html`) — `index.js`'s document
  * branch. ⛔ Not a list of towns, and not the legacy key alone (Ward, 2026-10-30): that gate counted a town as served
  * only if `player/<map>/index.html` existed, so HPDM, promoted to the Ward only, was skipped, and PTown passed on a
  * leftover. (lafayette-square.com's Pages site is not this Worker.)
@@ -47,6 +47,7 @@ import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { join } from 'node:path'
 import { route, MAP_ID } from '../workers/production-sites/src/route.js'
+import { stagingPlayerOf } from '../src/lib/stagingPlayer.js'
 import { importSource, sourceOf } from './_importSource.mjs'
 
 const REPO_ROOT = fileURLToPath(new URL('..', import.meta.url))
@@ -102,7 +103,7 @@ async function prodVerdict(rec, store) {
   const r = route('/', rec)
   if (r.kind === 'refuse') return { dark: `the Worker refuses its record (${r.status}): ${r.why}` }
   const need = [`baked/${rec.look}/manifest.json`]
-  if (r.app === 'ward') need.push(`kit/${rec.kit}/manifest.json`)
+  need.push(`kit/${rec.kit}/manifest.json`)
   need.push(r.key)
   const got = await Promise.all(need.map((k) => store.has(k)))
   const missing = need.filter((k, i) => !got[i])
@@ -143,39 +144,18 @@ const configOf = (env) => {
   const src = readFileSync(join(REPO_ROOT, at), 'utf8')
   return (k) => { const m = src.match(new RegExp(`"${k}"\\s*:\\s*"([^"]+)"`)); if (!m) throw new Error(`${at} names no ${k}`); return m[1] }
 }
-const stagingVars = () => { const v = configOf('staging'); return { SITE: v('SITE_PREFIX'), PLAYER: v('PLAYER_PREFIX'), WARD: v('WARD_PREFIX') } }
+const stagingVars = () => { const v = configOf('staging'); return { SITE: v('SITE_PREFIX') } }
 const SLAB = 'staging/baked/', KIT = 'staging/kit/', RENAMED = 'staging/renamed.json'   // index.js's own literals
 const isSha = (v) => typeof v === 'string' && /^[0-9a-f]{40}$/.test(v)
 
-/** The player every town naming it shares (`index.js#wardBuild`, and the legacy branch) → null when it serves, else why. */
-function sharedPlayers(store, vars) {
-  const memo = {}
-  return (player) => (memo[player] ??= (async () => {
-    if (player === 'legacy') return (await store.has(`${vars.PLAYER}index.html`)) ? null : `the kit's player is not published (nothing at ${vars.PLAYER}index.html)`
-    const pointerKey = `${vars.WARD}current.json`
-    const body = await store.get(pointerKey)
-    if (body == null) return `the Ward is not published (nothing at ${pointerKey})`
-    let cur
-    try { cur = JSON.parse(body) } catch { cur = null }
-    if (!isSha(cur?.sha) || !isSha(cur?.kit)) return `${pointerKey} names no Ward commit and kit commit: ${body.slice(0, 120)}`
-    if (!(await store.has(`${KIT}${cur.kit}/manifest.json`))) return `the kit bundle ${cur.kit} is not published (nothing at ${KIT}${cur.kit}/manifest.json)`
-    if (!(await store.has(`${vars.WARD}${cur.sha}/index.html`))) return `the Ward build ${cur.sha} has no index.html`
-    return null
-  })())
-}
-
 /** What staging-sites does before it serves `/<map>/` (`index.js`, after the rename table). */
-async function stagingVerdict(map, store, vars, shared) {
+async function stagingVerdict(map, store, vars) {
   const recordKey = `${vars.SITE}${map}/player.json`
   const [manifest, scene, rec] = await Promise.all([store.has(`${SLAB}${map}/manifest.json`), store.has(`${SLAB}${map}/scene.json`), store.get(recordKey)])
   if (!manifest && !scene) return { unpublished: rec != null ? 'a player record and no slab' : 'no slab' }
   if (!manifest) return { dark: 'published (scene.json) with NO manifest.json' }
-  if (rec == null) return { dark: `names no player (nothing at ${recordKey}) ▶ node scripts/set-staging-player.mjs --map=${map} --player=ward` }
-  let player
-  try { player = JSON.parse(rec).player } catch { player = undefined }
-  if (player !== 'ward' && player !== 'legacy') return { dark: `${recordKey} names player ${JSON.stringify(player)}` }
-  const why = await shared(player)
-  return why ? { dark: why } : { ok: `manifest.json · player record (${player}) · the ${player} player` }
+  const p = await stagingPlayerOf(map, { json: async (k) => { const b = await store.get(k); if (b == null) return null; try { return JSON.parse(b) } catch { return {} } }, exists: (k) => store.has(k) })
+  return p.current ? { ok: `manifest.json · player record (ward) · Ward ${p.ward.slice(0, 8)} on kit ${p.kit.slice(0, 8)}` } : { dark: p.why }
 }
 
 /** → { [map]: 'ok' | 'dark' | 'accepted' | 'unpublished' | 'renamed' | 'uncertain', ['ACCEPT_DARK <t>']: 'stale' }, printing each. */
@@ -195,7 +175,6 @@ async function stagingRun(store, accepted, say = console) {
     say.error(`  ⛔ staging the towns (${vars?.SITE ?? 'staging/sites/'}, ${SLAB}) could not be listed: ${err.message} — refusing to say it is safe`)
     return { '*': 'uncertain' }
   }
-  const shared = sharedPlayers(store, vars)
   for (const map of maps) {
     const tag = `${'staging'.padEnd(8)}${map.padEnd(26)}`
     // A former name is a 301 before any slab is asked for; the name it points at is judged as itself.
@@ -204,7 +183,7 @@ async function stagingRun(store, accepted, say = console) {
         if (await store.has(`${SLAB}${renamed[map]}/manifest.json`)) { out[map] = 'renamed'; say.log(`  ·  ${tag} renamed to "${renamed[map]}" (${RENAMED}): a redirect, not a town`); continue }
         throw Object.assign(new Error(), { dark: `renamed to "${renamed[map]}", which has no ${SLAB}${renamed[map]}/manifest.json — its old links 404` })
       }
-      const v = await stagingVerdict(map, store, vars, shared)
+      const v = await stagingVerdict(map, store, vars)
       if (v.ok) { out[map] = 'ok'; say.log(`  ✅ ${tag} ${v.ok}`) }
       else if (v.unpublished) { out[map] = 'unpublished'; say.log(`  ·  ${tag} not published here (${v.unpublished})`) }
       else if (accepted.has(map)) { out[map] = 'accepted'; say.warn(`  ⚠️ ${tag} goes DARK on staging BY YOUR DECISION (ACCEPT_DARK) — ${v.dark}`) }
@@ -262,8 +241,8 @@ const CASES = [
   ['HPDM with no slab manifest', without(both, 'baked/hipointedemun/manifest.json'), { 'provincetown.online': 'ok', 'hipointedemun.online': 'dark' }],
   ['a Ward town whose kit is not in production', without(wardTown('provincetown'), `kit/${K}/manifest.json`), { 'provincetown.online': 'dark' }],
   ['a Ward town whose pinned build has no page', without(wardTown('provincetown'), `ward/${W}/index.html`), { 'provincetown.online': 'dark' }],
-  ['a legacy town with its player', legacy, { 'ls.online': 'ok' }],
-  ['a legacy town with no player', without(legacy, 'player/lafayette-square/index.html'), { 'ls.online': 'dark' }],
+  ['a record naming the retired legacy player, its copy still there', legacy, { 'ls.online': 'dark' }],
+  ['a record naming the retired legacy player, no copy', without(legacy, 'player/lafayette-square/index.html'), { 'ls.online': 'dark' }],
   ['a record naming no player the Worker plays', { 'hosts/x.online.json': JSON.stringify({ v: 2, app: 'kit', map: 'x', look: 'x' }), 'baked/x/manifest.json': '{}' }, { 'x.online': 'dark' }],
   ['the records cannot be listed', null, { '*': 'uncertain' }],
 ]
@@ -299,8 +278,7 @@ const STAGING_CASES = [
   ['the Ward not published', stTown('provincetown'), [], { provincetown: 'dark' }],
   ['the Ward\'s kit bundle not published', { ...without(stWard, `staging/kit/${K}/manifest.json`), ...stTown('provincetown') }, [], { provincetown: 'dark' }],
   ['the Ward build with no page', { ...without(stWard, `staging/ward/${W}/index.html`), ...stTown('provincetown') }, [], { provincetown: 'dark' }],
-  ['a legacy town with the kit\'s player', { ...stTown('ls', 'legacy'), 'staging/player/index.html': 'x' }, [], { ls: 'ok' }],
-  ['a legacy town with no kit player published', stTown('ls', 'legacy'), [], { ls: 'dark' }],
+  ['a record naming the retired legacy player, its build still there', { ...stWard, ...stTown('ls', 'legacy'), 'staging/player/index.html': 'x' }, [], { ls: 'dark' }],
   ['a record naming no player the Worker plays', { ...stWard, ...stTown('x', 'kit') }, [], { x: 'dark' }],
   ['ACCEPT_DARK names a town going dark', huronNoRecord, ['huron'], { provincetown: 'ok', huron: 'accepted' }],
   ['ACCEPT_DARK names a town that is fine', { ...stWard, ...stTown('provincetown') }, ['provincetown'], { provincetown: 'ok', 'ACCEPT_DARK provincetown': 'stale' }],
@@ -329,13 +307,13 @@ async function selfTest() {
 const MUTANTS = [
   ['the legacy key gates a Ward town again', 'need.push(r.key)', 'need.push(r.key, `player/${rec.map}/index.html`)'],
   ['the slab manifest not asked for', 'const need = [`baked/${rec.look}/manifest.json`]', 'const need = []'],
-  ['the kit manifest not asked for', "if (r.app === 'ward') need.push(`kit/${rec.kit}/manifest.json`)", ''],
+  ['the kit manifest not asked for', "need.push(`kit/${rec.kit}/manifest.json`)", ''],
   ['the page not asked for', 'need.push(r.key)', ''],
   ['only the first page of records read', 'cursor = j.result_info?.is_truncated ? j.result_info.cursor : null', 'cursor = null'],
   ['an unlistable bucket read as no towns', "if (r.status !== 200) throw new Error(`listing ${prefix} answered ${r.status}`)", 'if (r.status !== 200) return'],
   ['staging: the registry\'s towns instead of the bucket\'s', 'maps = [...new Set([...sites, ...slabs])].sort()', "maps = (await import('../src/instances/registry.js')).registeredMaps()"],
   ['staging: only the records listed (a slab with no record unseen)', '[...sites, ...slabs]', '[...sites]'],
-  ['staging: the shared player not asked for', 'const why = await shared(player)', 'const why = null'],
+  ['staging: the town\'s player not asked for', 'const p = await stagingPlayerOf(map,', "const p = { current: true, ward: 'x'.repeat(40), kit: 'x'.repeat(40) }; void (map,"],
   ['staging: a record with no slab called dark', "if (!manifest && !scene) return { unpublished:", "if (false) return { unpublished:"],
   ['staging: the rename table not read', 'if (renamed[map]) {', 'if (false) {'],
   ['staging: the rename table\'s values not tested', " || Object.values(renamed).some((v) => typeof v !== 'string' || !MAP_ID.test(v))", ''],
