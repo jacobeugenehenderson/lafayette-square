@@ -17,7 +17,8 @@
  * rectangle out, for every baked primitive in every look. A town nobody has opened gets
  * it free, and it fails LOUDLY naming the species, the material and both rectangles.
  *
- *   node checks/claims-atlas-uv-rect-survives-the-bake.mjs [look ...]
+ *   node checks/claims-atlas-uv-rect-survives-the-bake.mjs [look ...]   — exit 2 NOT MEASURED when no rectangle was checked
+ *   node checks/claims-atlas-uv-rect-survives-the-bake.mjs --mutants    — the verdict on planted counts, and the zero gate removed → RED
  */
 import { NodeIO } from '@gltf-transform/core'
 import { ALL_EXTENSIONS } from '@gltf-transform/extensions'
@@ -46,7 +47,8 @@ function prims(doc) {
   return out
 }
 
-const looks = process.argv.slice(2).length ? process.argv.slice(2)
+const named = process.argv.slice(2).filter(a => !a.startsWith('--'))
+const looks = process.argv.includes('--mutants') ? [] : named.length ? named
   : (existsSync(BAKED) ? readdirSync(BAKED).filter(d => statSync(path.join(BAKED, d)).isDirectory()) : [])
 
 let checked = 0, fail = 0, skipped = 0
@@ -108,12 +110,44 @@ for (const look of looks) {
   }
 }
 
+/**
+ * The verdict, from the counts alone: a moved rectangle is RED; NO rectangle checked is NOT MEASURED (exit 2), never a
+ * pass. ⛔ "0 checked, 0 moved" used to print PASS: a checkout with no baked trees (public/baked is gitignored) went green
+ * having read nothing (Zob, 2026-11-01, measured in a data-less worktree).
+ */
+function verdictOf({ checked, fail }) {
+  if (fail) return 'red'
+  if (checked === 0) return 'notMeasured'
+  return 'green'
+}
+
+if (process.argv.includes('--mutants')) {
+  // The verdict, run on planted counts; then the same with the zero gate removed, which must be seen.
+  const { importSource } = await import('./_importSource.mjs')
+  const load = (transform) => importSource('checks/claims-atlas-uv-rect-survives-the-bake.mjs', { span: { functions: ['verdictOf'] }, suffix: '\nexport { verdictOf }', ...(transform ? { transform } : {}) })
+  const real = await load(), gate = "  if (checked === 0) return 'notMeasured'\n"
+  const cases = [[{ checked: 0, fail: 0 }, 'notMeasured'], [{ checked: 0, fail: 1 }, 'red'], [{ checked: 3, fail: 0 }, 'green'], [{ checked: 3, fail: 1 }, 'red']]
+  let bad = 0
+  for (const [c, want] of cases) { const got = real.verdictOf(c); if (got !== want) { bad++; console.log(`⛔ verdict ${JSON.stringify(c)} → ${got}, not ${want}`) } }
+  const mut = await load((t) => { if (!t.includes(gate)) throw new Error('[mutant] the zero gate is gone — re-aim it'); return t.replace(gate, '') })
+  const seen = mut.verdictOf({ checked: 0, fail: 0 }) !== 'notMeasured'
+  if (!seen) bad++
+  console.log(`   mutant · the zero gate removed: ${seen ? 'RED, as it must be (0 checked reads as a pass)' : '⛔ still clean — the check cannot see it'}`)
+  console.log(bad ? '\n⛔ the verdict is wrong, or a mutant was not seen' : '\n✅ the verdict holds on every planted count, and its mutant is seen')
+  process.exit(bad ? 1 : 0)
+}
+
 console.log(`\nrectangles checked: ${checked}   moved by the bake: ${fail}   unpairable/tiling/skipped: ${skipped}`)
-if (fail) {
+const verdict = verdictOf({ checked, fail })
+if (verdict === 'red') {
   console.log(`\n⛔ FAIL — a UV rectangle moved between the published GLB and the baked one.`)
   console.log(`   A linear pack-into-tile cannot do that. Something non-linear ran in front of it`)
   console.log(`   (see bake-look#transformUVs), and the two surfaces are now painting different`)
   console.log(`   parts of the atlas for the same tree.`)
   process.exit(1)
+}
+if (verdict === 'notMeasured') {
+  console.log(`\n⛔ NOT MEASURED — no UV rectangle was checked (${looks.length} look(s) under public/baked; ${skipped} skipped). Nothing here is a pass.`)
+  process.exit(2)
 }
 console.log('✅ PASS — every UV rectangle survived the bake unmoved.')

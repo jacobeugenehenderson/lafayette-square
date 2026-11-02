@@ -1343,7 +1343,9 @@
       "file": "checks/claims-an-inland-town-asks-no-water-level.mjs",
       "tier": "safe",
       "why": [
-        "importSource of cartograph/waterLevel.mjs — read, safe"
+        "importSource of cartograph/waterLevel.mjs — read, safe",
+        "importSource of checks/claims-an-inland-town-asks-no-water-level.mjs (its span: verdictOf) — read, safe",
+        "importSource of checks/claims-an-inland-town-asks-no-water-level.mjs (its span: verdictOf) — read, safe"
       ]
     },
     {
@@ -1384,6 +1386,7 @@
       "file": "checks/claims-atlas-uv-rect-survives-the-bake.mjs",
       "tier": "safe",
       "why": [
+        "importSource of checks/claims-atlas-uv-rect-survives-the-bake.mjs (its span: verdictOf) — read, safe",
         "imports package(s) @gltf-transform/core, @gltf-transform/extensions — not read from source"
       ]
     },
