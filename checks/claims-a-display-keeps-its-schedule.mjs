@@ -15,7 +15,8 @@
  *   4. DAYS: daily, weekdays; a DATED entry replaces them on its dates; fireworks (no Ambient) play on their date only;
  *   5. REFUSED by name: a bad END, days, key, fade, interval; an entry with nothing; "after the last show" with no shows;
  *      over the year: two ends that pass each other (naming the days), a slot that jumps, two nights that overlap on a date
- *      or across midnight (Zob 3); ONE HOME PER FACT: a key at 0 is a level (a show plays dark, Ambient hangs dark),
+ *      or across midnight (Zob 3), an Ambient that would never go off (a planted fault: a night with no show); a show at
+ *      Ambient's own on-time plays whatever its fade-in (Boz's ruling on Zob's probes); ONE HOME PER FACT: a key at 0 is a level (a show plays dark, Ambient hangs dark),
  *      never an off (Jacob, 2026-11-02);
  *   6. THE PUBLISHED SHAPES, read, EXACTLY: PTown's published channel (per-key showEvery, sunset ▲15, dawn ▼15) and the
  *      old default, against the OLD engine and resolver at a pinned full sha, at EVERY minute of 2026 at PTown (glow, show,
@@ -101,6 +102,17 @@ async function verdict({ sched, chan, slots, clock, view, bake, store } = {}) {
   F(/runs past .*'s night beginning; nights overlap across midnight/.test(judged([{ days: 'daily', ambient: { on: '00:30', fadeIn: 0, off: '05:00', fadeOut: 0 }, shows: null }, { days: { dates: ['2026-12-31'] }, ambient: { on: 'dusk', fadeIn: 0, off: '01:00', fadeOut: 0 }, shows: null }])), 'a dated night running past midnight into the next date\'s night is not refused (Zob 3)')
   const jump = Array.from({ length: 4 }, (_, i) => ({ date: `2026-03-0${i + 1}`, minutes: { ...SM, dusk: i < 2 ? hm(0, 30) : hm(12, 30) } }))
   F(refuses(() => H.refuseScheduleSense(chOf([{ days: 'daily', ambient: { on: 'dusk', fadeIn: 0, off: '23:00', fadeOut: 0 }, shows: null }]), jump, 302.2, 'check'), /Dusk moves 720 minutes from 2026-03-02 to 2026-03-03 here/), 'a schedule ending on a slot that jumps is judged rather than refused')
+  // Zob's probes (2026-11-02) under Boz's ruling: a show at Ambient's own on-time PLAYS, whatever its fade-in (the fade shapes
+  // the level, never whether a show plays); so the lone show plays and "after the last show" ends on it
+  for (const [amb, shows, want] of [[{ on: '21:00', fadeIn: 5 }, { first: '21:00', last: '21:00' }, [hm(21)]], [{ on: 'dusk', fadeIn: 10 }, { first: 'dusk', last: 'dusk' }, [SM.dusk]], [{ on: 'dusk', fadeIn: 10 }, { first: 'dusk', last: '23:00' }, [SM.dusk, ...[19, 20, 21, 22, 23].map(h => hm(h))]]]) {
+    const z = chOf([{ days: 'daily', ambient: { ...amb, off: 'after-last-show', fadeOut: 0 }, shows: { ...shows, every: 60 } }]), n = H.nightsOn(z, D, flat, 302.2)[0]
+    F(same(n.starts, want) && n.end === want.at(-1) + 302.2 / 60, `Ambient at ${amb.on} (fade ${amb.fadeIn}), shows ${shows.first}–${shows.last}: the starts are not ${want} ending the night (${n.starts}; end ${n.end})`)
+  }
+  // the invariant behind it: a night with "after the last show" and no show is refused by name, never left lit (a fault
+  // planted in nightOf drops every start)
+  const HP = await importSource('src/displays/showSchedule.js', { transform: (s) => (sched ? sched(s) : s).replace('      if (whole) {', '      if (false) {') })
+  const planted = (() => { try { HP.refuseScheduleSense(S.validateDisplayChannel({ animated: 'tod', values: { dusk: { ...KEY }, dawn: { ...KEY } }, schedule: [{ days: 'daily', ambient: { on: 'dusk', fadeIn: 0, off: 'after-last-show', fadeOut: 0 }, shows: { first: '19:00', last: '22:00', every: 60 } }] }, 'check'), year, 302.2, 'check'); return 'ok' } catch (e) { return e.message } })()
+  F(/no show plays, so Ambient \(going off after the last show\) would never go off: choose when Ambient goes off/.test(planted), `a night with no show and Ambient to go off after it is not refused by name (${planted.slice(0, 120)})`)
   // ONE HOME PER FACT (Jacob, 2026-11-02): a key at 0 is a level, never an off. Every key at Show 0 and Ambient 0, Ambient
   // Dusk → Dawn, shows hourly: the scheduled shows still play (dark), Ambient is still hung (dark), outside it is off.
   const zero = chOf([{ days: 'daily', ambient: { on: 'dusk', fadeIn: 0, off: 'dawn', fadeOut: 0 }, shows: { first: '00:00', last: '23:00', every: 60 } }], { dusk: { glow: 0, show: 0, kelvin: 3000 }, dawn: { glow: 0, show: 0, kelvin: 3000 } })
@@ -162,8 +174,10 @@ else console.log('✅ a display keeps its schedule: shows from a first to a last
 if (process.argv.includes('--mutants')) {
   const mutants = [
     ['the last start exclusive (no midnight show)', { sched: (s) => s.replace('if (o > mod(l - f) || o % shows.every) continue', 'if (o >= mod(l - f) || o % shows.every) continue') }],
-    ['a run clipped (the whole-run gate dropped)', { sched: (s) => s.replace("        if (!(env(p, fixedOff) > 0)) { whole = false; break }", '        void p') }],
-    ['a Show 0 key cancelling a show (two homes)', { sched: (s) => s.replace("        if (!(env(p, fixedOff) > 0)) { whole = false; break }", "        if (!(env(p, fixedOff) > 0) || !(levelsAt(ch, mod(p), rowAt(p)).show > 0)) { whole = false; break }") }],
+    ['a run clipped (the whole-run gate dropped)', { sched: (s) => s.replace('const whole = !amb || (x >= onAt && (fixedOff == null || x + len <= fixedOff + (amb.fadeOut || 0)))', 'const whole = true') }],
+    ['a fade-in dropping the show at Ambient\'s on-time (Zob\'s probes)', { sched: (s) => s.replace('x >= onAt && (fixedOff', 'x > onAt && (fixedOff') }],
+    ['an Ambient that never goes off allowed', { sched: (s) => s.replace("if (e.ambient?.off === 'after-last-show' && (!n || n.lastStart == null)) throw", 'if (false) throw') }],
+    ['a Show 0 key cancelling a show (two homes)', { sched: (s) => s.replace('const whole = !amb || (x >= onAt && (fixedOff == null || x + len <= fixedOff + (amb.fadeOut || 0)))', 'const whole = levelsAt(ch, mod(x), rowAt(x)).show > 0 && (!amb || (x >= onAt && (fixedOff == null || x + len <= fixedOff + (amb.fadeOut || 0))))') }],
     ['an Ambient 0 key unhanging Ambient (two homes)', { sched: (s) => s.replace("    if (n.onAt != null) return { mode: 'glow',", "    if (n.onAt != null && lit.glow > 0) return { mode: 'glow',") }],
     ['every close white (the last show not dark)', { sched: (s) => s.replace("return { mode: 'show', t: (x - s) * 60, dark: n.closesDark && s === n.lastStart, ...lit }", "return { mode: 'show', t: (x - s) * 60, dark: false, ...lit }") }],
     ['every show dark', { sched: (s) => s.replace("dark: n.closesDark && s === n.lastStart", 'dark: n.closesDark') }],

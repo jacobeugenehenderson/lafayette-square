@@ -359,6 +359,7 @@
         "importSource of src/displays/showSchedule.js — read, safe",
         "importSource of src/displays/showChannel.js — read, safe",
         "importSource of src/displays/showChannel.js redirects src/displays/showSchedule.js — read, safe",
+        "importSource of src/displays/showSchedule.js — read, safe",
         "importSource of src/displays/showChannel.js — read, safe",
         "importSource of src/displays/showChannel.js redirects src/cartograph/animatedParam.js — read, safe",
         "importSource of src/displays/lightShow/engine.js — read, safe",
