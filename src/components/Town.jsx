@@ -204,7 +204,7 @@ export { frameInterval, frameTimeLeft, runSliced, rowsInAFrame, useFailures, fai
   WeatherRangeError, kitUrl, tideAt, tideExtrema, tenantOf, titleOf, adoptSlabManifest, useBuildingAddress } from './TownPure.js'
 // The wind sheet's API — the field every wind consumer reads (lib/windSheet.js; contract ARCHITECTURE §8).
 export { WIND_SHEET_GLSL, bindWindSheet } from '../lib/windSheet.js'
-// The Canvas the town is drawn through, from its quality profile — an app spreads it (the Ward imports only Town).
+// The Canvas the town is drawn through, from its quality profile — an app spreads it on the <Canvas> it draws the town in.
 export { townCanvasProps } from '../lib/qualityProfile.js'
 // The player's chrome: its grounds, the colours that carry meaning, the contrast floors (src/tokens/playerChrome.js).
 // The Ward's tokens.css must equal these; its check reads them here.
