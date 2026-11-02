@@ -3,7 +3,8 @@
 // What it models: state, refs and memo per instance; effects (useEffect, useLayoutEffect) run after the render that queued
 // them, re-run when their deps change, cleaned up before a re-run and on unmount; a state change marks the instance dirty
 // and `settle` re-renders it after the microtasks drain; a render that THROWS is recorded (`thrown()`), not propagated.
-// What it does not: concurrent features, context (a check stubs useContext), children. Hooks are read from
+// What it does not: concurrent features, context (a check stubs useContext), children, and a store's hook form (a zustand
+// `useStore(selector)` is answered from getState by the check's prefix: a real hook would also subscribe and re-render). Hooks are read from
 // globalThis.__hooks, which a check's importSource prefix forwards to.
 export function hookRunner() {
   let cur = null
