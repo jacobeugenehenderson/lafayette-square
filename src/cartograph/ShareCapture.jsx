@@ -114,7 +114,7 @@ async function settleAt(when, what, pose) {
 async function creditFor(lookId) {
   let j = null
   try { const r = await slabFetch(lookId, 'sources.json', undefined, Date.now()); if (r.ok) j = await r.json() } catch { j = null }
-  if (!Array.isArray(j?.credits)) throw new Error(`"${lookId}" has no readable sources.json in its slab, so its share images could not carry the map's credit — pour the town (its sources step), then capture`)
+  if (!Array.isArray(j?.credits)) throw new Error(`"${lookId}" has no readable sources.json in its Slab, so its share images could not carry the map's credit — run the Foundry on the scene (its sources step), then capture`)
   return printedCredit(j.credits)   // null: this slab owes no attribution
 }
 
@@ -226,7 +226,7 @@ export default function ShareCapture({ playing }) {
     <div className="space-y-2">
       <button className="hero-btn w-full py-2 rounded-lg text-body-sm font-medium cursor-pointer transition-all"
         style={cardBtn()} disabled={busy || !lookId} onClick={capture}
-        title="Render this camera at every time of day and save one image per slot into the town's slab. A shared link sends the one for the time of day it is in the town.">
+        title="Render this camera at every time of day and save one image per slot into the scene's Slab. A shared link sends the one for the time of day it is in the town.">
         {busy ? 'Capturing…' : hasSet ? '📷 Recapture' : '📷 Capture share images'}
       </button>
       {msg && <div className="text-caption px-1" style={{ color: msg.kind === 'err' ? 'var(--error)' : 'var(--on-surface-variant)' }}>{msg.text}</div>}

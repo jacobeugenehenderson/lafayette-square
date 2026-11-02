@@ -1,6 +1,6 @@
 # Doc sweep — CLUSTER 6 (State & bake) — agent **Plumb**
 
-Docs: `ROADMAP.md` · `cartograph/BACKLOG.md` · `cartograph/BAKE.md` · `cartograph/DOC-CODE-COHERENCE.md`
+Docs: `ROADMAP.md` · `cartograph/BACKLOG.md` · `cartograph/FOUNDRY.md` · `cartograph/DOC-CODE-COHERENCE.md`
 
 **Claims extracted (load-bearing, consequence filter): 34.**
 Verdict split: **CONFIRMED 13 · FALSE 15 · UNVERIFIABLE 6.**
@@ -9,7 +9,7 @@ Checked at HEAD `40c7e2e5` (branch `land-use-derivation`); the ls-bleed/land-use
 
 ⚠️ **The dominant pattern: this cluster's "live / open / measured" lists have been overtaken by work that landed 2026-07-31 → 2026-08-01 and was never struck.** Six separate open tickets describe defects the code no longer has. Per the brief's own thesis — doctrine ages slowly, status lists age fast — every FALSE below is a status claim, and none is a doctrine claim.
 
-⛔ **Pure line-number drift is NOT reported** per §3 of the brief. It is nonetheless severe and worth one aggregate note: `BAKE.md`'s header claims it was "grounded against the live orchestration in `serve.js` (the `/looks/:id/bake` handler, ~L461–623)". The handler is now at ~L1860–2160; `runIfDirty` is `serve.js:1945` (doc: 531), the `bakedAt` stamp `:2159` (doc: 616), the bake-svg note `:1898` (doc: 493), `shape.json` emission `bake-ground.js:1027` (doc: 887), the B7 corpse-lie message `serve.js:1979` (DOC-CODE says `:1171`). Anyone opening the cited lines lands nowhere near the code.
+⛔ **Pure line-number drift is NOT reported** per §3 of the brief. It is nonetheless severe and worth one aggregate note: `FOUNDRY.md`'s header claims it was "grounded against the live orchestration in `serve.js` (the `/looks/:id/bake` handler, ~L461–623)". The handler is now at ~L1860–2160; `runIfDirty` is `serve.js:1945` (doc: 531), the `bakedAt` stamp `:2159` (doc: 616), the bake-svg note `:1898` (doc: 493), `shape.json` emission `bake-ground.js:1027` (doc: 887), the B7 corpse-lie message `serve.js:1979` (DOC-CODE says `:1171`). Anyone opening the cited lines lands nowhere near the code.
 
 ---
 
@@ -75,7 +75,7 @@ IMPACT: same as A00 — the class was closed; the brief entry still asks for it.
 ## B. Cross-doc contradictions (the code decides)
 
 ### ROADMAP C4 / DOC-CODE C3+C4+B4 / BAKE §5 vs `tileGround.js:6-8` — the docs are FALSE, the code is right
-CLAIM (three docs, one story): the figure-ground path is still live and awaiting T4. ROADMAP C4: "extract the still-live helpers from `buildBlockGeometryV2.js` (**3,371 lines**, ~13 importers) → … → **delete the builder** + `BlockGeometryV2Debug.jsx` + the `bake-ground.js:28` import (T4)". DOC-CODE **C3** 🔎: "Figure-ground (`buildBlockGeometryV2`/`fbMemo`) **still computed every Designer frame** to feed overlays"; **C4** 🔎: "`buildBlockGeometryV2.js` + `cornersAtIx` — **the whole dead module**"; **B4** 🔎 + `BAKE.md:143`: "`bake-ground.js:28` still `import`s `buildBlockGeometryV2` (the dead figure-ground). **Dead weight** pending the T4 excision."
+CLAIM (three docs, one story): the figure-ground path is still live and awaiting T4. ROADMAP C4: "extract the still-live helpers from `buildBlockGeometryV2.js` (**3,371 lines**, ~13 importers) → … → **delete the builder** + `BlockGeometryV2Debug.jsx` + the `bake-ground.js:28` import (T4)". DOC-CODE **C3** 🔎: "Figure-ground (`buildBlockGeometryV2`/`fbMemo`) **still computed every Designer frame** to feed overlays"; **C4** 🔎: "`buildBlockGeometryV2.js` + `cornersAtIx` — **the whole dead module**"; **B4** 🔎 + `FOUNDRY.md:143`: "`bake-ground.js:28` still `import`s `buildBlockGeometryV2` (the dead figure-ground). **Dead weight** pending the T4 excision."
 ACTUAL:
 - `src/lib/tileGround.js:6-8` — "This is THE live ground construction for every scene — and since **T4 (2026-07-15)** the ONLY one. **Figure-ground, its predecessor, is deleted**; what remains of `buildBlockGeometryV2` is the frontage-edge identity builder."
 - The file is **1,846 lines**, not 3,371.
@@ -98,10 +98,10 @@ ACTUAL: `.github/workflows/staging.yml:5` → `branches: [curb-offset-draw]` ✅
 
 ## C. Claims that hold
 
-### BAKE.md §4.5 (a census is the union of its wells) — CONFIRMED
+### FOUNDRY.md §4.5 (a census is the union of its wells) — CONFIRMED
 OSM well `cartograph/data/lafayette-square/raw/osm_street_lamps.json` = **641**; authored `src/data/street_lamps.json` = **80**; the doc's 688 pre-clip / "~583 after the boundary clip" matches the shipped `public/baked/lafayette-square/lamps.json` = **583** exactly. The `bake-lamps.js:128-129` comment independently narrates the regression the section is named for.
 
-### BAKE.md §4.6 (tree gates) — partially CONFIRMED
+### FOUNDRY.md §4.6 (tree gates) — partially CONFIRMED
 "LS bakes **5001**" — `public/baked/lafayette-square/trees.json` `count` = **5001** ✅. `scratch/tree-lu-exclusion-census.mjs` exists ✅. The gate breakdown (1707 / 637 / 4423 of 6767) is **UNVERIFIABLE (b)** — reproducing it means running the census harness against a re-derived shape, which the brief bounds out.
 
 ### ROADMAP.md:74 (A05 · the curb check measures the operator's authoring) — CONFIRMED
@@ -134,7 +134,7 @@ C6 ⚠️ resolves *further* than the row says: `src/data/ribbons.json` emits `i
 `useRingBandEmitter` survives in 3 live places (`buildBlockGeometryV2.js:1468` default `false`, `CartographApp.jsx:1098` hardcoded `true`, `BlockGeometryV2Debug.jsx:242` default `true`) with comments saying the legacy else-branch was removed. A flag with one reachable branch. The ⚠️ re-verify is discharged: it *is* vestigial.
 
 ### DOC-CODE B7 — CONFIRMED still open
-`serve.js:1979` still pushes `skipped.push('pipeline (scene-specific pipeline not yet implemented)')`. The row's "🔎 update the message" is accurate. `BAKE.md §1`'s claim that the comment is "conservative — it works" is consistent with `serve.js` running the pour path separately.
+`serve.js:1979` still pushes `skipped.push('pipeline (scene-specific pipeline not yet implemented)')`. The row's "🔎 update the message" is accurate. `FOUNDRY.md §1`'s claim that the comment is "conservative — it works" is consistent with `serve.js` running the pour path separately.
 
 ### BACKLOG.md:79 (the phantom park) — CONFIRMED at the mechanism
 `cartograph/classify.js:60-61` still buckets `leisure=park || leisure=garden || landuse=grass || landuse=recreation_ground` → `type='park'`. The "fix = drop grass AND garden" direction is unexecuted. The 512/895 and 25-of-29 measurements are **UNVERIFIABLE (b)** (need an overlay pass).
@@ -149,7 +149,7 @@ C6 ⚠️ resolves *further* than the row says: `src/data/ribbons.json` emits `i
 - **`ROADMAP` A01 — "the pipeline does not reproduce its own committed output (233 vs 228 junction nodes; 75 vs 71 asphalt rings)."** **UNVERIFIABLE (b)** by construction: confirming it requires the re-derivation the brief (and the ticket) forbid. Worth saying plainly — this is the cluster's highest-stakes claim and it is *deliberately* untestable inside the sweep's bounds. A worktree named `pipeline-repro` on branch `repro-a01` exists, which is consistent with someone else holding this.
 - **`ROADMAP` A03/A05/A06 — every "byte-identical", "Check C green for 58%", "30 divided median · 3 loop-body · 9 small", "`tClip` 2541 → 2021 m²".** **UNVERIFIABLE (b)** — all require running `buildTileGround` in both authored and bare-defaults states. The harnesses named (`scratch/a03-curb-identity.mjs`, `cartograph/litmus-curb-parallel.mjs`) exist and are the right instruments; I confirmed the *code shape* they describe but not the numbers.
 - **Every "⏳ eye-gate owed / eye-pending" claim** (A02's banner, B1/B2's impostors, the 7-slot TOD look, the Grove axis, `AWAITING JACOB`). **UNVERIFIABLE (a)** — by their own definition the test is the operator's eye. This is correct doctrine, not a defect; noting it because roughly a third of BACKLOG's status field reduces to it, and "eye-pending" has in several rows sat unchanged for five weeks.
-- **`ROADMAP` C9(a) sizing** — "`deriveLayers()` a single ~3,465-line function (L1009→~4474), 75% of the 4,607-line file." ACTUAL: `derive.js:1008` → `:4731` = **~3,724 lines**, **77% of 4,866**. Direction and conclusion intact; the numbers moved ~8%. Same for C9(c) "`scratch/` — 1,048 files" → **1,171**, and `BAKE.md §2` "derive.js… (185 KB)" → **228 KB**. Reported as one aggregate rather than three findings, per the consequence filter.
+- **`ROADMAP` C9(a) sizing** — "`deriveLayers()` a single ~3,465-line function (L1009→~4474), 75% of the 4,607-line file." ACTUAL: `derive.js:1008` → `:4731` = **~3,724 lines**, **77% of 4,866**. Direction and conclusion intact; the numbers moved ~8%. Same for C9(c) "`scratch/` — 1,048 files" → **1,171**, and `FOUNDRY.md §2` "derive.js… (185 KB)" → **228 KB**. Reported as one aggregate rather than three findings, per the consequence filter.
 
 ---
 

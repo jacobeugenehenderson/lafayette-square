@@ -233,28 +233,15 @@
   cursor: progress;
 }
 .carto-bake-btn {
-  /* Square-ish for the icon. */
-  padding: 6px 10px;
+  padding: 6px 12px;
   position: relative;
 }
-.carto-bake-icon {
-  display: inline-block;
-  font-size: 18px;
-  line-height: 1;
-  vertical-align: middle;
-}
-.carto-bake-btn.running .carto-bake-icon {
-  animation: carto-bake-spin 1.1s linear infinite;
-}
-@keyframes carto-bake-spin {
-  to { transform: rotate(360deg); }
-}
 .carto-bake-btn.stale {
-  /* Authoring edits exist since last bake — passive indicator only. */
+  /* Edits since the last Foundry run — passive indicator only. */
   background: var(--toolbar-btn-active, #2250E8);
 }
 .carto-bake-btn.stale::after {
-  /* Small dot in the upper-right corner when there are unbaked edits. */
+  /* Small dot in the upper-right corner: edits since the last Foundry run (named in the title). */
   content: '';
   position: absolute;
   top: 4px;
@@ -266,7 +253,7 @@
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
 }
 .carto-bake-btn:not(.stale):not(:disabled) {
-  /* Slab is fresh; re-baking still works (it's incremental and fast). */
+  /* The Slab is current; running the Foundry still works (it is incremental and fast). */
   background: rgba(34, 80, 232, 0.6);
 }
 

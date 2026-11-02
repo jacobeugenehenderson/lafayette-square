@@ -217,7 +217,7 @@ export default function IdentityPanel({ onClose }) {
               </div>
             )
           })}
-          <p className="carto-identity-foot">Saved to this town's Look. The published town shows a change after the next bake.</p>
+          <p className="carto-identity-foot">Saved to this scene's Look. The published town shows a change after the next Foundry run.</p>
         </div>
       </div>
     </div>,

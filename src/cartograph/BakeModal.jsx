@@ -3,6 +3,7 @@ import useCartographStore from './stores/useCartographStore.js'
 import { cancelBake } from './api.js'
 import { TOWN_CAMERA_NEAR_M } from '../lib/qualityProfile.js'
 import { REGIMES } from '../lib/cameraRegimes.js'
+import { stepWords } from '../lib/stepWords.js'
 
 const mmss = (ms) => { if (!Number.isFinite(ms) || ms < 0) return ''; const t = Math.round(ms / 1000); return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}` }
 const GLYPH = { waiting: '○', running: '●', done: '✓', skipped: '–', failed: '✕', cancelled: '⊘' }
@@ -24,7 +25,7 @@ function BakeSteps({ progress }) {
           <div key={st.label} className={`carto-bake-step is-${st.state}`}>
             <div className="carto-bake-step-row">
               <span className="carto-bake-step-glyph">{GLYPH[st.state] ?? '·'}</span>
-              <span className="carto-bake-step-label">{st.label}</span>
+              <span className="carto-bake-step-label">{stepWords(st.label)}</span>
               <span className="carto-bake-step-time">
                 {el != null ? mmss(el) : ''}{st.est && st.state !== 'skipped' ? <span className="carto-bake-step-est"> · last {mmss(st.est)}</span> : null}
               </span>
@@ -45,7 +46,7 @@ function BakeSteps({ progress }) {
     <div className="carto-bake-modal-actions">
       <button className="carto-bake-modal-dismiss" disabled={cancelling || !progress?.running}
         onClick={() => { setCancelling(true); cancelBake(lookId).catch(e => console.warn(`[bake] cancel: ${e.message}`)) }}>
-        {cancelling ? 'Cancelling…' : 'Cancel bake'}
+        {cancelling ? 'Cancelling…' : 'Stop the Foundry'}
       </button>
     </div>
   </>)
@@ -90,7 +91,7 @@ function CoastResidualCard({ cr }) {
   const keys = useCartographStore(s => s.heroKeyframes)
   const view = (i) => { set({ viewing: i }); if (i != null) frame(cr.pieces[i]) }
   const n = cr.pieces.length, acceptBtn = (
-    <button className="carto-bake-modal-dismiss is-primary" disabled={cr.accepting} onClick={accept}>{cr.accepting ? 'Signing…' : `Accept ${n === 1 ? 'it' : `these ${n}`} and bake`}</button>)
+    <button className="carto-bake-modal-dismiss is-primary" disabled={cr.accepting} onClick={accept}>{cr.accepting ? 'Signing…' : `Accept ${n === 1 ? 'it' : `these ${n}`} and run the Foundry`}</button>)
   const cancel = <button className="carto-bake-modal-dismiss" disabled={cr.accepting} onClick={() => useCartographStore.setState({ coastResidual: null })}>Cancel</button>
   const on = cr.signedAt ? ` on ${new Date(cr.signedAt).toLocaleDateString()}` : ''
   const err = cr.error && <div className="carto-bake-modal-msg is-error">{cr.error}</div>
@@ -115,7 +116,7 @@ function CoastResidualCard({ cr }) {
         <p>The coast step smooths the traced shoreline on the trace's own grid, then checks it against the same calculation done on a grid a
           thousand times finer. Differences under twice the grid's rounding are ignored; these are larger.
           {signed ? ` ${signed} of them ${cr.scene} signed${on}; ${n - signed} ${n - signed === 1 ? 'is' : 'are'} new.` : ` ${cr.scene} has signed none of them before.`}</p>
-        <p>Click a row to see it on the map. If none of them is a real change to the shore, accept them: that signs them for {cr.scene} and bakes again.</p>
+        <p>Click a row to see it on the map. If none of them is a real change to the shore, accept them: that signs them for {cr.scene} and runs the Foundry again.</p>
         <ul className="carto-bake-residual-list">{cr.pieces.map((w, i) => (
           <li key={`${w.path}:${w.key}`}><button className="carto-bake-residual-row" onClick={() => view(i)}>
             {lens(w.span)} long, at most {lens(w.wide)} wide · {sideOf(w)}{w.signed ? ' · signed' : ''}</button></li>))}</ul>
@@ -142,13 +143,13 @@ export default function BakeModal() {
   if (!bakeRunning && repourConfirm) {
     const { scene, files = [], resume = {} } = repourConfirm
     return (
-      <Card title={`This Bake will re-pour ${scene}`} actions={<>
+      <Card title={`The Foundry will run every step for ${scene}`} actions={<>
         <button className="carto-bake-modal-dismiss" onClick={() => useCartographStore.setState({ repourConfirm: null })}>Cancel</button>
-        <button className="carto-bake-modal-dismiss is-primary" onClick={() => { useCartographStore.setState({ repourConfirm: null }); useCartographStore.getState().runBake({ ...resume, repour: true }) }}>Re-pour and bake</button>
+        <button className="carto-bake-modal-dismiss is-primary" onClick={() => { useCartographStore.setState({ repourConfirm: null }); useCartographStore.getState().runBake({ ...resume, repour: true }) }}>Run every step</button>
       </>}>
         <div className="carto-bake-modal-msg">
-          What {scene}'s last pour read has changed — its code, a data file it reads, its geography or a registry
-          value — or baking would rewrite a file the town is holding. Baking now re-derives it first:
+          What {scene}'s last Foundry run read has changed — its code, a data file it reads, its geography or a registry
+          value — or the Foundry would rewrite a file the scene is holding. Running it now re-derives it first:
           <ul>{files.map(f => <li key={f}><code>{f}</code></li>)}</ul>
         </div>
       </Card>
@@ -158,7 +159,7 @@ export default function BakeModal() {
   // while that runs, and — ⛔ never a silent stale map — when it FAILS, saying why.
   if (!bakeRunning && !bakeError && mapRefreshing) return (
     <Card title="Redrawing the 2D map…" busy>
-      <div className="carto-bake-modal-msg">The bake re-poured this town; the map is being rebuilt from what was poured.</div>
+      <div className="carto-bake-modal-msg">The Foundry ran every step for this scene; the map is being redrawn from what it made.</div>
       <div className="carto-bake-modal-spinner" />
     </Card>
   )
@@ -167,18 +168,18 @@ export default function BakeModal() {
       <button className="carto-bake-modal-dismiss" onClick={() => useCartographStore.setState({ ribbonsStale: null })}>Dismiss</button>
       <button className="carto-bake-modal-dismiss is-primary" onClick={() => window.location.reload()}>Reload</button>
     </>}>
-      <div className="carto-bake-modal-msg">Baked. But {ribbonsStale}. Reload to draw what was poured.</div>
+      <div className="carto-bake-modal-msg">The Foundry finished. But {ribbonsStale}. Reload to draw what it made.</div>
     </Card>
   )
   if (bakeError) return (
-    <Card title="Bake failed" actions={
+    <Card title="The Foundry stopped" actions={
       <button className="carto-bake-modal-dismiss" onClick={() => useCartographStore.setState({ bakeError: null })}>Dismiss</button>
     }>
       <div className="carto-bake-modal-msg">{bakeError}</div>
     </Card>
   )
   return (
-    <Card title={`Baking ${bakeProgress?.scene ?? 'the cartograph'}…`} busy>
+    <Card title={`The Foundry is running for ${bakeProgress?.scene ?? 'this scene'}…`} busy>
       {bakeProgress?.steps?.length
         ? <BakeSteps progress={bakeProgress} />
         : <div className="carto-bake-modal-spinner" />}

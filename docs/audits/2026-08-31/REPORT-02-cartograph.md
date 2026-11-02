@@ -36,8 +36,8 @@ documentation layer**. A further **115 bare `:NNN` refs** are unresolvable by an
 including the whole of `SURVEY.md §3`, whose eight sentences are all correct and whose eight
 addresses are all dead.
 
-⭐ The remedy is already written, in one doc, and never generalized: `BAKE.md:3` — *"Cite the
-SYMBOL, never the line — this doc's line numbers had drifted by ~1,400 lines."* **BAKE.md then
+⭐ The remedy is already written, in one doc, and never generalized: `FOUNDRY.md:3` — *"Cite the
+SYMBOL, never the line — this doc's line numbers had drifted by ~1,400 lines."* **FOUNDRY.md then
 breaks its own rule four lines later** and cites `serve.js:461` as the bake handler four times;
 the handler is at `serve.js:1979`. **~1,518 lines — the exact drift its banner named.**
 
@@ -85,7 +85,7 @@ for f in cartograph/*.md; do printf "%-45s %5s %s\n" "$f" "$(wc -l < $f)" \
 | `PREBAKE-POLYGONIZATION-PLAN.md` | 123 | 08-04 | self-declared "CLOSED SCOPE+SPIKE" | DIARY held by one un-lifted fact | ARCHIVE after lifting §1 into `PREBAKE.md` |
 | `OSM-FORENSICS-EVAL.md` | 101 | 08-04 | build eval before/after | DIARY; every baseline superseded | ARCHIVE |
 | `LOOP-STREETS.md` | 96 | 08-04 | Benton/Waverly | OVERLAP; self-demotes | MERGE-INTO-SKELETON |
-| `BAKE.md` | 173 | 08-04 | the bake chain | CANON w/ 2 material errors | KEEP, fix (L4, L7) |
+| `FOUNDRY.md` | 173 | 08-04 | the bake chain | CANON w/ 2 material errors | KEEP, fix (L4, L7) |
 | `STAGE.md` | 152 | 07-04 | the Look tool | CANON | KEEP |
 | `TOY_AUTHORING_PLAN.md` | 246 | 06-30 | toy fixture coverage | **ROTTEN body, banner-corrected** — ~230 lines describe the dead figure-ground path as live | **EXCISE body → ARCHIVE** |
 | `SECTION-CAP-CLAMP-FORENSIC.md` | 104 | 06-22 | G8/G12 keep-vs-revert map | DIARY | ARCHIVE |
@@ -225,13 +225,13 @@ use it to state deployment status — *"LANDED (on trunk `curb-offset-draw`; not
 which an outside reader takes as "unshipped." NOTES' three are correct as Diary; **the other 15
 are live claims.**
 
-**L4 · `BAKE.md` steps 1–2 say "LS-only"; `cartograph/_archive/PIPELINE-superseded-2026-10-21.md` says scene-generic. ROT (BAKE). HIGH.
+**L4 · `FOUNDRY.md` steps 1–2 say "LS-only"; `cartograph/_archive/PIPELINE-superseded-2026-10-21.md` says scene-generic. ROT (BAKE). HIGH.
 ⭐ Cross-doc contradiction.**
-`BAKE.md:49` *"clean/map.json | **LS-only**"*; `:50` *"**LS-only.**"* vs `cartograph/_archive/PIPELINE-superseded-2026-10-21.md:63`
+`FOUNDRY.md:49` *"clean/map.json | **LS-only**"*; `:50` *"**LS-only.**"* vs `cartograph/_archive/PIPELINE-superseded-2026-10-21.md:63`
 *"STATUS: working, and now **scene-generic** — the whole prebake→bake arc runs for a fresh non-LS
 neighborhood (hipointe-demun poured a full slab)."* Code settles it: `pipeline.js:13` imports
 `SCENE/CLEAN_DIR`, `:21` refuses without `--scene`; `promote-ribbons.js:9,13` the same; six scene
-data dirs exist. **BAKE.md is rot — and it is the doc a developer reads to learn the bake chain.**
+data dirs exist. **FOUNDRY.md is rot — and it is the doc a developer reads to learn the bake chain.**
 
 **L5 · `FEATURES.md:22` assigns street WIDTH to Section. Every other doc and the code assign it to
 Survey. ROT. HIGH. ⭐ Load-bearing for an outsider's mental model.**
@@ -254,11 +254,11 @@ the file is in git. ROT. HIGH.**
 and `git log --all` shows neither was ever committed.** Aggravating: `LOOP-STREETS.md:7` says
 *"The archive copy stays in git"* — measurably false. ⛔ **Three dead pointers.**
 
-**L7 · `BAKE.md`'s step table omits five bake steps the live handler runs. LANDMINE. HIGH.**
+**L7 · `FOUNDRY.md`'s step table omits five bake steps the live handler runs. LANDMINE. HIGH.**
 `grep -n "bake-landscape\|bake-labels\|bake-content\|bake-terrain\|bake-tree-anchors"
 cartograph/serve.js` → `:2110 bake-terrain` · `:2154 bake-tree-anchors` · `:2185 bake-landscape` ·
 `:2210 bake-content` · `:2240 bake-labels`, all inside `/looks/:id/bake`. **Three production bake
-steps appear in zero cartograph docs**, while `BAKE.md §3` is the declared SSoT.
+steps appear in zero cartograph docs**, while `FOUNDRY.md §3` is the declared SSoT.
 
 **L8 · `requireExplicitScene()` — a hard `process.exit(2)` on five CLI entry points — is
 documented NOWHERE. LANDMINE. HIGH. ⭐⭐ The #1 blocker for town #2.**
@@ -387,7 +387,7 @@ existsSync(nbP))` under its own comment *"The `scene !== 'lafayette-square'` gat
    citation is worse than none — they cannot tell.
 
 ⭐ **Cheapest fix that moves all five:** rewrite `cartograph/README.md` against today's reality and
-adopt `BAKE.md`'s own rule — **cite the symbol, never the line** — corpus-wide.
+adopt `FOUNDRY.md`'s own rule — **cite the symbol, never the line** — corpus-wide.
 
 ---
 

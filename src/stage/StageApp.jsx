@@ -354,7 +354,7 @@ function HorizonControls() {
           <SliderRow label="Snowline (m)" value={ls.snowline} min={elevKnown ? elev.min : 0} max={elevKnown ? elev.max : 0} step={10}
             onChange={(v) => setLandscape('snowline', v)} />
           {!elevKnown && <div className="text-caption px-1" style={{ color: 'var(--error)' }}>
-            {backdrop === undefined ? 'Reading the backdrop…' : 'The backdrop carries no elevation range (elevM): Snowline is collapsed. Re-bake the landscape.'}
+            {backdrop === undefined ? 'Reading the backdrop…' : 'The backdrop carries no elevation range (elevM): Snowline is collapsed. Run the Foundry again (the landscape step).'}
           </div>}
           <SliderRow label="Snow Softness" value={ls.snowSoftness} min={0} max={800} step={10}
             onChange={(v) => setLandscape('snowSoftness', v)} />
@@ -401,7 +401,7 @@ function EdgeControls() {
   return (
     <div className="space-y-1">
       <SliderRow label="Fade band" value={shown} min={0} max={Math.max(1, Math.round(radius))} step={1} suffix=" m"
-        disabled={!(radius > 0)} title={radius > 0 ? 'Width of the fade at the town\'s edge, inward from the radius — shows at the next Bake' : 'No disc yet — author the radius in Extent'}
+        disabled={!(radius > 0)} title={radius > 0 ? 'Width of the fade at the town\'s edge, inward from the radius — shows at the next Foundry run' : 'No disc yet — author the radius in Extent'}
         onChange={(v) => setBand(v)} />
       {band == null && radius > 0 && (
         <div style={{ fontSize: 11, color: 'var(--on-surface-variant)', paddingLeft: 8 }}>

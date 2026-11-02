@@ -641,7 +641,7 @@ function useLoadData() {
 // while the scene's boundary has not been fetched. ⛔ Every town alike: LS's stencil used to be a static import of its own
 // boundary file (LS_STENCIL), a second channel for one town (BRIEF-the-disc-is-one-source §1b).
 function stencilFromBoundary(nb) {
-  return nb ? discOf(nb, 'Designer stencil').ring.map(([x, z]) => [x, z]) : null
+  return nb ? discOf(nb, 'Plan stencil').ring.map(([x, z]) => [x, z]) : null
 }
 
 // Per-scene configuration. The single source of truth for "what's
@@ -809,7 +809,7 @@ export default function CartographApp() {
       () => { if (live) useFailures.getState().clear(activeLookId, 'terrain') },
       (e) => { if (!live) return
         console.error(`[terrain] ⛔ ${reasonOf(e)}`)
-        useFailures.getState().report({ lookId: activeLookId, layer: 'terrain', kind: e instanceof Refusal ? 'refusal' : 'gave-up', reason: e instanceof Refusal ? reasonOf(e) : `not retried in the Designer: ${reasonOf(e)}` }) })
+        useFailures.getState().report({ lookId: activeLookId, layer: 'terrain', kind: e instanceof Refusal ? 'refusal' : 'gave-up', reason: e instanceof Refusal ? reasonOf(e) : `not retried in Plan: ${reasonOf(e)}` }) })
     return () => { live = false }
   }, [activeLookId, bakeLastMs, inDesigner])
 
@@ -972,7 +972,7 @@ export default function CartographApp() {
           <div role="alert" style={{ position: 'absolute', inset: 0, zIndex: 5, display: 'flex', alignItems: 'center',
             justifyContent: 'center', padding: 32, background: '#1a1a18', color: '#f3d9a4', font: '14px/1.5 system-ui',
             textAlign: 'center' }}>
-            <div style={{ maxWidth: 640 }}><strong>No map: the town's disc was refused.</strong><br />{boundaryRefused}</div>
+            <div style={{ maxWidth: 640 }}><strong>No map: the scene's disc was refused.</strong><br />{boundaryRefused}</div>
           </div>
         )}
         {inDesigner && !boundaryRefused && ribbonsRefused && (
@@ -980,7 +980,7 @@ export default function CartographApp() {
           <div role="alert" style={{ position: 'absolute', inset: 0, zIndex: 5, display: 'flex', alignItems: 'center',
             justifyContent: 'center', padding: 32, background: '#1a1a18', color: '#f3d9a4', font: '14px/1.5 system-ui',
             textAlign: 'center' }}>
-            <div style={{ maxWidth: 640 }}><strong>No map: the town's ribbons could not be read.</strong><br />{ribbonsRefused}</div>
+            <div style={{ maxWidth: 640 }}><strong>No map: the scene's ribbons could not be read.</strong><br />{ribbonsRefused}</div>
           </div>
         )}
         <Canvas

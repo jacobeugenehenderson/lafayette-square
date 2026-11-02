@@ -3,17 +3,17 @@
 Superseded text, kept verbatim for the record. Why: Jacob, 2026-10-04 — *"I don't think it makes sense to 'upload' at
 that step. If the operator turns things off or adjusts the pyramid, that's supposed to be 'accepted' when they publish
 and promote."* A bake now ends on disk; Publish freezes the manifest (accepting the deployment) and uploads to staging.
-Live homes: `cartograph/OPERATIONS.md` (*Bake* › THE UPLOAD · *Publish*) · `PUBLISH.md §6` · `cartograph/BAKE.md` ·
+Live homes: `cartograph/OPERATIONS.md` (*Bake* › THE UPLOAD · *Publish*) · `PUBLISH.md §6` · `cartograph/FOUNDRY.md` ·
 `cartograph/FEATURES.md` (Preview). ▶ `node checks/claims-a-bake-never-uploads.mjs`
 
-## `cartograph/BAKE.md` — removed lines
+## `cartograph/FOUNDRY.md` — removed lines
 
 > ⛔⛔ **AND THE POUR'S LAST STEP IS AN UPLOAD (2026-09-01).** `public/baked/` is gitignored; the slab is
 > served from R2. `scripts/upload-baked-to-r2.mjs` runs at the end of the bake and **a failed upload fails
 > the whole bake (500)** — a green bake that reached nobody is the one outcome worth refusing, and it is
 > exactly the shape this pipeline refuses everywhere else. ⚠️ **The pour is then live on staging AND
 > production immediately**, at the same URLs, without a push; `PREVIEW.md §0.2` settled that Preview — not
-> staging — is the gate for slab data. Operator view: `cartograph/OPERATIONS.md §Bake`. Mechanics:
+> staging — is the gate for slab data. Operator view: `cartograph/OPERATIONS.md §Foundry`. Mechanics:
 > `PUBLISH.md §6`. It is the boundary between the **authoring** world (cartograph: stores, live re-derivation, the operator's eye) and the **runtime** world (LS: trust the slab, never reach back).
 
 ## `PUBLISH.md` — removed lines

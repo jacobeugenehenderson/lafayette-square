@@ -5,7 +5,7 @@
 // service) — Render pavement-only, no measure authoring." And `§3 step 7`: "Unnamed vehicular
 // (motorway/trunk/*_link) → streets with synthetic names. Everything else → paths[]." A footway
 // is pavement drawn INSIDE a block (`buildPathRibbons` clips it to the parcel interior,
-// `ARCHITECTURE.md:142` / `BAKE.md §3`). It is not a block boundary and takes no authoring.
+// `ARCHITECTURE.md:142` / `FOUNDRY.md §3`). It is not a block boundary and takes no authoring.
 //
 // ⛔ THE RULE IS KEYED ON THE WORD "UNNAMED", AND NOTHING RE-CHECKS THE CLASS. `skeleton.js §3`
 // step 1 buckets by NAME; every named group goes through `makeStreet` (step 6) whatever its

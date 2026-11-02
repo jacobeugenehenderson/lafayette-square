@@ -33,7 +33,7 @@ The codebase is a **public-facing runtime app** plus a small set of **standalone
 └────────────────┘                  └──────────────────────────────┘
 ```
 
-**Note on Meteorologist's shape:** it shipped as a **standalone app** (`/meteorologist.html`), not a Stage panel — the earlier "authoring UI lives inside Stage" plan was not executed. The publish-loop pattern still holds; only the editor's housing differs. See [`../meteorologist/ARCHITECTURE.md`](../meteorologist/ARCHITECTURE.md). **Note on Stage's artifact:** the planned `stage-config.json` never materialized — every Stage channel folds **field-by-field into `scene.json`** (the slab); there is no separate stage-config layer (see `BAKE.md §5`, `DOC-CODE-COHERENCE.md` B1).
+**Note on Meteorologist's shape:** it shipped as a **standalone app** (`/meteorologist.html`), not a Stage panel — the earlier "authoring UI lives inside Stage" plan was not executed. The publish-loop pattern still holds; only the editor's housing differs. See [`../meteorologist/ARCHITECTURE.md`](../meteorologist/ARCHITECTURE.md). **Note on Stage's artifact:** the planned `stage-config.json` never materialized — every Stage channel folds **field-by-field into `scene.json`** (the slab); there is no separate stage-config layer (see `FOUNDRY.md §5`, `DOC-CODE-COHERENCE.md` B1).
 
 **Properties of this pattern, used everywhere:**
 
@@ -96,7 +96,7 @@ A **Look** is a styling snapshot. Each Look is `{ design.json, public/baked/<id>
 Three layers, in order:
 
 1. **Working draft (autosave, always on).** Every panel tweak hits the active Look's `design.json` within ~300ms. Survives reloads. No prompts.
-2. **Looks (named saved configurations).** First-class names: `kit-default` (the project's 0-state, can't be deleted), `lafayette-square`, `valentines`, `winter`. User explicitly forks via "＋ Save as new Look…". Each carries its own autosaved working state.
+2. **Looks (named saved configurations).** First-class names: `kit-default` (the project's 0-state, can't be deleted), `lafayette-square`, `valentines`, `winter`. User explicitly forks via "＋ Save as new look preset…". Each carries its own autosaved working state.
 
 > ### ⭐⭐ THE 0-STATE IS THE KIT, NOT A TOWN *(ruled 2026-09-19)*
 > `index.json`'s **`default`** is two things at once: the Look every new pour **seeds from**, and the id
@@ -129,7 +129,7 @@ Three layers, in order:
 > state. ▶ `node checks/claims-look-default-has-no-town.mjs`
 3. **Stage channels.** Every Stage channel (materials, color, visibility, sky, post-FX, neon, camera) folds **field-by-field into the Look's `scene.json`** at bake. The once-planned separate `stage-config.json` shader layer never materialized (`DOC-CODE-COHERENCE.md` B1).
 
-**The implicit bake.** Designer's "Stage →" navigates immediately and bakes async in the background, so the Stage view's slab re-reads (its `bakeLastMs` re-read key) when the bake finishes. Stage's "↻" re-bakes in place. The user never explicitly "saves the bake" — that language is misleading. The deliberate save action is *forking* into a new named Look.
+**The Foundry is explicit.** The Designer's "Look →" only navigates (since 2026-10-04); Look measures the Slab's age on entry and offers a Foundry run when it is older than what the Foundry reads. Look's **Foundry** button runs it in place, and the view re-reads the Slab (its `bakeLastMs` re-read key) when it finishes. Nobody "saves the Foundry run". The deliberate save action is *forking* into a new named Look.
 
 **Looks are material-keyed, never feature-keyed.** A Look's `design.json` says *"asphalt is pink"*, not *"the asphalt of street id chain-43A12 is pink"*. So adding geometry in Designer never invalidates a Look — new streets inherit the active Look's rules, re-bake just enlarges the slab with consistent styling. **Designer → maintain → Stage is purely additive.**
 
@@ -456,7 +456,7 @@ The post-FX stack is **declared once and installed identically in production, St
 - **Decision (why):** a fork duplicates the pipeline + the driver and drifts (proven — Preview's DoF rotted). Declaring the pipeline once + installing it by mode makes "add a pass / fix a driver / change an order" touch *one* place, inherited by all three surfaces. The `platform` field also **absorbs `preview-measurement`'s inclusion manifest** (one SSoT, not two). Follow-on Phases 4 (the scene tree onto the same manifest) + 5 (fold render-conformance/preview-measurement in) remain in the HANDOFF.
 
 ### Bake chain — async, re-read, dirty-skip
-- **Async handler:** `serve.js` POST `/looks/:id/bake` runs each step via `runStep` (non-blocking, progress to BakeModal, no clock kill, Cancel — `BAKE.md §2`); a per-look `_bakesInFlight` set rejects concurrent bakes against the same Look (409).
+- **Async handler:** `serve.js` POST `/looks/:id/bake` runs each step via `runStep` (non-blocking, progress to BakeModal, no clock kill, Cancel — `FOUNDRY.md §2`); a per-look `_bakesInFlight` set rejects concurrent bakes against the same Look (409).
 - **Re-read key:** Stage passes `bakeLastMs` to <Town>; **it must be `Date.now()` on every bake completion**, never the bake duration — it is what makes a consumer read the new bytes (on disk it rides the URL as `?bake=`, SLAB-CONTRACT §10.2).
 - **Dirty-skip:** `writeIfChanged` (§7) — skip identical bytes, but touch mtime on no-op; **patch another step's output before writing your own** (else the patch is newer than your output and `needsRebuild` reruns you every bake). Input artifacts produced outside serve's graph (e.g. `skeleton.json`) pass `{touch:false}`.
 
@@ -469,7 +469,7 @@ clean/ (skeleton.json ← skeleton.js · overlay.json ← Survey/Measure) ─┤
   node bake-terrain.js → src/data/terrain.{json,bin}
 POST /api/cartograph/looks/<id>/bake  (incremental; ?force=1 forces) → public/baked/<id>/*
   the step list is the route's own (`bakePlan()`) — ▶ node checks/claims-bake-progress-shows-the-route.mjs prints it;
-  what each step reads and writes: BAKE.md §2
+  what each step reads and writes: FOUNDRY.md §2
 Runtime reads public/baked/<id>/* + the live src/data/* (trees/water/paths/lamps/ribbons).
 ```
 

@@ -20,7 +20,7 @@ landed: d793e4d4 (eye-gated by Jacob: "That did it and it looks great") · super
 > **Where the live doctrine went:** **`cartograph/ARCHITECTURE.md §8`** (the flatten,
 > the `keepOwnSlot`/`doesNotCut` split, and ⭐ this brief's own hard-won rule — *a key
 > joins the shared plane only on a measurement comparing it against EVERYTHING already
-> on the plane*) · **`cartograph/OPERATIONS.md §Bake`** (what it changes for the
+> on the plane*) · **`cartograph/OPERATIONS.md §Foundry`** (what it changes for the
 > operator: toggling a layer off is now subtractive on re-bake).
 >
 > ⚠️ **The one thing this brief got wrong is worth keeping:** it said `stripe` "can be

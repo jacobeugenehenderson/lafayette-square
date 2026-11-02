@@ -445,7 +445,7 @@ export const INTAKE_ROWS = [
     // src/data/street_lamps.json on 2026-10-07, retiring bake-lamps' last scene-name special case).
     //
     // NOTE this row tracks the OSM well only. Lamps bake as the UNION of
-    // OSM ∪ authored, deduped at 4 m (`BAKE.md §4.5`) — so a filled row does not
+    // OSM ∪ authored, deduped at 4 m (`FOUNDRY.md §4.5`) — so a filled row does not
     // mean the authored well is unnecessary, and an authored-only scene is legal.
     absent: { kind: ABSENT.LS_BLEED, note: "LS's authored well still sits at the shared src/data path (guard closed; union since 2026-07-23)" },
     acquisition: { kind: ACQUIRE.BUTTON, note: 'Overpass highway=street_lamp — ODbL' },

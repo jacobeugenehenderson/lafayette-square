@@ -126,7 +126,7 @@ that folder was gitignored until `f9bbee28`.
 
 ### 1a. Line numbers — cite the SYMBOL, not the line
 
-Cluster 6 found `BAKE.md` citing `serve.js ~L461–623` for a handler now at **~L1860–2160**; `runIfDirty`
+Cluster 6 found `FOUNDRY.md` citing `serve.js ~L461–623` for a handler now at **~L1860–2160**; `runIfDirty`
 documented at `:531`, actually `:1945`. Anyone following those lands nowhere near the code.
 
 **Do not update line numbers — replace them with symbol names.** `` `serve.js` `runIfDirty` `` beats

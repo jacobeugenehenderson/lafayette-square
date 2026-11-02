@@ -1,6 +1,6 @@
 // claims-water-depth-reads-the-level.mjs — IS WATER DEPTH MEASURED FROM THE TOWN'S LEVEL, NEVER FROM y = 0?
 //
-// ⭐ THE RULE (cartograph/BAKE.md "every consumer reads the level"): y = 0 is the lidar's water — the tide the survey
+// ⭐ THE RULE (cartograph/FOUNDRY.md "every consumer reads the level"): y = 0 is the lidar's water — the tide the survey
 // flew at, which no one chose. A town's water stands at its own level (`cartograph/waterLevel.mjs`), so depth is
 // level − ground. ⛔ Before 2026-09-27 the water shader read depth as −terrain; at HIGH that put Provincetown's flats
 // at depth 0 and read them as bare sand.

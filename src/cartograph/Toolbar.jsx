@@ -77,15 +77,15 @@ export default function Toolbar() {
       ) : (
         <>
           <div className="carto-toolgroup">
-            <button onClick={() => setShot('designer')}>← Designer</button>
+            <button onClick={() => setShot('designer')}>← Plan</button>
           </div>
           <LooksMenu />
           <div className="carto-toolgroup">
-            {/* Preview — opens the last-baked slab in the named window (no re-bake;
-                baking is reached from the Designer "Stage →" / Stage "↻"). */}
+            {/* Preview — opens the Slab the Foundry last made in the named window (it never runs the Foundry;
+                that is the Look step's "Foundry" button, or its banner). */}
             <button
               onClick={() => openPreview()}
-              title="Open the last-baked slab in the Preview window (no re-bake; reuses the same window).">
+              title="Open the Slab the Foundry last made in the Preview window (does not run the Foundry; reuses the same window).">
               Preview
             </button>
             <button
@@ -102,10 +102,8 @@ export default function Toolbar() {
         </>
       )}
 
-      {/* Designer's "Stage" button is pure navigation — the operator
-          enters Stage to do look-authoring work. Bake is a Stage-level
-          action, not a Designer-level action. See FEATURES.md
-          "Bake button belongs in Stage's toolbar." */}
+      {/* Designer's "Look →" button is pure navigation into the Look step (09). The Foundry button lives
+          in the Look step's toolbar, not the Designer's. */}
       {inDesigner ? (
         <div className="carto-toolgroup">
           <button
@@ -117,9 +115,9 @@ export default function Toolbar() {
               setShot('hero')
             }}
             title={bakeRunning
-              ? 'Baking…'
-              : 'Enter Stage on the opening keyframe. If the slab is older than what the bake reads, Stage says so and offers the Bake.'}>
-            {bakeRunning ? 'Baking…' : 'Stage →'}
+              ? 'The Foundry is running…'
+              : 'Open the Look step on the opening keyframe. If the Slab is older than what the Foundry reads, it says so and offers to run the Foundry.'}>
+            {bakeRunning ? 'Foundry running…' : 'Look →'}
           </button>
         </div>
       ) : (
@@ -133,26 +131,22 @@ export default function Toolbar() {
             active={shot}
             onSelect={setShot}
           />
-          {/* Stage's Bake button — always runs the incremental bake chain
-              on click. No gating: clicking is always a legitimate "pour
-              me a fresh slab now." ⌥/Alt-click forces a full rebuild
-              (bypasses the dirty-check; the cache-bust escape hatch).
-              The stale indicator ("●") lights when authoring edits exist
-              but never disables the action. */}
+          {/* The Look step's Foundry button — always runs the Foundry (incremental) on click. No gating.
+              Option-click runs every step (`force`: bypasses the dirty-check). The dot lights when there are
+              edits since the last Foundry run, and never disables the action. */}
           <div className="carto-toolgroup">
             <button
               className={`carto-bake-btn${bakeStale ? ' stale' : ''}${bakeRunning ? ' running' : ''}`}
               disabled={bakeRunning}
               onClick={(e) => runBake({ force: e.altKey })}
               title={bakeRunning
-                ? 'Baking…'
+                ? 'The Foundry is running…'
                 : (bakeStale
-                  ? 'Re-bake — pour a fresh slab. Authoring edits exist since last bake. ⌥-click forces full rebuild.'
-                  : 'Re-bake — pour a fresh slab. ⌥-click forces full rebuild.')}
-              aria-label={bakeRunning ? 'Baking' : 'Re-bake'}>
-              {/* Circle-arrow icon. Spins via CSS when bakeRunning. The
-                  stale dot is a CSS pseudo-element — see .carto-bake-btn.stale. */}
-              <span className="carto-bake-icon" aria-hidden="true">↻</span>
+                  ? 'Run the Foundry: make a fresh Slab. ● = edits since the last Foundry run. Option-click: run every step.'
+                  : 'Run the Foundry: make a fresh Slab. Option-click: run every step.')}
+              aria-label={bakeRunning ? 'The Foundry is running' : (bakeStale ? 'Run the Foundry (edits since the last run)' : 'Run the Foundry')}>
+              {/* The dot is a CSS pseudo-element — see .carto-bake-btn.stale. */}
+              {bakeRunning ? 'Running…' : 'Foundry'}
             </button>
           </div>
         </>
@@ -228,7 +222,7 @@ function LooksMenu() {
   // Prefer the active Look when it IS this scene's; else this scene's own. Before
   // `looks` loads, fall back to the persisted id / scene — never another hood's name.
   const ownEntry = (activeEntry && activeEntry.scene === scene) ? activeEntry : sceneLooks[0]
-  const label = !scene && !activeLookId ? 'Choose a town' : ownEntry?.name || (activeIsForeign ? scene : activeLookId) || '…'
+  const label = !scene && !activeLookId ? 'Choose a scene' : ownEntry?.name || (activeIsForeign ? scene : activeLookId) || '…'
   // No town open and the list loaded ⇒ the menu opens itself: choosing a town is the only thing to do.
   const noTown = !scene && !activeLookId && (looks || []).length > 0
   useEffect(() => { if (noTown) setOpen(true) }, [noTown])
@@ -298,7 +292,7 @@ function LooksMenu() {
           ))}
           <div className="carto-looks-sep" />
           <button type="button" className="carto-looks-option" onClick={onNew}>
-            ＋ Save as new Look…
+            ＋ Save as new look preset…
           </button>
           {activeLookId && defaultLookId && activeLookId !== defaultLookId && (
             <button type="button" className="carto-looks-option carto-looks-danger" onClick={onDelete}>

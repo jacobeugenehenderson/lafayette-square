@@ -52,7 +52,7 @@ console.log(`  ${'UNION'.padEnd(17)} ${String(trees.length).padStart(5)}\n`)
 // the bake takes: measured 2026-08-28, kept 4572 vs 4547, curb 39 vs 109, sidewalk 546
 // vs 511. That is Layer 0 question 3 committed by an instrument — the same shape as
 // litmus-curb-parallel's `blockCustoms: null`, and it fails WORST on the most-authored
-// town. The numbers in BAKE.md §4.6 were taken before this line existed.
+// town. The numbers in FOUNDRY.md §4.6 were taken before this line existed.
 const designPath = path.join(ROOT, 'public', 'looks', scene, 'design.json')
 if (!existsSync(designPath)) console.warn(`  ⚠️ no design.json for '${scene}' — measuring the un-authored surfaces, which is NOT what the bake gates on`)
 const tester = makeZoneTester({ shapePath, mapPath, designPath: existsSync(designPath) ? designPath : undefined, scene, quiet: false })

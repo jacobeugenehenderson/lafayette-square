@@ -135,7 +135,7 @@ function CurbCornerPopover() {
   if (!c) return (
     <div className="carto-section">
       <h2 className="carto-measure-header"><span>Curb cut</span><button className="carto-btn-sm" onClick={() => selectCurbCorner(null)}>✕</button></h2>
-      <div className="carto-meta">⛔ This corner is no longer in the painted map (the shape was re-poured). Pick it again.</div>
+      <div className="carto-meta">⛔ This corner is no longer in the painted map (the Foundry re-made the shape). Pick it again.</div>
     </div>)
   const def = c.unauthored
   const current = c.authored ?? null
@@ -252,7 +252,7 @@ export default function MeasurePanel() {
         onChange={s => updateSide('right', s)} />
 
       <div className="carto-meta">
-        {st.class ?? '⛔ no class — re-pour'} · {st.points.length} nodes · {hasCustom ? 'custom block' : 'inherits chain'}
+        {st.class ?? '⛔ no class — run every step of the Foundry'} · {st.points.length} nodes · {hasCustom ? 'custom block' : 'inherits chain'}
       </div>
 
       {hasCustom && (

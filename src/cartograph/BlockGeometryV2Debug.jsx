@@ -56,7 +56,7 @@ import { fetchCurbedMinWidth } from './api.js'
 const PRI = { residential: 1, treelawn: 3, sidewalk: 5, curbCut: 5.5, curb: 6, asphalt: 8, crosswalk: 8.5, edgeline: 8.7, stripe: 8.8 }
 // the road's paint as flat geometry, cut to the disc for display (the record stays uncut: the bake cuts the rim once)
 function paintGeos(paint, stencil, where) {
-  if (!paint) { console.warn(`[BlockGeometryV2Debug] ⛔ the ${where} carries no road paint (stripe / edge lines) — frozen before the paint was sealed. Leave and re-enter Survey to re-freeze, or re-bake.`); return {} }
+  if (!paint) { console.warn(`[BlockGeometryV2Debug] ⛔ the ${where} carries no road paint (stripe / edge lines) — frozen before the paint was sealed. Leave and re-enter Survey to re-seal, or run the Foundry.`); return {} }
   const flat = (rings, y) => rings?.length ? ringsToFlatGeo(clipPaintToStencil(rings, stencil), y, true) : null
   return { edgeline: flat(paint.edgeline, 0.047), edgelineYellow: flat(paint['edgeline:yellow'], 0.047), stripe: flat(paint.stripe, 0.048) }
 }
@@ -612,7 +612,7 @@ export default function BlockGeometryV2Debug({
         // the frozen one. Say so, loudly, for as long as it is true.
         setShapeFreezeMissing(tiles && tiles.length
           ? null
-          : `No frozen shape for '${scene}' — showing a LIVE re-derivation, not the frozen shape. Run a bake (or exit Survey) to freeze it.`)
+          : `No sealed shape for '${scene}' — showing a LIVE re-derivation, not the sealed shape. Run the Foundry (or exit Survey) to seal it.`)
       })
       .catch(e => {
         done = true
@@ -622,7 +622,7 @@ export default function BlockGeometryV2Debug({
         setFrozenShape(null)
         // [ROADMAP A02] Door 2 — the fetch/parse FAILED. This one is not a
         // legitimate state at all: a freeze was expected and could not be read.
-        setShapeFreezeMissing(`Frozen shape for '${scene}' FAILED to load (${e?.message || e}) — showing a LIVE re-derivation. The Data Wall is not holding; do not trust this as the frozen shape.`)
+        setShapeFreezeMissing(`Sealed shape for '${scene}' FAILED to load (${e?.message || e}) — showing a LIVE re-derivation. The Seal is not holding; do not trust this as the sealed shape.`)
       })
     // Abort mid-flight (tool flipped / re-mount): clear the key so the next
     // activation refetches instead of silently falling back to the live build.
@@ -734,7 +734,7 @@ export default function BlockGeometryV2Debug({
     // strip, while the curb sits still — SECTION.md §4.
     let sg
     // [LOAD-FORENSIC 2026-07-14] see the note at buildBlockGeometryV2 above.
-    console.log(`[LOAD] ▶ sectionGeos rebuilding — trigger: ${__whyRerun()}`)
+    console.log(`[LOAD] ▶ sectionGeos recomputing — trigger: ${__whyRerun()}`)
     console.time(`[LOAD] sectionOpen (${frozenShape.tiles.length} tiles)`)
     try { sg = sectionOpen(frozenShape.tiles, curbWidth, { outer: 'LU', inner: 'SW' }, stencil, blockCustomsX, sectionCacheRef.current.map, selSet, cornerCornerRadiusOverrides, { stampedWith: frozenShape.boundaryRing }) }
     catch (e) { console.error('[BlockGeometryV2Debug] sectionOpen failed:', e); return null }

@@ -41,7 +41,7 @@ is **an edge of the drawing, never an absence** (`[[project_neighborhood_is_a_co
   water, so wherever the land's edge stood above the sheet the sky showed through (seen on Provincetown's harbour).
 - **Closed by the bed, and the bed is in the terrain.** Jacob, 2026-09-26: *"water is always flat, and the edge of
   water is always where the flat plane meets any other plane."* `bake-terrain` writes the USACE beach profile under
-  the mapped water down to the visibility depth (`BAKE.md`); the `bed` ground group drapes over it, and the water
+  the mapped water down to the visibility depth (`FOUNDRY.md`); the `bed` ground group drapes over it, and the water
   thins over the shallows. The shore is bare of curb/sidewalk (`tileGround.js` `shoreAt`); land no longer paints
   over the water (the flatten is strictly simple, `52cba914`). ▶ `node checks/claims-the-shore-is-closed.mjs`
 - ✅ **EYE GATE — the water over the bed** (Jacob, 2026-09-27, Provincetown, relayed by Boz): *"OH MY GOD it looks
@@ -92,7 +92,7 @@ near and far.
 - Commit only your own paths (`git commit -- <paths>`); the working tree is shared. ⚠️ Furrow holds
   `bake-ground.js`, and a revetment bake ran for Provincetown at 15:39. Coordinate through Boz before touching
   either.
-- Canon: `cartograph/BAKE.md` (the shore rule), `OPERATIONS`, and the revetment brief's §6 updated to point
+- Canon: `cartograph/FOUNDRY.md` (the shore rule), `OPERATIONS`, and the revetment brief's §6 updated to point
   here. Commit messages name the register reached.
 
 **The instruction is confirm-then-build:** measure, tell Jacob what the bare space is and your proposal, then

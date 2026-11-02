@@ -1,4 +1,5 @@
 import useCartographStore from './stores/useCartographStore.js'
+import { stepWords, stepList } from '../lib/stepWords.js'
 
 export default function StatusBar() {
   const status = useCartographStore(s => s.status)
@@ -16,9 +17,9 @@ export default function StatusBar() {
     return (
       <div
         className="carto-status carto-glass carto-status--alarm"
-        title={`No Look's scene is "${lookMissing}", so Designer (style) edits have nowhere to save. Create a Look for this neighborhood.`}
+        title={`No Look's scene is "${lookMissing}", so Plan (style) edits have nowhere to save. Create a Look for this neighborhood.`}
       >
-        ⚠ No Look for {lookMissing} — Designer edits are NOT saving
+        ⚠ No Look for {lookMissing} — Plan edits are NOT saving
       </div>
     )
   }
@@ -29,21 +30,21 @@ export default function StatusBar() {
   // refuse on it, so it says what must happen first, and offers no Bake.
   const blockers = slabAge?.stale?.filter(s => s.blocker) || []
   if (inStage && !bakeRunning && blockers.length) return (
-    <div className="carto-status carto-glass carto-status--alarm" title={blockers.map(b => `${b.step}: ${b.why.join(' · ')}`).join('\n')}>
-      ⛔ Can't bake until: {blockers.flatMap(b => b.why).join(' · ')}
+    <div className="carto-status carto-glass carto-status--alarm" title={blockers.map(b => `${stepWords(b.step)}: ${b.why.join(' · ')}`).join('\n')}>
+      ⛔ The Foundry can't run until: {blockers.flatMap(b => b.why).join(' · ')}
     </div>
   )
   if (inStage && !bakeRunning && (slabAge?.error || slabAge?.stale?.length)) {
     const steps = slabAge.error ? [] : slabAge.stale.map(s => s.step)
     const title = slabAge.error
-      ? `The slab's age could not be measured: ${slabAge.error}`
-      : slabAge.stale.map(s => `${s.step}${s.repour ? ' (re-pour)' : ''}: ${s.why.slice(0, 4).join(', ')}${s.why.length > 4 ? ` … +${s.why.length - 4}` : ''}`).join('\n')
+      ? `The Slab's age could not be measured: ${slabAge.error}`
+      : slabAge.stale.map(s => `${stepWords(s.step)}${s.repour ? ' (every step re-runs)' : ''}: ${s.why.slice(0, 4).join(', ')}${s.why.length > 4 ? ` … +${s.why.length - 4}` : ''}`).join('\n')
     return (
       <div className="carto-status carto-glass carto-status--alarm" title={title}>
         {slabAge.error
-          ? '⚠ Slab age unknown — this may not be the current pour'
-          : `⚠ This slab is older than what the bake reads — ${steps.length} step${steps.length === 1 ? '' : 's'} would re-run (${steps.slice(0, 3).join(', ')}${steps.length > 3 ? ', …' : ''})`}
-        {' '}<button className="carto-status-action" onClick={() => runBake()}>Bake</button>
+          ? '⚠ The Slab\'s age is unknown — it may not be the Foundry\'s latest'
+          : `⚠ The Foundry owes ${steps.length} step${steps.length === 1 ? '' : 's'}: ${stepList(steps)}`}
+        {' '}<button className="carto-status-action" onClick={() => runBake()}>Run the Foundry</button>
       </div>
     )
   }
@@ -56,7 +57,7 @@ export default function StatusBar() {
     return (
       <div
         className="carto-status carto-glass carto-status--alarm"
-        title="The Survey store is un-hydrated (typically after a hot-reload), so Survey edits are not writing to overlay.json. Hard-refresh the app to re-sync, then re-author."
+        title="The Survey store is un-hydrated (typically after a hot-reload), so Survey edits are not being saved. Hard-refresh the app to re-sync, then re-author."
       >
         ⚠ Survey edits are NOT saving — hard-refresh to re-sync
       </div>
@@ -77,7 +78,7 @@ export default function StatusBar() {
         className="carto-status carto-glass carto-status--alarm"
         title={freezeMissing}
       >
-        ⚠ NOT the frozen shape — live re-derivation (the Data Wall is not holding)
+        ⚠ NOT the sealed shape — live re-derivation (the Seal is not holding)
       </div>
     )
   }

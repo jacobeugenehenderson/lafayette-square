@@ -249,7 +249,7 @@ Evictions and corrections, all verified first. Full detail in the commit message
   resized M→S · the enumerated active-brief roster replaced with `ls BRIEF-*.md` (it was wrong in both
   directions) · **25 worktrees → 2**, so the standing deterrent against `isolation: worktree` is spent ·
   the intake manifest's three LS-data fallbacks are excised · `484 commits behind` → the command, not a
-  number · `BAKE.md` line numbers → symbols (its handler citation was off by ~1,400 lines) ·
+  number · `FOUNDRY.md` line numbers → symbols (its handler citation was off by ~1,400 lines) ·
   `DOC-CODE C6` — `ribbons.intersections` is not "near-zero consumers", it is **length 0**.
 - **The accord sweep** (`ae8ff532`). The re-center claim was repeated in five more docs; the membership
   formula in eleven; the `SvgGround` pointer in `arborist/`; the unreproducible "6 of 50" in `README`.

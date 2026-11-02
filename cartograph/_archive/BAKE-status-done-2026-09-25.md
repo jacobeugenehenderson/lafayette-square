@@ -1,6 +1,6 @@
-# BAKE.md §5 — the DONE list, retired 2026-09-25
+# FOUNDRY.md §5 — the DONE list, retired 2026-09-25
 
-Retired from `cartograph/BAKE.md` in the docs pass of 2026-09-25 (Jacob: *"net down to a
+Retired from `cartograph/FOUNDRY.md` in the docs pass of 2026-09-25 (Jacob: *"net down to a
 pristine documentation of truth only"*). Every line below was TRUE and shipping; that is
 precisely why it no longer belongs in canon, which carries live doctrine and open state.
 ⛔ Nothing here is superseded — do not read it as a record of things that stopped being true.

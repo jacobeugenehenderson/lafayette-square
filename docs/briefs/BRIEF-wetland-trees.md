@@ -42,7 +42,7 @@ to fixing it.
 
 ## Read first
 
-- `cartograph/BAKE.md §4.5/§4.6` (the tree gates; a census is the union of its wells) and `cartograph/lu-policy.mjs`'s
+- `cartograph/FOUNDRY.md §4.5/§4.6` (the tree gates; a census is the union of its wells) and `cartograph/lu-policy.mjs`'s
   header (planted vs hard vs soft).
 - `ROADMAP.md` "Land use" bullets (the `unknown` hijack and the containment direction) and `H-17` (surveyed is
   nudged, invented is dropped).
@@ -65,7 +65,7 @@ that is Jacob's go. Eye gate: Jacob, on Provincetown in Preview, scene recorded.
 
 - Measurement first; stop and report to Jacob before any change.
 - Then write in `cartograph/derive.js` and/or `cartograph/lu-policy.mjs`, plus a check. No bake or pour without Jacob's go.
-- Canon: `BAKE.md §4.6` gets the rule; a `ROADMAP` line. Commit messages name the register reached.
+- Canon: `FOUNDRY.md §4.6` gets the rule; a `ROADMAP` line. Commit messages name the register reached.
 
 **The instruction is confirm-then-build:** read the canon and the code, tell Jacob what you found, and if the code
 contradicts this brief — stop and flag him.

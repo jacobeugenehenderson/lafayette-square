@@ -37,12 +37,12 @@ export function assertKeyframesAimed(keyframes, where = 'hero') {
   keyframes.forEach((k, i) => {
     if (!_vec3(k?.position) || !_vec3(k?.target) || !Number.isFinite(k?.fov)) {
       throw new Error(`[${where}] hero keyframe ${i} has no finite position/target/fov — ` +
-        'every keyframe carries its own aim; re-bake a slab that predates keyframe targets')
+        'every keyframe carries its own aim; run the Foundry again on a Slab that predates keyframe targets')
     }
     if (!Number.isFinite(k.t) || k.t < 0 || k.t > 1 || (i === 0 && k.t !== 0) ||
         (i > 0 && !(k.t > keyframes[i - 1].t))) {
       throw new Error(`[${where}] hero keyframe ${i} has no valid time (t=${k.t}) — ` +
-        'the first key sits at 0 and times rise strictly to at most 1; re-bake a slab that predates keyframe times')
+        'the first key sits at 0 and times rise strictly to at most 1; run the Foundry again on a Slab that predates keyframe times')
     }
   })
   return keyframes
@@ -53,7 +53,7 @@ export function assertHeroMotion(keyframes, motion, where = 'hero') {
   if (keyframes.length < 2) return motion
   if (!(motion?.length > 0) || !HERO_MODES.includes(motion?.mode)) {
     throw new Error(`[${where}] an animated hero shot needs heroMotion { length > 0, mode: bounce|loop } — ` +
-      `got ${JSON.stringify(motion)}; re-bake a slab that predates the keyframe timeline`)
+      `got ${JSON.stringify(motion)}; run the Foundry again on a Slab that predates the keyframe timeline`)
   }
   const last = keyframes[keyframes.length - 1].t
   if (motion.mode === 'bounce' && last !== 1) {

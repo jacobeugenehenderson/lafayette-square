@@ -20,7 +20,7 @@ distance-from-shore stand-in: *"it's a whole other thing, BUT it's CORRECT and w
   p5–p95 in both towns — the water sheet's own slot lift — max 0.09 m on Huron, 1.23 m on Provincetown.
   ▶ re-derive: the water group's baked Y minus `public/baked/<town>/terrain.bin` under the drawn water ring.
 - Why: the USGS DEM hydro-flattens water bodies, and `bake-terrain.js` DERIVES the datum as the mode of
-  the samples under the water (`BAKE.md §2`, "the heightfield derives where zero is"). The flattening
+  the samples under the water (`FOUNDRY.md §2`, "the heightfield derives where zero is"). The flattening
   IS the datum's signal. ⛔ **A merge that replaces those samples first breaks the datum for every
   coastal town.** Order: derive the datum from the flattened surface, THEN lay the floor under it.
 - `BRIEF-water-shader.md` §6d/§6e (and the retired 2026-09-20 measurements in `cartograph/_archive/BRIEF-water-shader-6e-level-set-RETIRED-2026-09-26.md`) record "no bathymetry in the source" and that any depth ramp

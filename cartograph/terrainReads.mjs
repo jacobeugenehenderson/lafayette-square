@@ -1,7 +1,7 @@
 /**
  * terrainReads.mjs — the VALUES the terrain bake reads beyond its raster, in one place.
  *
- * bake-terrain writes the bed under the water (BAKE.md "the bed"): its profile scale comes from the references
+ * bake-terrain writes the bed under the water (FOUNDRY.md "the bed"): its profile scale comes from the references
  * registry and the town may author its sand size and water clarity in its looks' design.json `water`. ⭐ The bake
  * reads them HERE (and the town's water level: which tide datum is high and low, or which lake level — BRIEF-bathymetry),
  * and serve.js declares the same call as the terrain step's value input (hashed like a file), so
