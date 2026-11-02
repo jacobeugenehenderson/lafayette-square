@@ -11,7 +11,8 @@
  *   · ambient  null (fireworks: no Ambient) | { on: END, fadeIn, off: END | 'after-last-show', fadeOut } (minutes).
  *              AMBIENT is the lit-but-not-performing state (Jacob named it); its level is the channel's `glow` key.
  *   · shows    null | { first: END, last: END, every: N }: a start t plays when, on the clock of the date t falls on,
- *              (t − first) mod 1440 ≤ (last − first) mod 1440 and (t − first) mod 1440 is a multiple of N. The last is
+ *              (t − first) mod 1440 ≤ (last − first) mod 1440 and (t − first) mod 1440 is a multiple of N (a slot first or
+ *              last at its first whole minute: showMinute). The last is
  *              the last START, inclusive ("until 00:00" includes a midnight show). Never clipped: with Ambient, a start
  *              plays only if its WHOLE run is inside Ambient's span, on-time to the end of its fade-out (a fade shapes the
  *              level, never whether a show plays: Boz, 2026-11-02).
@@ -39,6 +40,11 @@ export const endName = (e) => (HHMM.test(e) ? e : e[0].toUpperCase() + e.slice(1
 /** An END as a minute of the town's day: a clock time, or the slot's minute on that row. */
 export function windowEndMinute(end, slotMinutes) { const c = HHMM.exec(end); return c ? Number(c[1]) * 60 + Number(c[2]) : slotMinutes[end] }
 const mod = (x) => ((x % DAY) + DAY) % DAY
+/** A shows' END as the minute a show STARTS: a clock time as it is; a slot at its first WHOLE minute at or after the sun's
+ *  (Math.ceil). Shows start on whole minutes, and a slot's minute never is one (Jacob's "first show at Golden" played none:
+ *  staging, 2026-11-02). Ceil, never round: a show at Ambient's own slot can never start before Ambient comes on. Ambient's
+ *  own on and off stay the sun's minute (a published slab plays exactly as before). */
+const showMinute = (end, row) => Math.ceil(windowEndMinute(end, row))
 export const nextDate = (d) => new Date(Date.parse(`${d}T12:00:00Z`) + 86400000).toISOString().slice(0, 10)
 export const prevDate = (d) => new Date(Date.parse(`${d}T12:00:00Z`) - 86400000).toISOString().slice(0, 10)
 /** Runs of consecutive dates, as "Mon D – Mon D" (or one date): how a refusal names its days. */
@@ -142,13 +148,13 @@ export function nightOf(ch, entry, date, rowOf, runSeconds) {
     // after its first played start: one evening's run, never the next evening's.
     let cap = Infinity
     for (let x = Math.ceil(start); x < horizon && x < start + DAY && x <= cap; x++) {
-      const row = rowAt(x), f = windowEndMinute(shows.first, row), l = windowEndMinute(shows.last, row), o = mod(x - f)
+      const row = rowAt(x), f = showMinute(shows.first, row), l = showMinute(shows.last, row), o = mod(x - f)
       if (o > mod(l - f) || o % shows.every) continue
       // Boz's ruling (2026-11-02, on Zob's HOLD): a show plays when its whole run is inside Ambient's SPAN, from its on-time to
       // its end (the fade-out's last minute); a fade shapes Ambient's level, never whether an authored show plays.
       const whole = !amb || (x >= onAt && (fixedOff == null || x + len <= fixedOff + (amb.fadeOut || 0)))
       if (whole) {
-        if (!starts.length && fixedOff == null) cap = x + mod(windowEndMinute(shows.last, rowAt(x)) - mod(x))
+        if (!starts.length && fixedOff == null) cap = x + mod(showMinute(shows.last, rowAt(x)) - mod(x))
         starts.push(x)
       }
     }
@@ -198,6 +204,8 @@ export function showtimesOnDate(nightsBefore, nightsToday) {
  *   · a pair (Ambient on → off; shows first → last) whose length wraps through 0 between consecutive days, or is 0;
  *   · an END slot moving more than SLOT_DAY_MOVE_MAX_MIN in a day (its pass cannot be judged);
  *   · two nights that overlap, on one date or across midnight into the next date's night (Zob's condition 3);
+ *   · an entry that asks for shows and plays none on any night of the year (Jacob's staging slab, 2026-11-02: "0 shows",
+ *     said and never refused, so it was published);
  *   · Ambient that ends after the last show on a night where no show plays: it would never go off. (Under the span rule a
  *     night with shows always has one; this is the invariant that keeps a future change from failing silently.)
  */
@@ -230,8 +238,10 @@ export function refuseScheduleSense(ch, days, runSeconds, where) {
   })
   // the nights: each date's, against each other and against the next date's (across midnight)
   let prevNights = null, prevDateSeen = null
+  const played = new Map()                                          // an entry with shows → its shows over the year
   for (const d of days.slice(0, -1)) {
     const nights = entriesOn(ch.schedule, d.date).map(e => ({ e, n: nightOf(ch, e, d.date, rowOf, runSeconds) }))
+    for (const { e, n } of nights) if (e.shows) played.set(e, (played.get(e) || 0) + (n ? n.starts.length : 0))
     for (const { e, n } of nights) if (e.ambient?.off === 'after-last-show' && (!n || n.lastStart == null)) throw new Refusal(`[showSchedule] ⛔ ${where}, schedule entry ${ch.schedule.indexOf(e) + 1}: on ${dateRuns([d.date])} no show plays, so Ambient (going off after the last show) would never go off: choose when Ambient goes off`)
     const spans = nights.filter(x => x.n).map(x => [x.n.start, x.n.end ?? x.n.start + DAY])
     for (let i = 0; i < spans.length; i++) for (let j = i + 1; j < spans.length; j++)
@@ -239,5 +249,9 @@ export function refuseScheduleSense(ch, days, runSeconds, where) {
     if (prevNights && prevDateSeen === prevDate(d.date)) for (const [, e0] of prevNights) for (const [s1] of spans)
       if (e0 > DAY + s1) throw new Refusal(`[showSchedule] ⛔ ${where}: the night of ${dateRuns([prevDateSeen])} runs past ${dateRuns([d.date])}'s night beginning; nights overlap across midnight: end the earlier night sooner, or start the later one later`)
     prevNights = spans; prevDateSeen = d.date
+  }
+  for (const [e, count] of played) if (!count) {
+    const sh = e.shows, why = e.ambient ? ": no show's whole run fits between Ambient's 'comes on' and its 'goes off' (with its fade-out); choose a first show, or a last, inside Ambient's span" : ''
+    throw new Refusal(`[showSchedule] ⛔ ${where}, schedule entry ${ch.schedule.indexOf(e) + 1}: its shows (first show ${endName(sh.first)}, last show starts ${endName(sh.last)}, every ${sh.every} min) play on no night of the year${why}`)
   }
 }

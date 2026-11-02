@@ -43,9 +43,9 @@ import useFailures, { failuresFor } from '../lib/failures.js'
 import { runSeconds } from '../displays/lightShow/engine.js'
 import { defaultDisplayChannel, DISPLAY_FIELDS, validateDisplayChannel } from '../displays/showChannel.js'
 import { nextDate, refuseShortCadence } from '../displays/showSchedule.js'
-import { setAmbient, setShows, addAmbient, addShows, removeAmbient, removeShows, setDays, addEvent, removeEntry, clockTyped, clockWords, ambientSpanWords, tonightOf, keyedSlots, unkeyedSlots } from './scheduleCard.js'
+import { setAmbient, setShows, addAmbient, addShows, removeAmbient, removeShows, setDays, addEvent, removeEntry, clockTyped, clockWords, ambientSpanWords, tonightOf, yearRefusal, keyedSlots, unkeyedSlots } from './scheduleCard.js'
 import { townClockOf, townDateAt, townClockChange } from '../lib/townClock.js'
-import { getTodSlotRow, getTodSlotMinutes, getTodSlotLabel, NAMED_TOD_SLOTS } from '../cartograph/animatedParam.js'
+import { getTodSlotRow, getTodSlotMinutes, getTodSlotLabel, getTodSlotDaysAhead, NAMED_TOD_SLOTS } from '../cartograph/animatedParam.js'
 import { PLUGINS as DISPLAY_PLUGINS } from '../displays/Displays.jsx'
 import { keyframeFocusIds } from '../lib/focusObject.js'
 import useListings from '../hooks/useListings'
@@ -206,12 +206,14 @@ function DisplaysSection() {
 /**
  * TONIGHT, inside the Lit card (Jacob, 2026-11-02: one picture of the night, the keys and the Schedule together): noon to
  * noon, Ambient's LEVEL as the keys and the Schedule make it (scheduleCard.js#tonightOf, the engine's own functions, so the
- * picture and the show agree), a tick at each showtime, and the clock's change if tonight has one. Read-only.
+ * picture and the show agree), a tick at each showtime, the clock's change if tonight has one, and the year's refusal if the
+ * schedule has one (scheduleCard.js#yearRefusal: what Publish and the player refuse, said here first). Read-only.
  */
 function Tonight({ display, channel, keys = [], selected, onSelect }) {
   const now = useTimeOfDay(s => s.currentTime)
   const D = townClockOf(now).date, secs = runSeconds(display.run)
   const t = useMemo(() => tonightOf(channel, D, secs, getTodSlotRow), [channel, D, secs])
+  const refused = useMemo(() => yearRefusal(channel, getTodSlotDaysAhead(now, 366), secs), [channel, D, secs])   // eslint-disable-line react-hooks/exhaustive-deps
   const change = useMemo(() => {                                     // the town's clock between tonight's noon and tomorrow's
     const noon = (d) => townDateAt({ year: +d.slice(0, 4), month: +d.slice(5, 7), day: +d.slice(8, 10), minute: 720 })
     return townClockChange(noon(D), noon(nextDate(D)))
@@ -222,6 +224,7 @@ function Tonight({ display, channel, keys = [], selected, onSelect }) {
   return (
     <div className="py-1" aria-label="Tonight's schedule">
       <div className="text-caption" style={CAPTION}>{t.line}</div>
+      {refused && <div role="alert" className="text-caption" style={{ ...CAPTION, color: 'var(--error)' }}>Refused, and Publish refuses it too: {plainReason({ message: refused })}</div>}
       {clock && <div className="text-caption" style={CAPTION}>{clock}</div>}
       <div className="relative rounded my-1" style={{ height: 28, background: 'var(--surface-container)', border: '1px solid var(--outline-variant)', overflow: 'hidden' }}>
         <svg viewBox="0 0 100 100" preserveAspectRatio="none" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}>

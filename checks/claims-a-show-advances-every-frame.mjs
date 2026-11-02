@@ -31,10 +31,11 @@ async function verdict({ clock, view } = {}) {
     F(Math.abs(C.townMinuteOf(at, tz) - (c.minuteOfDay + (c.seconds + 0.75) / 60)) < 1e-9, `${tz}: the town's minute is not its whole minute + seconds + milliseconds`)
   }
   // 2. the show: hourly on the hour from 00:00, the show 302.2 s; frames from 21:01:10.000 in New York, 60 a second
-  const ch = S.defaultDisplayChannel(), flat = () => ({ dawn: 360, sunrise: 390, noon: 750, golden: 1020, sunset: 1050, dusk: 1080, night: 1140, deep: 30 })
-  const D = '2026-12-04', n = { before: H.nightsOn(ch, H.prevDate(D), flat, 302.2), today: H.nightsOn(ch, D, flat, 302.2) }
+  const T = await importSource('src/lib/todSlots.js'), real = (d) => T.todSlotRowOf({ lat: 40.7128, lon: -74.006, tz: 'America/New_York' }, d)   // REAL rows
+  const ch = S.defaultDisplayChannel()
+  const D = '2026-12-04', n = { before: H.nightsOn(ch, H.prevDate(D), real, 302.2), today: H.nightsOn(ch, D, real, 302.2) }
   const start = C.townDateAt({ year: 2026, month: 12, day: 4, minute: 21 * 60 + 1 + 10 / 60 }, 'America/New_York').getTime()
-  const st = Array.from({ length: 60 }, (_, i) => { const at = new Date(start + i * 1000 / 60); return H.displayStateAt(ch, n.before, n.today, C.townClockOf(at, 'America/New_York').date, C.townMinuteOf(at, 'America/New_York'), flat) })
+  const st = Array.from({ length: 60 }, (_, i) => { const at = new Date(start + i * 1000 / 60); return H.displayStateAt(ch, n.before, n.today, C.townClockOf(at, 'America/New_York').date, C.townMinuteOf(at, 'America/New_York'), real) })
   F(st.every(s => s.mode === 'show'), `21:01:10 is not inside the 21:00 show (${st[0].mode})`)
   F(st.every((s, i) => !i || s.t > st[i - 1].t), `the show's t does not rise every frame (${st.slice(0, 4).map(s => s.t.toFixed(4)).join(', ')} …)`)
   F(Math.abs(st[59].t - st[0].t - 59 / 60) < 0.002, `the show's t does not advance by the frames' own length (a Date holds whole milliseconds) (${(st[59].t - st[0].t).toFixed(4)} s over 59 frames)`)

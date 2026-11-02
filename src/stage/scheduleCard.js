@@ -9,7 +9,7 @@
  * ▶ node checks/claims-the-schedule-card-changes-only-what-it-touches.mjs
  */
 import { defaultDisplayChannel } from '../displays/showChannel.js'
-import { nightsOn, displayStateAt, prevDate, nextDate, windowEndMinute } from '../displays/showSchedule.js'
+import { nightsOn, displayStateAt, prevDate, nextDate, windowEndMinute, refuseScheduleSense } from '../displays/showSchedule.js'
 import { mmss } from '../displays/lightShow/engine.js'
 import { TOD_SLOT_IDS } from '../lib/todSlots.js'
 
@@ -97,4 +97,11 @@ export function tonightOf(ch, D, secs, rowOf) {
   const runs = lit.map(([a, b]) => `${clockWords(720 + a)}–${clockWords(720 + b)}`).join(', ')
   const line = `Tonight: ${lit.length ? `Ambient ${runs}` : 'no Ambient'} · ${times.length} show${times.length === 1 ? '' : 's'}${times.length ? ` (${clockWords(times[0] % 1440)}${times.length > 1 ? `…${clockWords(times.at(-1) % 1440)}` : ''}), ${mmss(secs)} each` : ''}${dark ? ` · dark after the ${clockWords(dark.lastStart % 1440)} show` : ''}`
   return { level, lit, times, dark: dark ? dark.lastStart : null, line }
+}
+
+/** The year ahead judged as the store, Publish's bake and the player judge it (showSchedule.js#refuseScheduleSense): null, or
+ *  the refusal. Tonight shows it, so a schedule whose shows play on no night is refused where "0 shows" was once only said
+ *  (staging, 2026-11-02). `days` the year ahead at the town (animatedParam.js#getTodSlotDaysAhead). */
+export function yearRefusal(ch, days, secs) {
+  try { refuseScheduleSense(ch, days, secs, 'Tonight'); return null } catch (e) { return String(e?.message || e) }
 }

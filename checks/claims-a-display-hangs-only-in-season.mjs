@@ -18,7 +18,7 @@ import { importSource, sourceOf } from './_importSource.mjs'
 
 const code = (src) => src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '')
 const D = { season: 'lights' }, C = { segs: [], seconds: 60 }
-const SM = { dawn: 360, sunrise: 390, noon: 720, golden: 960, sunset: 990, dusk: 1020, night: 1100, deep: 1430 }   // a night from 17:00 to 06:00
+const PT = { lat: 42.05167, lon: -70.18666, tz: 'America/New_York' }   // the town's REAL slot rows (a slot's minute is never whole)
 const CAL = [{ id: 'lights', start_date: '2026-11-11', end_date: '2027-01-01' }]
 const at = (date, hours) => ({ date, hours, minutes: 30, seconds: 0 })
 
@@ -26,7 +26,7 @@ async function verdict({ engine, view, stageMut } = {}) {
   const fails = []
   const E = await importSource('src/displays/lightShow/engine.js', engine ? { transform: engine } : {})
   const { defaultDisplayChannel } = await importSource('src/displays/showChannel.js'), ch = defaultDisplayChannel()
-  const H = await importSource('src/displays/showSchedule.js'), rowOf = () => SM
+  const H = await importSource('src/displays/showSchedule.js'), T = await importSource('src/lib/todSlots.js'), rowOf = (d) => T.todSlotRowOf(PT, d)
   // LightShow's composition (asserted against its source below): up by the season, the mode by the schedule while up
   const ask = (cal, clock) => {
     const up = E.inSeason(cal, D.season, clock.date, 'check'), minute = clock.hours * 60 + clock.minutes
