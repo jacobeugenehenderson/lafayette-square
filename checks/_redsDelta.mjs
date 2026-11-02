@@ -9,7 +9,7 @@
 //   new        — red, blocked or timed out now; at base green, not checked, or absent;
 //   changed    — red at both, with different output (a red that grew, e.g. 11 unknown classes → 12);
 //   unmeasured — measured at base (green or red), not checked now: a check that lost its data hides what it would find;
-//   gone       — red at base, absent now (a red check deleted, or no longer in this tier);
+//   gone       — red at base, absent now (a red check deleted, or no longer in this tier), unless the merger accepts it;
 //   removed    — measured or not checked at base (green · notChecked), absent now: a check deleted or moved out of the tier
 //                (Fuse, 2026-11-02: a branch could break a green check AND delete it, and pass). A real rename or retirement
 //                passes only when the merger names it for THIS run (`accepted`, from --accept-removed=<label>), printed as
@@ -31,8 +31,10 @@ export function redsDelta(base, today, accepted = []) {
   }
   for (const [label, b] of was) {
     if (is.has(label)) continue
-    if (FAIL.has(b.bucket)) d.gone.push({ label, was: b.bucket })
-    else if (accepted.includes(label)) d.accepted.push({ label, was: b.bucket })
+    // A removal the merger names for this run is ACCEPTED whatever it was at base (a red check retired because its claim
+    // is settled elsewhere included, Fuse 2026-11-02), and printed as theirs. Unnamed: a red is GONE, anything else REMOVED.
+    if (accepted.includes(label)) d.accepted.push({ label, was: b.bucket })
+    else if (FAIL.has(b.bucket)) d.gone.push({ label, was: b.bucket })
     else d.removed.push({ label, was: b.bucket })
   }
   // An acceptance naming nothing the base had is itself refused: it would read as a removal accepted that never happened.

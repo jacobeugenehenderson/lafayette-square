@@ -37,6 +37,7 @@ const CASES = [
   ['a not-checked check deleted', [row('a', 'notChecked')], [], { removed: ['a'] }, true],
   ['a rename, accepted by the merger', [row('old', 'green')], [row('new', 'green')], { accepted: ['old'] }, false, ['old']],
   ['a rename, not accepted', [row('old', 'green')], [row('new', 'green')], { removed: ['old'] }, true],
+  ['a red check retired, accepted by the merger', [row('a', 'red')], [], { accepted: ['a'] }, false, ['a']],
 ]
 const KINDS = ['new', 'changed', 'unmeasured', 'gone', 'removed', 'accepted', 'same', 'fixed']
 
@@ -71,6 +72,7 @@ const WIRING = [
   [/rev-parse', 'HEAD\^\{tree\}'/, 'the record is not keyed by the tree'],
   [/\(green \? \{\} : \{ tail: norm\(r\.stdout\)[^\n]*errTail: norm\(r\.stderr\)/, 'a failing row keeps none of its output, so a CHANGED red cannot be shown'],
   [/for \(const c of d\.changed\)/, '--against flags a CHANGED red without showing what changed'],
+  [/if \(base\) for \(const a of ACCEPTED\)[\s\S]{0,400}the base record never ran it[\s\S]{0,400}it still runs here/, '--accept-removed is not refused by name before the suite runs'],
   [/redsDelta\(base, rowsOf\(\), ACCEPTED\)/, '--against does not hand the merger\'s --accept-removed to the delta'],
 ]
 const wiring = (src) => WIRING.filter(([re]) => !re.test(src)).map(([, why]) => why)
@@ -92,6 +94,7 @@ if (process.argv.includes('--mutants')) {
     ['blocked and timed-out not failures', swap("new Set(['red', 'blocked', 'timedOut'])", "new Set(['red'])")],
     ['a deleted green let through', swap("    else d.removed.push({ label, was: b.bucket })", '')],
     ['removed not blocking', swap(' + d.gone.length + d.removed.length', ' + d.gone.length')],
+    ['a retired red never acceptable', swap("    if (accepted.includes(label)) d.accepted.push({ label, was: b.bucket })\n    else if (FAIL.has(b.bucket))", "    if (FAIL.has(b.bucket)) d.gone.push({ label, was: b.bucket })\n    else if (accepted.includes(label)) d.accepted.push({ label, was: b.bucket })\n    else if (false)")],
     ['an acceptance of nothing taken', swap("  for (const a of accepted) if (!was.has(a) || is.has(a)) throw", "  for (const a of []) if (!was.has(a) || is.has(a)) throw")],
   ]
   const RUNM = [
@@ -101,6 +104,7 @@ if (process.argv.includes('--mutants')) {
     ['the exit not the delta', swap('process.exit(n ? 1 : 0)', 'process.exit(0)')],
     ['a failing row keeps no lines', swap("...(green ? {} : { tail: norm(r.stdout)", "...(true ? {} : { tail: norm(r.stdout)")],
     ['a CHANGED red not shown', swap('for (const c of d.changed)', 'for (const c of [])')],
+    ['--accept-removed judged only after the run', swap('if (base) for (const a of ACCEPTED)', 'if (false) for (const a of ACCEPTED)')],
   ]
   let bad = 0
   for (const [name, t] of DELTA) { const f = drive(await load(t)); console.log(`${f.length ? '🔴' : '⚪ SURVIVED'} mutant: ${name}${f.length ? ` (${f.length})` : ''}`); if (!f.length) bad++ }

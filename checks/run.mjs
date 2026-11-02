@@ -131,6 +131,12 @@ console.log(`${run.length} check(s) in tier(s): ${tiers.join(' + ')}   ` +
 const towns = run.some(r => r.args?.enumerate === 'town') ? (await import('./_scenes.mjs')).declaredScenes() : []
 const runs = run.flatMap(r => runsFor(r, towns))
 const declaredBlocked = run.filter(r => r.args?.unbounded)
+// ⛔ A merger's --accept-removed is judged BEFORE anything runs, by name, like every other --against refusal: it must name a
+//    check the base record ran and that this run no longer runs.
+if (base) for (const a of ACCEPTED) {
+  if (!base.rows.some(r => r.label === a)) { console.error(`⛔ --accept-removed=${a}: the base record never ran it, so there is no removal to accept`); process.exit(2) }
+  if (runs.some(r => r.label === a) || declaredBlocked.some(r => r.file === a)) { console.error(`⛔ --accept-removed=${a}: it still runs here, so it was not removed`); process.exit(2) }
+}
 if (runs.length !== run.length) console.log(`   ${runs.length} run(s): ${run.filter(r => r.args && !r.args.unbounded).length} check(s) declare @args and run once per value · ${declaredBlocked.length} declare an unbounded one (blocked)`)
 
 if (LIST) { for (const r of runs) console.log(`  ${r.label}  — ${claimOf(r.file) || '(no header claim)'}`); for (const r of declaredBlocked) console.log(`  ${r.file}  — BLOCKED: declares @args ${r.args.flag}=${r.args.unbounded}`); process.exit(0) }
